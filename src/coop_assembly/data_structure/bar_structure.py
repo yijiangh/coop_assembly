@@ -15,7 +15,8 @@ edited on 17.12.2019 by Yijiang Huang, yijiangh@mit.edu
 
 from compas.datastructures.network import Network
 from compas.geometry import is_point_on_line
-from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points, find_points_extreme
+from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points, find_points_extreme, \
+    compute_contact_line_between_bars, create_bar_body
 from coop_assembly.help_functions.shared_const import TOL
 
 
@@ -69,12 +70,14 @@ class BarStructure(Network):
         self.__connector_max_key     = 0
         self.name = "Network_b"
 
-    def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[]):
+    def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17):
         v_key = self.add_vertex()
+        bar_body = create_bar_body(_axis_endpoints, radius)
         self.vertex[v_key].update({"bar_type":_bar_type,
                                    "axis_endpoints":_axis_endpoints,
                                    "index_sol":None,    # tangent plane config
                                    "mean_point":None,   # mean point used for local axis construction
+                                   "pb_body":bar_body,  # pybullet body
                                    "crosec_type":_crosec_type,
                                    "crosec_values":_crosec_values,
                                    "zdir":_zdir,
@@ -84,6 +87,7 @@ class BarStructure(Network):
                                    "exchange_values":{}
                                    })
         return v_key
+        # TODO: bisect search for local disassembly motion
 
     def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[]):
         """create an edge connecting bar v_key1 and v_key2 or update edge attributes if edge exists already
@@ -137,8 +141,11 @@ class BarStructure(Network):
         list of two points
             [description]
         """
-        bar  = self.vertex[bar_v_key]
+        bar = self.vertex[bar_v_key]
         return (bar["axis_endpoints"][0], bar["axis_endpoints"][1])
+
+    def get_bar_pb_body(self, bar_v_key):
+        return self.vertex[bar_v_key]['pb_body']
 
     def update_bar_lengths(self):
         """update each bar's length so that it can cover all the contact points specified in edges (contact joints)
@@ -149,10 +156,11 @@ class BarStructure(Network):
             list_pts = []
             # for each connnected joint
             for bar_vert_1, bar_vert_2 in edges_con:
-                dpp = dropped_perpendicular_points(self.vertex[bar_vert_1]["axis_endpoints"][0],
-                                                   self.vertex[bar_vert_1]["axis_endpoints"][1],
-                                                   self.vertex[bar_vert_2]["axis_endpoints"][0],
-                                                   self.vertex[bar_vert_2]["axis_endpoints"][1])
+                dpp = compute_contact_line_between_bars(self, bar_vert_1, bar_vert_2)
+                # dpp = dropped_perpendicular_points(self.vertex[bar_vert_1]["axis_endpoints"][0],
+                #                                    self.vertex[bar_vert_1]["axis_endpoints"][1],
+                #                                    self.vertex[bar_vert_2]["axis_endpoints"][0],
+                #                                    self.vertex[bar_vert_2]["axis_endpoints"][1])
                 self.edge[bar_vert_1][bar_vert_2]["endpoints"][0] = dpp
                 points = self.edge[bar_vert_1][bar_vert_2]["endpoints"]
                 for p in points.keys():

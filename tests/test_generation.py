@@ -1,6 +1,7 @@
 import os
 import pytest
 from itertools import combinations
+import numpy as np
 
 from compas.datastructures import Network
 
@@ -16,11 +17,19 @@ from coop_assembly.geometry_generation.tet_sequencing import \
 from coop_assembly.geometry_generation.execute import execute_from_points
 from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
+from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
+
+from pybullet_planning import connect, wait_for_user, set_camera_pose, create_plane
 
 @pytest.fixture
 def save_dir():
     here = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(here, 'test_data')
+
+def set_camera(node_points):
+    centroid = np.average(node_points, axis=0) * METER_SCALE
+    camera_offset = 0.25 * np.array([1, -1, 1])
+    set_camera_pose(camera_point=centroid + camera_offset, target_point=centroid)
 
 @pytest.mark.gen_from_pts
 # @pytest.mark.parametrize('test_set_name', [('single_cube'), ('YJ_12_bars')])
@@ -29,10 +38,16 @@ def save_dir():
 # @pytest.mark.parametrize('pt_search_method', [('point2point'), ])
 @pytest.mark.parametrize('pt_search_method', [('point2triangle'), ])
 # @pytest.mark.parametrize('pt_search_method', [('point2point'), ('point2triangle')])
-def test_generate_from_points(points_library, test_set_name, radius, pt_search_method, save_dir, write):
+def test_generate_from_points(viewer, points_library, test_set_name, radius, pt_search_method, save_dir, write):
+
     points, base_tri_pts = points_library[test_set_name]
     print('\n' + '#'*10)
     print('Testing generate from point for set: {}, total # of pts: {}'.format(test_set_name, len(points)))
+
+    # create pybullet env
+    connect(use_gui=viewer)
+    set_camera(points)
+    # create_plane()
 
     start_tri_ids = [find_point_id(base_pt, points) for base_pt in base_tri_pts]
     assert len(start_tri_ids) == 3, 'start triangle should only have three points!'
@@ -56,6 +71,9 @@ def test_generate_from_points(points_library, test_set_name, radius, pt_search_m
     b_struct_data, o_struct_data = execute_from_points(points, tet_node_ids, radius, correct=True, check_collision=True)
     if write:
         export_structure_data(save_dir, b_struct_data, o_struct_data, file_name=test_set_name+'_'+pt_search_method+'.json')
+
+    if viewer:
+        wait_for_user()
 
 @pytest.mark.gen_grasp_planes
 @pytest.mark.parametrize('test_file_name', [('YJ_12_bars_point2triangle.json'),])

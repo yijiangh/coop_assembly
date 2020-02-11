@@ -23,6 +23,7 @@ requirements = [
     # 'compas>=0.11,<0.12',
     'compas>=0.11',
     'scipy>=1.3.1',
+    # 'pybullet_planning'
     # 'compas_fab',
     # 'pychoreo',
     # 'pycddlib',

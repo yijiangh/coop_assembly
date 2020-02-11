@@ -12,3 +12,15 @@ TOL = 1e-1
 NODE_CORRECTION_TOP_DISTANCE = 80 # millimter
 
 NODE_CORRECTION_SINE_ANGLE = 0.4
+
+# unit used in coop_assembly converted to meter
+METER_SCALE = 1e-3
+
+try:
+    import pybullet_planning
+    HAS_PYBULLET = True
+except ImportError:
+    print('Cannot import pybullet_plannig, related features disabled.')
+    HAS_PYBULLET = False
+
+USE_BOX = True

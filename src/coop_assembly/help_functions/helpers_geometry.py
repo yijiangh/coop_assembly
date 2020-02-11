@@ -24,7 +24,8 @@ from compas.geometry import project_point_plane, translate_points
 from compas.geometry import distance_point_point, distance_point_line, distance_point_plane, \
     area_triangle, volume_polyhedron
 
-from coop_assembly.help_functions.shared_const import EPS, NODE_CORRECTION_TOP_DISTANCE, NODE_CORRECTION_SINE_ANGLE
+from coop_assembly.help_functions.shared_const import EPS, NODE_CORRECTION_TOP_DISTANCE, NODE_CORRECTION_SINE_ANGLE, \
+    HAS_PYBULLET, METER_SCALE, USE_BOX
 
 
 ###############################################
@@ -72,6 +73,54 @@ def tet_volume(tet_end_points):
 def Frame_to_plane_data(frame):
     data = frame.to_data()
     return (data['point'], data['xaxis'], data['yaxis'], cross_vectors(data['xaxis'], data['yaxis']))
+
+###############################################
+
+def create_bar_body(axis_end_pts, radius, use_box=USE_BOX):
+    if not HAS_PYBULLET:
+        return None
+
+    import numpy as np
+    from pybullet_planning import quat_from_euler, create_box, set_color, set_point, set_quat, dump_body, create_cylinder, \
+        get_aabb, draw_aabb, apply_alpha
+    from pybullet_planning import Euler, STATIC_MASS, RED
+
+    color = apply_alpha(RED, alpha=1)
+
+    p1, p2 = axis_end_pts
+    p1 = np.array(p1) * METER_SCALE
+    p2 = np.array(p2) * METER_SCALE
+    # height = max(np.linalg.norm(p2 - p1) - 2*shrink, 0)
+    height = max(np.linalg.norm(p2 - p1), 0)
+    center = (p1 + p2) / 2
+
+    delta = p2 - p1
+    x, y, z = delta
+    phi = np.math.atan2(y, x)
+    theta = np.math.acos(z / np.linalg.norm(delta))
+    quat = quat_from_euler(Euler(pitch=theta, yaw=phi))
+    # p1 is z=-height/2, p2 is z=+height/2
+    diameter = 2*radius*METER_SCALE
+
+    if use_box:
+        # Much smaller than cylinder
+        # use inscribed square
+        h = diameter / np.sqrt(2)
+        body = create_box(h, h, height, color=color, mass=STATIC_MASS)
+    else:
+        # Visually, smallest diameter is 2e-3
+        # The geometries and bounding boxes seem correct though
+        body = create_cylinder(diameter/2, height, color=color, mass=STATIC_MASS)
+        # print('Diameter={:.5f} | Height={:.5f}'.format(diameter/2., height))
+        # print(get_aabb_extent(get_aabb(body)).round(6).tolist())
+        # print(get_visual_data(body))
+        # print(get_collision_data(body))
+
+    set_point(body, center)
+    set_quat(body, quat)
+    set_color(body, color)
+    # draw_aabb(get_aabb(body))
+    return body
 
 ###############################################
 

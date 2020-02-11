@@ -86,9 +86,9 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     crosec_values = (25.0, 2.0) # ? what does this cross section value mean?
     # these are vertex keys in the Bar_Structure network
     # * each bar is a vertex in the Bar_Structure
-    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0)
-    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1)
-    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2)
+    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius)
+    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius)
+    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius)
 
     # pt_o_0  = centroid_points(end_pts_0)
     # pt_o_1  = centroid_points(end_pts_1)
@@ -355,7 +355,6 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
             pt_new = correct_point(b_struct, o_struct, pt_new,
                                    [(b_v1_1, b_v1_2), (b_v2_1, b_v2_2), (b_v3_1, b_v3_2)], o_v_key=o_v_key)
 
-        # ! is this a mistype? shouldn't we plug in the corrected pt pt_new?
         ret_ft = first_tangent(pt_new, b1_1, b1_2, pt_mean_1, max_len,
                                b_v1_1, b_v1_2, b_struct, pt_mean, radius,
                                b_v0_n=None if bool_add else b_v0, check_collision=check_collision)

@@ -428,7 +428,7 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
     # pt_o        = centroid_points(end_pts_0)
     if not b_v0_n:
         # pts_e = [map(float, p) for p in end_pts_0]
-        b_v0 = b_struct.add_bar(0, new_axis_end_pts, "tube", (25.0, 2.0), vec_z)
+        b_v0 = b_struct.add_bar(0, new_axis_end_pts, "tube", (25.0, 2.0), vec_z, radius=radius)
     else:
         b_v0 = b_v0_n
         b_struct.vertex[b_v0].update(
@@ -559,7 +559,7 @@ def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1
     # pt_o        = centroid_points(end_pts_0)
     if not b_v0_n:
         # b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (2*radius, 2.0), vec_z)
-        b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (25.0, 2.0), vec_z)
+        b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (25.0, 2.0), vec_z, radius=radius)
     else:
         b_v0    = b_v0_n
         b_struct.vertex[b_v0].update(
@@ -738,7 +738,7 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
     # pt_o        = centroid_points(end_pts_0)
     if not b_v0_n:
         # b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (2*radius, 2.0), vec_z)
-        b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (25.0, 2.0), vec_z)
+        b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (25.0, 2.0), vec_z, radius=radius)
     else:
         b_v0    = b_v0_n
         b_struct.vertex[b_v0].update(
