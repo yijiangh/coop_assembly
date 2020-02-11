@@ -22,26 +22,28 @@ from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_
 
 
 class OverallStructure(Network):
-    """this class defines the overall structure in which a node is represented
-    by a network.vertex and a bar by a network.edge does not include
-    connectors - these are referenced through the additional bar_structure class
+    """this class defines the overall structure in which a node is represented by a network.vertex and a bar by a network.edge does not include connectors - these are referenced through the additional bar_structure class
 
-    The Overall_Structure is a second Network structure in which
-    # ! bars are modelled as edges and nodes (points where multiple bars would ideally
-    # ! come together) as vertices. This does not include the geometric information
-    # ! about the bars' actual position or endpoints, but only an idealised
-    # ! point where tetrahedra edges would be located.
+    The Overall_Structure is the abstract Network structure in which bars are modelled as edges and nodes (points where multiple bars would ideally come together) as vertices. This does not include the geometric information about the bars' actual position or endpoints, but only an idealised point where tetrahedra edges would be located.
+
+    Each bar has two representations:
+        (1) bar connecting a pair of ideal vertices: ``bar = (ideal vertex 0, ideal vertex 1)``
+        (2) bar as a vertex in the bar structure: ``b_v  = o_struct.edge[bars[0]][bars[1]]["vertex_bar"], b_s = b_struct.vertex[b_v]``
 
     Additionaly, the network uses an attribute `tetrahedra` to keep track of
     {tet_index : [vertex keys]}
 
     SP dissertation section 3.5.2:
-    `OverallStructure` is implemented to control "high-level" features, such as
-    aggregations of bars into three-bar-groups. This data structure does not
-    depict the reciprocal connections but abstracts one node where multiple bars
-    come together in one "vertex point". `OverallStructure` uses vertices to represent
-    nodes and edges to describe the topological function of bars, i.e. which nodes
-    are connected through a bar.
+
+        `OverallStructure` is implemented to control "high-level" features, such as
+        aggregations of bars into three-bar-groups. This data structure does not
+        depict the reciprocal connections but abstracts one node where multiple bars
+        come together in one "vertex point". `OverallStructure` uses vertices to represent
+        nodes and edges to describe the topological function of bars, i.e. which nodes
+        are connected through a bar.
+        ..., while one edge always connects two vertices. In the given geometric system, one bar may be connected to multiple other bars, whereas one welded joint can only bridge two bars.
+
+    This means that we need a more zoomed-in version of vertices, to describe multiple connection details (welded points) under one single ideal vertex.
 
     .. image:: ../images/node_subnode_joint.png
         :scale: 80 %
@@ -77,6 +79,21 @@ class OverallStructure(Network):
         self.update_default_edge_attributes({"name" : "network_o"})
         self.tetrahedra = {}
         self.t_key_max = 0
+
+    def get_bar_vertex_key(self, bar):
+        """return vertex key of a given bar in the BarStructure
+
+        Parameters
+        ----------
+        bar : list of two int
+            the ideal vertex indices that the bar is connecting to
+
+        Returns
+        -------
+        int
+            vertex key representing the bar in BarStructure
+        """
+        return self.edge[bar[0]][bar[1]]["vertex_bar"]
 
     def add_node(self, xyz = (0.0, 0.0, 0.0), v_key=None, t_key=None):
         """add vertex point to a tetrahedra index

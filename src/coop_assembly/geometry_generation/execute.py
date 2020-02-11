@@ -41,8 +41,8 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
     (Overall_Structure.data, Bar_Structure.data)
         Serialized version of the overall structure and bar structure
     """
-    b_struct    = BarStructure()
-    o_struct    = OverallStructure(b_struct)
+    b_struct = BarStructure()
+    o_struct = OverallStructure(b_struct)
     generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_ids,
         correct=correct, check_collision=check_collision)
 

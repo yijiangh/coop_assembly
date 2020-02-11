@@ -23,19 +23,17 @@ class BarStructure(Network):
     """[summary]
 
     SP:
-    The Bar_Structure is some sort of an "inverted" network.
-    # ! It contains bars as vertices and the connections between bars as edges,
-    # ! these include the geometric information of each bar (endpoints) and their connecting points.
-    However, this does not include information about which bars form a tetrahedron or which
-    bars come together within a larger node, they only have information about where two bars
-    are connected to one another
+
+        The Bar_Structure is some sort of an "inverted" network. It contains bars as vertices and the connections between bars as edges, these include the geometric information of each bar (endpoints) and their connecting points. However, this does not include information about which bars form a tetrahedron or which
+        bars come together within a larger node, they only have information about where two bars are connected to one another.
 
     SP dissertation section 3.5.2:
-    One bar may be connected to multiple other bars, whereas one welded joint can only bridge two bars.
-    The vertices describe the bars, each of which can have multiple joints.
-    The edges describe the joints between pairs of bars.
-    `BarStructure` includes geometric information about the bars endpoints and the joint positions in the
-    space.
+
+        One bar may be connected to multiple other bars, whereas one welded joint can only bridge two bars.
+        The vertices describe the bars, each of which can have multiple joints.
+        The edges describe the joints between pairs of bars.
+        `BarStructure` includes geometric information about the bars endpoints and the joint positions in the
+        space.
 
     .. image:: ../images/node_subnode_joint.png
         :scale: 80 %
@@ -75,13 +73,16 @@ class BarStructure(Network):
         v_key = self.add_vertex()
         self.vertex[v_key].update({"bar_type":_bar_type,
                                    "axis_endpoints":_axis_endpoints,
+                                   "index_sol":None,    # tangent plane config
+                                   "mean_point":None,   # mean point used for local axis construction
                                    "crosec_type":_crosec_type,
                                    "crosec_values":_crosec_values,
                                    "zdir":_zdir,
                                    "supports":{}, # not used now
                                    "loads":{},    # not used now
                                    "bar_parameters":_bar_parameters,
-                                   "exchange_values":{}})
+                                   "exchange_values":{}
+                                   })
         return v_key
 
     def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[]):
@@ -122,6 +123,22 @@ class BarStructure(Network):
                                            "connection_parameters":{0:_connection_parameters},
                                            "exchange_values":{0:{}}})
         return (v_key1, v_key2)
+
+    def get_bar_axis_end_pts(self, bar_v_key):
+        """return axis end points of a bar vertex
+
+        Parameters
+        ----------
+        bar_v_key : int
+            [description]
+
+        Returns
+        -------
+        list of two points
+            [description]
+        """
+        bar  = self.vertex[bar_v_key]
+        return (bar["axis_endpoints"][0], bar["axis_endpoints"][1])
 
     def update_bar_lengths(self):
         """update each bar's length so that it can cover all the contact points specified in edges (contact joints)

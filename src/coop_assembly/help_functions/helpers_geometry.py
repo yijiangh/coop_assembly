@@ -157,6 +157,23 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
 
     return [line_1_dp_point, line_2_dp_point]
 
+def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
+    """a convenient wrapper for ``dropped_perpendicular_points`` to operate directly on BarStructure and its bar vertices
+
+    Parameters
+    ----------
+    b_struct : BarStructure
+        [description]
+    bar1_key : int
+        bar vertex key, usually get from:
+            b_vertex_key = o_struct.get_bar_vertex_key(bars3[0])
+    bar2_key : int
+        [description]
+    """
+    bar1 = b_struct.vertex[bar1_key]
+    bar2 = b_struct.vertex[bar2_key]
+    return dropped_perpendicular_points(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1],
+                                        bar2["axis_endpoints"][0], bar2["axis_endpoints"][1])
 
 def find_points_extreme(pts_all, pts_init):
     """update a bar's axis end point based on all the contact projected points specified in `pts_all`
@@ -205,7 +222,7 @@ def update_bar_lengths(b_struct):
 def correct_point(b_struct, o_struct, pt_new, bar_pairs, o_v_key=None):
     """vertex position correction following an angle/distance heuristic to improve the success rate of a feasible three-bar group.
         Performing vertex correction wrt individual bar bases (fig.1 below) and three-bar base (fig.2 below)
-        See SP dissertation 3.1.3.f. (p.80)
+        See SP dissertation 3.1.3.f. (p.65)
 
     .. image:: ../images/vertex_correction_to_base.png
         :scale: 80 %
@@ -277,12 +294,9 @@ def calc_correction_vector(b_struct, pt_new, bar_pair):
     list of two points
         return None if feasible (bigger than the angle threshold), otherwise return the line connecting pt_int and modified pt
     """
-    bar1  = b_struct.vertex[bar_pair[0]]
-    bar2  = b_struct.vertex[bar_pair[1]]
     pt_int = intersection_bars_base(b_struct, bar_pair)
-
-    vec_x   = normalize_vector(vector_from_points(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1]))
-    vec_y   = normalize_vector(vector_from_points(bar2["axis_endpoints"][0], bar2["axis_endpoints"][1]))
+    vec_x   = normalize_vector(vector_from_points(*b_struct.get_bar_axis_end_pts(bar_pair[0])))
+    vec_y   = normalize_vector(vector_from_points(*b_struct.get_bar_axis_end_pts(bar_pair[1])))
     # contact vector
     vec_z   = normalize_vector(cross_vectors(vec_x, vec_y))
     # test plane
@@ -403,10 +417,7 @@ def intersection_bars_base(b_struct, bar_pair):
     list of three float
         point N
     """
-    bar1 = b_struct.vertex[bar_pair[0]]
-    bar2  = b_struct.vertex[bar_pair[1]]
-    pts_int = dropped_perpendicular_points(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1],
-                                           bar2["axis_endpoints"][0], bar2["axis_endpoints"][1])
+    pts_int = compute_contact_line_between_bars(b_struct, *bar_pair)
     return centroid_points(pts_int)
 
 ###################################################
