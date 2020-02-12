@@ -30,6 +30,7 @@ from coop_assembly.help_functions.helpers_geometry import calculate_coord_sys, c
     dropped_perpendicular_points, update_bar_lengths, correct_point, find_bar_ends, compute_contact_line_between_bars
 from coop_assembly.help_functions.tangents import tangent_from_point, check_length_sol_one, \
     first_tangent, second_tangent, third_tangent
+from coop_assembly.help_functions.shared_const import HAS_PYBULLET
 
 def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids):
     """[summary]
@@ -151,7 +152,7 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
 
 
 def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_ids,
-    correct=True, check_collision=False):
+    correct=True, check_collision=False, viewer=False):
     """generate double-tangent tet design from a given list of points and tet sequence indices.
 
     There are three types of parameters to be resolved at each step of the generation process:
@@ -202,6 +203,10 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
     # parameters: connection side of the bar, existing bars of the node that the new bar is connecting to
     # the process iterates through over all four possible connection sides, and consequently runs through
     # all possible bar pairs that a new bar connect to in a side
+
+    if HAS_PYBULLET:
+        from pybullet_planning import connect
+        connect(use_gui=viewer)
 
     print('Generate the first triangle.')
     base_tri_ids = tet_node_ids[0][0]

@@ -82,10 +82,10 @@ def create_bar_body(axis_end_pts, radius, use_box=USE_BOX):
 
     import numpy as np
     from pybullet_planning import quat_from_euler, create_box, set_color, set_point, set_quat, dump_body, create_cylinder, \
-        get_aabb, draw_aabb, apply_alpha
+        get_aabb, draw_aabb, apply_alpha, draw_pose, get_pose, add_line, wait_for_user
     from pybullet_planning import Euler, STATIC_MASS, RED
 
-    color = apply_alpha(RED, alpha=1)
+    color = apply_alpha(RED, alpha=0.6)
 
     p1, p2 = axis_end_pts
     p1 = np.array(p1) * METER_SCALE
@@ -120,6 +120,8 @@ def create_bar_body(axis_end_pts, radius, use_box=USE_BOX):
     set_quat(body, quat)
     set_color(body, color)
     # draw_aabb(get_aabb(body))
+    # draw_pose(get_pose(body), length=5e-3)
+
     return body
 
 ###############################################

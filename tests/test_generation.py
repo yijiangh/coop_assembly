@@ -45,8 +45,7 @@ def test_generate_from_points(viewer, points_library, test_set_name, radius, pt_
     print('Testing generate from point for set: {}, total # of pts: {}'.format(test_set_name, len(points)))
 
     # create pybullet env
-    connect(use_gui=viewer)
-    set_camera(points)
+    # set_camera(points)
     # create_plane()
 
     start_tri_ids = [find_point_id(base_pt, points) for base_pt in base_tri_pts]
@@ -68,7 +67,7 @@ def test_generate_from_points(viewer, points_library, test_set_name, radius, pt_
     else:
         raise NotImplementedError('search method not implemented!')
 
-    b_struct_data, o_struct_data = execute_from_points(points, tet_node_ids, radius, correct=True, check_collision=True)
+    b_struct_data, o_struct_data = execute_from_points(points, tet_node_ids, radius, correct=True, check_collision=True, viewer=viewer)
     if write:
         export_structure_data(save_dir, b_struct_data, o_struct_data, file_name=test_set_name+'_'+pt_search_method+'.json')
 

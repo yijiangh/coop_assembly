@@ -381,10 +381,10 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
     # iterating through combinations of tangent plane configurations
     for sol_id in sol_indices:
         new_bar_axis = tangent_from_point_one(b1_1["axis_endpoints"][0],
-                                             subtract_vectors(b1_1["axis_endpoints"][1], b1_1["axis_endpoints"][0]),
-                                             b1_2["axis_endpoints"][0],
-                                             subtract_vectors(b1_2["axis_endpoints"][1], b1_2["axis_endpoints"][0]),
-                                             pt1, 2 * radius, 2 * radius, sol_id)
+                                              subtract_vectors(b1_1["axis_endpoints"][1], b1_1["axis_endpoints"][0]),
+                                              b1_2["axis_endpoints"][0],
+                                              subtract_vectors(b1_2["axis_endpoints"][1], b1_2["axis_endpoints"][0]),
+                                              pt1, 2 * radius, 2 * radius, sol_id)
 
         if new_bar_axis is None:
             print("First tangent bar: bar #{} no solutions.".format(sol_id))
@@ -393,19 +393,18 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
                 return None
             continue
 
-        ret_cls = check_length_sol_one(new_bar_axis[0], pt_mean_1, pt1, b1_1, b1_2, b_v1_1, b_v1_2, b_struct)
+        vec_sol_1, l1, pts_b1_1, pts_b1_2 = check_length_sol_one(new_bar_axis[0], pt_mean_1, pt1, b1_1, b1_2, b_v1_1, b_v1_2, b_struct)
 
-        vec_sol_1, l1, pts_b1_1, pts_b1_2 = ret_cls
-        pt1_e       = add_vectors(pt1, scale_vector(vec_sol_1, l1))
+        pt1_e = add_vectors(pt1, scale_vector(vec_sol_1, l1))
         new_axis_end_pts   = (pt1, pt1_e)
 
         if not check_colisions:
             break
 
-        # add extension
+        # add extension for collision checking
         ext_len = 30
         new_axis_end_pts = (add_vectors(pt1, scale_vector(normalize_vector(vector_from_points(pt1_e, pt1)), ext_len)), \
-                     add_vectors(pt1_e, scale_vector(normalize_vector(vector_from_points(pt1, pt1_e)), ext_len)))
+                            add_vectors(pt1_e, scale_vector(normalize_vector(vector_from_points(pt1, pt1_e)), ext_len)))
 
         is_collided = check_colisions(b_struct, new_axis_end_pts, radius, bar_nb=b_v0_n)
 
@@ -472,7 +471,7 @@ def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1
     l_2         = vector_from_points(pt_b_2, pt_b_2_2)
 
     # sols_test = tangent_from_point(pt_b_1, l_1, pt_b_2, l_2, ptM, 2*radius, 2*radius)
-    if check_collision == False:
+    if not check_collision:
         if b_v0_n:
             ind = b_struct.vertex[b_v0_n]["index_sol"][0]
         else:
@@ -504,8 +503,8 @@ def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1
         vec_sol_2, l2, pts_b2_1, pts_b2_2 = ret_cls
         pt2_e = add_vectors(pt2, scale_vector(vec_sol_2, l2))
         end_pts_0 = (pt2, pt2_e)
-
     else:
+        # check collisions
         for ind in range(4):
             sols_test = tangent_from_point_one(
                 pt_b_1, l_1, pt_b_2, l_2, ptM, 2 * radius, 2 * radius, ind)
@@ -775,7 +774,7 @@ def solve_second_tangent(*args):
     for i in range(2):
         res_opt = scipy.optimize.fminbound(f_tangent_point_2, -2*radius, 2*radius, args, full_output=True, disp=0)
         if res_opt[1] > 0.1: return None
-        x       = float(res_opt[0])
+        x = float(res_opt[0])
         ret_fp2 = find_point_2(x, *args)
         if not ret_fp2:
             return None
@@ -786,7 +785,6 @@ def solve_second_tangent(*args):
 
 def solve_third_tangent(*args):
     import scipy.optimize
-
     res_opt = scipy.optimize.fmin(f_tangent_point_3, [0.0, 0.0], args, full_output=True, disp=0)
     if res_opt[1] > 0.1: return None
     ret_fp3 = find_point_3(list(map(float, res_opt[0])), *args)
