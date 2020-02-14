@@ -2,6 +2,7 @@ import numpy as np
 from numpy.linalg import norm
 import cdd
 
+from compas.geometry import Rotation, Point, Vector
 from pybullet_planning import get_pose, matrix_from_quat
 
 def compute_feasible_region_from_block_dir(block_dirs, verbose=False):
@@ -96,7 +97,7 @@ def compute_body_jacobian(contact_pt, com_pt):
 def contact_velocity_from_local_frame_velocity(contact_pts, body_pose, body_v):
     if len(body_pose) == 2:
         # pb pose
-        pt_com, quat = body_pose
+        pt_com, _ = body_pose
     elif len(body_pose) >= 3:
         # coop_assembly frame
         # (pt_o, vec_x, vec_y, vec_z)
@@ -113,7 +114,7 @@ def check_local_contact_feasibility(body_pose, contact_pts, block_dirs, body_vel
     assert len(body_vel) == 6
     if len(body_pose) == 2:
         # pb pose
-        pt_com, quat = body_pose
+        pt_com, _ = body_pose
     elif len(body_pose) >= 3:
         # coop_assembly frame
         # (pt_o, vec_x, vec_y, vec_z)
@@ -133,7 +134,7 @@ def compute_local_disassembly_motion(body_pose, contact_pts, block_dirs, verbose
     assert len(contact_pts) == len(block_dirs)
     if len(body_pose) == 2:
         # pb pose
-        pt_com, quat = body_pose
+        pt_com, _ = body_pose
     elif len(body_pose) >= 3:
         # coop_assembly frame
         # (pt_o, vec_x, vec_y, vec_z)
@@ -167,7 +168,10 @@ def compute_local_disassembly_motion(body_pose, contact_pts, block_dirs, verbose
             # TODO: numerical instability?
             ray_vec = [nt.make_number(num) for num in ext[i][1:]]
             ray_vec /= norm(ray_vec)
-            # assert ray_vec[:3].dot(ray_vec[3:]) == 0
+
+            # if abs(ray_vec[:3].dot(ray_vec[3:])) > 1e-10:
+            #     print('v.dot(w)={}'.format(abs(ray_vec[:3].dot(ray_vec[3:]))))
+
             if i in lin_set:
                 contact_maintain_dirs.append(ray_vec)
             else:
@@ -182,3 +186,39 @@ def compute_local_disassembly_motion(body_pose, contact_pts, block_dirs, verbose
         print('contact maintaining rays:\n {}'.format(contact_maintain_dirs))
 
     return contact_change_dirs, contact_maintain_dirs
+
+def velocity_to_rotation(v, com_pt=[0,0,0]):
+    """v = [a, c]^T, compute cross(c, a)/a.dot(a) + t*a,
+    the rotational axis is constructed by connecting t = -0.5 and 0.5
+
+    For v = [t, w] \in R^6, representing the rigid body's local frame velocity,
+    velocity of a point on the ridid body in the world frame is
+        v_pt = t + cross(w, r_pt - r_com)
+    We want to find r_pt such that its v_pt = 0 (this pt is on the rotational axis),
+    i.e. solve:
+        t = - cross(w, r_pt - r_com)
+        c = cross(a, b)
+
+    a = - w, c = t
+
+    Parameters
+    ----------
+    v : [type]
+        [description]
+    angle : [type]
+        [description]
+    """
+    V = np.array(v)
+    T = V[:3]
+    W = V[3:]
+    def inverse_cross(s):
+        # find b for equation a x b = c
+        # (no solution if a and c are not orthogonal)
+        a = -W
+        c = T
+        return np.cross(c, a)/a.dot(a) + s * a
+
+    axis = inverse_cross(-1.) - inverse_cross(1)
+    pt = inverse_cross(0) + np.array(com_pt)
+    # return Rotation.from_axis_and_angle(axis, angle, point=pt)
+    return axis.tolist(), pt.tolist()

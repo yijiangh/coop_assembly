@@ -13,11 +13,12 @@ author: stefanaparascho
 
 edited on 17.12.2019 by Yijiang Huang, yijiangh@mit.edu
 '''
-
+import sys
 import random
 import itertools
 import math
 import warnings
+from termcolor import cprint
 
 from compas.geometry.basic import add_vectors, normalize_vector, vector_from_points, scale_vector, \
     cross_vectors, subtract_vectors
@@ -203,12 +204,11 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
     # parameters: connection side of the bar, existing bars of the node that the new bar is connecting to
     # the process iterates through over all four possible connection sides, and consequently runs through
     # all possible bar pairs that a new bar connect to in a side
-
     if HAS_PYBULLET:
-        from pybullet_planning import connect
+        from pybullet_planning import connect, reset_simulation, disconnect
         connect(use_gui=viewer)
 
-    print('Generate the first triangle.')
+    cprint('Generate the first triangle.', 'red')
     base_tri_ids = tet_node_ids[0][0]
     base_tri_pts = [points[node_id] for node_id in base_tri_ids]
     generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids)
@@ -242,6 +242,9 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
             raise RuntimeError('Tet generation fails at #{} ({}) -> {}'.format(tet_id, tri_node_ids, new_vertex_id))
             # break
 
+    if HAS_PYBULLET:
+        reset_simulation()
+        disconnect()
 
 def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     new_vertex_pt, new_vertex_id, radius,

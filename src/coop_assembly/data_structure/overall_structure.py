@@ -66,7 +66,7 @@ class OverallStructure(Network):
         [description]
     """
 
-    def __init__(self, struct_bar):
+    def __init__(self, struct_bar=None):
         super(OverallStructure, self).__init__()
         self.struct_bar = struct_bar
         self.name = "Network_o"

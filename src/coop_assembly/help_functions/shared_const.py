@@ -1,3 +1,4 @@
+import sys
 
 # small number epsilon
 EPS = 1e-8
@@ -16,6 +17,13 @@ NODE_CORRECTION_SINE_ANGLE = 0.4
 # unit used in coop_assembly converted to meter
 METER_SCALE = 1e-3
 
+USE_BOX = True
+
+def is_ironpython():
+    return 'ironpython' in sys.version.lower()
+
+IPY = is_ironpython()
+
 try:
     import pybullet_planning
     HAS_PYBULLET = True
@@ -23,4 +31,3 @@ except ImportError:
     print('Cannot import pybullet_plannig, related features disabled.')
     HAS_PYBULLET = False
 
-USE_BOX = True

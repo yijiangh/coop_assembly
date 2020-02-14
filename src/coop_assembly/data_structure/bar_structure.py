@@ -78,6 +78,8 @@ class BarStructure(Network):
                                    "index_sol":None,    # tangent plane config
                                    "mean_point":None,   # mean point used for local axis construction
                                    "pb_body":bar_body,  # pybullet body
+                                   'radius':radius,
+                                   "grounded":False, # not used now
                                    "crosec_type":_crosec_type,
                                    "crosec_values":_crosec_values,
                                    "zdir":_zdir,
@@ -88,6 +90,10 @@ class BarStructure(Network):
                                    })
         return v_key
         # TODO: bisect search for local disassembly motion
+
+    def create_pb_bodies(self):
+        for v in self.vertices():
+            self.vertex[v]['pb_body'] = create_bar_body(self.vertex[v]['axis_endpoints'], self.vertex[v]['radius'])
 
     def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[]):
         """create an edge connecting bar v_key1 and v_key2 or update edge attributes if edge exists already

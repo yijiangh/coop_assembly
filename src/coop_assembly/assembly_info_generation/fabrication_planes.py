@@ -9,8 +9,9 @@ import random
 import itertools
 import math
 
-from compas.geometry import Transformation, Frame
-from compas.geometry.basic import add_vectors, normalize_vector, vector_from_points, scale_vector, cross_vectors, subtract_vectors, length_vector, length_vector
+from compas.geometry import Transformation, Frame, Rotation, Translation
+from compas.geometry.basic import add_vectors, normalize_vector, vector_from_points, scale_vector, cross_vectors, subtract_vectors,\
+    length_vector, length_vector, norm_vector
 from compas.geometry.distance import distance_point_point, distance_point_line, distance_line_line, closest_point_on_line
 from compas.geometry.transformations import rotate_points
 from compas.geometry.angles import angle_vectors
@@ -18,11 +19,13 @@ from compas.geometry.average import centroid_points
 from compas.geometry import translate_points, rotate_points_xy
 from compas.geometry.queries import is_point_on_line
 
-from coop_assembly.assembly_info_generation.interlock import compute_local_disassembly_motion
 from coop_assembly.help_functions.helpers_geometry import calculate_bar_z, calculate_coord_sys, Frame_to_plane_data
 from coop_assembly.help_functions.debug_utils import deprecation_error
-from coop_assembly.help_functions.shared_const import TOL
+from coop_assembly.help_functions.shared_const import TOL, IPY, EPS
 from coop_assembly.help_functions.drawing import get_ideal_vert_keys_from_bar_vertex_key
+
+def scale_frame(cp_plane, scale):
+    return [scale_vector(cp_plane[0], scale)] + list(cp_plane[1:4])
 
 def calculate_gripping_plane(b_struct, v, pt_mean, nb_rot=8, nb_trans=8,
     planes_rot=True, planes_trans=True):
@@ -45,7 +48,6 @@ def calculate_gripping_plane(b_struct, v, pt_mean, nb_rot=8, nb_trans=8,
     planes_trans : bool, optional
         [description], by default True
     """
-    from pybullet_planning import get_pose
 
     end_pts_0 = b_struct.vertex[v]["axis_endpoints"]
     # local coordinate system
@@ -103,7 +105,7 @@ def calculate_gripping_plane(b_struct, v, pt_mean, nb_rot=8, nb_trans=8,
 
     b_struct.vertex[v].update({"gripping_planes_all" : frames_all})
 
-def calculate_offset(o_struct, b_struct, bar_vkey, d_o_1, d_o_2, seq):
+def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_distance=30, seq=None, scale=1.0):
     """[summary]
 
     Example usage:
@@ -130,6 +132,7 @@ def calculate_offset(o_struct, b_struct, bar_vkey, d_o_1, d_o_2, seq):
     seq : [type]
         [description]
     """
+    seq = seq or list(range(bar_vkey))
     v_pos = seq.index(bar_vkey)
     int_v = 2 - v_pos % 3
     v_pos_max = v_pos + int_v # maximal bar index in the three-bar group
@@ -185,74 +188,47 @@ def calculate_offset(o_struct, b_struct, bar_vkey, d_o_1, d_o_2, seq):
         else:
             raise RuntimeError("no point found on axis - check function calculate_offset")
 
-    from pybullet_planning import get_pose
-    body_pose = get_pose(b_struct.get_bar_pb_body(bar_vkey))
-    contact_pts = contact_pts_from_o1 + contact_pts_from_o2
-    contact_normals = contact_vecs_from_o1 + contact_vecs_from_o2
+    # body_pose = get_pose(b_struct.get_bar_pb_body(bar_vkey))
+    body_pose = scale_frame(b_struct.vertex[bar_vkey]["gripping_plane"], scale)
+    contact_pts = [scale_vector(p, scale) for p in contact_pts_from_o1 + contact_pts_from_o2]
+    contact_normals = [scale_vector(v, scale) for v in contact_vecs_from_o1 + contact_vecs_from_o2]
 
-    f_rays, lin_set = compute_local_disassembly_motion(body_pose, contact_pts, contact_normals, verbose=True)
+    # ! numpy needed here
+    if not IPY:
+        import numpy as np
+        from numpy.linalg import norm
+        import coop_assembly.assembly_info_generation.interlock as ipc
+    else:
+        from compas.rpc import Proxy
+        ipc = Proxy('coop_assembly.assembly_info_generation.interlock')
 
-    # b_struct.vertex[bar_vkey].update({"gripping_plane_offset":b_struct.vertex[bar_vkey]["gripping_plane"]})
+    contact_change_dirs, _ = ipc.compute_local_disassembly_motion(body_pose, contact_pts, contact_normals)
+    w = 1.0
+    sum_v = [0,0,0,0,0,0]
+    for v in contact_change_dirs:
+        sum_v = add_vectors(scale_vector(v, w), sum_v)
 
-    # ### calculate offset for first three bars (with one neighbour each)
-    # if len(vecs_con_1) == 1 and len(contact_vecs) == 1:
-    #     v1 = normalize_vector(vecs_con_1[0])
-    #     v2 = normalize_vector(contact_vecs[0])
-    #     if angle_vectors(v1, v2, deg=True) < 90:
-    #         # not locked on the both sides, translation-only
-    #         vm      = scale_vector(normalize_vector(add_vectors(v1, v2)), -1.*d_o_1)
-    #         # shift gripping plane
-    #         pt_o    = b_struct.vertex[bar_vkey]["gripping_plane"][0]
-    #         pt_o_n  = translate_points([pt_o], vm)[0]
-    #         b_struct.vertex[bar_vkey].update({"gripping_plane_offset":b_struct.vertex[bar_vkey]["gripping_plane"]})
-    #     else:
-    #         # not locked on the both sides, translation-only
-    #         pt_1    = pts_con_1[0]
-    #         pt_2    = contact_projected_pts[0]
-    #         pt_o_n, vec_x_n, y_ax, vec_z = calculate_offset_pos_two_side_one_point_locked(b_struct, bar_vkey, pt_1, pt_2, v1, v2, d_o_1, d_o_2)
-    #         b_struct.vertex[bar_vkey].update({"gripping_plane_offset":(pt_o_n, vec_x_n, y_ax, vec_z)})
+    if norm_vector(sum_v[3:]) > EPS:
+        print('sum_v: {} | {}'.format(sum_v, body_pose[0]))
+        # axis, pt = velocity_to_rotation_fn(sum_v, body_pose[0])
+        axis, pt = ipc.velocity_to_rotation(sum_v, body_pose[0])
+        tf = Rotation.from_axis_and_angle(axis, rot_angle, point=pt)
+    else:
+        tf = Translation(scale_vector(sum_v[:3], trans_distance*scale))
 
-    # ### calculate offset for bars with neighbours only on one side
-    # if (len(vecs_con_1) == 1 and len(contact_vecs) == 0) or (len(contact_vecs) == 1 and len(vecs_con_1) == 0):
-    #     if len(vecs_con_1) == 1:
-    #         v1 = normalize_vector(vecs_con_1[0])
-    #     else:
-    #         v1 = normalize_vector(contact_vecs[0])
-    #     vm = scale_vector(v1, -1.*d_o_1)
-    #     pt_o = b_struct.vertex[bar_vkey]["gripping_plane"][0]
-    #     pt_o_n  = translate_points([pt_o], vm)[0]
-    #     b_struct.vertex[bar_vkey].update({"gripping_plane_offset":b_struct.vertex[bar_vkey]["gripping_plane"]})
-
-    # if (len(vecs_con_1) == 2 and len(contact_vecs) == 0) or (len(contact_vecs) == 2 and len(vecs_con_1) == 0):
-    #     # not locked on the both sides, translation-only
-    #     if len(vecs_con_1) == 2:
-    #         v1 = normalize_vector(vecs_con_1[0])
-    #         v2 = normalize_vector(vecs_con_1[1])
-    #     else:
-    #         v1 = normalize_vector(contact_vecs[0])
-    #         v2 = normalize_vector(contact_vecs[1])
-    #     vm      = scale_vector(normalize_vector(add_vectors(v1, v2)), -1.*d_o_1)
-    #     # shift gripping plane
-    #     pt_o    = b_struct.vertex[bar_vkey]["gripping_plane"][0]
-    #     pt_o_n  = translate_points([pt_o], vm)[0]
-    #     b_struct.vertex[bar_vkey].update({"gripping_plane_offset":b_struct.vertex[bar_vkey]["gripping_plane"]})
-
-    # ### calculate offset for other bars (with two neighbours each)
-    # if len(vecs_con_1) == 2 and len(contact_vecs) == 2:
-    #     pt_o_n, vec_x_n, y_ax, vec_z  = calculate_offset_pos_two_side_two_point_locked(b_struct, bar_vkey, \
-    #         vecs_con_1, contact_vecs, pts_con_1, contact_projected_pts, d_o_1, d_o_2)
-    #     b_struct.vertex[bar_vkey].update({"gripping_plane_offset":(pt_o_n, vec_x_n, y_ax, vec_z)})
+    gripping_frame = Frame(*scale_frame(b_struct.vertex[bar_vkey]["gripping_plane"], scale)[0:3])
+    gripping_frame_offset = gripping_frame.transformed(tf)
+    b_struct.vertex[bar_vkey].update({"gripping_plane_offset":Frame_to_plane_data(gripping_frame_offset)})
 
     # * gripping_planes_all by applying transformation from gripping_plane
-    gripping_frame = Frame(*b_struct.vertex[bar_vkey]["gripping_plane"][0:3])
-    gripping_frame_offset = Frame(*b_struct.vertex[bar_vkey]["gripping_plane_offset"][0:3])
     offset_tf = Transformation.from_frame_to_frame(gripping_frame, gripping_frame_offset)
-    gripping_frames_all = [Frame(*plane[0:3]).transformed(offset_tf) for plane in b_struct.vertex[bar_vkey]["gripping_planes_all"]]
+    gripping_frames_all = [Frame(*scale_frame(plane, scale)[0:3]).transformed(offset_tf) for plane in b_struct.vertex[bar_vkey]["gripping_planes_all"]]
     b_struct.vertex[bar_vkey].update({"gripping_planes_offset_all" : [Frame_to_plane_data(frame) for frame in gripping_frames_all]})
 
     # contact point projection on the central axis
     # vector connecting projected points on the bars
-    return contact_projected_pts_from_o1, contact_vecs_from_o1, contact_projected_pts_from_o2, contact_vecs_from_o2
+    # return contact_projected_pts_from_o1, contact_vecs_from_o1, contact_projected_pts_from_o2, contact_vecs_from_o2
+    return tf
 
 def calculate_offset_pos_two_side_one_point_locked(b_struct, v_key, pt_1, pt_2, v1, v2, d_o_1, d_o_2):
     """calculate offsetted plane when the bar's both sides are blocked by vector v1 and v2
