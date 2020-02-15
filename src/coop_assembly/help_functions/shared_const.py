@@ -17,7 +17,8 @@ NODE_CORRECTION_SINE_ANGLE = 0.4
 # unit used in coop_assembly converted to meter
 METER_SCALE = 1e-3
 
-USE_BOX = True
+# use box approx for pybullet
+USE_BOX = False
 
 def is_ironpython():
     return 'ironpython' in sys.version.lower()

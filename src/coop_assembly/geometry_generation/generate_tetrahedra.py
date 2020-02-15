@@ -18,7 +18,6 @@ import random
 import itertools
 import math
 import warnings
-from termcolor import cprint
 
 from compas.geometry.basic import add_vectors, normalize_vector, vector_from_points, scale_vector, \
     cross_vectors, subtract_vectors
@@ -208,7 +207,7 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
         from pybullet_planning import connect, reset_simulation, disconnect
         connect(use_gui=viewer)
 
-    cprint('Generate the first triangle.', 'red')
+    print('Generate the first triangle.')
     base_tri_ids = tet_node_ids[0][0]
     base_tri_pts = [points[node_id] for node_id in base_tri_ids]
     generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids)

@@ -22,7 +22,7 @@ from coop_assembly.help_functions.parsing import export_structure_data, parse_sa
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from pybullet_planning import connect, wait_for_user, set_camera_pose, create_plane, get_pose, set_pose, multiply, \
-    set_color, RED, BLUE, apply_alpha, set_point, Point
+    set_color, RED, BLUE, apply_alpha, set_point, Point, unit_pose, draw_pose
 
 @pytest.fixture
 def save_dir():
@@ -85,6 +85,7 @@ def test_gen_grasp_planes(viewer, points_library, test_file_name, save_dir):
     connect(use_gui=viewer)
     floor = create_plane()
     set_point(floor, Point(x=1.2, z=-0.025)) # -0.02
+    draw_pose(unit_pose())
 
     o_struct = OverallStructure.from_data(o_struct_data)
     b_struct = BarStructure.from_data(b_struct_data)
@@ -95,7 +96,8 @@ def test_gen_grasp_planes(viewer, points_library, test_file_name, save_dir):
 
     nb_rot, nb_trans = 4, 4
     rot_angle = np.pi / 6
-    # trans_distance =
+    trans_distance = 30
+
     for v in b_struct.vertex:
         bar_body = b_struct.get_bar_pb_body(v)
         set_color(bar_body, apply_alpha(RED, 0.01))
@@ -106,9 +108,8 @@ def test_gen_grasp_planes(viewer, points_library, test_file_name, save_dir):
         print('bar #{}'.format(v))
         wait_for_user()
         calculate_gripping_plane(b_struct, v, b_struct.vertex[v]["mean_point"], nb_rot=nb_rot, nb_trans=nb_trans)
-        tf = calculate_offset(o_struct, b_struct, v, rot_angle=rot_angle, seq=seq, scale=1e-3)
+        tf = calculate_offset(o_struct, b_struct, v, rot_angle=rot_angle, trans_distance=trans_distance, seq=seq, scale=1e-3)
 
-        print(tf.matrix)
         world_from_tf = pb_pose_from_Transformation(tf)
 
         bar_body = b_struct.get_bar_pb_body(v)
