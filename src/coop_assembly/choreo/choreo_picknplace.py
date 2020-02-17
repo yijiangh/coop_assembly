@@ -30,8 +30,8 @@ from pychoreo_examples.picknplace.visualization import display_picknplace_trajec
 from pychoreo_examples.picknplace.parsing import parse_saved_trajectory
 from pychoreo_examples.picknplace.transition_planner import solve_transition_between_picknplace_processes
 
-from coop_assembly.choreo_interface.robot_setup import IK_MODULE
-from coop_assembly.choreo_interface.robot_setup import get_picknplace_robot_data, get_picknplace_end_effector_urdf, \
+from coop_assembly.choreo.robot_setup import IK_MODULE
+from coop_assembly.choreo.robot_setup import get_picknplace_robot_data, get_picknplace_end_effector_urdf, \
     get_picknplace_tcp_def, get_robot_init_conf
 
 AVAIBLE_SOLVE_METHODS = ['ladder_graph', 'sparse_ladder_graph']
@@ -80,7 +80,6 @@ def sequenced_picknplace_plan(assembly_pkg_json_path, solve_method='sparse_ladde
     ValueError
         [description]
     """
-    # TODO: assert solve method in avaiable list
 
     # * load robot setup data
     (robot_urdf, base_link_name, tool_root_link_name, ee_link_name, ik_joint_names, disabled_self_collision_link_names), \
@@ -148,6 +147,12 @@ def sequenced_picknplace_plan(assembly_pkg_json_path, solve_method='sparse_ladde
     # * load precomputed sequence / use assigned sequence
     # TODO: load this as function argument
     # element_seq = elements.keys()
+    # TODO: sequence can come from contact analysis
+    # TODO: make sure element key corresponds to bar_vkey
+    # TODO: reformat picknplace instances in assembly_instances
+    # which two elements are connecting
+    # what's the contact normal:
+    # E_i : 'E_j' : {n_i, p_i}
     element_seq = [0, 1, 2, 3, 4, 5]
     # element_seq = [3, 4, 5]
     print('sequence: ', element_seq)

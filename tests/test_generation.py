@@ -108,7 +108,7 @@ def test_gen_grasp_planes(viewer, points_library, test_file_name, save_dir):
         print('bar #{}'.format(v))
         wait_for_user()
         calculate_gripping_plane(b_struct, v, b_struct.vertex[v]["mean_point"], nb_rot=nb_rot, nb_trans=nb_trans)
-        tf = calculate_offset(o_struct, b_struct, v, rot_angle=rot_angle, trans_distance=trans_distance, seq=seq, scale=1e-3)
+        tf = calculate_offset(o_struct, b_struct, v, rot_angle=rot_angle, trans_distance=trans_distance, sequence=seq, scale=1e-3, obstacles=[floor])
 
         world_from_tf = pb_pose_from_Transformation(tf)
 

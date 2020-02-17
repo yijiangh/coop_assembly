@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from coop_assembly.choreo_interface import sequenced_picknplace_plan, visualize_picknplace_planning_results
+from coop_assembly.choreo import sequenced_picknplace_plan, visualize_picknplace_planning_results
 
 @pytest.fixture
 def pkg_name():
@@ -22,6 +22,7 @@ def test_choreo_seq_plan(viewer, solve_method, pkg_name, dir_setup):
     test_data_dir, result_dir = dir_setup
     assembly_json_path = os.path.join(test_data_dir, pkg_name, 'json', pkg_name + '.json')
 
+    # TODO: o_struct.from_data(), replace assembly_json_path with that
     sequenced_picknplace_plan(assembly_json_path, solve_method=solve_method, scale=1e-3, viewer=viewer, viz_inspect=False, \
         save_dir=result_dir, sample_time=5, sparse_time_out=0, jt_res=0.1)
 

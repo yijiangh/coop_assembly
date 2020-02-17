@@ -70,7 +70,7 @@ class BarStructure(Network):
         self.__connector_max_key     = 0
         self.name = "Network_b"
 
-    def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17):
+    def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False):
         v_key = self.add_vertex()
         bar_body = create_bar_body(_axis_endpoints, radius)
         self.vertex[v_key].update({"bar_type":_bar_type,
@@ -79,7 +79,7 @@ class BarStructure(Network):
                                    "mean_point":None,   # mean point used for local axis construction
                                    "pb_body":bar_body,  # pybullet body
                                    'radius':radius,
-                                   "grounded":False, # not used now
+                                   "grounded":grounded, # not used now
                                    "crosec_type":_crosec_type,
                                    "crosec_values":_crosec_values,
                                    "zdir":_zdir,

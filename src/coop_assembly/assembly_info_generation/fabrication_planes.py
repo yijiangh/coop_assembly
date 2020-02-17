@@ -22,7 +22,7 @@ from compas.geometry.queries import is_point_on_line
 from coop_assembly.help_functions.helpers_geometry import calculate_bar_z, calculate_coord_sys, Frame_to_plane_data
 from coop_assembly.help_functions.debug_utils import deprecation_error
 from coop_assembly.help_functions.shared_const import TOL, IPY, EPS
-from coop_assembly.help_functions.drawing import get_ideal_vert_keys_from_bar_vertex_key
+from coop_assembly.help_functions.drawing import get_o_edge_from_bar_vertex_key
 
 def scale_frame(cp_plane, scale):
     return [scale_vector(cp_plane[0], scale)] + list(cp_plane[1:4])
@@ -105,7 +105,8 @@ def calculate_gripping_plane(b_struct, v, pt_mean, nb_rot=8, nb_trans=8,
 
     b_struct.vertex[v].update({"gripping_planes_all" : frames_all})
 
-def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_distance=30, seq=None, scale=1.0):
+def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_distance=30,
+    sequence=None, scale=1.0, obstacles=[]):
     """[summary]
 
     Example usage:
@@ -132,25 +133,39 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
     seq : [type]
         [description]
     """
-    seq = seq or list(range(bar_vkey))
-    v_pos = seq.index(bar_vkey)
-    int_v = 2 - v_pos % 3
-    v_pos_max = v_pos + int_v # maximal bar index in the three-bar group
-    assembled_bv = seq[0:v_pos_max+1]
+    # solve for sequence here
+    from termcolor import cprint
+    from pybullet_planning import get_floating_body_collision_fn, multiply, get_pose, WorldSaver
+    from compas_fab.backends.pybullet import pb_pose_from_Transformation
+
+    sequence = sequence or list(range(bar_vkey))
+    v_pos = sequence.index(bar_vkey)
+    # int_v = 2 - v_pos % 3
+    # v_pos_max = v_pos + int_v # maximal bar index in the three-bar group
+    # assembled_bv = seq[0:v_pos_max+1]
+    assembled_bv = sequence[:v_pos]
+    print('assembled_bv: ', assembled_bv)
 
     # * Find v_key bar's corresponding edge in OverallStructure
-    o_edge_from_bv = get_ideal_vert_keys_from_bar_vertex_key(o_struct)
+    o_edge_from_bv = get_o_edge_from_bar_vertex_key(o_struct)
     o_edge = o_edge_from_bv[bar_vkey]
 
     # OverallStructure's edges are bars, find this bar's two end points' connected
     b_edge_from_o1 = find_connectors(o_struct, o_edge[0])
     b_edge_from_o2 = find_connectors(o_struct, o_edge[1])
+    print('b_edge_from o1: {} | b_edge from o2: {}'.format(b_edge_from_o1, b_edge_from_o2))
 
-    b_edge_assembled_from_o1 = [c for c in b_edge_from_o1 if c[0] in assembled_bv and c[1] in assembled_bv and (c[0] == bar_vkey or c[1] == bar_vkey)]
-    b_edge_assembled_from_o2 = [c for c in b_edge_from_o2 if c[0] in assembled_bv and c[1] in assembled_bv and (c[0] == bar_vkey or c[1] == bar_vkey)]
+    # existing assembled bars based on the sequence
+    def check_connector_exist(c):
+        return c[0] in assembled_bv and c[1] == bar_vkey
+    b_edge_assembled_from_o1 = [c for c in b_edge_from_o1 if check_connector_exist(c) or check_connector_exist(c[::-1])]
+    b_edge_assembled_from_o2 = [c for c in b_edge_from_o2 if check_connector_exist(c) or check_connector_exist(c[::-1])]
+
+    print('b_edge_assembled_from_o1: {} | b_edge_assembled_from_o2: {}'.format(b_edge_assembled_from_o1, b_edge_assembled_from_o2))
 
     bar_1 = b_struct.vertex[bar_vkey]["axis_endpoints"]
 
+    # find contact info based on the given sequence
     contact_vecs_from_o1 = [] # vectors of all connections to the bar in endpoint 1
     contact_pts_from_o1 = []
     contact_projected_pts_from_o1 = [] # points of connections on bar axis
@@ -176,54 +191,39 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
     for c in b_edge_assembled_from_o2:
         # ep = b_struct.edge[c[0]][c[1]]["endpoints"][b_struct.edge[c[0]][c[1]]["endpoints"].keys()[0]]
         ep = list(b_struct.edge[c[0]][c[1]]["endpoints"].values())[0]
-        if is_point_on_line(ep[0], bar_1, 0.1):
+        if is_point_on_line(ep[0], bar_1, TOL):
             contact_vecs_from_o2.append(vector_from_points(ep[0], ep[1]))
             contact_projected_pts_from_o2.append(ep[0])
             contact_pts_from_o2.append(ep[1])
-        elif is_point_on_line(ep[1], bar_1, 0.1):
+        elif is_point_on_line(ep[1], bar_1, TOL):
             contact_vecs_from_o2.append(vector_from_points(ep[1], ep[0]))
             contact_projected_pts_from_o2.append(ep[1])
             contact_pts_from_o2.append(ep[0])
         else:
             raise RuntimeError("no point found on axis - check function calculate_offset")
 
-    # # body_pose = get_pose(b_struct.get_bar_pb_body(bar_vkey))
-    # body_pose = scale_frame(b_struct.vertex[bar_vkey]["gripping_plane"], scale)
-    # contact_pts = [scale_vector(p, scale) for p in contact_pts_from_o1 + contact_pts_from_o2]
-    # contact_normals = [scale_vector(v, scale) for v in contact_vecs_from_o1 + contact_vecs_from_o2]
-
-    # if not IPY:
-    #     import numpy as np
-    #     from numpy.linalg import norm
-    #     import coop_assembly.assembly_info_generation.interlock as ipc
-    # else:
-    #     from compas.rpc import Proxy
-    #     ipc = Proxy('coop_assembly.assembly_info_generation.interlock')
-
-    # contact_change_dirs, _ = ipc.compute_local_disassembly_motion(body_pose, contact_pts, contact_normals)
-    # w = 1.0
-    # sum_v = [0,0,0,0,0,0]
-    # for v in contact_change_dirs:
-    #     sum_v = add_vectors(scale_vector(v, w), sum_v)
-
-    # if norm_vector(sum_v[3:]) > EPS:
-    #     print('sum_v: {} | {}'.format(sum_v, body_pose[0]))
-    #     # axis, pt = velocity_to_rotation_fn(sum_v, body_pose[0])
-    #     axis, pt = ipc.velocity_to_rotation(sum_v, body_pose[0])
-    #     tf = Rotation.from_axis_and_angle(axis, rot_angle, point=pt)
-    # else:
-    #     tf = Translation(scale_vector(sum_v[:3], trans_distance*scale))
-
     d_o_1 = trans_distance
     d_o_2 = trans_distance
-    # TODO: if grounded triangle, simply pregrasp from above
+
+    # TODO: generate sequence here, based on reachability
+    # enumerate within each three bar group
+    cprint('contact vec 1: {} | contact vec 2: {}'.format(len(contact_vecs_from_o1), len(contact_vecs_from_o2)), 'yellow')
+
+    # TODO: collision checking
+    bar_body = b_struct.vertex[bar_vkey]['pb_body']
+    built_obstacles = obstacles + [b_struct.vertex[bv]['pb_body'] for bv in assembled_bv]
+    ee_collision_fn = get_floating_body_collision_fn(bar_body, built_obstacles)
+    #  disabled_collisions=disabled_collisions)
 
     ### calculate offset for first three bars (with one neighbour each)
-    if len(contact_vecs_from_o1) == 1 and len(contact_vecs_from_o2) == 1:
+    if len(contact_vecs_from_o1) + len(contact_vecs_from_o2) == 0:
+        assert b_struct.vertex[bar_vkey]['grounded']
+        grasp_frame = Frame(*b_struct.vertex[bar_vkey]["gripping_plane"][0:3])
+        grasp_frame_offset = grasp_frame.transformed(Translation([0,0,d_o_1]))
+        b_struct.vertex[bar_vkey].update({"gripping_plane_offset":Frame_to_plane_data(grasp_frame_offset)})
+    elif len(contact_vecs_from_o1) == 1 and len(contact_vecs_from_o2) == 1:
         v1 = normalize_vector(contact_vecs_from_o1[0])
         v2 = normalize_vector(contact_vecs_from_o2[0])
-        # same_dir    = check_dir(v1, v2)
-
         if angle_vectors(v1, v2, deg=True) < 90:
             # not locked on the both sides, translation-only
             vm      = scale_vector(normalize_vector(add_vectors(v1, v2)), -1.*d_o_1)
@@ -276,10 +276,9 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
     elif len(contact_vecs_from_o1) == 2 and len(contact_vecs_from_o2) == 2:
         pt_o_n, vec_x_n, y_ax, vec_z  = calculate_offset_pos_two_side_two_point_locked(b_struct, bar_vkey, \
             contact_vecs_from_o1, contact_vecs_from_o2, contact_pts_from_o1, contact_pts_from_o2, d_o_1, d_o_2)
-
-        #pt_o_n  = point_mean([pt_1_n, pt_2_n])
         b_struct.vertex[bar_vkey].update({"gripping_plane_offset":(pt_o_n, vec_x_n, y_ax, vec_z)})
-        # return pt_o_n, vec_x_n, y_ax, vec_z
+    else:
+        print('{} | {}'.format(len(contact_vecs_from_o1), len(contact_vecs_from_o2)))
 
     gripping_frame = Frame(*scale_frame(b_struct.vertex[bar_vkey]["gripping_plane"], scale)[0:3])
     gripping_frame_offset = Frame(*scale_frame(b_struct.vertex[bar_vkey]["gripping_plane_offset"], scale)[0:3])
@@ -288,6 +287,16 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
 
     # * gripping_planes_all by applying transformation from gripping_plane
     tf = Transformation.from_frame_to_frame(gripping_frame, gripping_frame_offset)
+
+    world_from_tf = pb_pose_from_Transformation(tf)
+    world_from_bar = get_pose(bar_body)
+    offset_pose = multiply(world_from_tf, world_from_bar)
+
+    # check pairwise collision between the EE and collision objects
+    with WorldSaver():
+        is_colliding = ee_collision_fn(offset_pose, diagnosis=True)
+        cprint('is colliding: {}'.format(is_colliding), 'red')
+
     gripping_frames_all = [Frame(*scale_frame(plane, scale)[0:3]).transformed(tf) for plane in b_struct.vertex[bar_vkey]["gripping_planes_all"]]
     b_struct.vertex[bar_vkey].update({"gripping_planes_offset_all" : [Frame_to_plane_data(frame) for frame in gripping_frames_all]})
 
@@ -418,3 +427,32 @@ def find_connectors(o_struct, o_node_key):
                         if e1 == e2 or e1 == e2[::-1]:
                             common_e.append(e1)
     return common_e
+
+def offset_tf_from_contact():
+    pass
+    # # body_pose = get_pose(b_struct.get_bar_pb_body(bar_vkey))
+    # body_pose = scale_frame(b_struct.vertex[bar_vkey]["gripping_plane"], scale)
+    # contact_pts = [scale_vector(p, scale) for p in contact_pts_from_o1 + contact_pts_from_o2]
+    # contact_normals = [scale_vector(v, scale) for v in contact_vecs_from_o1 + contact_vecs_from_o2]
+
+    # if not IPY:
+    #     import numpy as np
+    #     from numpy.linalg import norm
+    #     import coop_assembly.assembly_info_generation.interlock as ipc
+    # else:
+    #     from compas.rpc import Proxy
+    #     ipc = Proxy('coop_assembly.assembly_info_generation.interlock')
+
+    # contact_change_dirs, _ = ipc.compute_local_disassembly_motion(body_pose, contact_pts, contact_normals)
+    # w = 1.0
+    # sum_v = [0,0,0,0,0,0]
+    # for v in contact_change_dirs:
+    #     sum_v = add_vectors(scale_vector(v, w), sum_v)
+
+    # if norm_vector(sum_v[3:]) > EPS:
+    #     print('sum_v: {} | {}'.format(sum_v, body_pose[0]))
+    #     # axis, pt = velocity_to_rotation_fn(sum_v, body_pose[0])
+    #     axis, pt = ipc.velocity_to_rotation(sum_v, body_pose[0])
+    #     tf = Rotation.from_axis_and_angle(axis, rot_angle, point=pt)
+    # else:
+    #     tf = Translation(scale_vector(sum_v[:3], trans_distance*scale))

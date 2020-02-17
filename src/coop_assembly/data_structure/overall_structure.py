@@ -12,6 +12,8 @@ author: stefanaparascho
 
 edited on 17.12.2019 by Yijiang Huang, yijiangh@mit.edu
 '''
+import os
+from collections import defaultdict
 
 from compas.datastructures.network import Network
 from compas.geometry.basic import add_vectors, scale_vector, cross_vectors, subtract_vectors, vector_from_points
@@ -19,7 +21,7 @@ from compas.geometry.distance import distance_point_point, closest_point_on_plan
 from compas.geometry.average import centroid_points
 
 from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points
-
+from compas_fab.assembly.datastructures import Assembly, Element, VirtualJoint, Grasp
 
 class OverallStructure(Network):
     """this class defines the overall structure in which a node is represented by a network.vertex and a bar by a network.edge does not include connectors - these are referenced through the additional bar_structure class
@@ -259,3 +261,29 @@ class OverallStructure(Network):
             if not bool_check: return nodes_vic, nodes_used
 
         return nodes_vic, nodes_used
+
+##################################################
+
+def get_node_neighbors(elements):
+    node_neighbors = defaultdict(set)
+    for e in elements:
+        n1, n2 = e
+        node_neighbors[n1].add(e)
+        node_neighbors[n2].add(e)
+    return node_neighbors
+
+def nodes_from_elements(elements):
+    # TODO: always include ground nodes
+    return {n for e in elements for n in e}
+
+def get_element_neighbors(elements):
+    node_neighbors = get_node_neighbors(elements)
+    element_neighbors = defaultdict(set)
+    for e in elements:
+        n1, n2 = e
+        element_neighbors[e].update(node_neighbors[n1])
+        element_neighbors[e].update(node_neighbors[n2])
+        element_neighbors[e].remove(e)
+    return element_neighbors
+
+# TODO: elements_from_ideal_vertices

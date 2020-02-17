@@ -48,7 +48,7 @@ def draw_bar_structure_gh(bar_struct):
 
     return end_pts_from_v, bar_axis_lines_from_v, connector_lines_from_edge
 
-def get_ideal_vert_keys_from_bar_vertex_key(o_struct):
+def get_o_edge_from_bar_vertex_key(o_struct):
     ideal_v_from_bv = {}
     for u, v, attr in o_struct.edges(True):
         ideal_v_from_bv[attr['vertex_bar']] = [u, v]

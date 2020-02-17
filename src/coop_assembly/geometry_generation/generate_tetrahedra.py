@@ -87,9 +87,9 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     crosec_values = (25.0, 2.0) # ? what does this cross section value mean?
     # these are vertex keys in the Bar_Structure network
     # * each bar is a vertex in the Bar_Structure
-    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius)
-    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius)
-    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius)
+    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius, grounded=True)
+    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius, grounded=True)
+    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius, grounded=True)
 
     # pt_o_0  = centroid_points(end_pts_0)
     # pt_o_1  = centroid_points(end_pts_1)
