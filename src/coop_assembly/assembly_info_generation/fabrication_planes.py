@@ -202,9 +202,6 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
         else:
             raise RuntimeError("no point found on axis - check function calculate_offset")
 
-    d_o_1 = trans_distance
-    d_o_2 = trans_distance
-
     # TODO: generate sequence here, based on reachability
     # enumerate within each three bar group
     cprint('contact vec 1: {} | contact vec 2: {}'.format(len(contact_vecs_from_o1), len(contact_vecs_from_o2)), 'yellow')
@@ -215,7 +212,39 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
     ee_collision_fn = get_floating_body_collision_fn(bar_body, built_obstacles)
     #  disabled_collisions=disabled_collisions)
 
-    ### calculate offset for first three bars (with one neighbour each)
+    compute_offset_SP_heuristic(b_struct, bar_vkey, contact_vecs_from_o1, contact_vecs_from_o2, contact_pts_from_o1, contact_pts_from_o2, trans_distance)
+
+    gripping_frame = Frame(*scale_frame(b_struct.vertex[bar_vkey]["gripping_plane"], scale)[0:3])
+    gripping_frame_offset = Frame(*scale_frame(b_struct.vertex[bar_vkey]["gripping_plane_offset"], scale)[0:3])
+    # gripping_frame_offset = gripping_frame.transformed(tf)
+    # b_struct.vertex[bar_vkey].update({"gripping_plane_offset":Frame_to_plane_data(gripping_frame_offset)})
+
+    # * gripping_planes_all by applying transformation from gripping_plane
+    tf = Transformation.from_frame_to_frame(gripping_frame, gripping_frame_offset)
+
+    world_from_tf = pb_pose_from_Transformation(tf)
+    world_from_bar = get_pose(bar_body)
+    offset_pose = multiply(world_from_tf, world_from_bar)
+
+    # check pairwise collision between the EE and collision objects
+    with WorldSaver():
+        is_colliding = ee_collision_fn(offset_pose, diagnosis=True)
+        cprint('is colliding: {}'.format(is_colliding), 'red')
+
+    gripping_frames_all = [Frame(*scale_frame(plane, scale)[0:3]).transformed(tf) for plane in b_struct.vertex[bar_vkey]["gripping_planes_all"]]
+    b_struct.vertex[bar_vkey].update({"gripping_planes_offset_all" : [Frame_to_plane_data(frame) for frame in gripping_frames_all]})
+
+    # contact point projection on the central axis
+    # vector connecting projected points on the bars
+    # return contact_projected_pts_from_o1, contact_vecs_from_o1, contact_projected_pts_from_o2, contact_vecs_from_o2
+    return tf
+
+def compute_offset_SP_heuristic(b_struct, bar_vkey, contact_vecs_from_o1, contact_vecs_from_o2,
+    contact_pts_from_o1, contact_pts_from_o2, trans_distance):
+    d_o_1 = trans_distance
+    d_o_2 = trans_distance
+
+        ### calculate offset for first three bars (with one neighbour each)
     if len(contact_vecs_from_o1) + len(contact_vecs_from_o2) == 0:
         assert b_struct.vertex[bar_vkey]['grounded']
         grasp_frame = Frame(*b_struct.vertex[bar_vkey]["gripping_plane"][0:3])
@@ -258,7 +287,7 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
     elif (len(contact_vecs_from_o1) == 2 and len(contact_vecs_from_o2) == 0) or \
        (len(contact_vecs_from_o2) == 2 and len(contact_vecs_from_o1) == 0):
         # not locked on the both sides, translation-only
-        if len(contact_projected_pts_from_o1) == 2:
+        if len(contact_vecs_from_o2) == 2:
             v1 = normalize_vector(contact_vecs_from_o1[0])
             v2 = normalize_vector(contact_vecs_from_o1[1])
         else:
@@ -279,31 +308,6 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
         b_struct.vertex[bar_vkey].update({"gripping_plane_offset":(pt_o_n, vec_x_n, y_ax, vec_z)})
     else:
         print('{} | {}'.format(len(contact_vecs_from_o1), len(contact_vecs_from_o2)))
-
-    gripping_frame = Frame(*scale_frame(b_struct.vertex[bar_vkey]["gripping_plane"], scale)[0:3])
-    gripping_frame_offset = Frame(*scale_frame(b_struct.vertex[bar_vkey]["gripping_plane_offset"], scale)[0:3])
-    # gripping_frame_offset = gripping_frame.transformed(tf)
-    # b_struct.vertex[bar_vkey].update({"gripping_plane_offset":Frame_to_plane_data(gripping_frame_offset)})
-
-    # * gripping_planes_all by applying transformation from gripping_plane
-    tf = Transformation.from_frame_to_frame(gripping_frame, gripping_frame_offset)
-
-    world_from_tf = pb_pose_from_Transformation(tf)
-    world_from_bar = get_pose(bar_body)
-    offset_pose = multiply(world_from_tf, world_from_bar)
-
-    # check pairwise collision between the EE and collision objects
-    with WorldSaver():
-        is_colliding = ee_collision_fn(offset_pose, diagnosis=True)
-        cprint('is colliding: {}'.format(is_colliding), 'red')
-
-    gripping_frames_all = [Frame(*scale_frame(plane, scale)[0:3]).transformed(tf) for plane in b_struct.vertex[bar_vkey]["gripping_planes_all"]]
-    b_struct.vertex[bar_vkey].update({"gripping_planes_offset_all" : [Frame_to_plane_data(frame) for frame in gripping_frames_all]})
-
-    # contact point projection on the central axis
-    # vector connecting projected points on the bars
-    # return contact_projected_pts_from_o1, contact_vecs_from_o1, contact_projected_pts_from_o2, contact_vecs_from_o2
-    return tf
 
 def calculate_offset_pos_two_side_one_point_locked(b_struct, v_key, pt_1, pt_2, v1, v2, d_o_1, d_o_2):
     """calculate offsetted plane when the bar's both sides are blocked by vector v1 and v2
