@@ -12,6 +12,9 @@
     <group name="manipulator">
         <chain base_link="robot_base_link" tip_link="robot_tool0" />
     </group>
+    <group name="manipulator_gripper">
+        <chain base_link="robot_base_link" tip_link="eef_tcp_frame" />
+    </group>
 
     <!-- EE is attached at runtime -->
     <!-- <group name="manipulator_ee">

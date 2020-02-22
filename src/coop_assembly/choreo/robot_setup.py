@@ -12,7 +12,7 @@ from compas_fab.robots import RobotSemantics
 from pybullet_planning import Pose
 import coop_assembly
 
-ROBOT_URDF = 'kuka_kr6_r900/urdf/kuka_kr6_r900.urdf'
+ROBOT_URDF = 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf'
 ROBOT_SRDF = 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf'
 
 WS_URDF = 'kuka_kr6_r900/urdf/mit_3-412_workspace.urdf'
@@ -30,17 +30,17 @@ def get_picknplace_robot_data():
     workspace_urdf = os.path.join(MODEL_DIR, WS_URDF)
     workspace_srdf = os.path.join(MODEL_DIR, WS_SRDF)
 
-    move_group = None
+    move_group = 'manipulator_gripper'
     robot_model = RobotModel.from_urdf_file(robot_urdf)
     robot_semantics = RobotSemantics.from_srdf_file(robot_srdf, robot_model)
     robot = RobotClass(robot_model, semantics=robot_semantics)
 
     base_link_name = robot.get_base_link_name(group=move_group)
-    # ee_link_name = robot.get_end_effector_link_name(group=move_group)
-    ee_link_name = None # set to None since end effector is not included in the robot URDF, but attached later
+    ee_link_name = robot.get_end_effector_link_name(group=move_group)
+    # ee_link_name = None # set to None since end effector is not included in the robot URDF, but attached later
     ik_joint_names = robot.get_configurable_joint_names(group=move_group)
     disabled_self_collision_link_names = robot_semantics.get_disabled_collisions()
-    tool_root_link_name = robot.get_end_effector_link_name(group=move_group)
+    tool_root_link_name = robot.get_end_effector_link_name(group='manipulator')
 
     workspace_model = RobotModel.from_urdf_file(workspace_urdf)
     workspace_semantics = RobotSemantics.from_srdf_file(workspace_srdf, workspace_model)
