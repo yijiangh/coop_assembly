@@ -218,6 +218,11 @@ def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
             b_vertex_key = o_struct.get_bar_vertex_key(bars3[0])
     bar2_key : int
         [description]
+
+    Returns
+    -------
+    list of two points
+       representing the contact line segment between the two axes
     """
     bar1 = b_struct.vertex[bar1_key]
     bar2 = b_struct.vertex[bar2_key]

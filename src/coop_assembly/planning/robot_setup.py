@@ -21,6 +21,8 @@ WS_SRDF = 'kuka_kr6_r900/srdf/mit_3-412_workspace.srdf'
 import ikfast_kuka_kr6_r900
 IK_MODULE = ikfast_kuka_kr6_r900
 
+# TODO: compute joint weight as np.reciprocal(joint velocity bound) from URDF
+
 def get_picknplace_robot_data():
     MODEL_DIR = coop_assembly.get_data('models')
 

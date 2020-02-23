@@ -13,11 +13,13 @@ author: stefanaparascho
 edited on 17.12.2019 by Yijiang Huang, yijiangh@mit.edu
 '''
 
+from collections import defaultdict
 from compas.datastructures.network import Network
 from compas.geometry import is_point_on_line
+from compas.geometry import scale_vector
 from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points, find_points_extreme, \
     compute_contact_line_between_bars, create_bar_body
-from coop_assembly.help_functions.shared_const import TOL
+from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
 
 class BarStructure(Network):
@@ -152,10 +154,6 @@ class BarStructure(Network):
             # for each connnected joint
             for bar_vert_1, bar_vert_2 in edges_con:
                 dpp = compute_contact_line_between_bars(self, bar_vert_1, bar_vert_2)
-                # dpp = dropped_perpendicular_points(self.vertex[bar_vert_1]["axis_endpoints"][0],
-                #                                    self.vertex[bar_vert_1]["axis_endpoints"][1],
-                #                                    self.vertex[bar_vert_2]["axis_endpoints"][0],
-                #                                    self.vertex[bar_vert_2]["axis_endpoints"][1])
                 self.edge[bar_vert_1][bar_vert_2]["endpoints"][0] = dpp
                 points = self.edge[bar_vert_1][bar_vert_2]["endpoints"]
                 for p in points.keys():
@@ -184,8 +182,9 @@ class BarStructure(Network):
     #     return self.__load_point_max_key
 
     ##################################
+    # individual get fn
 
-    def get_bar_axis_end_pts(self, bar_v_key):
+    def get_bar_axis_end_pts(self, bar_v_key, scale=1.0):
         """return axis end points of a bar vertex
 
         Parameters
@@ -199,11 +198,75 @@ class BarStructure(Network):
             [description]
         """
         bar = self.vertex[bar_v_key]
-        return (bar["axis_endpoints"][0], bar["axis_endpoints"][1])
+        return (scale_vector(bar["axis_endpoints"][0], scale), scale_vector(bar["axis_endpoints"][1], scale))
+
+    def get_connector_end_pts(self, b1, b2, scale=1.0):
+        """return axis end points of a connection between bar ``b1`` and ``b2``
+
+        Parameters
+        ----------
+        b1 : int
+            bar vertex key
+        b2 : int
+            [description]
+
+        Returns
+        -------
+        list of two points
+            [description]
+        """
+        end_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
+        return (scale_vector(end_pts[0], scale), scale_vector(end_pts[1], scale))
 
     def get_bar_pb_body(self, bar_v_key):
+        """get pybullet body of a particular bar
+
+        Parameters
+        ----------
+        bar_v_key : int
+            [description]
+
+        Returns
+        -------
+        int
+            [description]
+        """
         return self.vertex[bar_v_key]['pb_body']
 
+    ##################################
+    # export dict info for planning
+
     def get_element_bodies(self):
+        """[summary]
+
+        Returns
+        -------
+        dict
+            bar vkey -> pb body
+        """
         return {v : self.get_bar_pb_body(v) for v in self.vertices()}
 
+
+    def get_axis_pts_from_element(self, scale=METER_SCALE):
+        """[summary]
+
+        Returns
+        -------
+        dict
+            bar vkey -> ([x,y,z], [x,y,z])
+        """
+        return {v : self.get_bar_axis_end_pts(v, scale=scale) for v in self.vertices()}
+
+    def get_connector_from_element(self, scale=METER_SCALE):
+        connectors = []
+        element_connector_neighbors = defaultdict(set)
+        for b1, b2 in self.edges():
+            connectors.append(self.get_connector_end_pts(b1, b2, scale))
+            element_connector_neighbors[b1].add(len(connectors)-1)
+            element_connector_neighbors[b2].add(len(connectors)-1)
+        return connectors, element_connector_neighbors
+
+    ##################################
+    # structural model extraction
+    # TODO: element into segments (axis-pt - connector pt)
+    # existence of connector based on existence of neighbor element

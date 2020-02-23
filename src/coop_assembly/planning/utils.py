@@ -2,7 +2,7 @@ import numpy as np
 from collections import defaultdict
 
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
-    create_plane, set_point, Point, set_camera_pose
+    create_plane, set_point, Point
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from coop_assembly.planning.robot_setup import get_picknplace_robot_data, get_robot_init_conf
 
@@ -26,28 +26,32 @@ def load_world(use_floor=True, built_plate_z=-0.025):
             floor = None
     return obstacles, robot
 
-###########################################
-
-def set_camera(node_points):
-    centroid = np.average(node_points, axis=0) * METER_SCALE
-    camera_offset = 0.25 * np.array([1, 1, 1])
-    set_camera_pose(camera_point=centroid + camera_offset, target_point=centroid)
-
 ##################################################
 
-def get_connector_neighbors(b_struct, elements):
-    # TODO
-    node_neighbors = defaultdict(set)
-    for e in elements:
-        n1, n2 = e
-        node_neighbors[n1].add(e)
-        node_neighbors[n2].add(e)
-    return node_neighbors
+def get_connector_neighbors(connector_from_element, elements):
+    """find connected elements for each connector
 
-def nodes_from_elements(elements):
-    return {n for e in elements for n in e}
+    Parameters
+    ----------
+    connector_from_element : dict
+        bar vkey -> connector ids
+    elements : list of int
+        bar keys
+
+    Returns
+    -------
+    dict
+        connector id -> set of connected bar vkey
+    """
+    connector_neighbors = defaultdict(set)
+    for bar in elements:
+        for connector in connector_from_element[bar]:
+            connector_neighbors[connector].add(bar)
+    return connector_neighbors
+
 
 def get_element_neighbors(elements):
+    # get neighbor via the connector's neighbor
     node_neighbors = get_node_neighbors(elements)
     element_neighbors = defaultdict(set)
     for e in elements:
@@ -56,5 +60,29 @@ def get_element_neighbors(elements):
         element_neighbors[e].update(node_neighbors[n2])
         element_neighbors[e].remove(e)
     return element_neighbors
+
+##################################################
+
+def check_connected(grounded_connectors, printed_elements):
+    if not printed_elements:
+        return True
+    node_neighbors = get_node_neighbors(printed_elements)
+    queue = deque(ground_nodes)
+    visited_nodes = set(ground_nodes)
+    visited_elements = set()
+    while queue:
+        node1 = queue.popleft()
+        for element in node_neighbors[node1]:
+            visited_elements.add(element)
+            node2 = get_other_node(node1, element)
+            if node2 not in visited_nodes:
+                queue.append(node2)
+                visited_nodes.add(node2)
+    return printed_elements <= visited_elements
+
+def get_connected_structures(elements):
+    edges = {(e1, e2) for e1, neighbors in get_element_neighbors(elements).items()
+             for e2 in neighbors}
+    return get_connected_components(elements, edges)
 
 ##################################################
