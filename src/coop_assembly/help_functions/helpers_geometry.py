@@ -76,7 +76,7 @@ def Frame_to_plane_data(frame):
 
 ###############################################
 
-def create_bar_body(axis_end_pts, radius, use_box=USE_BOX):
+def create_bar_body(axis_end_pts, radius, use_box=USE_BOX, color=(1,0,0,0)):
     if not HAS_PYBULLET:
         return None
 
@@ -84,8 +84,6 @@ def create_bar_body(axis_end_pts, radius, use_box=USE_BOX):
     from pybullet_planning import quat_from_euler, create_box, set_color, set_point, set_quat, dump_body, create_cylinder, \
         get_aabb, draw_aabb, apply_alpha, draw_pose, get_pose, add_line, wait_for_user
     from pybullet_planning import Euler, STATIC_MASS, RED
-
-    color = apply_alpha(RED, alpha=0.6)
 
     p1, p2 = axis_end_pts
     p1 = np.array(p1) * METER_SCALE

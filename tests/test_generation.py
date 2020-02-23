@@ -30,10 +30,6 @@ def save_dir():
     here = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(here, 'test_data')
 
-def set_camera(node_points):
-    centroid = np.average(node_points, axis=0) * METER_SCALE
-    camera_offset = 0.25 * np.array([1, 1, 1])
-    set_camera_pose(camera_point=centroid + camera_offset, target_point=centroid)
 
 @pytest.mark.gen_from_pts
 # @pytest.mark.parametrize('test_set_name', [('single_cube'), ('YJ_12_bars')])

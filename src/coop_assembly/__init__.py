@@ -11,6 +11,7 @@ coop_assembly
     coop_assembly.data_structure
     coop_assembly.geometry_generation
     coop_assembly.help_functions
+    coop_assembly.planning
 
 """
     # coop_assembly.assembly_info_generation

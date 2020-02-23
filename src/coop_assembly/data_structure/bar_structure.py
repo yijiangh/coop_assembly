@@ -91,9 +91,17 @@ class BarStructure(Network):
         return v_key
         # TODO: bisect search for local disassembly motion
 
-    def create_pb_bodies(self):
+    def create_pb_bodies(self, color=(1,1,1,0)):
+        """create pybullet bodies for all elements, useful when the BarStructure is reconstructed from json data
+
+        Parameters
+        ----------
+        color : tuple, optional
+            [description], by default (1,1,1,0)
+        """
         for v in self.vertices():
-            self.vertex[v]['pb_body'] = create_bar_body(self.vertex[v]['axis_endpoints'], self.vertex[v]['radius'])
+            self.vertex[v]['pb_body'] = create_bar_body(self.vertex[v]['axis_endpoints'], \
+                self.vertex[v]['radius'], color=color)
 
     def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[]):
         """create an edge connecting bar v_key1 and v_key2 or update edge attributes if edge exists already
@@ -133,25 +141,6 @@ class BarStructure(Network):
                                            "connection_parameters":{0:_connection_parameters},
                                            "exchange_values":{0:{}}})
         return (v_key1, v_key2)
-
-    def get_bar_axis_end_pts(self, bar_v_key):
-        """return axis end points of a bar vertex
-
-        Parameters
-        ----------
-        bar_v_key : int
-            [description]
-
-        Returns
-        -------
-        list of two points
-            [description]
-        """
-        bar = self.vertex[bar_v_key]
-        return (bar["axis_endpoints"][0], bar["axis_endpoints"][1])
-
-    def get_bar_pb_body(self, bar_v_key):
-        return self.vertex[bar_v_key]['pb_body']
 
     def update_bar_lengths(self):
         """update each bar's length so that it can cover all the contact points specified in edges (contact joints)
@@ -193,3 +182,28 @@ class BarStructure(Network):
     #     self.vertex[v_key]["loads"].update({self.__load_point_max_key+1:{"point":_point,"force":_load_force,"moment":_load_moment}})
     #     self.__load_point_max_key += 1
     #     return self.__load_point_max_key
+
+    ##################################
+
+    def get_bar_axis_end_pts(self, bar_v_key):
+        """return axis end points of a bar vertex
+
+        Parameters
+        ----------
+        bar_v_key : int
+            [description]
+
+        Returns
+        -------
+        list of two points
+            [description]
+        """
+        bar = self.vertex[bar_v_key]
+        return (bar["axis_endpoints"][0], bar["axis_endpoints"][1])
+
+    def get_bar_pb_body(self, bar_v_key):
+        return self.vertex[bar_v_key]['pb_body']
+
+    def get_element_bodies(self):
+        return {v : self.get_bar_pb_body(v) for v in self.vertices()}
+
