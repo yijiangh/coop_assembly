@@ -10,8 +10,8 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data
 from coop_assembly.planning import load_world, set_camera
-from coop_assembly.planning import color_structure, draw_ordered, draw_element
-from coop_assembly.planning import get_connector_neighbors
+from coop_assembly.planning import color_structure, draw_ordered, draw_element, label_elements, label_connector
+from coop_assembly.planning import get_connector_neighbors, get_element_neighbors
 
 
 @pytest.fixture
@@ -94,10 +94,15 @@ def test_draw_ordered(viewer, test_file_name):
         wait_for_user()
 
 
-@pytest.mark.choreo_wip
 def test_connector(viewer, test_file_name):
+    # visual test
     bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()
+    handles = []
+    handles.extend(label_elements(element_bodies))
+    if has_gui():
+        wait_for_user()
+    remove_handles(handles)
 
     # * connectors from bar
     connectors, connector_from_element = bar_struct.get_connector_from_element()
@@ -107,17 +112,30 @@ def test_connector(viewer, test_file_name):
         for c in list(bar_connectors):
             handles.append(draw_element(connectors, c))
         color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
-        if has_gui():
-            wait_for_user()
+        # if has_gui():
+        #     wait_for_user()
         remove_handles(handles)
 
     # * connector to bar neighbors
     connector_neighbors = get_connector_neighbors(connector_from_element, bar_struct.vertices())
     for connector, connected_bars in connector_neighbors.items():
-        handle = draw_element(connectors, connector)
+        handles = []
+        handles.append(draw_element(connectors, connector))
         color_structure(element_bodies, connected_bars, built_alpha=0.6)
-        # if has_gui():
-        #     wait_for_user()
-        remove_handles([handle])
+        handles.extend(label_connector(connectors, connector))
+        if has_gui():
+            wait_for_user()
+        remove_handles(handles)
 
-    # * connectors of a partial assembly
+    # * neighbor elements from elements
+    element_neighbors = get_element_neighbors(connector_from_element, list(bar_struct.vertices()))
+    for element, connected_bars in element_neighbors.items():
+        color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
+        if has_gui():
+            wait_for_user()
+
+@pytest.mark.choreo_wip
+def test_connected_to_ground():
+    pass
+    # TODO: ground the base triangle during generation
+    # and check connected test

@@ -142,7 +142,7 @@ def get_offset_collision_test(body, obstacles, **kwargs):
             print('offset pose:')
             set_pose(body, pose)
             set_color(body, apply_alpha(BLUE, 0.5))
-            wait_for_user()
+            # wait_for_user()
 
         is_colliding = ee_collision_fn(pose, diagnosis=diagnosis)
         if diagnosis:

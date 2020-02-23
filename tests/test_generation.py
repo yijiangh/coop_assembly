@@ -21,6 +21,7 @@ from coop_assembly.assembly_info_generation import calculate_gripping_plane, cal
 from coop_assembly.assembly_info_generation.offset_motion import get_offset_collision_test
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
+from coop_assembly.planning import set_camera
 
 from pybullet_planning import connect, wait_for_user, set_camera_pose, create_plane, get_pose, set_pose, multiply, \
     set_color, RED, BLUE, apply_alpha, set_point, Point, unit_pose, draw_pose

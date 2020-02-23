@@ -50,15 +50,28 @@ def get_connector_neighbors(connector_from_element, elements):
     return connector_neighbors
 
 
-def get_element_neighbors(elements):
+def get_element_neighbors(connector_from_element, elements):
+    """find neighbor bars for each bar
+
+    Parameters
+    ----------
+    connector_from_element : dict
+        bar vkey -> connector ids
+    elements : list of int
+        bar vkey list
+
+    Returns
+    -------
+    dict
+        bar key -> set of neighbor bar keys
+    """
     # get neighbor via the connector's neighbor
-    node_neighbors = get_node_neighbors(elements)
+    connector_neighbors = get_connector_neighbors(connector_from_element, elements)
     element_neighbors = defaultdict(set)
-    for e in elements:
-        n1, n2 = e
-        element_neighbors[e].update(node_neighbors[n1])
-        element_neighbors[e].update(node_neighbors[n2])
-        element_neighbors[e].remove(e)
+    for bar in elements:
+        for c in connector_from_element[bar]:
+            element_neighbors[bar].update(connector_neighbors[c])
+        element_neighbors[bar].remove(bar)
     return element_neighbors
 
 ##################################################

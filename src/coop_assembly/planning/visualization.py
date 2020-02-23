@@ -1,6 +1,7 @@
 import colorsys
 import numpy as np
-from pybullet_planning import RED, BLUE, GREEN, BLACK, add_line, set_color, apply_alpha, get_visual_data, set_camera_pose
+from pybullet_planning import RED, BLUE, GREEN, BLACK, add_line, set_color, apply_alpha, get_visual_data, \
+    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user
 from coop_assembly.help_functions.shared_const import METER_SCALE
 
 BAR_LINE_WIDTH = 1.0
@@ -91,3 +92,30 @@ def set_camera(node_points, camera_dir=[1, 1, 1], camera_dist=0.25):
     centroid = np.average(node_points, axis=0) * METER_SCALE
     camera_offset = camera_dist * np.array(camera_dir)
     set_camera_pose(camera_point=centroid + camera_offset, target_point=centroid)
+
+######################################################
+
+def label_element(element_bodies, element):
+    element_body = element_bodies[element]
+    return [
+        add_text('b'+str(element), position=(0, 0, 0), parent=element_body),
+        # add_text(element[1], position=(0, 0, +0.02), parent=element_body),
+    ]
+
+
+def label_elements(element_bodies):
+    handles = []
+    # +z points parallel to each element body
+    for element, body in element_bodies.items():
+        handles.extend(label_element(element_bodies, element))
+        handles.extend(draw_pose(get_pose(body), length=0.02))
+        # wait_for_user()
+
+
+def label_connector(connector_pts, c, **kwargs):
+    return [add_text('c'+str(c), position=(np.array(connector_pts[c][0])+np.array(connector_pts[c][1]))/2, **kwargs)]
+
+
+def label_points(points, **kwargs):
+    return [add_text(node, position=point, **kwargs) for node, point in enumerate(points)]
+
