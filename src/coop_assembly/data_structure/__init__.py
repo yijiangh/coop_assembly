@@ -8,7 +8,8 @@ data_structure
 OverallStructure
 ----------------
 
-todo
+OverallStructure is used in the geometry generation process, where we need to keep
+track of three-bar-group and large node group information.
 
 .. autosummary::
     :toctree: generated/

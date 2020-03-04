@@ -7,7 +7,7 @@ EPS = 1e-8
 INF = 1e23
 
 # tolerance
-TOL = 1e-1
+TOL = 1e-1 # mm
 
 # vertex correction, deciding how low a new vertex can go for a three-bar group
 NODE_CORRECTION_TOP_DISTANCE = 80 # millimter

@@ -1,14 +1,15 @@
 import os
 import pytest
 
-from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles
+from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.assembly_info_generation.offset_motion import get_offset_collision_test
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
+from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
-from coop_assembly.planning import get_picknplace_robot_data
+from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z
 from coop_assembly.planning import load_world, set_camera
 from coop_assembly.planning import color_structure, draw_ordered, draw_element, label_elements, label_connector
 from coop_assembly.planning import get_connector_neighbors, get_element_neighbors
@@ -135,7 +136,12 @@ def test_connector(viewer, test_file_name):
             wait_for_user()
 
 @pytest.mark.choreo_wip
-def test_connected_to_ground():
-    pass
-    # TODO: ground the base triangle during generation
+def test_connected_to_ground(viewer):
+    bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
+    element_bodies = bar_struct.get_element_bodies()
+    handles = []
+    for bar_key in bar_struct.vertices():
+        contact_pts = contact_to_ground(bar_struct.vertex(bar_key), built_plate_z=BUILT_PLATE_Z, scale=1e-3)
+        handles.append(add_line(*contact_pts, color=(1,0,0,0), width=2))
+    wait_for_user()
     # and check connected test

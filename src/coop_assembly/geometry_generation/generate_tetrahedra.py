@@ -27,10 +27,14 @@ from compas.geometry.angles import angle_vectors
 from compas.geometry.average import centroid_points
 
 from coop_assembly.help_functions.helpers_geometry import calculate_coord_sys, calculate_bar_z, \
-    dropped_perpendicular_points, update_bar_lengths, correct_point, find_bar_ends, compute_contact_line_between_bars
+    dropped_perpendicular_points, update_bar_lengths, correct_point, find_bar_ends, compute_contact_line_between_bars, \
+    contact_to_ground
 from coop_assembly.help_functions.tangents import tangent_from_point, check_length_sol_one, \
     first_tangent, second_tangent, third_tangent
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET
+from coop_assembly.planning import BUILT_PLATE_Z
+
+from pybullet_planning import connect, reset_simulation, disconnect
 
 def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids):
     """[summary]
@@ -69,9 +73,8 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     end_pts_1   = (pt_1, add_vectors(pt_2, c_1))
     end_pts_2   = (pt_2, add_vectors(pt_0, c_2))
 
-    # pt_int = centroid_points((end_pts_0[0], end_pts_0[1], end_pts_1[0], end_pts_1[1], end_pts_2[0], end_pts_2[1]))
-
     # local coordinate system for each bar
+    # pt_int = centroid_points((end_pts_0[0], end_pts_0[1], end_pts_1[0], end_pts_1[1], end_pts_2[0], end_pts_2[1]))
     # _, _, vec_z_0 = calculate_coord_sys(end_pts_0, pt_int)
     # _, _, vec_z_1 = calculate_coord_sys(end_pts_1, pt_int)
     # _, _, vec_z_2 = calculate_coord_sys(end_pts_2, pt_int)
@@ -87,21 +90,11 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     crosec_values = (25.0, 2.0) # ? what does this cross section value mean?
     # these are vertex keys in the Bar_Structure network
     # * each bar is a vertex in the Bar_Structure
-    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius, grounded=True)
-    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius, grounded=True)
-    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius, grounded=True)
-
-    # pt_o_0  = centroid_points(end_pts_0)
-    # pt_o_1  = centroid_points(end_pts_1)
-    # pt_o_2  = centroid_points(end_pts_2)
-    # b_struct.vertex[b_v0].update({"gripping_plane": (pt_o_0, vec_x_0, vec_y_0, vec_z_0)})
-    # b_struct.vertex[b_v1].update({"gripping_plane": (pt_o_1, vec_x_1, vec_y_1, vec_z_1)})
-    # b_struct.vertex[b_v2].update({"gripping_plane": (pt_o_2, vec_x_2, vec_y_2, vec_z_2)})
+    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius, grounded=True, grounded=True)
+    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius, grounded=True, grounded=True)
+    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius, grounded=True, grounded=True)
 
     pt_m = [0,0,-10000000000000]
-    # calculate_gripping_plane(b_struct, b_v0, pt_m)
-    # calculate_gripping_plane(b_struct, b_v1, pt_m)
-    # calculate_gripping_plane(b_struct, b_v2, pt_m)
 
     # ? what does this mean_point mean?
     b_struct.vertex[b_v0_key].update({"mean_point":pt_m})
@@ -125,9 +118,17 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     b_struct.connect_bars(b_v0_key, b_v1_key, _endpoints=epts_0)
     b_struct.connect_bars(b_v1_key, b_v2_key, _endpoints=epts_1)
     b_struct.connect_bars(b_v2_key, b_v0_key, _endpoints=epts_2)
+    assert b_struct.edge[b_v0_key][b_v1_key]["grounded"] == False, "sanity check"
 
     # update_edges(b_struct)
     b_struct.update_bar_lengths()
+
+    # generate connectors between element and the grounded
+    # modeled as self-pointing edges
+    # TODO
+    for bar_key in [b_v0_key, b_v1_key, b_v2_key]:
+        contact_pts = contact_to_ground(bar_vertex, built_plate_z=BUILT_PLATE_Z*1e3)
+        b_struct.connect_bars(bar_key, bar_key)
 
     tet_id = 0
     # these are vertex's index in the Overall_Structure network
@@ -203,15 +204,12 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
     # parameters: connection side of the bar, existing bars of the node that the new bar is connecting to
     # the process iterates through over all four possible connection sides, and consequently runs through
     # all possible bar pairs that a new bar connect to in a side
-    if HAS_PYBULLET:
-        from pybullet_planning import connect, reset_simulation, disconnect
-        connect(use_gui=viewer)
+    connect(use_gui=viewer)
 
     print('Generate the first triangle.')
     base_tri_ids = tet_node_ids[0][0]
     base_tri_pts = [points[node_id] for node_id in base_tri_ids]
     generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids)
-    # generate_structure_points(o_struct, b_struct, points, dict_nodes, r, correct=correct, check_col=check_col)
 
     for tet_id, (tri_node_ids, new_vertex_id) in enumerate(tet_node_ids):
         print('='*20)

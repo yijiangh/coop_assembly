@@ -12,7 +12,9 @@ created on 28.06.2019
 author: stefanaparascho
 '''
 
+import math
 from itertools import combinations
+from copy import deepcopy
 
 from compas.geometry import Plane
 from compas.geometry import normalize_vector, subtract_vectors, cross_vectors, vector_from_points, \
@@ -22,10 +24,10 @@ from compas.geometry import intersection_line_plane
 from compas.geometry import is_point_on_line, is_point_infront_plane, is_coplanar
 from compas.geometry import project_point_plane, translate_points
 from compas.geometry import distance_point_point, distance_point_line, distance_point_plane, \
-    area_triangle, volume_polyhedron
+    area_triangle, volume_polyhedron, rotate_points
 
 from coop_assembly.help_functions.shared_const import EPS, NODE_CORRECTION_TOP_DISTANCE, NODE_CORRECTION_SINE_ANGLE, \
-    HAS_PYBULLET, METER_SCALE, USE_BOX
+    HAS_PYBULLET, METER_SCALE, USE_BOX, TOL
 
 
 ###############################################
@@ -497,3 +499,33 @@ def find_bar_ends(b_struct, b_key):
         bar_all_contact_pts.append(bar_contact_pt)
     bar_end_pts_new = find_points_extreme(bar_all_contact_pts, bar["axis_endpoints"])
     b_struct.vertex[b_key].update({"axis_endpoints" : bar_end_pts_new})
+
+def contact_to_ground(bar_vertex, built_plate_z=0.0, scale=1.0):
+    """[summary]
+
+    Parameters
+    ----------
+    bar_vertex : [type]
+        [description]
+    build_plate_z : [type]
+        in meter
+    """
+    bar_radius = bar_vertex['radius'] * scale
+    # TODO remove this
+    bar_endpts = deepcopy(bar_vertex['axis_endpoints'])
+    bar_endpts[0] *= scale
+    bar_endpts[1] *= scale
+    # computation all in meter
+    rot_axis = cross_vectors(add_vectors(bar_endpts[1], scale_vector(bar_endpts[0], -1)), [0,0,1])
+    rotated_bar_axis_pts = rotate_points(bar_endpts, math.pi/2, axis=rot_axis, origin=bar_endpts[0])
+    rotated_bar_axis = add_vectors(rotated_bar_axis_pts[1], scale_vector(rotated_bar_axis_pts[0], -1))
+
+    lower_axis_pt = bar_endpts[1] if bar_endpts[0][2] - bar_endpts[1][2] > 0 else bar_endpts[0]
+    intersec_line = (add_vectors(lower_axis_pt, scale_vector(rotated_bar_axis, -100)),
+                     add_vectors(lower_axis_pt, scale_vector(rotated_bar_axis, 100)))
+    ground_intersect_pt = intersection_line_plane(intersec_line, Plane([0,0,built_plate_z], [0,0,1]))
+
+    dist = distance_point_point(ground_intersect_pt, lower_axis_pt)
+    assert dist > bar_radius - TOL*scale, 'bar penetrating into the ground, distance: {} | {}!'.format(dist, bar_radius)
+
+    return (lower_axis_pt, scale_vector(ground_intersect_pt, scale))

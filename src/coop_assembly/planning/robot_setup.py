@@ -12,6 +12,8 @@ from compas_fab.robots import RobotSemantics
 from pybullet_planning import Pose
 import coop_assembly
 
+BUILT_PLATE_Z = -0.025 # meter
+
 ROBOT_URDF = 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf'
 ROBOT_SRDF = 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf'
 

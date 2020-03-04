@@ -21,13 +21,19 @@ from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_
     compute_contact_line_between_bars, create_bar_body
 from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
+from pybullet_planning import create_plane, set_point, Point
+
 
 class BarStructure(Network):
-    """[summary]
+    """This class encloses all the data that an assembly planner needs to know about the assembly. Each element
+    is modeled as a graph vertex and edge models contact connection.
+
+    We use e->e self connecting edge to model contact to the ground to avoid introducing a vertex representing the ground now.
 
     SP:
 
-        The Bar_Structure is some sort of an "inverted" network. It contains bars as vertices and the connections between bars as edges, these include the geometric information of each bar (endpoints) and their connecting points. However, this does not include information about which bars form a tetrahedron or which
+        The Bar_Structure is some sort of an "inverted" network. It contains bars as vertices and the connections between bars as edges,
+        these include the geometric information of each bar (endpoints) and their connecting points. However, this does not include information about which bars form a tetrahedron or which
         bars come together within a larger node, they only have information about where two bars are connected to one another.
 
     SP dissertation section 3.5.2:
@@ -65,12 +71,29 @@ class BarStructure(Network):
     # crosec_values = "rectangle" : (width, height) - height = dimension in z-axis direction
     #                                                            "tube"   : (outer diameter, thickness)
     #                                                            "circle"    : (diameter)
-    def __init__(self):
+    def __init__(self, built_plate_z=0.0):
         super(BarStructure, self).__init__()
         self.support_point_max_key   = 0
         self.__load_point_max_key    = 0
         self.__connector_max_key     = 0
         self.name = "Network_b"
+        # self._ground_key = self.add_ground(built_plate_z=built_plate_z)
+
+    # def add_ground(self, built_plate_z=0.0, floor_body=None):
+    #     # TODO: maybe can add in all static obstacles here?
+    #     # the ground is modeled as an element
+    #     v_key = self.add_vertex()
+    #     if floor_body is None:
+    #         floor_body = create_plane()
+    #         set_point(floor_body, Point(z=built_plate_z))
+    #     self.vertex[v_key].update({"element_type":"static",
+    #                                "pb_body":floor_body,  # pybullet body
+    #                               })
+    #     return self.v_key
+
+    # @property
+    # def ground_key(self):
+    #     return self._ground_key
 
     def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False):
         v_key = self.add_vertex()
@@ -81,12 +104,11 @@ class BarStructure(Network):
                                    "mean_point":None,   # mean point used for local axis construction
                                    "pb_body":bar_body,  # pybullet body
                                    'radius':radius,
-                                   "grounded":grounded, # not used now
+                                   "grounded":grounded,
+                                   "element_type":"mobile",
                                    "crosec_type":_crosec_type,
                                    "crosec_values":_crosec_values,
                                    "zdir":_zdir,
-                                   "supports":{}, # not used now
-                                   "loads":{},    # not used now
                                    "bar_parameters":_bar_parameters,
                                    "exchange_values":{}
                                    })
@@ -105,7 +127,7 @@ class BarStructure(Network):
             self.vertex[v]['pb_body'] = create_bar_body(self.vertex[v]['axis_endpoints'], \
                 self.vertex[v]['radius'], color=color)
 
-    def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[]):
+    def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[], grounded=None):
         """create an edge connecting bar v_key1 and v_key2 or update edge attributes if edge exists already
 
         Parameters
@@ -135,13 +157,16 @@ class BarStructure(Network):
             self.edge[v_key1][v_key2]["exchange_values"].update( {id : {}} )
             id += 1
             self.edge[v_key1][v_key2]["connections_count"] = id
+            if grounded is not None:
+                self.edge[v_key1][v_key2]["grounded"] = grounded
         else:
             # create an new edge
             self.add_edge(v_key1, v_key2, {"connections_count":1,
                                            "endpoints":{0:_endpoints},
                                            "connection_type":{0:_connection_type},
                                            "connection_parameters":{0:_connection_parameters},
-                                           "exchange_values":{0:{}}})
+                                           "exchange_values":{0:{}},
+                                           "grounded":grounded or False})
         return (v_key1, v_key2)
 
     def update_bar_lengths(self):
@@ -170,16 +195,6 @@ class BarStructure(Network):
                     pts_extr = list_pts
                 # update axis end points
                 self.vertex[b].update({"axis_endpoints":pts_extr})
-
-    # def add_bar_support(self, v_key, _point, _dof=(-1,-1,-1,0,0,0), _support_type=0):
-    #     self.vertex[v_key]["supports"].update({self.support_point_max_key+1:{"point":_point,"dof":_dof,"type":_support_type}})
-    #     self.support_point_max_key += 1
-    #     return self.support_point_max_key
-
-    # def add_bar_load(self, v_key, _point, _load_force, _load_moment=(0.0,0.0,0.0)):
-    #     self.vertex[v_key]["loads"].update({self.__load_point_max_key+1:{"point":_point,"force":_load_force,"moment":_load_moment}})
-    #     self.__load_point_max_key += 1
-    #     return self.__load_point_max_key
 
     ##################################
     # individual get fn

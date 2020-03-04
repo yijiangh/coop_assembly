@@ -4,9 +4,9 @@ from collections import defaultdict
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point
 from coop_assembly.help_functions.shared_const import METER_SCALE
-from coop_assembly.planning.robot_setup import get_picknplace_robot_data, get_robot_init_conf
+from coop_assembly.planning.robot_setup import get_picknplace_robot_data, get_robot_init_conf, BUILT_PLATE_Z
 
-def load_world(use_floor=True, built_plate_z=-0.025):
+def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
     robot_data, ws_data = get_picknplace_robot_data()
     robot_urdf, _, _, _, joint_names, _ = robot_data
 
