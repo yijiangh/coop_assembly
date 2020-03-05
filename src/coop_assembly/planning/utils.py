@@ -1,10 +1,11 @@
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from coop_assembly.planning.robot_setup import get_picknplace_robot_data, get_robot_init_conf, BUILT_PLATE_Z
+from pddlstream.utils import get_connected_components
 
 def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
     robot_data, ws_data = get_picknplace_robot_data()
@@ -28,73 +29,61 @@ def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
 
 ##################################################
 
-def get_connector_neighbors(connector_from_element, elements):
-    """find connected elements for each connector
+def get_connector_from_elements(connectors, elements):
+    connector_from_elements = defaultdict(set)
+    for e in elements:
+        for c in connectors:
+            if e in c:
+                connector_from_elements[e].add(c)
+    return connector_from_elements
 
-    Parameters
-    ----------
-    connector_from_element : dict
-        bar vkey -> connector ids
-    elements : list of int
-        bar keys
-
-    Returns
-    -------
-    dict
-        connector id -> set of connected bar vkey
-    """
-    connector_neighbors = defaultdict(set)
-    for bar in elements:
-        for connector in connector_from_element[bar]:
-            connector_neighbors[connector].add(bar)
-    return connector_neighbors
-
-
-def get_element_neighbors(connector_from_element, elements):
-    """find neighbor bars for each bar
-
-    Parameters
-    ----------
-    connector_from_element : dict
-        bar vkey -> connector ids
-    elements : list of int
-        bar vkey list
-
-    Returns
-    -------
-    dict
-        bar key -> set of neighbor bar keys
-    """
-    # get neighbor via the connector's neighbor
-    connector_neighbors = get_connector_neighbors(connector_from_element, elements)
+def get_element_neighbors(connectors, elements):
+    connector_from_elements = get_connector_from_elements(connectors, elements)
     element_neighbors = defaultdict(set)
-    for bar in elements:
-        for c in connector_from_element[bar]:
-            element_neighbors[bar].update(connector_neighbors[c])
-        element_neighbors[bar].remove(bar)
+    for e in elements:
+        for c in connector_from_elements[e]:
+            element_neighbors[e].update(c)
+        element_neighbors[e].remove(e)
     return element_neighbors
 
 ##################################################
 
-def check_connected(grounded_connectors, printed_elements):
+def check_connected(connectors, grounded_elements, printed_elements):
+    """check if a given partial structure is connected to the ground
+
+    Parameters
+    ----------
+    connectors : list of 2-int tuples
+        each entry are the indices into the element set,
+    grounded_elements : set
+        grounded element ids
+    printed_elements : set
+        printed element ids
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
+    # TODO: for stability might need to check 2-connected
     if not printed_elements:
         return True
-    node_neighbors = get_node_neighbors(printed_elements)
-    queue = deque(ground_nodes)
-    visited_nodes = set(ground_nodes)
+    printed_grounded_elements = set(grounded_elements) & printed_elements
+    if not printed_grounded_elements:
+        return False
+    element_neighbors = get_element_neighbors(connectors, printed_elements)
+    queue = deque(printed_grounded_elements)
     visited_elements = set()
     while queue:
-        node1 = queue.popleft()
-        for element in node_neighbors[node1]:
-            visited_elements.add(element)
-            node2 = get_other_node(node1, element)
-            if node2 not in visited_nodes:
-                queue.append(node2)
-                visited_nodes.add(node2)
+        n_element = queue.popleft()
+        for element in element_neighbors[n_element]:
+            if element in printed_elements and element not in visited_elements:
+                visited_elements.add(element)
+                queue.append(element)
     return printed_elements <= visited_elements
 
-def get_connected_structures(elements):
-    edges = {(e1, e2) for e1, neighbors in get_element_neighbors(elements).items()
+def get_connected_structures(connectors, elements):
+    edges = {(e1, e2) for e1, neighbors in get_element_neighbors(connectors, elements).items()
              for e2 in neighbors}
     return get_connected_components(elements, edges)
 

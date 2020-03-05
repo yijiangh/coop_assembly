@@ -110,6 +110,7 @@ def label_elements(element_bodies):
         handles.extend(label_element(element_bodies, element))
         handles.extend(draw_pose(get_pose(body), length=0.02))
         # wait_for_user()
+    return handles
 
 
 def label_connector(connector_pts, c, **kwargs):

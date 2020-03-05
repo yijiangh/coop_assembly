@@ -13,6 +13,7 @@ author: stefanaparascho
 '''
 
 import math
+import numpy as np
 from itertools import combinations
 from copy import deepcopy
 
@@ -509,13 +510,14 @@ def contact_to_ground(bar_vertex, built_plate_z=0.0, scale=1.0):
         [description]
     build_plate_z : [type]
         in meter
+    scale : float
+        meter to * unit conversion
     """
-    bar_radius = bar_vertex['radius'] * scale
-    # TODO remove this
-    bar_endpts = deepcopy(bar_vertex['axis_endpoints'])
-    bar_endpts[0] *= scale
-    bar_endpts[1] *= scale
-    # computation all in meter
+    bar_radius = bar_vertex['radius'] * METER_SCALE
+    bar_endpts = []
+    bar_endpts.append(scale_vector(bar_vertex['axis_endpoints'][0], METER_SCALE))
+    bar_endpts.append(scale_vector(bar_vertex['axis_endpoints'][1], METER_SCALE))
+
     rot_axis = cross_vectors(add_vectors(bar_endpts[1], scale_vector(bar_endpts[0], -1)), [0,0,1])
     rotated_bar_axis_pts = rotate_points(bar_endpts, math.pi/2, axis=rot_axis, origin=bar_endpts[0])
     rotated_bar_axis = add_vectors(rotated_bar_axis_pts[1], scale_vector(rotated_bar_axis_pts[0], -1))
@@ -526,6 +528,6 @@ def contact_to_ground(bar_vertex, built_plate_z=0.0, scale=1.0):
     ground_intersect_pt = intersection_line_plane(intersec_line, Plane([0,0,built_plate_z], [0,0,1]))
 
     dist = distance_point_point(ground_intersect_pt, lower_axis_pt)
-    assert dist > bar_radius - TOL*scale, 'bar penetrating into the ground, distance: {} | {}!'.format(dist, bar_radius)
+    assert dist > bar_radius - TOL*METER_SCALE, 'bar penetrating into the ground, distance: {} | {}!'.format(dist, bar_radius)
 
-    return (lower_axis_pt, scale_vector(ground_intersect_pt, scale))
+    return (scale_vector(lower_axis_pt, scale), scale_vector(ground_intersect_pt, scale))

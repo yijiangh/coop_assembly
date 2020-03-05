@@ -12,7 +12,7 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z
 from coop_assembly.planning import load_world, set_camera
 from coop_assembly.planning import color_structure, draw_ordered, draw_element, label_elements, label_connector
-from coop_assembly.planning import get_connector_neighbors, get_element_neighbors
+from coop_assembly.planning import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
 
 
 @pytest.fixture
@@ -20,16 +20,6 @@ def test_file_name():
     # @pytest.mark.parametrize('test_file_name', [('YJ_12_bars_point2triangle.json'),])
     return 'YJ_12_bars_point2triangle.json'
 
-# @pytest.fixture
-# def pkg_name():
-#     return 'dms_ws_tet_bars'
-
-# @pytest.fixture
-# def dir_setup():
-#     here = os.path.dirname(os.path.abspath(__file__))
-#     test_data_dir = os.path.join(here, 'test_data')
-#     result_dir = os.path.join(here, 'results')
-#     return test_data_dir, result_dir
 
 def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     connect(use_gui=viewer)
@@ -94,54 +84,60 @@ def test_draw_ordered(viewer, test_file_name):
     if has_gui():
         wait_for_user()
 
-
+@pytest.mark.choreo_wip
 def test_connector(viewer, test_file_name):
     # visual test
     bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()
     handles = []
     handles.extend(label_elements(element_bodies))
-    if has_gui():
-        wait_for_user()
+    # if has_gui():
+    #     wait_for_user()
     remove_handles(handles)
 
+    elements = list(element_bodies.keys())
+    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
+    connectors = list(contact_from_connectors.keys())
+
     # * connectors from bar
-    connectors, connector_from_element = bar_struct.get_connector_from_element()
+    connector_from_elements = get_connector_from_elements(connectors, elements)
     for bar in bar_struct.vertices():
         handles = []
-        bar_connectors = connector_from_element[bar]
+        bar_connectors = connector_from_elements[bar]
         for c in list(bar_connectors):
-            handles.append(draw_element(connectors, c))
+            handles.append(add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2))
         color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
         # if has_gui():
         #     wait_for_user()
         remove_handles(handles)
 
-    # * connector to bar neighbors
-    connector_neighbors = get_connector_neighbors(connector_from_element, bar_struct.vertices())
-    for connector, connected_bars in connector_neighbors.items():
-        handles = []
-        handles.append(draw_element(connectors, connector))
-        color_structure(element_bodies, connected_bars, built_alpha=0.6)
-        handles.extend(label_connector(connectors, connector))
-        if has_gui():
-            wait_for_user()
-        remove_handles(handles)
-
     # * neighbor elements from elements
-    element_neighbors = get_element_neighbors(connector_from_element, list(bar_struct.vertices()))
+    element_neighbors = get_element_neighbors(connectors, elements)
     for element, connected_bars in element_neighbors.items():
         color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
         if has_gui():
             wait_for_user()
 
-@pytest.mark.choreo_wip
-def test_connected_to_ground(viewer):
+    grounded_elements = bar_struct.get_grounded_bar_keys()
+
+    printed_elements = set([9,10,11])
+    assert not check_connected(connectors, grounded_elements, printed_elements)
+
+    printed_elements = set([1,9,10,11])
+    assert not check_connected(connectors, grounded_elements, printed_elements)
+
+    printed_elements = set([2,9,11,10])
+    grounded_elements = bar_struct.get_grounded_bar_keys()
+    assert check_connected(connectors, grounded_elements, printed_elements)
+
+def test_contact_to_ground(viewer, test_file_name):
     bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()
     handles = []
+    handles.extend(label_elements(element_bodies))
     for bar_key in bar_struct.vertices():
-        contact_pts = contact_to_ground(bar_struct.vertex(bar_key), built_plate_z=BUILT_PLATE_Z, scale=1e-3)
-        handles.append(add_line(*contact_pts, color=(1,0,0,0), width=2))
+        if bar_struct.vertex[bar_key]['grounded']:
+            contact_pts = contact_to_ground(bar_struct.vertex[bar_key], built_plate_z=BUILT_PLATE_Z, scale=1)
+            handles.append(add_line(*contact_pts, color=(1,0,0,0), width=2))
     wait_for_user()
     # and check connected test

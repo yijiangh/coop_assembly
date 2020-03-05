@@ -28,8 +28,6 @@ class BarStructure(Network):
     """This class encloses all the data that an assembly planner needs to know about the assembly. Each element
     is modeled as a graph vertex and edge models contact connection.
 
-    We use e->e self connecting edge to model contact to the ground to avoid introducing a vertex representing the ground now.
-
     SP:
 
         The Bar_Structure is some sort of an "inverted" network. It contains bars as vertices and the connections between bars as edges,
@@ -272,14 +270,16 @@ class BarStructure(Network):
         """
         return {v : self.get_bar_axis_end_pts(v, scale=scale) for v in self.vertices()}
 
-    def get_connector_from_element(self, scale=METER_SCALE):
-        connectors = []
-        element_connector_neighbors = defaultdict(set)
+    def get_connectors(self, scale=METER_SCALE):
+        connectors = {}
         for b1, b2 in self.edges():
-            connectors.append(self.get_connector_end_pts(b1, b2, scale))
-            element_connector_neighbors[b1].add(len(connectors)-1)
-            element_connector_neighbors[b2].add(len(connectors)-1)
-        return connectors, element_connector_neighbors
+            connectors[(b1, b2)] = self.get_connector_end_pts(b1, b2, scale)
+            # connectors[(b2, b1)] = self.get_connector_end_pts(b1, b2, scale)
+        return connectors
+
+    def get_grounded_bar_keys(self):
+        # return frozenset(filter(lambda e: is_ground(e, ground_nodes), elements))
+        return frozenset([bv for bv, attr in self.vertices(True) if attr['grounded']])
 
     ##################################
     # structural model extraction

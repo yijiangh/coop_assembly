@@ -31,7 +31,7 @@ from coop_assembly.help_functions.helpers_geometry import calculate_coord_sys, c
     contact_to_ground
 from coop_assembly.help_functions.tangents import tangent_from_point, check_length_sol_one, \
     first_tangent, second_tangent, third_tangent
-from coop_assembly.help_functions.shared_const import HAS_PYBULLET
+from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning import BUILT_PLATE_Z
 
 from pybullet_planning import connect, reset_simulation, disconnect
@@ -90,9 +90,9 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     crosec_values = (25.0, 2.0) # ? what does this cross section value mean?
     # these are vertex keys in the Bar_Structure network
     # * each bar is a vertex in the Bar_Structure
-    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius, grounded=True, grounded=True)
-    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius, grounded=True, grounded=True)
-    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius, grounded=True, grounded=True)
+    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius, grounded=True)
+    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius, grounded=True)
+    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius, grounded=True)
 
     pt_m = [0,0,-10000000000000]
 
@@ -122,13 +122,6 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
 
     # update_edges(b_struct)
     b_struct.update_bar_lengths()
-
-    # generate connectors between element and the grounded
-    # modeled as self-pointing edges
-    # TODO
-    for bar_key in [b_v0_key, b_v1_key, b_v2_key]:
-        contact_pts = contact_to_ground(bar_vertex, built_plate_z=BUILT_PLATE_Z*1e3)
-        b_struct.connect_bars(bar_key, bar_key)
 
     tet_id = 0
     # these are vertex's index in the Overall_Structure network

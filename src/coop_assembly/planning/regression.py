@@ -2,21 +2,11 @@ import heapq
 import random
 import time
 
-from extrusion.progression import Node, retrace_trajectories, retrace_commands
-from extrusion.heuristics import get_heuristic_fn
-from extrusion.motion import compute_motion, compute_motions
-from extrusion.parsing import load_extrusion
-from extrusion.stream import get_print_gen_fn, MAX_DIRECTIONS, MAX_ATTEMPTS
-from extrusion.utils import get_id_from_element, get_ground_elements, is_ground, \
-    check_connected, get_memory_in_kb, check_memory, timeout, get_undirected, get_directions, compute_printed_nodes, \
-    recover_sequence, recover_directed_sequence, flatten_commands
-from extrusion.stiffness import create_stiffness_checker, test_stiffness, plan_stiffness
-from extrusion.validator import compute_plan_deformation
-from extrusion.visualization import draw_ordered, draw_element
 from pddlstream.utils import outgoing_from_edges
-from pybullet_tools.utils import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
+from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer
-from extrusion.optimize import optimize_commands
+from coop_assembly.help_functions import METER_SCALE
+from coop_assembly.planning import draw_element
 
 def draw_action(node_points, printed, element):
     if not has_gui():
@@ -30,19 +20,26 @@ def draw_action(node_points, printed, element):
 
 ##################################################
 
-def regression(robot, obstacles, b_struct, partial_orders=[],
+def regression(robot, obstacles, bar_struct, partial_orders=[],
                max_time=INF, backtrack_limit=INF, revisit=False,
                collisions=True, stiffness=True, motions=True, lazy=True, checker=None, **kwargs):
 
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = get_joint_positions(robot, joints)
-    element_from_id, node_points, ground_nodes = load_extrusion(extrusion_path)
-    id_from_element = get_id_from_element(element_from_id)
+    # element_from_id, node_points, ground_nodes = load_extrusion(extrusion_path)
+    # id_from_element = get_id_from_element(element_from_id)
+
+    element_bodies = bar_struct.get_element_bodies()
     all_elements = frozenset(element_bodies)
-    ground_elements = get_ground_elements(all_elements, ground_nodes)
-    if checker is None:
-        checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
+    grounded_elements = bar_struct.get_grounded_bar_keys()
+
+    contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
+    connectors = list(contact_from_connectors.keys())
+
+    # if checker is None:
+    #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
+
     print_gen_fn = get_print_gen_fn(robot, obstacles, node_points, element_bodies, ground_nodes,
                                     supports=False, precompute_collisions=False,
                                     max_directions=MAX_DIRECTIONS, max_attempts=MAX_ATTEMPTS,
@@ -67,8 +64,8 @@ def regression(robot, obstacles, b_struct, partial_orders=[],
                     priority = (num_remaining, bias, random.random())
                     heapq.heappush(queue, (visits, priority, printed, directed, conf))
 
-    if check_connected(ground_nodes, final_printed) and \
-            (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):
+    if check_connected(ground_nodes, final_printed):
+    # and (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):
         add_successors(final_printed, final_conf)
 
     # if has_gui():
@@ -102,7 +99,8 @@ def regression(robot, obstacles, b_struct, partial_orders=[],
         #    draw_model(next_printed, node_points, ground_nodes)
         #    wait_for_user()
 
-        if (next_printed in visited) or (directed[0] not in next_nodes) or not check_connected(ground_nodes, next_printed):
+        # we don't have directionality in assembly: (directed[0] not in next_nodes)
+        if (next_printed in visited) or not check_connected(ground_nodes, next_printed):
             continue
 
         # TODO: stiffness plan lazily here possibly with reuse

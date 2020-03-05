@@ -21,7 +21,6 @@ from compas.geometry.distance import distance_point_point, closest_point_on_plan
 from compas.geometry.average import centroid_points
 
 from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points
-from compas_fab.assembly.datastructures import Assembly, Element, VirtualJoint, Grasp
 
 class OverallStructure(Network):
     """this class defines the overall structure in which a node is represented by a network.vertex and a bar by a network.edge does not include connectors - these are referenced through the additional bar_structure class

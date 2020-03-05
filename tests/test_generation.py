@@ -68,7 +68,7 @@ def test_generate_from_points(viewer, points_library, test_set_name, radius, pt_
     else:
         raise NotImplementedError('search method not implemented!')
 
-    b_struct_data, o_struct_data = execute_from_points(points, tet_node_ids, radius, correct=True, check_collision=True, viewer=viewer)
+    b_struct_data, o_struct_data = execute_from_points(points, tet_node_ids, radius, correct=False, check_collision=True, viewer=viewer)
     if write:
         export_structure_data(save_dir, b_struct_data, o_struct_data, file_name=test_set_name+'_'+pt_search_method+'.json')
 
