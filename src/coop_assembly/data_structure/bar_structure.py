@@ -13,6 +13,7 @@ author: stefanaparascho
 edited on 17.12.2019 by Yijiang Huang, yijiangh@mit.edu
 '''
 
+import numpy as np
 from collections import defaultdict
 from compas.datastructures.network import Network
 from compas.geometry import is_point_on_line
@@ -21,8 +22,9 @@ from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_
     compute_contact_line_between_bars, create_bar_body
 from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
-from pybullet_planning import create_plane, set_point, Point
+from pybullet_planning import create_plane, set_point, Point, get_pose
 
+from .utils import Element, WorldPose
 
 class BarStructure(Network):
     """This class encloses all the data that an assembly planner needs to know about the assembly. Each element
@@ -259,6 +261,21 @@ class BarStructure(Network):
         """
         return {v : self.get_bar_pb_body(v) for v in self.vertices()}
 
+    def get_element_from_index(self):
+        element_from_index = {}
+        for index in self.vertices():
+            body = self.get_bar_pb_body(index)
+            axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=METER_SCALE)]
+            # TODO: make sure the body is not moved
+            goal_pose = get_pose(body)
+            # all data in Element is in meter
+            element_from_index[index] = Element(index=index, body=body,
+                                                axis_endpoints=axis_pts,
+                                                initial_pose=WorldPose(index, None),
+                                                goal_pose=WorldPose(index, goal_pose),
+                                                grasps=None,
+                                                goal_supports=None)
+        return element_from_index
 
     def get_axis_pts_from_element(self, scale=METER_SCALE):
         """[summary]

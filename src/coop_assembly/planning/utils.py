@@ -1,11 +1,12 @@
 import numpy as np
 from collections import defaultdict, deque
 
-from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
-    create_plane, set_point, Point
-from coop_assembly.help_functions.shared_const import METER_SCALE
-from coop_assembly.planning.robot_setup import get_picknplace_robot_data, get_robot_init_conf, BUILT_PLATE_Z
 from pddlstream.utils import get_connected_components
+from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
+    create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver
+from coop_assembly.help_functions.shared_const import METER_SCALE
+
+from .robot_setup import get_picknplace_robot_data, get_robot_init_conf, BUILT_PLATE_Z, EE_LINK_NAME
 
 def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
     robot_data, ws_data = get_picknplace_robot_data()
@@ -86,5 +87,3 @@ def get_connected_structures(connectors, elements):
     edges = {(e1, e2) for e1, neighbors in get_element_neighbors(connectors, elements).items()
              for e2 in neighbors}
     return get_connected_components(elements, edges)
-
-##################################################

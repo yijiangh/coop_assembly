@@ -5,6 +5,7 @@ Might consider exposed as arguments in the future.
 import os
 import pytest
 import numpy as np
+from termcolor import cprint
 
 from compas.robots import RobotModel
 from compas_fab.robots import Robot as RobotClass
@@ -20,8 +21,12 @@ ROBOT_SRDF = 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf'
 WS_URDF = 'kuka_kr6_r900/urdf/mit_3-412_workspace.urdf'
 WS_SRDF = 'kuka_kr6_r900/srdf/mit_3-412_workspace.srdf'
 
-import ikfast_kuka_kr6_r900
-IK_MODULE = ikfast_kuka_kr6_r900
+try:
+    import ikfast_kuka_kr6_r900
+    IK_MODULE = ikfast_kuka_kr6_r900
+except ImportError as e:
+    IK_MODULE = None
+    cprint('{}, Using pybullet ik fn instead'.format(e), 'red')
 
 CUSTOM_LIMITS = {
     'robot_joint_a1': (-np.pi/2, np.pi/2),
@@ -51,18 +56,20 @@ def get_picknplace_robot_data():
     robot = RobotClass(robot_model, semantics=robot_semantics)
 
     base_link_name = robot.get_base_link_name(group=move_group)
-    ee_link_name = robot.get_end_effector_link_name(group=move_group)
-    # ee_link_name = None # set to None since end effector is not included in the robot URDF, but attached later
     ik_joint_names = robot.get_configurable_joint_names(group=move_group)
     disabled_self_collision_link_names = robot_semantics.get_disabled_collisions()
-    tool_root_link_name = robot.get_end_effector_link_name(group='manipulator')
+    # * the bare arm flange attach link
+    ee_link_name = robot.get_end_effector_link_name(group='manipulator')
+    # * the TCP link
+    tool_link_name = robot.get_end_effector_link_name(group=move_group)
+    # tool_link_name = None # set to None since end effector is not included in the robot URDF, but attached later
 
     workspace_model = RobotModel.from_urdf_file(workspace_urdf)
     workspace_semantics = RobotSemantics.from_srdf_file(workspace_srdf, workspace_model)
     workspace_robot_disabled_link_names = workspace_semantics.get_disabled_collisions()
     workspace_robot_disabled_link_names = []
 
-    return (robot_urdf, base_link_name, tool_root_link_name, ee_link_name, ik_joint_names, disabled_self_collision_link_names), \
+    return (robot_urdf, base_link_name, tool_link_name, ee_link_name, ik_joint_names, disabled_self_collision_link_names), \
            (workspace_urdf, workspace_robot_disabled_link_names)
 
 def get_picknplace_end_effector_urdf():
@@ -80,7 +87,9 @@ def get_robot_init_conf():
 
 #################################
 
-(ROBOT_URDF, BASE_LINK_NAME, TOOL_ROOT_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, DISABLED_SELF_COLLISION_LINK_NAMES), \
+# TOOL_LINK: TCP link
+# EE_LINK: attach link
+(ROBOT_URDF, BASE_LINK_NAME, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, DISABLED_SELF_COLLISION_LINK_NAMES), \
 (WORKSPACE_URDF, WORKSPACE_ROBOT_DISABLED_LINK_NAMES) = get_picknplace_robot_data()
 
 #################################

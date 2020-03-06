@@ -34,5 +34,4 @@ from __future__ import print_function
 
 from .overall_structure import *
 from .bar_structure import *
-
-__all__ = ['OverallStructure', 'BarStructure']
+from .utils import *

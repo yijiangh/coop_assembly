@@ -1,7 +1,8 @@
 import os
 import pytest
 
-from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line
+from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
+    draw_pose, get_side_cylinder_grasps, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.assembly_info_generation.offset_motion import get_offset_collision_test
@@ -14,14 +15,35 @@ from coop_assembly.planning import load_world, set_camera
 from coop_assembly.planning import color_structure, draw_ordered, draw_element, label_elements, label_connector
 from coop_assembly.planning import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
 
+from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn
+from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
 
 @pytest.fixture
 def test_file_name():
     # @pytest.mark.parametrize('test_file_name', [('YJ_12_bars_point2triangle.json'),])
     return 'YJ_12_bars_point2triangle.json'
 
+def wait_if_gui(enable=True):
+    if has_gui() and enable:
+        wait_for_user()
 
 def load_structure(test_file_name, viewer, color=(1,0,0,0)):
+    """connect pybullet env and load the bar system
+
+    Parameters
+    ----------
+    test_file_name : [type]
+        [description]
+    viewer : [type]
+        [description]
+    color : tuple, optional
+        [description], by default (1,0,0,0)
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
     connect(use_gui=viewer)
     with LockRenderer():
         load_world()
@@ -37,7 +59,6 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
         set_camera([attr['point_xyz'] for v, attr in o_struct.vertices(True)])
     return b_struct, o_struct
 
-
 def test_load_robot(viewer):
     robot_data, ws_data = get_picknplace_robot_data()
     robot_urdf, _, tool_link_name, ee_link_name, joint_names, _ = robot_data
@@ -45,27 +66,62 @@ def test_load_robot(viewer):
     assert tool_link_name == 'robot_tool0'
     connect(use_gui=viewer)
     load_world()
-    if has_gui():
-        wait_for_user()
+    wait_if_gui()
 
+def test_rotate_goal_pose_gen(viewer, test_file_name):
+    bar_struct, _ = load_structure(test_file_name, viewer)
+    element_bodies = bar_struct.get_element_bodies()
+    element_from_index = bar_struct.get_element_from_index()
 
-# @pytest.mark.choreo_wip
+    printed = set([0,1,2])
+    chosen = 4
+    goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
+    handles = []
+    for _ in range(5):
+        goal_pose, = next(goal_pose_gen_fn(chosen))
+        handles.extend(draw_pose(goal_pose, length=0.01))
+        color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
+        wait_if_gui(True)
+        remove_handles(handles)
+
+@pytest.mark.choreo_wip
 def test_grasp_gen_fn(viewer, test_file_name):
-    pass
-    # for bar_vkey in b_struct.vertex:
-    #     print('-------------')
-    #     print('Bar #{}'.format(bar_vkey))
+    bar_struct, _ = load_structure(test_file_name, viewer)
+    element_bodies = bar_struct.get_element_bodies()
+    element_from_index = bar_struct.get_element_from_index()
 
-    #     assembled_bv = list(range(bar_vkey))
-    #     bar_vertex = b_struct.vertex[bar_vkey]
-    #     bar_body = bar_vertex['pb_body']
-    #     built_obstacles = [floor] + [b_struct.vertex[bv]['pb_body'] for bv in assembled_bv]
+    obstacles, robot = load_world()
+    # draw_pose(get_link_pose(robot, link_from_name(robot, TOOL_LINK_NAME)))
 
-    #     # contact_vec_1, contact_vec_2, contact_pt_1, contact_pt_2 = contact_info_from_seq(o_struct, b_struct, bar_vkey, assembled_bv, verbose=True)
+    printed = set([0,1,2])
+    chosen = 4
 
-    #     offset_collision_fn = get_offset_collision_test(bar_body, built_obstacles)
-    #     is_collide = offset_collision_fn(world_from_bar, diagnosis=True)
-    #     print('is_collide: ', is_collide)
+    # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
+    color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
+    n_attempts = 20
+    # tool_pose = Pose(euler=Euler(yaw=np.pi/2))
+    tool_pose = unit_pose()
+    print('EE link : {} | tool link : {}'.format(EE_LINK_NAME, TOOL_LINK_NAME))
+    end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
+                               tool_link=link_from_name(robot, TOOL_LINK_NAME),
+                               visual=False, collision=True)
+
+    goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
+    grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
+        reverse_grasp=True, safety_margin_length=0.005)
+    body_pose = element_from_index[chosen].goal_pose.value
+    for _ in range(n_attempts):
+        handles = []
+        # couple rotations in goal pose' symmetry and translational grasp
+        gripper_from_bar = next(grasp_gen(chosen))
+        body_pose, = next(goal_pose_gen_fn(chosen))
+
+        world_from_ee = end_effector_from_body(body_pose, gripper_from_bar)
+        end_effector.set_pose(world_from_ee)
+
+        handles.extend(draw_pose(world_from_ee, length=0.01))
+        wait_if_gui()
+        remove_handles(handles)
 
 
 def test_color_structure(viewer, test_file_name):
@@ -73,26 +129,24 @@ def test_color_structure(viewer, test_file_name):
     element_bodies = bar_struct.get_element_bodies()
     printed = set([0,1,2,3])
     color_structure(element_bodies, printed, 4)
-    if has_gui():
-        wait_for_user()
+    wait_if_gui()
 
 
 def test_draw_ordered(viewer, test_file_name):
     bar_struct, _ = load_structure(test_file_name, viewer)
     endpts_from_element = bar_struct.get_axis_pts_from_element()
     draw_ordered(list(bar_struct.vertices()), endpts_from_element)
-    if has_gui():
-        wait_for_user()
+    wait_if_gui()
 
-@pytest.mark.choreo_wip
+# @pytest.mark.choreo_wip
 def test_connector(viewer, test_file_name):
     # visual test
     bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()
     handles = []
     handles.extend(label_elements(element_bodies))
-    # if has_gui():
-    #     wait_for_user()
+    if has_gui():
+        wait_for_user()
     remove_handles(handles)
 
     elements = list(element_bodies.keys())
