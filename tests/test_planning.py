@@ -62,8 +62,8 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
 def test_load_robot(viewer):
     robot_data, ws_data = get_picknplace_robot_data()
     robot_urdf, _, tool_link_name, ee_link_name, joint_names, _ = robot_data
-    assert ee_link_name == 'eef_tcp_frame'
-    assert tool_link_name == 'robot_tool0'
+    assert ee_link_name == 'eef_base_link'
+    assert tool_link_name == 'eef_tcp_frame'
     connect(use_gui=viewer)
     load_world()
     wait_if_gui()
@@ -78,7 +78,7 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     handles = []
     for _ in range(5):
-        goal_pose, = next(goal_pose_gen_fn(chosen))
+        goal_pose = next(goal_pose_gen_fn(chosen))[0].value
         handles.extend(draw_pose(goal_pose, length=0.01))
         color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
         wait_if_gui(True)
@@ -113,8 +113,8 @@ def test_grasp_gen_fn(viewer, test_file_name):
     for _ in range(n_attempts):
         handles = []
         # couple rotations in goal pose' symmetry and translational grasp
-        gripper_from_bar = next(grasp_gen(chosen))
-        body_pose, = next(goal_pose_gen_fn(chosen))
+        gripper_from_bar = next(grasp_gen(chosen))[0].attach
+        body_pose = next(goal_pose_gen_fn(chosen))[0].value
 
         world_from_ee = end_effector_from_body(body_pose, gripper_from_bar)
         end_effector.set_pose(world_from_ee)
@@ -145,8 +145,7 @@ def test_connector(viewer, test_file_name):
     element_bodies = bar_struct.get_element_bodies()
     handles = []
     handles.extend(label_elements(element_bodies))
-    if has_gui():
-        wait_for_user()
+    wait_if_gui()
     remove_handles(handles)
 
     elements = list(element_bodies.keys())
@@ -161,16 +160,13 @@ def test_connector(viewer, test_file_name):
         for c in list(bar_connectors):
             handles.append(add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2))
         color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
-        # if has_gui():
-        #     wait_for_user()
         remove_handles(handles)
 
     # * neighbor elements from elements
     element_neighbors = get_element_neighbors(connectors, elements)
     for element, connected_bars in element_neighbors.items():
         color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
-        if has_gui():
-            wait_for_user()
+        wait_if_gui()
 
     grounded_elements = bar_struct.get_grounded_bar_keys()
 
@@ -193,5 +189,5 @@ def test_contact_to_ground(viewer, test_file_name):
         if bar_struct.vertex[bar_key]['grounded']:
             contact_pts = contact_to_ground(bar_struct.vertex[bar_key], built_plate_z=BUILT_PLATE_Z, scale=1)
             handles.append(add_line(*contact_pts, color=(1,0,0,0), width=2))
-    wait_for_user()
+    wait_if_gui()
     # and check connected test

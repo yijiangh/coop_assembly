@@ -233,10 +233,10 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
         set_color(bar_body, BLUE)
         for p in offset_path:
             set_pose(bar_body, p)
-            wait_for_user()
+            # wait_for_user()
     else:
         print('Not Found!')
-        wait_for_user()
+        # wait_for_user()
 
     # gripping_frame = Frame(*scale_frame(bar_vertex["gripping_plane"], scale)[0:3])
     # gripping_frame_offset = gripping_frame.transformed(tf)
