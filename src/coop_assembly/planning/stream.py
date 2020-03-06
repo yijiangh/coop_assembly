@@ -1,10 +1,22 @@
 import numpy as np
+import random
+
 from collections import namedtuple
 
-from pybullet_planning import point_from_pose
+# from extrusion.utils import get_disabled_collisions, get_custom_limits, MotionTrajectory
+
+from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
+    multiply, invert, inverse_kinematics, plan_direct_joint_motion, Attachment, set_joint_positions, plan_joint_motion, \
+    get_configuration, wait_for_interrupt, point_from_pose, HideOutput, load_pybullet, draw_pose, unit_quat, create_obj, \
+    add_body_name, get_pose, pose_from_tform, connect, WorldSaver, get_sample_fn, \
+    wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
+    add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, has_gui, \
+    disconnect
 
 ##################################################
 
+""" simple container for an element
+"""
 Brick = namedtuple('Brick', ['index', 'body', 'initial_pose', 'goal_pose',
                              'grasps', 'goal_supports'])
 
@@ -19,21 +31,25 @@ class WorldPose(object):
 class Grasp(object):
     def __init__(self, index, num, approach, attach, retreat):
         self.index = index # bar vertex key
-        self.num = num
+        self.num = num # grasp id associated for a bar
         self.approach = approach
         self.attach = attach
         self.retreat = retreat
     def __repr__(self):
         return '{}({},{})'.format(self.__class__.__name__, self.index, self.num)
 
-def get_sample_body_pregrasp_fn():
-    pass
-
 def get_grasp_gen_fn(brick_from_index):
-    # TODO: sliding along the bar's axis
+    """[summary]
+
+    Parameters
+    ----------
+    brick_from_index : dict
+        {brick id : pb body}
+    """
     def gen_fn(index):
         brick = brick_from_index[index]
         while True:
+            # TODO: sliding along the bar's axis
             original_grasp = random.choice(brick.grasps)
             theta = random.uniform(-np.pi, +np.pi)
             rotation = Pose(euler=Euler(yaw=theta))

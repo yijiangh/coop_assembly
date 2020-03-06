@@ -19,6 +19,24 @@ def get_pose_generator(epsilon, angle=np.pi/2, **kwargs):
 
 ######################################
 
+def get_offset_collision_test(body, obstacles, **kwargs):
+    ee_collision_fn = get_floating_body_collision_fn(body, obstacles, **kwargs)
+    def fn(pose, diagnosis=False):
+        if diagnosis:
+            print('offset pose:')
+            set_pose(body, pose)
+            set_color(body, apply_alpha(BLUE, 0.5))
+            # wait_for_user()
+
+        is_colliding = ee_collision_fn(pose, diagnosis=diagnosis)
+        if diagnosis:
+            pcolor = 'red' if is_colliding else 'green'
+            cprint('is colliding: {}'.format(is_colliding), pcolor)
+
+        return is_colliding
+    return fn
+
+
 def sample_tf(body, obstacles, epsilon=10*1e-3, angle=np.pi/2, max_attempts=50, debug=False, max_distance=0, \
     **kwargs):
     pose_gen = get_pose_generator(epsilon)
@@ -44,8 +62,39 @@ def sample_tf(body, obstacles, epsilon=10*1e-3, angle=np.pi/2, max_attempts=50, 
             return offset_path
     return None
 
+######################################
+
 def offset_tf_from_contact(bar_vertex, contact_vecs_from_o1, contact_vecs_from_o2,
     contact_pts_from_o1, contact_pts_from_o2, rot_angle, trans_distance, scale=1.0, built_plate_z=0.0):
+    """generate offset point from contact information
+
+    Parameters
+    ----------
+    bar_vertex : [type]
+        [description]
+    contact_vecs_from_o1 : [type]
+        [description]
+    contact_vecs_from_o2 : [type]
+        [description]
+    contact_pts_from_o1 : [type]
+        [description]
+    contact_pts_from_o2 : [type]
+        [description]
+    rot_angle : [type]
+        [description]
+    trans_distance : [type]
+        [description]
+    scale : float, optional
+        [description], by default 1.0
+    built_plate_z : float, optional
+        [description], by default 0.0
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
+    raise NotImplementedError('needs some fix')
 
     # body_pose = get_pose(b_struct.get_bar_pb_body(bar_vkey))
     body_pose = scale_frame(bar_vertex["gripping_plane"], scale)
@@ -128,26 +177,3 @@ def offset_tf_from_contact(bar_vertex, contact_vecs_from_o1, contact_vecs_from_o
         tf = Translation(scale_vector(sum_v[:3], trans_distance*scale))
 
     return tf
-
-def get_offset_collision_test(body, obstacles, **kwargs):
-    ee_collision_fn = get_floating_body_collision_fn(body, obstacles, **kwargs)
-    def fn(pose, diagnosis=False):
-        # world_from_offset_pose
-
-        # world_from_tf = pb_pose_from_Transformation(tf)
-        # world_from_bar = get_pose(body)
-        # offset_pose = multiply(world_from_tf, world_from_bar)
-
-        if diagnosis:
-            print('offset pose:')
-            set_pose(body, pose)
-            set_color(body, apply_alpha(BLUE, 0.5))
-            # wait_for_user()
-
-        is_colliding = ee_collision_fn(pose, diagnosis=diagnosis)
-        if diagnosis:
-            pcolor = 'red' if is_colliding else 'green'
-            cprint('is colliding: {}'.format(is_colliding), pcolor)
-
-        return is_colliding
-    return fn

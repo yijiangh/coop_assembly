@@ -39,6 +39,7 @@ Contents
    :maxdepth: 3
    :titlesonly:
 
+   getting_started
    instructions
    reference
    troubleshooting

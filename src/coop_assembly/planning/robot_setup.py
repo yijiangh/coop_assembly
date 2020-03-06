@@ -4,12 +4,12 @@ Might consider exposed as arguments in the future.
 
 import os
 import pytest
+import numpy as np
 
 from compas.robots import RobotModel
-import compas_fab
 from compas_fab.robots import Robot as RobotClass
 from compas_fab.robots import RobotSemantics
-from pybullet_planning import Pose
+from pybullet_planning import Pose, link_from_name, has_link, joint_from_name
 import coop_assembly
 
 BUILT_PLATE_Z = -0.025 # meter
@@ -23,7 +23,18 @@ WS_SRDF = 'kuka_kr6_r900/srdf/mit_3-412_workspace.srdf'
 import ikfast_kuka_kr6_r900
 IK_MODULE = ikfast_kuka_kr6_r900
 
+CUSTOM_LIMITS = {
+    'robot_joint_a1': (-np.pi/2, np.pi/2),
+}
+
+# joint resolution used in transit motions
+RESOLUTION = 0.1
+
 # TODO: compute joint weight as np.reciprocal(joint velocity bound) from URDF
+# JOINT_WEIGHTS = np.array([0.3078557810844393, 0.443600199302506, 0.23544367607317915,
+#                           0.03637161028426032, 0.04644626184081511, 0.015054267683041092])
+
+#########################################
 
 def get_picknplace_robot_data():
     MODEL_DIR = coop_assembly.get_data('models')
@@ -66,3 +77,43 @@ def get_robot_init_conf():
     # radius
     initial_conf = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
     return initial_conf
+
+#################################
+
+(ROBOT_URDF, BASE_LINK_NAME, TOOL_ROOT_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, DISABLED_SELF_COLLISION_LINK_NAMES), \
+(WORKSPACE_URDF, WORKSPACE_ROBOT_DISABLED_LINK_NAMES) = get_picknplace_robot_data()
+
+#################################
+
+def get_disabled_collisions(robot):
+    """get robot's link-link tuples disabled from collision checking
+
+    Parameters
+    ----------
+    robot : [type]
+        [description]
+
+    Returns
+    -------
+    set of int-tuples
+        int for link index in pybullet
+    """
+    return {tuple(link_from_name(robot, link)
+                  for link in pair if has_link(robot, link))
+                  for pair in DISABLED_SELF_COLLISION_LINK_NAMES}
+
+def get_custom_limits(robot):
+    """[summary]
+
+    Parameters
+    ----------
+    robot : [type]
+        [description]
+
+    Returns
+    -------
+    [type]
+        {joint index : (lower limit, upper limit)}
+    """
+    return {joint_from_name(robot, joint): limits
+            for joint, limits in CUSTOM_LIMITS.items()}
