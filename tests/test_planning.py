@@ -2,7 +2,8 @@ import os
 import pytest
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
-    draw_pose, get_side_cylinder_grasps, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose
+    draw_pose, get_side_cylinder_grasps, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
+    dump_world
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.assembly_info_generation.offset_motion import get_offset_collision_test
@@ -15,8 +16,9 @@ from coop_assembly.planning import load_world, set_camera
 from coop_assembly.planning import color_structure, draw_ordered, draw_element, label_elements, label_connector
 from coop_assembly.planning import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
 
-from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn
+from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
+from coop_assembly.planning.motion import step_trajectory
 
 @pytest.fixture
 def test_file_name():
@@ -46,8 +48,6 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     """
     connect(use_gui=viewer)
     with LockRenderer():
-        load_world()
-
         here = os.path.dirname(os.path.abspath(__file__))
         test_data_dir = os.path.join(here, 'test_data')
 
@@ -84,7 +84,7 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
         wait_if_gui(True)
         remove_handles(handles)
 
-@pytest.mark.choreo_wip
+# @pytest.mark.choreo_wip
 def test_grasp_gen_fn(viewer, test_file_name):
     bar_struct, _ = load_structure(test_file_name, viewer)
     element_bodies = bar_struct.get_element_bodies()
@@ -98,10 +98,9 @@ def test_grasp_gen_fn(viewer, test_file_name):
 
     # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
-    n_attempts = 20
+    n_attempts = 5
     # tool_pose = Pose(euler=Euler(yaw=np.pi/2))
     tool_pose = unit_pose()
-    print('EE link : {} | tool link : {}'.format(EE_LINK_NAME, TOOL_LINK_NAME))
     end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
                                tool_link=link_from_name(robot, TOOL_LINK_NAME),
                                visual=False, collision=True)
@@ -109,17 +108,27 @@ def test_grasp_gen_fn(viewer, test_file_name):
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
         reverse_grasp=True, safety_margin_length=0.005)
+    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, max_attempts=25, collision=True)
+
     body_pose = element_from_index[chosen].goal_pose.value
     for _ in range(n_attempts):
         handles = []
         # couple rotations in goal pose' symmetry and translational grasp
-        gripper_from_bar = next(grasp_gen(chosen))[0].attach
-        body_pose = next(goal_pose_gen_fn(chosen))[0].value
+        grasp, = next(grasp_gen(chosen))
+        world_pose, = next(goal_pose_gen_fn(chosen))
+        command = next(ik_gen(chosen, world_pose, grasp, printed=printed, diagnosis=False))
 
-        world_from_ee = end_effector_from_body(body_pose, gripper_from_bar)
-        end_effector.set_pose(world_from_ee)
+        if not command:
+            gripper_from_bar = grasp.attach
+            body_pose = world_pose.value
+            world_from_ee = end_effector_from_body(body_pose, gripper_from_bar)
+            end_effector.set_pose(world_from_ee)
+            handles.extend(draw_pose(world_from_ee, length=0.01))
+            print('no command found')
+        else:
+            attach_traj = command[1]
+            step_trajectory(attach_traj, attach_traj.attachments, 0.1)
 
-        handles.extend(draw_pose(world_from_ee, length=0.01))
         wait_if_gui()
         remove_handles(handles)
 
@@ -137,6 +146,7 @@ def test_draw_ordered(viewer, test_file_name):
     endpts_from_element = bar_struct.get_axis_pts_from_element()
     draw_ordered(list(bar_struct.vertices()), endpts_from_element)
     wait_if_gui()
+
 
 # @pytest.mark.choreo_wip
 def test_connector(viewer, test_file_name):
@@ -176,7 +186,7 @@ def test_connector(viewer, test_file_name):
     printed_elements = set([1,9,10,11])
     assert not check_connected(connectors, grounded_elements, printed_elements)
 
-    printed_elements = set([2,9,11,10])
+    printed_elements = set([2,7,9,11,10])
     grounded_elements = bar_struct.get_grounded_bar_keys()
     assert check_connected(connectors, grounded_elements, printed_elements)
 

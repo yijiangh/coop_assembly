@@ -6,15 +6,15 @@ from collections import namedtuple
 
 # from extrusion.utils import get_disabled_collisions, get_custom_limits, MotionTrajectory
 
-from pybullet_planning import get_ik_joints, link_from_name, set_pose, \
+from pybullet_planning import link_from_name, set_pose, \
     multiply, invert, inverse_kinematics, plan_direct_joint_motion, Attachment, set_joint_positions, plan_joint_motion, \
     get_configuration, wait_for_interrupt, point_from_pose, HideOutput, load_pybullet, draw_pose, unit_quat, create_obj, \
     add_body_name, get_pose, pose_from_tform, connect, WorldSaver, get_sample_fn, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, has_gui, \
-    disconnect, unit_pose, Point, get_distance, sample_tool_ik
+    disconnect, unit_pose, Point, get_distance, sample_tool_ik, joints_from_names
 
-from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES
+from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 
 def get_goal_pose_gen_fn(element_from_index):
@@ -40,7 +40,6 @@ def get_bar_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_gras
     longitude_x = Pose(euler=Euler(pitch=np.pi/2))
     def gen_fn(index):
         # can get from aabb as well
-        print(element_from_index[index].axis_endpoints)
         bar_length = get_distance(*element_from_index[index].axis_endpoints)
         while True:
             # translation along the longitude axis
@@ -63,13 +62,13 @@ def get_bar_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_gras
 # rotational goal pose x grasp sliding
 # the approach pose is independent of grasp and symmetry, can be generated independently
 
-def get_ik_gen_fn(robot, element_from_index, obstacle_from_name, max_attempts=25):
+def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True, max_attempts=25):
     """return the ik generating function when placing
     # TODO: for now, we always assume the picking is collision-free
 
     Parameters
     ----------
-    robot : [type]
+    end_effector : EndEffector
         [description]
     element_from_index : [type]
         [description]
@@ -82,21 +81,23 @@ def get_ik_gen_fn(robot, element_from_index, obstacle_from_name, max_attempts=25
     -------
     function handle
     """
+    robot = end_effector.robot
+    ee_from_tool = invert(end_effector.tool_from_root)
     # ik_joints = get_movable_joints(robot)
     ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
+    robot_base_link = link_from_name(robot, BASE_LINK_NAME)
     if IK_MODULE:
         assert IK_MODULE.get_dof() == len(ik_joints)
         # free_dof safe_guard?
-    tool_link = link_from_name(robot, EE_LINK_NAME)
+    tool_link = link_from_name(robot, TOOL_LINK_NAME)
     disabled_collisions = get_disabled_collisions(robot)
     # joint conf sample fn, used when ikfast is not used
     sample_fn = get_sample_fn(robot, ik_joints)
 
     approach_distance = 0.1
-    #approach_distance = 0.0
     approach_vector = approach_distance*np.array([0, 0, -1])
 
-    def gen_fn(index, pose, grasp):
+    def gen_fn(index, pose, grasp, printed=[], diagnosis=False):
         """[summary]
 
         Parameters
@@ -116,7 +117,12 @@ def get_ik_gen_fn(robot, element_from_index, obstacle_from_name, max_attempts=25
         body = element_from_index[index].body
         set_pose(body, pose.value)
 
-        obstacles = list(obstacle_from_name.values()) # + [body]
+        element_obstacles = {element_from_index[e].body for e in list(printed)}
+        obstacles = set(fixed_obstacles) | element_obstacles
+        if not collision:
+            obstacles = set()
+
+        # TODO: collision checking against assembled elements in the sequence
         collision_fn = get_collision_fn(robot, ik_joints, obstacles=obstacles, attachments=[],
                                         self_collisions=True,
                                         disabled_collisions=disabled_collisions,
@@ -127,19 +133,19 @@ def get_ik_gen_fn(robot, element_from_index, obstacle_from_name, max_attempts=25
 
         for _ in range(max_attempts):
             if IK_MODULE:
-                attach_conf = sample_tool_ik(IK_MODULE.get_ik, ik_joints, robot, attach_pose)
+                attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
             else:
                 set_joint_positions(robot, ik_joints, sample_fn())  # Random seed
                 attach_conf = inverse_kinematics(robot, tool_link, attach_pose)
 
-            if (attach_conf is None) or collision_fn(attach_conf):
+            if (attach_conf is None) or collision_fn(attach_conf, diagnosis):
                 continue
             set_joint_positions(robot, ik_joints, attach_conf)
             #if USE_IKFAST:
             #    approach_conf = sample_tool_ik(robot, approach_pose, nearby_conf=attach_conf)
             #else:
             approach_conf = inverse_kinematics(robot, tool_link, approach_pose)
-            if (approach_conf is None) or collision_fn(approach_conf):
+            if (approach_conf is None) or collision_fn(approach_conf, diagnosis):
                 continue
             set_joint_positions(robot, ik_joints, approach_conf)
             path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
@@ -153,5 +159,7 @@ def get_ik_gen_fn(robot, element_from_index, obstacle_from_name, max_attempts=25
             traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
             yield approach_conf, traj
             break
+        # TODO: check if pddlstream is happy with returning None
+        yield None
     return gen_fn
 

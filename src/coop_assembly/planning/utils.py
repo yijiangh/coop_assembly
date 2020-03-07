@@ -12,7 +12,7 @@ def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
     robot_data, ws_data = get_picknplace_robot_data()
     robot_urdf, _, _, _, joint_names, _ = robot_data
 
-    print(robot_urdf)
+    print('URDF: ', robot_urdf)
     obstacles = []
     with HideOutput():
         robot = load_pybullet(robot_urdf, fixed_base=True)

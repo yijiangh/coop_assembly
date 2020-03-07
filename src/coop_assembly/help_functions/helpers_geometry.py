@@ -28,7 +28,7 @@ from compas.geometry import distance_point_point, distance_point_line, distance_
     area_triangle, volume_polyhedron, rotate_points
 
 from coop_assembly.help_functions.shared_const import EPS, NODE_CORRECTION_TOP_DISTANCE, NODE_CORRECTION_SINE_ANGLE, \
-    HAS_PYBULLET, METER_SCALE, USE_BOX, TOL
+    HAS_PYBULLET, METER_SCALE, USE_BOX, TOL, EPS
 
 
 ###############################################

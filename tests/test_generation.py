@@ -24,7 +24,7 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning import set_camera
 
 from pybullet_planning import connect, wait_for_user, set_camera_pose, create_plane, get_pose, set_pose, multiply, \
-    set_color, RED, BLUE, apply_alpha, set_point, Point, unit_pose, draw_pose
+    set_color, RED, BLUE, apply_alpha, set_point, Point, unit_pose, draw_pose, tform_from_pose, Pose, Point, Euler, tform_point
 
 @pytest.fixture
 def save_dir():
@@ -44,6 +44,13 @@ def test_generate_from_points(viewer, points_library, test_set_name, radius, pt_
     points, base_tri_pts = points_library[test_set_name]
     print('\n' + '#'*10)
     print('Testing generate from point for set: {}, total # of pts: {}'.format(test_set_name, len(points)))
+
+    # affine transf, in millimeter
+    tform = Pose(Point(40,0,0))
+    for i, pt in enumerate(points):
+        points[i] = tform_point(tform, pt)
+    for i, pt in enumerate(base_tri_pts):
+        base_tri_pts[i] = tform_point(tform, pt)
 
     # create pybullet env
     # set_camera(points)
@@ -121,7 +128,8 @@ def test_gen_grasp_planes(viewer, test_file_name, save_dir):
         set_pose(bar_body, world_from_bar)
         set_color(bar_body, apply_alpha(RED, 0.5))
 
-@pytest.mark.ignore('')
+
+@pytest.mark.skip(reason="")
 @pytest.mark.collision_contact
 @pytest.mark.parametrize('test_file_name', [('YJ_12_bars_point2triangle.json'),])
 def test_collision_contact(viewer, test_file_name, save_dir):
