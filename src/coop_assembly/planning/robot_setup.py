@@ -35,6 +35,8 @@ CUSTOM_LIMITS = {
 # joint resolution used in transit motions
 RESOLUTION = 0.1
 
+INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
+
 # TODO: compute joint weight as np.reciprocal(joint velocity bound) from URDF
 # JOINT_WEIGHTS = np.array([0.3078557810844393, 0.443600199302506, 0.23544367607317915,
 #                           0.03637161028426032, 0.04644626184081511, 0.015054267683041092])
@@ -75,15 +77,10 @@ def get_picknplace_robot_data():
 def get_picknplace_end_effector_urdf():
     return coop_assembly.get_data('models/kuka_kr6_r900/urdf/mit_arch_grasp_end_effector.urdf')
 
-def get_picknplace_tcp_def():
-    # TODO: should be derived from the end effector URDF
-    # in meter
-    return Pose(point=[-0.002851003, 0.001035, 0.188155183])
-
-def get_robot_init_conf():
-    # radius
-    initial_conf = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
-    return initial_conf
+# def get_picknplace_tcp_def():
+#     # TODO: should be derived from the end effector URDF
+#     # in meter
+#     return Pose(point=[-0.002851003, 0.001035, 0.188155183])
 
 #################################
 

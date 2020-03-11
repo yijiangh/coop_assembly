@@ -5,18 +5,18 @@ coop_assembly
 .. start-badges
 
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
-    :target: https://github.com/stefanaparascho/coop_assembly/blob/master/LICENSE
+    :target: https://github.com/stefanaparascho/coop_assembly/blob/dev/LICENSE
     :alt: License MIT
 
-.. image:: https://travis-ci.com/yijiangh/coop_assembly.svg?branch=master
+.. image:: https://travis-ci.com/yijiangh/coop_assembly.svg?branch=dev
     :target: https://travis-ci.com/yijiangh/coop_assembly
 
 .. image:: https://readthedocs.org/projects/coop-assembly/badge/?version=latest
     :target: https://coop-assembly.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://coveralls.io/repos/github/yijiangh/coop_assembly/badge.svg?branch=master
-    :target: https://coveralls.io/github/yijiangh/coop_assembly?branch=master
+.. image:: https://coveralls.io/repos/github/yijiangh/coop_assembly/badge.svg?branch=dev
+    :target: https://coveralls.io/github/yijiangh/coop_assembly?branch=dev
 
 .. end-badges
 

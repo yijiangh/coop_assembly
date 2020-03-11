@@ -16,7 +16,22 @@ from pybullet_planning import link_from_name, set_pose, \
     interpolate_poses, create_attachment, plan_cartesian_motion
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
+from .utils import wait_if_gui
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
+
+ENABLE_SELF_COLLISION = False
+MAX_ATTEMPTS = 1
+
+# pregrasp delta sample
+EPSILON = 0.01
+ANGLE = np.pi/6
+
+# pregrasp interpolation
+POS_STEP_SIZE = 0.005
+ORI_STEP_SIZE = np.pi/18
+
+# collision checking safe margin
+MAX_DISTANCE = 0.0
 
 def get_goal_pose_gen_fn(element_from_index):
     def gen_fn(index):
@@ -59,7 +74,7 @@ def get_bar_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_gras
 
 ######################################
 
-def get_delta_pose_generator(epsilon=0.01, angle=np.pi/2, **kwargs):
+def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
     """sample an infinitestimal pregrasp pose
 
     Parameters
@@ -71,18 +86,16 @@ def get_delta_pose_generator(epsilon=0.01, angle=np.pi/2, **kwargs):
 
     Yields
     -------
-    [type]
-        [description]
+    Pose
     """
     lower = [-epsilon]*3 + [-angle]*3
     upper = [epsilon]*3 + [angle]*3
-    for [x, y, z, roll, pitch, yaw] in interval_generator(lower, upper):
+    for [x, y, z, roll, pitch, yaw] in interval_generator(lower, upper): # halton?
         pose = Pose(point=[x,y,z], euler=Euler(roll=roll, pitch=pitch, yaw=yaw))
         yield pose
 
-def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, epsilon=10*1e-3, angle=np.pi/2, max_attempts=50, max_distance=0, \
-    **kwargs):
-    pose_gen = get_delta_pose_generator(epsilon, angle=angle, **kwargs)
+def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=MAX_ATTEMPTS):
+    pose_gen = get_delta_pose_generator()
 
     def gen_fn(index, pose, printed, diagnosis=False):
         body = element_from_index[index].body
@@ -91,13 +104,13 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, epsilon=10*1e-3, an
         element_obstacles = {element_from_index[e].body for e in list(printed)}
         obstacles = set(fixed_obstacles) | element_obstacles
 
-        ee_collision_fn = get_floating_body_collision_fn(body, obstacles, max_distance=max_distance)
+        ee_collision_fn = get_floating_body_collision_fn(body, obstacles, max_distance=MAX_DISTANCE)
 
         for _ in range(max_attempts):
             delta_pose = next(pose_gen)
             offset_pose = multiply(pose.value, delta_pose)
             is_colliding = False
-            offset_path = list(interpolate_poses(offset_pose, pose.value, **kwargs))
+            offset_path = list(interpolate_poses(offset_pose, pose.value, pos_step_size=POS_STEP_SIZE, ori_step_size=ORI_STEP_SIZE))
             for p in offset_path[:-1]:
                 # TODO: if colliding at the world_from_bar pose, use local velocity + normal check
                 # TODO: normal can be derived from
@@ -107,8 +120,8 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, epsilon=10*1e-3, an
             if not is_colliding:
                 yield offset_path,
                 break
-        return None
-
+        else:
+            yield None
     return gen_fn
 
 ######################################
@@ -118,10 +131,8 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, epsilon=10*1e-3, an
 # rotational goal pose x grasp sliding
 # the approach pose is independent of grasp and symmetry, can be generated independently
 
-def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True, max_attempts=25, \
-    epsilon=0.01, angle=np.pi/2, max_distance=0, **kwargs):
+def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True, max_attempts=MAX_ATTEMPTS, allow_failure=True, **kwargs):
     """return the ik generating function when placing
-    # TODO: for now, we always assume the picking is collision-free
 
     Parameters
     ----------
@@ -150,27 +161,25 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
     disabled_collisions = get_disabled_collisions(robot)
     # joint conf sample fn, used when ikfast is not used
     sample_fn = get_sample_fn(robot, ik_joints)
-    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, epsilon=epsilon, angle=angle, max_attempts=max_attempts, max_distance=max_distance)
-
-    # approach_distance = 0.1
-    # approach_vector = approach_distance*np.array([0, 0, -1])
+    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=max_attempts)
 
     def gen_fn(index, pose, grasp, printed=[], diagnosis=False):
-        """[summary]
+        """generator function for pick approach-attach trajectory
 
         Parameters
         ----------
-        index : [type]
+        index : int
             index of the element
         pose : WorldPose
             world_from_object pose, can wire in a rotational sampler outside if rotational symmetry exists
         grasp : Grasp
             grasp instance
+        printed : list of int
+            assembled element's indices
 
         Yields
         -------
         MotionTrajectory
-            [description]
         """
         body = element_from_index[index].body
         set_pose(body, pose.value)
@@ -179,11 +188,12 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
         obstacles = set(fixed_obstacles) | element_obstacles
         if not collision:
             obstacles = set()
-
+        # attachment is assumed to be empty here, since pregrasp sampler guarantees that
         collision_fn = get_collision_fn(robot, ik_joints, obstacles=obstacles, attachments=[],
-                                        self_collisions=True,
+                                        self_collisions=ENABLE_SELF_COLLISION,
                                         disabled_collisions=disabled_collisions,
-                                        custom_limits=get_custom_limits(robot))
+                                        custom_limits=get_custom_limits(robot),
+                                        max_distance=MAX_DISTANCE)
 
         for _ in range(max_attempts):
             pregrasp_poses, = next(pregrasp_gen_fn(index, pose, printed))
@@ -193,7 +203,6 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
             pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
             attach_pose = pre_attach_poses[-1]
             approach_pose = pre_attach_poses[0]
-            # approach_pose = multiply(attach_pose, (approach_vector, unit_quat()))
 
             if IK_MODULE:
                 attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
@@ -204,11 +213,10 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
             if (attach_conf is None) or collision_fn(attach_conf, diagnosis):
                 continue
             set_joint_positions(robot, ik_joints, attach_conf)
+            set_pose(body, pregrasp_poses[-1])
             attachment = create_attachment(robot, tool_link, body)
+            wait_if_gui()
 
-            #if USE_IKFAST:
-            #    approach_conf = sample_tool_ik(robot, approach_pose, nearby_conf=attach_conf)
-            #else:
             approach_conf = inverse_kinematics(robot, tool_link, approach_pose)
             if (approach_conf is None) or collision_fn(approach_conf, diagnosis):
                 continue
@@ -216,19 +224,21 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
 
             path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
                                             obstacles=obstacles,
-                                            self_collisions=True,
+                                            self_collisions=ENABLE_SELF_COLLISION,
                                             disabled_collisions=disabled_collisions,
-                                            attachments=[attachment])
-            # path = plan_cartesian_motion(robot, first_joint, target_link, waypoint_poses)
+                                            attachments=[])
+            # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
             if path is None: # TODO: retreat
                 continue
-            #path = [approach_conf, attach_conf]
-            attachment = Attachment(robot, tool_link, grasp.attach, body)
+            # path = [approach_conf, attach_conf]
+
             traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
             yield approach_conf, traj
             break
-        # TODO: check if pddlstream is happy with returning None
-        yield None
+        else:
+            # this will run if no break is called, prevent a StopIteraton error
+            # https://docs.python.org/3/tutorial/controlflow.html#break-and-continue-statements-and-else-clauses-on-loops
+            if allow_failure:
+                yield None
         return
     return gen_fn
-

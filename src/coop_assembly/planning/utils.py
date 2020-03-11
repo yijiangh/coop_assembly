@@ -3,10 +3,14 @@ from collections import defaultdict, deque
 
 # from pddlstream.utils import get_connected_components
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
-    create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver
+    create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize
 from coop_assembly.help_functions.shared_const import METER_SCALE
 
-from .robot_setup import get_picknplace_robot_data, get_robot_init_conf, BUILT_PLATE_Z, EE_LINK_NAME
+from .robot_setup import get_picknplace_robot_data, BUILT_PLATE_Z, EE_LINK_NAME, INITIAL_CONF
+
+def wait_if_gui(enable=True):
+    if has_gui() and enable:
+        wait_for_user()
 
 def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
     robot_data, ws_data = get_picknplace_robot_data()
@@ -19,7 +23,7 @@ def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
         # 1/velocity = weight
         # print([get_max_velocity(robot, joint) for joint in get_movable_joints(robot)])
         set_static(robot)
-        set_joint_positions(robot, joints_from_names(robot, joint_names), get_robot_init_conf())
+        set_joint_positions(robot, joints_from_names(robot, joint_names), INITIAL_CONF)
         if use_floor:
             floor = create_plane()
             obstacles.append(floor)
@@ -27,6 +31,100 @@ def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
         else:
             floor = None
     return obstacles, robot
+
+##################################################
+
+def flatten_commands(commands):
+    if commands is None:
+        return None
+    return [traj for command in commands for traj in command.trajectories]
+
+##################################################
+
+class Command(object):
+    def __init__(self, trajectories=[], safe_per_element={}):
+        self.trajectories = list(trajectories)
+        self.safe_per_element = dict(safe_per_element)
+        self.colliding = set()
+    # @property
+    # def print_trajectory(self):
+    #     for traj in self.trajectories:
+    #         if isinstance(traj, PrintTrajectory):
+    #             return traj
+    #     return None
+    @property
+    def start_conf(self):
+        return self.trajectories[0].start_conf
+    @property
+    def end_conf(self):
+        return self.trajectories[-1].end_conf
+    # @property
+    # def elements(self):
+    #     return recover_sequence(self.trajectories)
+    # @property
+    # def directed_elements(self):
+    #     return recover_directed_sequence(self.trajectories)
+    def get_distance(self):
+        return sum(traj.get_distance() for traj in self.trajectories)
+    def get_link_distance(self, **kwargs):
+        return sum(traj.get_link_distance(**kwargs) for traj in self.trajectories)
+    def set_safe(self, element):
+        assert self.safe_per_element.get(element, True) is True
+        self.safe_per_element[element] = True
+    def set_unsafe(self, element):
+        assert self.safe_per_element.get(element, False) is False
+        self.safe_per_element[element] = False
+        self.colliding.add(element)
+    def update_safe(self, elements):
+        for element in elements:
+            self.set_safe(element)
+    def is_safe(self, elements, element_bodies):
+        # TODO: check the end-effector first
+        known_elements = set(self.safe_per_element) & set(elements)
+        if not all(self.safe_per_element[e] for e in known_elements):
+            return False
+        unknown_elements = randomize(set(elements) - known_elements)
+        if not unknown_elements:
+            return True
+        for trajectory in randomize(self.trajectories): # TODO: could cache each individual collision
+            intersecting = trajectory.get_intersecting()
+            for i in randomize(range(len(trajectory))):
+                set_joint_positions(trajectory.robot, trajectory.joints, trajectory.path[i])
+                for element in unknown_elements:
+                    body = element_bodies[element]
+                    #if not pairwise_collision(trajectory.robot, body):
+                    #    self.set_unsafe(element)
+                    #    return False
+                    for robot_link, bodies in intersecting[i].items():
+                        #print(robot_link, bodies, len(bodies))
+                        if (element_bodies[element] in bodies) and pairwise_link_collision(
+                                trajectory.robot, robot_link, body, link2=BASE_LINK):
+                            self.set_unsafe(element)
+                            return False
+        self.update_safe(elements)
+        return True
+    def reverse(self):
+        return self.__class__([traj.reverse() for traj in reversed(self.trajectories)],
+                              safe_per_element=self.safe_per_element)
+    def iterate(self):
+        for trajectory in self.trajectories:
+            for output in trajectory.iterate():
+                yield output
+    @property
+    def start_time(self):
+        return self.trajectories[0].start_time
+    @property
+    def end_time(self):
+        return self.trajectories[-1].end_time
+    @property
+    def duration(self):
+        return self.end_time - self.start_time
+    def retime(self, start_time=0, **kwargs):
+        for traj in self.trajectories:
+            traj.retime(start_time=start_time)
+            start_time += traj.duration
+    def __repr__(self):
+        return 'c[{}]'.format(','.join(map(repr, self.trajectories)))
 
 ##################################################
 

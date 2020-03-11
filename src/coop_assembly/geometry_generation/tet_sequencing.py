@@ -138,6 +138,7 @@ PT2TRI_SEARCH_HEURISTIC = {
 # TODO: minimize number of crossings
 def get_pt2tri_search_heuristic_fn(points, penalty_cost=2.0, heuristic='tet_surface_area'):
     assert penalty_cost >= 1.0, 'penalty cost should be bigger than 1.0, heuristic is computed by score *= penalty_cost'
+    print('hey')
     def h_fn(built_nodes, node_id, built_triangles):
         # return (bias, chosen triangle node ids)
         # lower bias will be dequed first

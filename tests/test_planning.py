@@ -4,7 +4,7 @@ import numpy as np
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
-    dump_world, set_pose
+    dump_world, set_pose, WorldSaver
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -12,22 +12,19 @@ from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z
-from coop_assembly.planning import load_world, set_camera
+from coop_assembly.planning import load_world, set_camera, wait_if_gui
 from coop_assembly.planning import color_structure, draw_ordered, draw_element, label_elements, label_connector
 from coop_assembly.planning import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
 
 from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
+from coop_assembly.planning.regression import regression
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
 from coop_assembly.planning.motion import step_trajectory
 
 @pytest.fixture
 def test_file_name():
-    # @pytest.mark.parametrize('test_file_name', [('YJ_12_bars_point2triangle.json'),])
-    return 'YJ_12_bars_point2triangle.json'
-
-def wait_if_gui(enable=True):
-    if has_gui() and enable:
-        wait_for_user()
+    # return 'YJ_12_bars_point2triangle.json'
+    return 'single_tet_point2triangle.json'
 
 def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     """connect pybullet env and load the bar system
@@ -85,7 +82,18 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
         remove_handles(handles)
 
 @pytest.mark.choreo_wip
-def test_grasp_gen_fn(viewer, test_file_name):
+def test_regression(viewer, test_file_name):
+    bar_struct, _ = load_structure(test_file_name, viewer)
+    element_bodies = bar_struct.get_element_bodies()
+    element_from_index = bar_struct.get_element_from_index()
+
+    fixed_obstacles, robot = load_world()
+
+    plan, data = regression(robot, fixed_obstacles, bar_struct)
+    print(data)
+
+@pytest.mark.stream
+def test_grasp_gen_fn(viewer, test_file_name, collision):
     bar_struct, _ = load_structure(test_file_name, viewer)
     element_bodies = bar_struct.get_element_bodies()
     element_from_index = bar_struct.get_element_from_index()
@@ -98,15 +106,11 @@ def test_grasp_gen_fn(viewer, test_file_name):
     printed = set([0,1,2,4,3])
     chosen = 5
 
-    epsilon=10*1e-3
-    angle=np.pi/6
-    pos_step_size = 0.005
-    ori_step_size = np.pi/18
-    max_attempts=100
-
     # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
-    n_attempts = 50
+    wait_if_gui(False)
+
+    n_attempts = 10
     # tool_pose = Pose(euler=Euler(yaw=np.pi/2))
     tool_pose = unit_pose()
     end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
@@ -116,11 +120,7 @@ def test_grasp_gen_fn(viewer, test_file_name):
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
         reverse_grasp=True, safety_margin_length=0.005)
-    # pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, obstacles, epsilon=epsilon, angle=angle, max_attempts=50, max_distance=0, \
-    #     pos_step_size=pos_step_size, ori_step_size=ori_step_size)
-    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, max_attempts=max_attempts, collision=True, \
-        epsilon=epsilon, angle=angle,
-        pos_step_size=pos_step_size, ori_step_size=ori_step_size)
+    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, max_attempts=n_attempts, collision=collision)
 
     # body_pose = element_from_index[chosen].goal_pose.value
     for _ in range(n_attempts):
@@ -131,9 +131,18 @@ def test_grasp_gen_fn(viewer, test_file_name):
         # pregrasp_poses, = next(pregrasp_gen_fn(chosen, world_pose, printed=printed))
         command = next(ik_gen(chosen, world_pose, grasp, printed=printed, diagnosis=False))
 
+        # visualize grasp
+        p = world_pose.value
+        gripper_from_bar = grasp.attach
+        set_pose(element_from_index[chosen].body, p)
+        world_from_ee = end_effector_from_body(p, gripper_from_bar)
+        end_effector.set_pose(world_from_ee)
+        handles.extend(draw_pose(world_from_ee, length=0.05))
+        handles.extend(draw_pose(p, length=0.05))
+
         if not command:
             print('no command found')
-            gripper_from_bar = grasp.attach
+            # gripper_from_bar = grasp.attach
             # for p in pregrasp_poses:
             #     set_pose(element_from_index[chosen].body, p)
             #     world_from_ee = end_effector_from_body(p, gripper_from_bar)
@@ -148,7 +157,7 @@ def test_grasp_gen_fn(viewer, test_file_name):
             step_trajectory(attach_traj, attach_traj.attachments, time_step)
             print('*'*10)
 
-        # wait_if_gui()
+        wait_if_gui()
         remove_handles(handles)
 
 
@@ -168,7 +177,8 @@ def test_draw_ordered(viewer, test_file_name):
 
 
 # @pytest.mark.choreo_wip
-def test_connector(viewer, test_file_name):
+def test_connector(viewer):
+    test_file_name = 'YJ_12_bars_point2triangle.json'
     # visual test
     bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()
@@ -209,7 +219,8 @@ def test_connector(viewer, test_file_name):
     grounded_elements = bar_struct.get_grounded_bar_keys()
     assert check_connected(connectors, grounded_elements, printed_elements)
 
-def test_contact_to_ground(viewer, test_file_name):
+def test_contact_to_ground(viewer):
+    test_file_name = 'YJ_12_bars_point2triangle.json'
     bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()
     handles = []
