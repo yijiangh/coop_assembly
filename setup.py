@@ -19,7 +19,7 @@ def read(*names, **kwargs):
     ).read()
 
 requirements = [
-    'compas>=0.11',
+    'compas>=0.10',
     'compas_fab',
     'scipy>=1.3.1',
     'pybullet_planning', # TODO: pin version

@@ -1,7 +1,7 @@
 import numpy as np
 from collections import defaultdict, deque
 
-from pddlstream.utils import get_connected_components
+# from pddlstream.utils import get_connected_components
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver
 from coop_assembly.help_functions.shared_const import METER_SCALE
