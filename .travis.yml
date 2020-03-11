@@ -13,12 +13,11 @@ python:
 before_install:
   - pip install Cython --install-option="--no-cython-compile"
 install:
-# This works because requirements-dev.txt ends with "-e ." to install COMPAS itself
   - pip install --no-cache-dir -r requirements-dev.txt
   # before these PRs are merged
   - pip install cmake
   - pip install -e git+git://github.com/yijiangh/compas_fab.git@feature/assembly_datastructure#egg=compas_fab
-  - pip install -e git+git://github.com/yijiangh/pychoreo.git@test/extrusion_rss#egg=pychoreo
+  - pip install -e git+git://github.com/yijiangh/pybullet_planning.git@dev#egg=pybullet_planning
   - pip install scipy>=1.4.1
 
 script:

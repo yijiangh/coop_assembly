@@ -1,12 +1,12 @@
 import os
 import pytest
+import numpy as np
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
-    draw_pose, get_side_cylinder_grasps, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
-    dump_world
+    draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
+    dump_world, set_pose
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
-from coop_assembly.assembly_info_generation.offset_motion import get_offset_collision_test
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
@@ -16,7 +16,7 @@ from coop_assembly.planning import load_world, set_camera
 from coop_assembly.planning import color_structure, draw_ordered, draw_element, label_elements, label_connector
 from coop_assembly.planning import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
 
-from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn
+from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
 from coop_assembly.planning.motion import step_trajectory
 
@@ -84,7 +84,7 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
         wait_if_gui(True)
         remove_handles(handles)
 
-# @pytest.mark.choreo_wip
+@pytest.mark.choreo_wip
 def test_grasp_gen_fn(viewer, test_file_name):
     bar_struct, _ = load_structure(test_file_name, viewer)
     element_bodies = bar_struct.get_element_bodies()
@@ -93,12 +93,20 @@ def test_grasp_gen_fn(viewer, test_file_name):
     obstacles, robot = load_world()
     # draw_pose(get_link_pose(robot, link_from_name(robot, TOOL_LINK_NAME)))
 
-    printed = set([0,1,2])
-    chosen = 4
+    # printed = set([0,1,2,3])
+    # chosen = 4
+    printed = set([0,1,2,4,3])
+    chosen = 5
+
+    epsilon=10*1e-3
+    angle=np.pi/6
+    pos_step_size = 0.005
+    ori_step_size = np.pi/18
+    max_attempts=100
 
     # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
-    n_attempts = 5
+    n_attempts = 50
     # tool_pose = Pose(euler=Euler(yaw=np.pi/2))
     tool_pose = unit_pose()
     end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
@@ -108,28 +116,39 @@ def test_grasp_gen_fn(viewer, test_file_name):
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
         reverse_grasp=True, safety_margin_length=0.005)
-    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, max_attempts=25, collision=True)
+    # pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, obstacles, epsilon=epsilon, angle=angle, max_attempts=50, max_distance=0, \
+    #     pos_step_size=pos_step_size, ori_step_size=ori_step_size)
+    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, max_attempts=max_attempts, collision=True, \
+        epsilon=epsilon, angle=angle,
+        pos_step_size=pos_step_size, ori_step_size=ori_step_size)
 
-    body_pose = element_from_index[chosen].goal_pose.value
+    # body_pose = element_from_index[chosen].goal_pose.value
     for _ in range(n_attempts):
         handles = []
         # couple rotations in goal pose' symmetry and translational grasp
         grasp, = next(grasp_gen(chosen))
         world_pose, = next(goal_pose_gen_fn(chosen))
+        # pregrasp_poses, = next(pregrasp_gen_fn(chosen, world_pose, printed=printed))
         command = next(ik_gen(chosen, world_pose, grasp, printed=printed, diagnosis=False))
 
         if not command:
-            gripper_from_bar = grasp.attach
-            body_pose = world_pose.value
-            world_from_ee = end_effector_from_body(body_pose, gripper_from_bar)
-            end_effector.set_pose(world_from_ee)
-            handles.extend(draw_pose(world_from_ee, length=0.01))
             print('no command found')
+            gripper_from_bar = grasp.attach
+            # for p in pregrasp_poses:
+            #     set_pose(element_from_index[chosen].body, p)
+            #     world_from_ee = end_effector_from_body(p, gripper_from_bar)
+            #     end_effector.set_pose(world_from_ee)
+            #     handles.extend(draw_pose(world_from_ee, length=0.01))
+            #     wait_if_gui()
+            print('-'*10)
         else:
+            print('command found!')
             attach_traj = command[1]
-            step_trajectory(attach_traj, attach_traj.attachments, 0.1)
+            time_step = np.inf if has_gui() else 0.1
+            step_trajectory(attach_traj, attach_traj.attachments, time_step)
+            print('*'*10)
 
-        wait_if_gui()
+        # wait_if_gui()
         remove_handles(handles)
 
 

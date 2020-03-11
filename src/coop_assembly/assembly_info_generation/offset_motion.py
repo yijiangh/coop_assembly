@@ -10,58 +10,6 @@ from pybullet_planning import Euler, Pose
 from pybullet_planning import RED, BLUE
 from compas_fab.backends.pybullet import pb_pose_from_Transformation, Frame_from_pb_pose
 
-def get_pose_generator(epsilon, angle=np.pi/2, **kwargs):
-    lower = [-epsilon]*3 + [-angle]*3
-    upper = [epsilon]*3 + [angle]*3
-    for [x, y, z, roll, pitch, yaw] in interval_generator(lower, upper, **kwargs):
-        pose = Pose(point=[x,y,z], euler=Euler(roll=roll, pitch=pitch, yaw=yaw))
-        yield pose
-
-######################################
-
-def get_offset_collision_test(body, obstacles, **kwargs):
-    ee_collision_fn = get_floating_body_collision_fn(body, obstacles, **kwargs)
-    def fn(pose, diagnosis=False):
-        if diagnosis:
-            print('offset pose:')
-            set_pose(body, pose)
-            set_color(body, apply_alpha(BLUE, 0.5))
-            # wait_for_user()
-
-        is_colliding = ee_collision_fn(pose, diagnosis=diagnosis)
-        if diagnosis:
-            pcolor = 'red' if is_colliding else 'green'
-            cprint('is colliding: {}'.format(is_colliding), pcolor)
-
-        return is_colliding
-    return fn
-
-
-def sample_tf(body, obstacles, epsilon=10*1e-3, angle=np.pi/2, max_attempts=50, debug=False, max_distance=0, \
-    **kwargs):
-    pose_gen = get_pose_generator(epsilon)
-    collision_fn = get_offset_collision_test(body, obstacles, max_distance=max_distance)
-    world_from_bar = get_pose(body)
-    for i in range(max_attempts):
-        delta_pose = next(pose_gen)
-        offset_pose = multiply(world_from_bar, delta_pose)
-        # print('-------------')
-        # print('attempt #', i)
-        # if not collision_fn(offset_pose, diagnosis):
-        #     return Transformation.from_frame(Frame_from_pb_pose(delta_pose))
-        is_colliding = False
-        offset_path = list(interpolate_poses(offset_pose, world_from_bar, **kwargs))
-        for p in offset_path[:-1]: # *kwargs
-            # TODO: if colliding at the world_from_bar pose, use local velocity + normal check
-            # TODO: normal can be derived from
-            # if get_distance(p[0], world_from_bar[0]) > 1e-3:
-            if collision_fn(p):
-                is_colliding = True
-                break
-        if not is_colliding:
-            return offset_path
-    return None
-
 ######################################
 
 def offset_tf_from_contact(bar_vertex, contact_vecs_from_o1, contact_vecs_from_o2,

@@ -18,7 +18,6 @@ from coop_assembly.geometry_generation.tet_sequencing import \
     point2triangle_tet_sequencing
 from coop_assembly.geometry_generation.execute import execute_from_points
 from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset, contact_info_from_seq
-from coop_assembly.assembly_info_generation.offset_motion import get_offset_collision_test
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning import set_camera
@@ -118,7 +117,8 @@ def test_gen_grasp_planes(viewer, test_file_name, save_dir):
         world_from_bar = get_pose(bar_body)
 
         calculate_gripping_plane(b_struct, v, b_struct.vertex[v]["mean_point"], nb_rot=nb_rot, nb_trans=nb_trans)
-        calculate_offset(o_struct, b_struct, v, rot_angle=rot_angle, trans_distance=trans_distance, sequence=seq, scale=1e-3, obstacles=[floor], built_plate_z=built_plate_z, method='sample')
+        calculate_offset(o_struct, b_struct, v, rot_angle=rot_angle, trans_distance=trans_distance, sequence=seq, scale=1e-3,
+            obstacles=[floor], built_plate_z=built_plate_z, method='SP') # sample
 
         # world_from_tf = pb_pose_from_Transformation(tf)
         # set_pose(bar_body, multiply(world_from_tf, world_from_bar))

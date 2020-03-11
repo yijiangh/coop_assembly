@@ -218,24 +218,24 @@ def calculate_offset(o_struct, b_struct, bar_vkey, rot_angle=math.pi/6, trans_di
         from coop_assembly.assembly_info_generation.offset_motion import offset_tf_from_contact
         tf = offset_tf_from_contact(bar_vertex, contact_vecs_from_o1, contact_vecs_from_o2, \
             contact_pts_from_o1, contact_pts_from_o2, rot_angle, trans_distance, scale=scale, built_plate_z=built_plate_z)
-    elif method == 'sample':
-        from coop_assembly.assembly_info_generation.offset_motion import sample_tf
-        built_obstacles = obstacles + [b_struct.vertex[bv]['pb_body'] for bv in assembled_bv]
-        offset_path = sample_tf(bar_body, built_obstacles, epsilon=0.03, angle=math.pi/2, max_attempts=500, debug=True, \
-                pos_step_size=0.005, ori_step_size=math.pi/18, max_distance=0.002)
+    # elif method == 'sample':
+    #     from coop_assembly.assembly_info_generation.offset_motion import sample_tf
+    #     built_obstacles = obstacles + [b_struct.vertex[bv]['pb_body'] for bv in assembled_bv]
+    #     offset_path = sample_tf(bar_body, built_obstacles, epsilon=0.03, angle=math.pi/2, max_attempts=500, debug=True, \
+    #             pos_step_size=0.005, ori_step_size=math.pi/18, max_distance=0.002)
     else:
         raise NotImplementedError('Not implemented offset gen method: {}'.format(method))
 
     from pybullet_planning import wait_for_user, set_color, set_pose, BLUE
-    if offset_path is not None:
-        print('FOUND!!!!!!!!')
-        print(offset_path)
-        set_color(bar_body, BLUE)
-        for p in offset_path:
-            set_pose(bar_body, p)
-            # wait_for_user()
-    else:
-        print('Not Found!')
+    # if offset_path is not None:
+    #     print('FOUND!!!!!!!!')
+    #     print(offset_path)
+    #     set_color(bar_body, BLUE)
+    #     for p in offset_path:
+    #         set_pose(bar_body, p)
+    #         # wait_for_user()
+    # else:
+    #     print('Not Found!')
         # wait_for_user()
 
     # gripping_frame = Frame(*scale_frame(bar_vertex["gripping_plane"], scale)[0:3])

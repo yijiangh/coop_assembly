@@ -19,13 +19,11 @@ def read(*names, **kwargs):
     ).read()
 
 requirements = [
-    # Until COMPAS reaches 1.0, we pin major.minor and allow patch version updates
-    # 'compas>=0.11,<0.12',
     'compas>=0.11',
+    'compas_fab',
     'scipy>=1.3.1',
+    'pybullet_planning', # TODO: pin version
     'termcolor',
-    # 'pybullet_planning'
-    # 'compas_fab',
     # 'pychoreo',
     # 'pycddlib',
 ]
