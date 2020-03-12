@@ -16,11 +16,11 @@ from pybullet_planning import link_from_name, set_pose, \
     interpolate_poses, create_attachment, plan_cartesian_motion
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
-from .utils import wait_if_gui
+from .utils import wait_if_gui, Command
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 
 ENABLE_SELF_COLLISION = False
-MAX_ATTEMPTS = 1
+MAX_ATTEMPTS = 10
 
 # pregrasp delta sample
 EPSILON = 0.01
@@ -121,7 +121,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=MAX_AT
                 yield offset_path,
                 break
         else:
-            yield None
+            yield None,
     return gen_fn
 
 ######################################
@@ -215,7 +215,6 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
             set_joint_positions(robot, ik_joints, attach_conf)
             set_pose(body, pregrasp_poses[-1])
             attachment = create_attachment(robot, tool_link, body)
-            wait_if_gui()
 
             approach_conf = inverse_kinematics(robot, tool_link, approach_pose)
             if (approach_conf is None) or collision_fn(approach_conf, diagnosis):
@@ -233,12 +232,12 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
             # path = [approach_conf, attach_conf]
 
             traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
-            yield approach_conf, traj
+            yield Command([traj]),
             break
         else:
             # this will run if no break is called, prevent a StopIteraton error
             # https://docs.python.org/3/tutorial/controlflow.html#break-and-continue-statements-and-else-clauses-on-loops
             if allow_failure:
-                yield None
+                yield None,
         return
     return gen_fn

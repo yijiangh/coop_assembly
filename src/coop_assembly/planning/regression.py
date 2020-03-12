@@ -2,17 +2,23 @@ import heapq
 import random
 import time
 from collections import namedtuple
+from termcolor import cprint
 
 # from pddlstream.utils import outgoing_from_edges
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
-    remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer
+    remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name
+
 from coop_assembly.help_functions import METER_SCALE
 from coop_assembly.planning import draw_element, check_connected
+from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
+from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands
 
 Node = namedtuple('Node', ['action', 'state'])
 
 def draw_action(node_points, printed, element):
+    """printed elements are drawn green, current element drawn red
+    """
     if not has_gui():
         return []
     with LockRenderer():
@@ -37,8 +43,7 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 
 def regression(robot, obstacles, bar_struct, partial_orders=[],
                max_time=INF, backtrack_limit=INF, revisit=False,
-               collisions=True, stiffness=True, motions=True, lazy=True, checker=None, **kwargs):
-
+               collision=True, stiffness=True, motions=True, lazy=True, checker=None, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = get_joint_positions(robot, joints)
@@ -47,7 +52,8 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
     axis_pts_from_element = bar_struct.get_axis_pts_from_element()
     element_bodies = bar_struct.get_element_bodies()
-    all_elements = frozenset(element_bodies)
+    element_from_index = bar_struct.get_element_from_index()
+    all_elements = frozenset(element_from_index)
     grounded_elements = bar_struct.get_grounded_bar_keys()
 
     contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
@@ -67,11 +73,8 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
 
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
-    grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
-        reverse_grasp=True, safety_margin_length=0.02)
-    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, max_attempts=max_attempts, collision=True, \
-        epsilon=epsilon, angle=angle,
-        pos_step_size=pos_step_size, ori_step_size=ori_step_size)
+    grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.02)
+    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision)
 
     final_conf = initial_conf # TODO: allow choice of config
     final_printed = all_elements
@@ -82,11 +85,11 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     def add_successors(printed, conf):
         # only_ground = printed <= ground_elements
         num_remaining = len(printed) - 1
-        assert 0 <= num_remaining
+        # assert 0 <= num_remaining
         for element in randomize(printed):
             # outgoing_from_element[element] & printed
             priority = (num_remaining, random.random())
-            heapq.heappush(queue, (visits, priority, printed, element, conf))
+            heapq.heappush(queue, (priority, printed, element, conf))
             # if not (printed): # and implies(is_ground(element, ground_nodes), only_ground):
             #     for directed in get_directions(element):
             #         visits = 0
@@ -95,9 +98,9 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             #         priority = (num_remaining, random.random())
             #         heapq.heappush(queue, (visits, priority, printed, directed, conf))
 
-    # if check_connected(ground_nodes, final_printed):
-    # # and (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):
-    #     add_successors(final_printed, final_conf)
+    if check_connected(connectors, grounded_elements, all_elements):
+    # and (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):
+        add_successors(final_printed, final_conf)
 
     # if has_gui():
     #     sequence = sorted(final_printed, key=lambda e: heuristic_fn(final_printed, e, conf=None), reverse=True)
@@ -109,8 +112,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     min_remaining = len(all_elements)
     num_evaluated = max_backtrack = extrusion_failures = transit_failures = stiffness_failures = 0
     while queue and (elapsed_time(start_time) < max_time): #  and check_memory(): #max_memory):
-        visits, priority, printed, element, current_conf = heapq.heappop(queue)
-        # element = get_undirected(all_elements, directed)
+        priority, printed, element, current_conf = heapq.heappop(queue)
         num_remaining = len(printed)
         backtrack = num_remaining - min_remaining
         max_backtrack = max(max_backtrack, backtrack)
@@ -123,7 +125,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         next_printed = printed - {element}
         # next_nodes = compute_printed_nodes(ground_nodes, next_printed)
 
-        draw_action(axis_pts_from_element, next_printed, element)
+        # draw_action(axis_pts_from_element, next_printed, element)
         # if 3 < backtrack + 1:
         #    remove_all_debug()
         #    set_renderer(enable=True)
@@ -135,8 +137,12 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         #    check_connected(connectors, grounded_elements, printed):
         #     continue
 
-        command, = next(print_gen_fn(directed[0], element, extruded=next_printed), (None,))
+        grasp, = next(grasp_gen(element))
+        world_pose, = next(goal_pose_gen_fn(element))
+        command, = next(ik_gen(element, world_pose, grasp, printed=next_printed))
+
         if command is None:
+            cprint('Pick planning failure.', 'red')
             extrusion_failures += 1
             continue
         # if motions and not lazy:
@@ -150,7 +156,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
         if num_remaining < min_remaining:
             min_remaining = num_remaining
-            print('New best: {}'.format(num_remaining))
+            cprint('New best: {}'.format(num_remaining), 'green')
             #if has_gui():
             #    # TODO: change link transparency
             #    remove_all_debug()
@@ -160,10 +166,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         visited[next_printed] = Node(command, printed) # TODO: be careful when multiple trajs
         if not next_printed:
             min_remaining = 0
-            #plan = retrace_trajectories(visited, next_printed, reverse=True)
             commands = retrace_commands(visited, next_printed, reverse=True)
-            #commands = optimize_commands(robot, obstacles, element_bodies, extrusion_path, initial_conf, commands,
-            #                             motions=motions, collisions=collisions)
             plan = flatten_commands(commands)
 
             # if motions and not lazy:
@@ -179,11 +182,9 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             #     plan = compute_motions(robot, obstacles, element_bodies, initial_conf, plan,
             #                            collisions=collisions, max_time=max_time - elapsed_time(start_time))
             # break
-            # if plan is not None:
-            #     break
+            if plan is not None:
+                break
         add_successors(next_printed, command.start_conf)
-        if revisit:
-            heapq.heappush(queue, (visits + 1, priority, printed, directed, current_conf))
 
     data = {
         #'memory': get_memory_in_kb(), # May need to update instead

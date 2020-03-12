@@ -4,7 +4,7 @@ import numpy as np
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
-    dump_world, set_pose, WorldSaver
+    dump_world, set_pose, WorldSaver, reset_simulation, disconnect
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -20,6 +20,7 @@ from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_ge
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
 from coop_assembly.planning.motion import step_trajectory
+from coop_assembly.planning.visualization import display_trajectories
 
 @pytest.fixture
 def test_file_name():
@@ -81,16 +82,27 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
         wait_if_gui(True)
         remove_handles(handles)
 
-@pytest.mark.choreo_wip
-def test_regression(viewer, test_file_name):
-    bar_struct, _ = load_structure(test_file_name, viewer)
-    element_bodies = bar_struct.get_element_bodies()
-    element_from_index = bar_struct.get_element_from_index()
-
+@pytest.mark.regression
+def test_regression(viewer, test_file_name, collision, motion, stiffness, animate):
+    bar_struct, o_struct = load_structure(test_file_name, viewer)
     fixed_obstacles, robot = load_world()
 
-    plan, data = regression(robot, fixed_obstacles, bar_struct)
+    plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness)
     print(data)
+
+    # reset_simulation()
+    # disconnect()
+    watch = True
+    if watch and (plan is not None):
+        # TODO: avoid reconnecting
+        # animate = not (args.disable or args.ee_only)
+        # connect(use_gui=viewer)
+        # set_camera([attr['point_xyz'] for v, attr in o_struct.vertices(True)])
+        # _, robot = load_world()
+        display_trajectories(plan, #time_step=None, video=True,
+                             animate=animate)
+        reset_simulation()
+        disconnect()
 
 @pytest.mark.stream
 def test_grasp_gen_fn(viewer, test_file_name, collision):
@@ -129,7 +141,7 @@ def test_grasp_gen_fn(viewer, test_file_name, collision):
         grasp, = next(grasp_gen(chosen))
         world_pose, = next(goal_pose_gen_fn(chosen))
         # pregrasp_poses, = next(pregrasp_gen_fn(chosen, world_pose, printed=printed))
-        command = next(ik_gen(chosen, world_pose, grasp, printed=printed, diagnosis=False))
+        command, = next(ik_gen(chosen, world_pose, grasp, printed=printed, diagnosis=False))
 
         # visualize grasp
         p = world_pose.value
@@ -152,7 +164,7 @@ def test_grasp_gen_fn(viewer, test_file_name, collision):
             print('-'*10)
         else:
             print('command found!')
-            attach_traj = command[1]
+            attach_traj = command.trajectories[0]
             time_step = np.inf if has_gui() else 0.1
             step_trajectory(attach_traj, attach_traj.attachments, time_step)
             print('*'*10)

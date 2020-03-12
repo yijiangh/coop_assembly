@@ -41,6 +41,16 @@ class Trajectory(object):
         self.joints = joints
         self.path = path
         self.path_from_link = {}
+    @property
+    def start_conf(self):
+        if not self.path:
+            return None
+        return self.path[0]
+    @property
+    def end_conf(self):
+        if not self.path:
+            return None
+        return self.path[-1]
     def get_link_path(self, link_name=TOOL_LINK_NAME):
         link = link_from_name(self.robot, link_name)
         if link not in self.path_from_link:
@@ -55,7 +65,7 @@ class Trajectory(object):
     def iterate(self):
         for conf in self.path[1:]:
             set_joint_positions(self.robot, self.joints, conf)
-            yield
+            yield conf
 
 class MotionTrajectory(Trajectory):
     def __init__(self, robot, joints, path, attachments=[]):
@@ -63,5 +73,13 @@ class MotionTrajectory(Trajectory):
         self.attachments = attachments
     def reverse(self):
         return self.__class__(self.robot, self.joints, self.path[::-1], self.attachments)
+    def iterate(self):
+        for conf in self.path[1:]:
+            print('joints: ', self.joints)
+            print('conf: ', conf)
+            set_joint_positions(self.robot, self.joints, conf)
+            for attachment in self.attachments:
+                attachment.assign()
+            yield conf
     def __repr__(self):
         return 'm({},{})'.format(len(self.joints), len(self.path))

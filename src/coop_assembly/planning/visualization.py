@@ -1,7 +1,7 @@
 import colorsys
 import numpy as np
 from pybullet_planning import RED, BLUE, GREEN, BLACK, add_line, set_color, apply_alpha, get_visual_data, \
-    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user
+    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration
 from coop_assembly.help_functions.shared_const import METER_SCALE
 
 BAR_LINE_WIDTH = 1.0
@@ -120,3 +120,71 @@ def label_connector(connector_pts, c, **kwargs):
 def label_points(points, **kwargs):
     return [add_text(node, position=point, **kwargs) for node, point in enumerate(points)]
 
+###################################
+
+def display_trajectories(trajectories, animate=True, time_step=0.02, video=False):
+    # node_points, ground_nodes,
+    if trajectories is None:
+        return
+    # set_extrusion_camera(node_points)
+    # planned_elements = recover_sequence(trajectories)
+    # colors = sample_colors(len(planned_elements))
+    # if not animate:
+    #     draw_ordered(planned_elements, node_points)
+    #     wait_for_user()
+    #     disconnect()
+    #     return
+
+    # video_saver = None
+    # if video:
+    #     handles = draw_model(planned_elements, node_points, ground_nodes) # Allows user to adjust the camera
+    #     wait_for_user()
+    #     remove_all_debug()
+    #     wait_for_duration(0.1)
+    #     video_saver = VideoSaver('video.mp4') # has_gui()
+    #     time_step = 0.001
+    # else:
+    #     wait_for_user()
+
+    #element_bodies = dict(zip(planned_elements, create_elements(node_points, planned_elements)))
+    #for body in element_bodies.values():
+    #    set_color(body, (1, 0, 0, 0))
+    # connected_nodes = set(ground_nodes)
+    printed_elements = []
+    print('Trajectories:', len(trajectories))
+    for i, trajectory in enumerate(trajectories):
+        #wait_for_user()
+        #set_color(element_bodies[element], (1, 0, 0, 1))
+        last_point = None
+        handles = []
+
+        for _ in trajectory.iterate():
+            # TODO: the robot body could be different
+            # if isinstance(trajectory, PrintTrajectory):
+            #     current_point = point_from_pose(trajectory.end_effector.get_tool_pose())
+            #     if last_point is not None:
+            #         # color = BLUE if is_ground(trajectory.element, ground_nodes) else RED
+            #         color = colors[len(printed_elements)]
+            #         handles.append(add_line(last_point, current_point, color=color, width=LINE_WIDTH))
+            #     last_point = current_point
+            if time_step is None:
+                wait_for_user()
+            else:
+                wait_for_duration(time_step)
+
+        # if isinstance(trajectory, PrintTrajectory):
+        #     if not trajectory.path:
+        #         color = colors[len(printed_elements)]
+        #         handles.append(draw_element(node_points, trajectory.element, color=color))
+        #         #wait_for_user()
+        #     is_connected = (trajectory.n1 in connected_nodes) # and (trajectory.n2 in connected_nodes)
+        #     print('{}) {:9} | Connected: {} | Ground: {} | Length: {}'.format(
+        #         i, str(trajectory), is_connected, is_ground(trajectory.element, ground_nodes), len(trajectory.path)))
+        #     if not is_connected:
+        #         wait_for_user()
+        #     connected_nodes.add(trajectory.n2)
+        #     printed_elements.append(trajectory.element)
+
+    # if video_saver is not None:
+    #     video_saver.restore()
+    wait_for_user()

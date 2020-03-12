@@ -7,6 +7,7 @@ def pytest_addoption(parser):
     parser.addoption('--collision', action='store_false', help='disable collision checking')
     parser.addoption('--stiffness', action='store_false', help='disable stiffness')
     parser.addoption('--motion', action='store_true', help='enable transit motion')
+    parser.addoption('--animate', action='store_false', help='animate trajectories')
 
 @pytest.fixture
 def viewer(request):
@@ -27,3 +28,7 @@ def stiffness(request):
 @pytest.fixture
 def motion(request):
     return request.config.getoption("--motion")
+
+@pytest.fixture
+def animate(request):
+    return request.config.getoption("--animate")
