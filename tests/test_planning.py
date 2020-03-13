@@ -83,8 +83,7 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
 
 @pytest.mark.regression
 def test_regression(viewer, test_file_name, collision, motion, stiffness, animate):
-    collision = False
-
+    # collision = False
     bar_struct, o_struct = load_structure(test_file_name, viewer)
     fixed_obstacles, robot = load_world()
 

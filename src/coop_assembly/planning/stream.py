@@ -75,6 +75,11 @@ def get_bar_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_gras
 
 ######################################
 
+def get_element_body_in_goal_pose(element_from_index, printed):
+    for e in list(printed):
+        set_pose(element_from_index[e].body, element_from_index[e].goal_pose.value)
+    return {element_from_index[e].body for e in list(printed)}
+
 def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
     """sample an infinitestimal pregrasp pose
 
@@ -102,7 +107,8 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
         body = element_from_index[index].body
         set_pose(body, pose.value)
 
-        element_obstacles = {element_from_index[e].body for e in list(printed)}
+        # element_obstacles = {element_from_index[e].body for e in list(printed)}
+        element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
         if not collision:
             obstacles = set()
@@ -187,7 +193,8 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
         body = element_from_index[index].body
         set_pose(body, pose.value)
 
-        element_obstacles = {element_from_index[e].body for e in list(printed)}
+        # element_obstacles = {element_from_index[e].body for e in list(printed)}
+        element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
         if not collision:
             obstacles = set()
@@ -241,9 +248,10 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
             #                                 disabled_collisions=disabled_collisions,
             #                                 attachments=[])
             # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
+            # TODO: ladder graph-based Cartesian planning
             path = [approach_conf, attach_conf]
 
-            if path is None: # TODO: retreat
+            if path is None: # TODO: retreat, can just reverse
                 if verbose : print('direct motion failure.')
                 continue
 
