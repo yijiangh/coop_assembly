@@ -45,7 +45,7 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 
 def regression(robot, obstacles, bar_struct, partial_orders=[],
                max_time=INF, backtrack_limit=INF, revisit=False,
-               collision=True, stiffness=True, motions=True, lazy=True, checker=None, **kwargs):
+               collision=True, stiffness=True, motions=True, lazy=True, checker=None, verbose=True, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = get_joint_positions(robot, joints)
@@ -70,7 +70,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
-    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=True) #max_attempts=n_attempts
+    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=verbose) #max_attempts=n_attempts
 
     final_conf = initial_conf # TODO: allow choice of config
     final_printed = all_elements
@@ -116,13 +116,12 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             break # continue
         num_evaluated += 1
 
-        print('#'*10)
-        print('Iteration: {} | Best: {} | Printed: {} | Element: {} | Time: {:.3f} | Visit: {}'.format(
-            num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time), visits))
+        if verbose:
+            print('#'*10)
+            print('Iteration: {} | Best: {} | Printed: {} | Element: {} | Time: {:.3f} | BT : {} | Visit: {}'.format(
+                num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time), backtrack, visits))
         next_printed = printed - {element}
 
-        if revisit and visits < MAX_REVISIT:
-            heapq.heappush(queue, (visits + 1, priority, printed, element, current_conf))
         # next_nodes = compute_printed_nodes(ground_nodes, next_printed)
 
         # debug visualize
@@ -133,24 +132,30 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         #    draw_model(next_printed, node_points, ground_nodes)
         #    wait_for_user()
 
-        if next_printed in visited and visits == 0:
+        if next_printed in visited:
             continue
         if not check_connected(connectors, grounded_elements, next_printed):
-            cprint('>'*5, 'red')
-            cprint('Connectivity failure', 'red')
+            if verbose:
+                cprint('>'*5, 'red')
+                cprint('Connectivity failure', 'red')
             continue
+
+        if revisit and visits < MAX_REVISIT:
+            heapq.heappush(queue, (visits + 1, priority, printed, element, current_conf))
 
         grasp, = next(grasp_gen(element))
         if grasp is None:
-            cprint('$'*5, 'red')
-            cprint('Pregrasp planning failure.', 'red')
+            if verbose:
+                cprint('$'*5, 'red')
+                cprint('Pregrasp planning failure.', 'red')
             continue
         world_pose, = next(goal_pose_gen_fn(element))
         command, = next(ik_gen(element, world_pose, grasp, printed=next_printed))
 
         if command is None:
-            cprint('<'*5, 'red')
-            cprint('Pick planning failure.', 'red')
+            if verbose:
+                cprint('<'*5, 'red')
+                cprint('Pick planning failure.', 'red')
             extrusion_failures += 1
             continue
         # if motions and not lazy:
@@ -164,7 +169,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
         if num_remaining < min_remaining:
             min_remaining = num_remaining
-            cprint('New best: {}'.format(num_remaining), 'green')
+            if verbose : cprint('New best: {}'.format(num_remaining), 'green')
             #if has_gui():
             #    # TODO: change link transparency
             #    remove_all_debug()

@@ -8,6 +8,7 @@ def pytest_addoption(parser):
     parser.addoption('--stiffness', action='store_false', help='disable stiffness')
     parser.addoption('--motion', action='store_true', help='enable transit motion')
     parser.addoption('--animate', action='store_false', help='animate trajectories')
+    parser.addoption('--revisit', action='store_true')
 
 @pytest.fixture
 def viewer(request):
@@ -32,3 +33,7 @@ def motion(request):
 @pytest.fixture
 def animate(request):
     return request.config.getoption("--animate")
+
+@pytest.fixture
+def revisit(request):
+    return request.config.getoption("--revisit")

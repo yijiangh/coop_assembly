@@ -19,6 +19,7 @@ from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_c
 from .utils import wait_if_gui, Command
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 
+# TODO: fix self collision
 ENABLE_SELF_COLLISION = False
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 10
@@ -170,7 +171,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
     disabled_collisions = get_disabled_collisions(robot)
     # joint conf sample fn, used when ikfast is not used
     sample_fn = get_sample_fn(robot, ik_joints)
-    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=True) # max_attempts=max_attempts,
+    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=collision) # max_attempts=max_attempts,
 
     def gen_fn(index, pose, grasp, printed=[], diagnosis=False):
         """generator function for pick approach-attach trajectory
@@ -211,6 +212,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
                 if verbose : print('pregrasp failure.')
                 continue
 
+            # TODO: grasp should be sampled here
             pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
             attach_pose = pre_attach_poses[-1]
             approach_pose = pre_attach_poses[0]

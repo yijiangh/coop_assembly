@@ -1,6 +1,7 @@
 import os
 import pytest
 import numpy as np
+from termcolor import cprint
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
@@ -82,20 +83,31 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
         remove_handles(handles)
 
 @pytest.mark.regression
-def test_regression(viewer, test_file_name, collision, motion, stiffness, animate):
-    # collision = False
+def test_regression(viewer, test_file_name, collision, motion, stiffness, animate, revisit):
     bar_struct, o_struct = load_structure(test_file_name, viewer)
     fixed_obstacles, robot = load_world()
 
-    with WorldSaver():
-        plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness,
-            revisit=True)
-        print(data)
-    assert plan is not None, 'plan not found for {}'.format(test_file_name)
+    n_attempts = 10
+    success = 0
+    for i in range(n_attempts):
+        print('#'*10)
+        with WorldSaver():
+            plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness,
+                revisit=revisit, verbose=False if n_attempts>1 else True)
+            print(data)
+        if plan is None:
+            cprint('#{}: plan not found'.format(i), 'red')
+        else:
+            success += 1
+            cprint('#{}: plan found'.format(i), 'green')
+
+    print('#'*10)
+    print('collision: {}'.format(collision))
+    print('{} : {} / {}'.format(test_file_name, success, n_attempts))
 
     # reset_simulation()
     # disconnect()
-    watch = True
+    watch = False
     if watch and (plan is not None):
         # animate = not (args.disable or args.ee_only)
         # connect(use_gui=viewer)
