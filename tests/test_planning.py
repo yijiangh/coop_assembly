@@ -92,7 +92,7 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
         plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness,
             revisit=True)
         print(data)
-    assert plan is not None
+    assert plan is not None, 'plan not found for {}'.format(test_file_name)
 
     # reset_simulation()
     # disconnect()

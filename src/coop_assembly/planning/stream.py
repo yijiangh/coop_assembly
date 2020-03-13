@@ -20,7 +20,7 @@ from .utils import wait_if_gui, Command
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 
 ENABLE_SELF_COLLISION = False
-MAX_ATTEMPTS = 10
+MAX_ATTEMPTS = 1
 
 # pregrasp delta sample
 EPSILON = 0.01
@@ -133,7 +133,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=MAX_AT
 # rotational goal pose x grasp sliding
 # the approach pose is independent of grasp and symmetry, can be generated independently
 
-def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True, max_attempts=MAX_ATTEMPTS, allow_failure=True, **kwargs):
+def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True, max_attempts=MAX_ATTEMPTS, allow_failure=True, verbose=False, **kwargs):
     """return the ik generating function when placing
 
     Parameters
@@ -200,6 +200,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
         for _ in range(max_attempts):
             pregrasp_poses, = next(pregrasp_gen_fn(index, pose, printed))
             if not pregrasp_poses:
+                if verbose : print('pregrasp failure.')
                 continue
 
             pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
@@ -212,15 +213,25 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
                 set_joint_positions(robot, ik_joints, sample_fn())  # Random seed
                 attach_conf = inverse_kinematics(robot, tool_link, attach_pose)
 
-            if (attach_conf is None) or collision_fn(attach_conf, diagnosis):
+            if (attach_conf is None):
+                if verbose : print('attach ik failure.')
                 continue
+            if collision_fn(attach_conf, diagnosis):
+                if verbose : print('attach collision failure.')
+                continue
+
             set_joint_positions(robot, ik_joints, attach_conf)
             set_pose(body, pregrasp_poses[-1])
             attachment = create_attachment(robot, tool_link, body)
 
             approach_conf = inverse_kinematics(robot, tool_link, approach_pose)
-            if (approach_conf is None) or collision_fn(approach_conf, diagnosis):
+            if (approach_conf is None):
+                if verbose : print('approach ik failure.')
                 continue
+            if collision_fn(approach_conf, diagnosis):
+                if verbose : print('approach collision failure.')
+                continue
+
             set_joint_positions(robot, ik_joints, approach_conf)
 
             path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
@@ -230,6 +241,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
                                             attachments=[])
             # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
             if path is None: # TODO: retreat
+                if verbose : print('direct motion failure.')
                 continue
             # path = [approach_conf, attach_conf]
 
