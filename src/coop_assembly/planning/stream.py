@@ -20,7 +20,8 @@ from .utils import wait_if_gui, Command
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 
 ENABLE_SELF_COLLISION = False
-MAX_ATTEMPTS = 1
+IK_MAX_ATTEMPTS = 1
+PREGRASP_MAX_ATTEMPTS = 10
 
 # pregrasp delta sample
 EPSILON = 0.01
@@ -94,7 +95,7 @@ def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
         pose = Pose(point=[x,y,z], euler=Euler(roll=roll, pitch=pitch, yaw=yaw))
         yield pose
 
-def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=MAX_ATTEMPTS, collision=True):
+def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRASP_MAX_ATTEMPTS, collision=True):
     pose_gen = get_delta_pose_generator()
 
     def gen_fn(index, pose, printed, diagnosis=False):
@@ -133,7 +134,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=MAX_AT
 # rotational goal pose x grasp sliding
 # the approach pose is independent of grasp and symmetry, can be generated independently
 
-def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True, max_attempts=MAX_ATTEMPTS, allow_failure=True, verbose=False, **kwargs):
+def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True, max_attempts=IK_MAX_ATTEMPTS, allow_failure=True, verbose=False, **kwargs):
     """return the ik generating function when placing
 
     Parameters
@@ -163,7 +164,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
     disabled_collisions = get_disabled_collisions(robot)
     # joint conf sample fn, used when ikfast is not used
     sample_fn = get_sample_fn(robot, ik_joints)
-    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=max_attempts, collision=collision)
+    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=True) # max_attempts=max_attempts,
 
     def gen_fn(index, pose, grasp, printed=[], diagnosis=False):
         """generator function for pick approach-attach trajectory
@@ -234,16 +235,17 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
 
             set_joint_positions(robot, ik_joints, approach_conf)
 
-            path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
-                                            obstacles=obstacles,
-                                            self_collisions=ENABLE_SELF_COLLISION,
-                                            disabled_collisions=disabled_collisions,
-                                            attachments=[])
+            # path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
+            #                                 obstacles=obstacles,
+            #                                 self_collisions=ENABLE_SELF_COLLISION,
+            #                                 disabled_collisions=disabled_collisions,
+            #                                 attachments=[])
             # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
+            path = [approach_conf, attach_conf]
+
             if path is None: # TODO: retreat
                 if verbose : print('direct motion failure.')
                 continue
-            # path = [approach_conf, attach_conf]
 
             traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
             yield Command([traj]),

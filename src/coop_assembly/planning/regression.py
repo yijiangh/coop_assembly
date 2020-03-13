@@ -14,6 +14,8 @@ from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
 from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands, Command
 
+MAX_REVISIT = 5
+
 Node = namedtuple('Node', ['action', 'state'])
 
 def draw_action(node_points, printed, element):
@@ -119,7 +121,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time), visits))
         next_printed = printed - {element}
 
-        if revisit:
+        if revisit and visits < MAX_REVISIT:
             heapq.heappush(queue, (visits + 1, priority, printed, element, current_conf))
         # next_nodes = compute_printed_nodes(ground_nodes, next_printed)
 

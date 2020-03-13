@@ -63,7 +63,7 @@ class Trajectory(object):
     def reverse(self):
         raise NotImplementedError()
     def iterate(self):
-        for conf in self.path[1:]:
+        for conf in self.path:
             set_joint_positions(self.robot, self.joints, conf)
             yield conf
 
@@ -74,7 +74,7 @@ class MotionTrajectory(Trajectory):
     def reverse(self):
         return self.__class__(self.robot, self.joints, self.path[::-1], self.attachments)
     def iterate(self):
-        for conf in self.path[1:]:
+        for conf in self.path: # [1:]
             set_joint_positions(self.robot, self.joints, conf)
             for attachment in self.attachments:
                 attachment.assign()
