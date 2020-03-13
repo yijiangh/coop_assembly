@@ -94,7 +94,7 @@ def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
         pose = Pose(point=[x,y,z], euler=Euler(roll=roll, pitch=pitch, yaw=yaw))
         yield pose
 
-def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=MAX_ATTEMPTS):
+def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=MAX_ATTEMPTS, collision=True):
     pose_gen = get_delta_pose_generator()
 
     def gen_fn(index, pose, printed, diagnosis=False):
@@ -103,6 +103,8 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=MAX_AT
 
         element_obstacles = {element_from_index[e].body for e in list(printed)}
         obstacles = set(fixed_obstacles) | element_obstacles
+        if not collision:
+            obstacles = set()
 
         ee_collision_fn = get_floating_body_collision_fn(body, obstacles, max_distance=MAX_DISTANCE)
 
@@ -161,7 +163,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
     disabled_collisions = get_disabled_collisions(robot)
     # joint conf sample fn, used when ikfast is not used
     sample_fn = get_sample_fn(robot, ik_joints)
-    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=max_attempts)
+    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=max_attempts, collision=collision)
 
     def gen_fn(index, pose, grasp, printed=[], diagnosis=False):
         """generator function for pick approach-attach trajectory

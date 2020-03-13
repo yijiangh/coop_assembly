@@ -161,8 +161,8 @@ def check_connected(connectors, grounded_elements, printed_elements):
 
     Returns
     -------
-    [type]
-        [description]
+    bool
+        True if connected to ground
     """
     # TODO: for stability might need to check 2-connected
     if not printed_elements:
@@ -175,6 +175,7 @@ def check_connected(connectors, grounded_elements, printed_elements):
     visited_elements = set()
     while queue:
         n_element = queue.popleft()
+        visited_elements.add(n_element)
         for element in element_neighbors[n_element]:
             if element in printed_elements and element not in visited_elements:
                 visited_elements.add(element)

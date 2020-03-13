@@ -12,7 +12,7 @@ from coop_assembly.help_functions import METER_SCALE
 from coop_assembly.planning import draw_element, check_connected
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
 from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
-from .utils import flatten_commands
+from .utils import flatten_commands, Command
 
 Node = namedtuple('Node', ['action', 'state'])
 
@@ -114,22 +114,24 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             break # continue
         num_evaluated += 1
 
+        print('#'*10)
         print('Iteration: {} | Best: {} | Printed: {} | Element: {} | Time: {:.3f}'.format(
             num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time)))
         next_printed = printed - {element}
         # next_nodes = compute_printed_nodes(ground_nodes, next_printed)
 
-        # draw_action(axis_pts_from_element, next_printed, element)
+        draw_action(axis_pts_from_element, next_printed, element)
         # if 3 < backtrack + 1:
         #    remove_all_debug()
         #    set_renderer(enable=True)
         #    draw_model(next_printed, node_points, ground_nodes)
         #    wait_for_user()
 
-        # we don't have directionality in assembly: (directed[0] not in next_nodes)
-        # if (next_printed in visited) or \
-        #    check_connected(connectors, grounded_elements, printed):
-        #     continue
+        if next_printed in visited:
+            continue
+        if not check_connected(connectors, grounded_elements, next_printed):
+            cprint('Connectivity failure', 'red')
+            continue
 
         grasp, = next(grasp_gen(element))
         world_pose, = next(goal_pose_gen_fn(element))

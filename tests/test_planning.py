@@ -90,8 +90,6 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
         plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness)
         print(data)
 
-    dump_world()
-
     # reset_simulation()
     # disconnect()
     watch = True
@@ -192,7 +190,6 @@ def test_draw_ordered(viewer, test_file_name):
     wait_if_gui()
 
 
-# @pytest.mark.choreo_wip
 def test_connector(viewer):
     test_file_name = 'YJ_12_bars_point2triangle.json'
     # visual test
@@ -225,6 +222,12 @@ def test_connector(viewer):
 
     grounded_elements = bar_struct.get_grounded_bar_keys()
 
+    printed_elements = set([2])
+    assert check_connected(connectors, grounded_elements, printed_elements)
+
+    printed_elements = set([0,1])
+    assert check_connected(connectors, grounded_elements, printed_elements)
+
     printed_elements = set([9,10,11])
     assert not check_connected(connectors, grounded_elements, printed_elements)
 
@@ -233,6 +236,31 @@ def test_connector(viewer):
 
     printed_elements = set([2,7,9,11,10])
     grounded_elements = bar_struct.get_grounded_bar_keys()
+    assert check_connected(connectors, grounded_elements, printed_elements)
+
+def test_connector_debug(viewer):
+    test_file_name = 'single_tet_point2triangle.json'
+    # visual test
+    bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
+    element_bodies = bar_struct.get_element_bodies()
+    handles = []
+    handles.extend(label_elements(element_bodies))
+    wait_if_gui()
+    remove_handles(handles)
+
+    elements = list(element_bodies.keys())
+    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
+    connectors = list(contact_from_connectors.keys())
+
+    grounded_elements = bar_struct.get_grounded_bar_keys()
+
+    printed_elements = set([0])
+    assert check_connected(connectors, grounded_elements, printed_elements)
+
+    printed_elements = set([0,1])
+    assert check_connected(connectors, grounded_elements, printed_elements)
+
+    printed_elements = set([0,3])
     assert check_connected(connectors, grounded_elements, printed_elements)
 
 def test_contact_to_ground(viewer):
