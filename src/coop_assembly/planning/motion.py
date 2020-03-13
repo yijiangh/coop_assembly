@@ -7,6 +7,7 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color
 from coop_assembly.data_structure.utils import MotionTrajectory
+from .utils import wait_if_gui
 
 ##################################################
 
@@ -116,7 +117,7 @@ def display_trajectories(trajectories, animate=True, time_step=0.02, video=False
 
     # if video_saver is not None:
     #     video_saver.restore()
-    wait_for_user()
+    wait_if_gui()
 
 ##################################################
 

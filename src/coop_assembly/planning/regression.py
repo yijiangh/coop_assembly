@@ -81,9 +81,9 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         num_remaining = len(printed) - 1
         # assert 0 <= num_remaining
         for element in randomize(printed):
-            # outgoing_from_element[element] & printed
+            visits = 0
             priority = (num_remaining, random.random())
-            heapq.heappush(queue, (priority, printed, element, conf))
+            heapq.heappush(queue, (visits, priority, printed, element, conf))
             # if not (printed): # and implies(is_ground(element, ground_nodes), only_ground):
             #     for directed in get_directions(element):
             #         visits = 0
@@ -106,7 +106,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     min_remaining = len(all_elements)
     num_evaluated = max_backtrack = extrusion_failures = transit_failures = stiffness_failures = 0
     while queue and (elapsed_time(start_time) < max_time): #  and check_memory(): #max_memory):
-        priority, printed, element, current_conf = heapq.heappop(queue)
+        visits, priority, printed, element, current_conf = heapq.heappop(queue)
         num_remaining = len(printed)
         backtrack = num_remaining - min_remaining
         max_backtrack = max(max_backtrack, backtrack)
@@ -120,7 +120,8 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         next_printed = printed - {element}
         # next_nodes = compute_printed_nodes(ground_nodes, next_printed)
 
-        draw_action(axis_pts_from_element, next_printed, element)
+        # debug visualize
+        # draw_action(axis_pts_from_element, next_printed, element)
         # if 3 < backtrack + 1:
         #    remove_all_debug()
         #    set_renderer(enable=True)
@@ -130,6 +131,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         if next_printed in visited:
             continue
         if not check_connected(connectors, grounded_elements, next_printed):
+            cprint('>'*5, 'red')
             cprint('Connectivity failure', 'red')
             continue
 
@@ -138,6 +140,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         command, = next(ik_gen(element, world_pose, grasp, printed=next_printed))
 
         if command is None:
+            cprint('<'*5, 'red')
             cprint('Pick planning failure.', 'red')
             extrusion_failures += 1
             continue
@@ -165,6 +168,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             commands = retrace_commands(visited, next_printed, reverse=True)
             plan = flatten_commands(commands)
 
+            # * return to start config transit
             # if motions and not lazy:
             #     motion_traj = compute_motion(robot, obstacles, element_bodies, frozenset(),
             #                                  initial_conf, plan[0].start_conf, collisions=collisions,
@@ -181,6 +185,8 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             if plan is not None:
                 break
         add_successors(next_printed, command.start_conf)
+        if revisit:
+            heapq.heappush(queue, (visits + 1, priority, printed, element, current_conf))
 
     data = {
         #'memory': get_memory_in_kb(), # May need to update instead

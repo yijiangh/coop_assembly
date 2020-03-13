@@ -83,12 +83,16 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
 
 @pytest.mark.regression
 def test_regression(viewer, test_file_name, collision, motion, stiffness, animate):
+    collision = False
+
     bar_struct, o_struct = load_structure(test_file_name, viewer)
     fixed_obstacles, robot = load_world()
 
     with WorldSaver():
-        plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness)
+        plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness,
+            revisit=True)
         print(data)
+    assert plan is not None
 
     # reset_simulation()
     # disconnect()
@@ -99,7 +103,8 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
         # set_camera([attr['point_xyz'] for v, attr in o_struct.vertices(True)])
         # _, robot = load_world()
 
-        display_trajectories(plan, time_step=None, #video=True,
+        time_step = None if has_gui() else 0.01
+        display_trajectories(plan, time_step=time_step, #video=True,
                              animate=animate)
         reset_simulation()
         disconnect()
