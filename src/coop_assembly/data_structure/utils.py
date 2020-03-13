@@ -75,8 +75,6 @@ class MotionTrajectory(Trajectory):
         return self.__class__(self.robot, self.joints, self.path[::-1], self.attachments)
     def iterate(self):
         for conf in self.path[1:]:
-            print('joints: ', self.joints)
-            print('conf: ', conf)
             set_joint_positions(self.robot, self.joints, conf)
             for attachment in self.attachments:
                 attachment.assign()

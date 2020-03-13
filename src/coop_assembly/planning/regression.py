@@ -47,8 +47,6 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = get_joint_positions(robot, joints)
-    # element_from_id, node_points, ground_nodes = load_extrusion(extrusion_path)
-    # id_from_element = get_id_from_element(element_from_id)
 
     axis_pts_from_element = bar_struct.get_axis_pts_from_element()
     element_bodies = bar_struct.get_element_bodies()
@@ -66,15 +64,11 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     # if checker is None:
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
 
-    # print_gen_fn = get_print_gen_fn(robot, obstacles, node_points, element_bodies, ground_nodes,
-    #                                 supports=False, precompute_collisions=False,
-    #                                 max_directions=MAX_DIRECTIONS, max_attempts=MAX_ATTEMPTS,
-    #                                 collisions=collisions, **kwargs)
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
 
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
-    grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.02)
-    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision)
+    grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
+    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision) #max_attempts=n_attempts
 
     final_conf = initial_conf # TODO: allow choice of config
     final_printed = all_elements
@@ -120,7 +114,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             break # continue
         num_evaluated += 1
 
-        print('Iteration: {} | Best: {} | Printed: {} | Element: {} | | Time: {:.3f}'.format(
+        print('Iteration: {} | Best: {} | Printed: {} | Element: {} | Time: {:.3f}'.format(
             num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time)))
         next_printed = printed - {element}
         # next_nodes = compute_printed_nodes(ground_nodes, next_printed)

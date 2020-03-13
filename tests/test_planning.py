@@ -4,7 +4,7 @@ import numpy as np
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
-    dump_world, set_pose, WorldSaver, reset_simulation, disconnect
+    dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -19,8 +19,7 @@ from coop_assembly.planning import get_element_neighbors, get_connector_from_ele
 from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
-from coop_assembly.planning.motion import step_trajectory
-from coop_assembly.planning.visualization import display_trajectories
+from coop_assembly.planning.motion import step_trajectory, display_trajectories
 
 @pytest.fixture
 def test_file_name():
@@ -87,19 +86,22 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
     bar_struct, o_struct = load_structure(test_file_name, viewer)
     fixed_obstacles, robot = load_world()
 
-    plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness)
-    print(data)
+    with WorldSaver():
+        plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness)
+        print(data)
+
+    dump_world()
 
     # reset_simulation()
     # disconnect()
     watch = True
     if watch and (plan is not None):
-        # TODO: avoid reconnecting
         # animate = not (args.disable or args.ee_only)
         # connect(use_gui=viewer)
         # set_camera([attr['point_xyz'] for v, attr in o_struct.vertices(True)])
         # _, robot = load_world()
-        display_trajectories(plan, #time_step=None, video=True,
+
+        display_trajectories(plan, time_step=None, #video=True,
                              animate=animate)
         reset_simulation()
         disconnect()
@@ -165,8 +167,10 @@ def test_grasp_gen_fn(viewer, test_file_name, collision):
         else:
             print('command found!')
             attach_traj = command.trajectories[0]
-            time_step = np.inf if has_gui() else 0.1
-            step_trajectory(attach_traj, attach_traj.attachments, time_step)
+            time_step = None if has_gui() else 0.1
+            # step_trajectory(attach_traj, attach_traj.attachments, time_step)
+            display_trajectories([attach_traj], time_step=time_step, #video=True,
+                                 animate=True)
             print('*'*10)
 
         wait_if_gui()
