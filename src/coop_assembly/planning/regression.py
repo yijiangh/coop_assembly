@@ -68,8 +68,6 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
 
-    goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
-    grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
     ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=verbose) #max_attempts=n_attempts
 
     final_conf = initial_conf # TODO: allow choice of config
@@ -143,14 +141,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         if revisit and visits < MAX_REVISIT:
             heapq.heappush(queue, (visits + 1, priority, printed, element, current_conf))
 
-        grasp, = next(grasp_gen(element))
-        if grasp is None:
-            if verbose:
-                cprint('$'*5, 'red')
-                cprint('Pregrasp planning failure.', 'red')
-            continue
-        world_pose, = next(goal_pose_gen_fn(element))
-        command, = next(ik_gen(element, world_pose, grasp, printed=next_printed))
+        command, = next(ik_gen(element, printed=next_printed))
 
         if command is None:
             if verbose:

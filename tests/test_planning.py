@@ -24,8 +24,8 @@ from coop_assembly.planning.motion import step_trajectory, display_trajectories
 
 @pytest.fixture
 def test_file_name():
-    # return 'YJ_12_bars_point2triangle.json'
-    return 'single_tet_point2triangle.json'
+    return 'YJ_12_bars_point2triangle.json'
+    # return 'single_tet_point2triangle.json'
 
 def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     """connect pybullet env and load the bar system
@@ -89,6 +89,7 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
 
     n_attempts = 10
     success = 0
+    splan = None
     for i in range(n_attempts):
         print('#'*10)
         with WorldSaver():
@@ -98,6 +99,7 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
         if plan is None:
             cprint('#{}: plan not found'.format(i), 'red')
         else:
+            splan = plan
             success += 1
             cprint('#{}: plan found'.format(i), 'green')
 
@@ -107,21 +109,21 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
 
     # reset_simulation()
     # disconnect()
-    watch = False
-    if watch and (plan is not None):
+    watch = viewer
+    if watch and (splan is not None):
         # animate = not (args.disable or args.ee_only)
         # connect(use_gui=viewer)
         # set_camera([attr['point_xyz'] for v, attr in o_struct.vertices(True)])
         # _, robot = load_world()
 
         time_step = None if has_gui() else 0.01
-        display_trajectories(plan, time_step=time_step, #video=True,
+        display_trajectories(splan, time_step=time_step, #video=True,
                              animate=animate)
         reset_simulation()
         disconnect()
 
 @pytest.mark.stream
-def test_grasp_gen_fn(viewer, test_file_name, collision):
+def test_stream(viewer, test_file_name, collision):
     bar_struct, _ = load_structure(test_file_name, viewer)
     element_bodies = bar_struct.get_element_bodies()
     element_from_index = bar_struct.get_element_from_index()
@@ -148,16 +150,16 @@ def test_grasp_gen_fn(viewer, test_file_name, collision):
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
         reverse_grasp=True, safety_margin_length=0.005)
-    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, max_attempts=n_attempts, collision=collision)
+    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=True) #max_attempts=n_attempts,
 
     # body_pose = element_from_index[chosen].goal_pose.value
     for _ in range(n_attempts):
         handles = []
+        # * sample goal pose and grasp
         # couple rotations in goal pose' symmetry and translational grasp
         grasp, = next(grasp_gen(chosen))
         world_pose, = next(goal_pose_gen_fn(chosen))
         # pregrasp_poses, = next(pregrasp_gen_fn(chosen, world_pose, printed=printed))
-        command, = next(ik_gen(chosen, world_pose, grasp, printed=printed, diagnosis=False))
 
         # visualize grasp
         p = world_pose.value
@@ -167,6 +169,9 @@ def test_grasp_gen_fn(viewer, test_file_name, collision):
         end_effector.set_pose(world_from_ee)
         handles.extend(draw_pose(world_from_ee, length=0.05))
         handles.extend(draw_pose(p, length=0.05))
+
+        # * sample pick trajectory
+        command, = next(ik_gen(chosen, printed=printed, diagnosis=False))
 
         if not command:
             print('no command found')

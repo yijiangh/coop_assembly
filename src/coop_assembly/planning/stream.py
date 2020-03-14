@@ -1,8 +1,11 @@
 import numpy as np
 import random
 import math
+import time
+from termcolor import cprint
 
 from collections import namedtuple
+from itertools import islice
 
 # from extrusion.utils import get_disabled_collisions, get_custom_limits, MotionTrajectory
 
@@ -13,7 +16,7 @@ from pybullet_planning import link_from_name, set_pose, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, has_gui, \
     disconnect, unit_pose, Point, get_distance, sample_tool_ik, joints_from_names, interval_generator, get_floating_body_collision_fn, \
-    interpolate_poses, create_attachment, plan_cartesian_motion
+    interpolate_poses, create_attachment, plan_cartesian_motion, INF
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
 from .utils import wait_if_gui, Command
@@ -23,6 +26,7 @@ from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 ENABLE_SELF_COLLISION = False
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 10
+GRASP_MAX_ATTEMPTS = 10
 
 # pregrasp delta sample
 EPSILON = 0.01
@@ -141,24 +145,10 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
 # rotational goal pose x grasp sliding
 # the approach pose is independent of grasp and symmetry, can be generated independently
 
-def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True, max_attempts=IK_MAX_ATTEMPTS, allow_failure=True, verbose=False, **kwargs):
-    """return the ik generating function when placing
+def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True,
+    max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS,
+    allow_failure=False, verbose=False, **kwargs):
 
-    Parameters
-    ----------
-    end_effector : EndEffector
-        [description]
-    element_from_index : [type]
-        [description]
-    obstacle_from_name : [type]
-        [description]
-    max_attempts : int, optional
-        [description], by default 25
-
-    Returns
-    -------
-    function handle
-    """
     robot = end_effector.robot
     ee_from_tool = invert(end_effector.tool_from_root)
     # ik_joints = get_movable_joints(robot)
@@ -167,34 +157,18 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
     if IK_MODULE:
         assert IK_MODULE.get_dof() == len(ik_joints)
         # free_dof safe_guard?
+    else:
+        # joint conf sample fn, used when ikfast is not used
+        sample_fn = get_sample_fn(robot, ik_joints)
     tool_link = link_from_name(robot, TOOL_LINK_NAME)
     disabled_collisions = get_disabled_collisions(robot)
-    # joint conf sample fn, used when ikfast is not used
-    sample_fn = get_sample_fn(robot, ik_joints)
+
+    goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
+    grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
     pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=collision) # max_attempts=max_attempts,
 
-    def gen_fn(index, pose, grasp, printed=[], diagnosis=False):
-        """generator function for pick approach-attach trajectory
-
-        Parameters
-        ----------
-        index : int
-            index of the element
-        pose : WorldPose
-            world_from_object pose, can wire in a rotational sampler outside if rotational symmetry exists
-        grasp : Grasp
-            grasp instance
-        printed : list of int
-            assembled element's indices
-
-        Yields
-        -------
-        MotionTrajectory
-        """
+    def gen_fn(index, printed=[], diagnosis=False):
         body = element_from_index[index].body
-        set_pose(body, pose.value)
-
-        # element_obstacles = {element_from_index[e].body for e in list(printed)}
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
         if not collision:
@@ -206,64 +180,73 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
                                         custom_limits=get_custom_limits(robot),
                                         max_distance=MAX_DISTANCE)
 
-        for _ in range(max_attempts):
-            pregrasp_poses, = next(pregrasp_gen_fn(index, pose, printed))
-            if not pregrasp_poses:
-                if verbose : print('pregrasp failure.')
-                continue
+        for attempt, (world_pose_t, grasp_t) in enumerate(zip(islice(goal_pose_gen_fn(index), max_grasp), islice(grasp_gen(index), max_grasp))):
+            world_pose = world_pose_t[0]
+            grasp = grasp_t[0]
+            for _ in range(max_attempts):
+                pregrasp_poses, = next(pregrasp_gen_fn(index, world_pose, printed))
+                if not pregrasp_poses:
+                    if verbose : print('pregrasp failure.')
+                    continue
 
-            # TODO: grasp should be sampled here
-            pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
-            attach_pose = pre_attach_poses[-1]
-            approach_pose = pre_attach_poses[0]
+                # TODO: grasp should be sampled here
+                pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
+                attach_pose = pre_attach_poses[-1]
+                approach_pose = pre_attach_poses[0]
 
-            if IK_MODULE:
-                attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
+                if IK_MODULE:
+                    attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
+                else:
+                    set_joint_positions(robot, ik_joints, sample_fn())  # Random seed
+                    attach_conf = inverse_kinematics(robot, tool_link, attach_pose)
+
+                if (attach_conf is None):
+                    if verbose : print('attach ik failure.')
+                    continue
+                if collision_fn(attach_conf, diagnosis):
+                    if verbose : print('attach collision failure.')
+                    continue
+
+                set_joint_positions(robot, ik_joints, attach_conf)
+                set_pose(body, pregrasp_poses[-1])
+                attachment = create_attachment(robot, tool_link, body)
+
+                approach_conf = inverse_kinematics(robot, tool_link, approach_pose)
+                if (approach_conf is None):
+                    if verbose : print('approach ik failure.')
+                    continue
+                if collision_fn(approach_conf, diagnosis):
+                    if verbose : print('approach collision failure.')
+                    continue
+
+                set_joint_positions(robot, ik_joints, approach_conf)
+
+                # path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
+                #                                 obstacles=obstacles,
+                #                                 self_collisions=ENABLE_SELF_COLLISION,
+                #                                 disabled_collisions=disabled_collisions,
+                #                                 attachments=[])
+                # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
+                # TODO: ladder graph-based Cartesian planning
+                path = [approach_conf, attach_conf]
+
+                if path is None: # TODO: retreat, can just reverse
+                    if verbose : print('direct motion failure.')
+                    continue
+
+                traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
+                if verbose:
+                    cprint('E#{} | Attempts: {}'.format(index, attempt), 'green')
+                yield Command([traj]),
+                break
             else:
-                set_joint_positions(robot, ik_joints, sample_fn())  # Random seed
-                attach_conf = inverse_kinematics(robot, tool_link, attach_pose)
-
-            if (attach_conf is None):
-                if verbose : print('attach ik failure.')
-                continue
-            if collision_fn(attach_conf, diagnosis):
-                if verbose : print('attach collision failure.')
-                continue
-
-            set_joint_positions(robot, ik_joints, attach_conf)
-            set_pose(body, pregrasp_poses[-1])
-            attachment = create_attachment(robot, tool_link, body)
-
-            approach_conf = inverse_kinematics(robot, tool_link, approach_pose)
-            if (approach_conf is None):
-                if verbose : print('approach ik failure.')
-                continue
-            if collision_fn(approach_conf, diagnosis):
-                if verbose : print('approach collision failure.')
-                continue
-
-            set_joint_positions(robot, ik_joints, approach_conf)
-
-            # path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
-            #                                 obstacles=obstacles,
-            #                                 self_collisions=ENABLE_SELF_COLLISION,
-            #                                 disabled_collisions=disabled_collisions,
-            #                                 attachments=[])
-            # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
-            # TODO: ladder graph-based Cartesian planning
-            path = [approach_conf, attach_conf]
-
-            if path is None: # TODO: retreat, can just reverse
-                if verbose : print('direct motion failure.')
-                continue
-
-            traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
-            yield Command([traj]),
-            break
+                # this will run if no break is called, prevent a StopIteraton error
+                # https://docs.python.org/3/tutorial/controlflow.html#break-and-continue-statements-and-else-clauses-on-loops
+                if allow_failure:
+                    yield None,
         else:
-            # this will run if no break is called, prevent a StopIteraton error
-            # https://docs.python.org/3/tutorial/controlflow.html#break-and-continue-statements-and-else-clauses-on-loops
-            if allow_failure:
-                yield None,
-        return
+            if verbose:
+                cprint('E#{} | Attempts: {} | Max attempts exceeded!'.format(index, max_grasp), 'red')
+            yield None,
+            # return
     return gen_fn

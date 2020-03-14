@@ -37,3 +37,6 @@ def animate(request):
 @pytest.fixture
 def revisit(request):
     return request.config.getoption("--revisit")
+
+#TODO: test a main function with argparse
+# https://stackoverflow.com/questions/18160078/how-do-you-write-tests-for-the-argparse-portion-of-a-python-module
