@@ -20,12 +20,20 @@ from coop_assembly.planning import get_element_neighbors, get_connector_from_ele
 from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
-from coop_assembly.planning.motion import step_trajectory, display_trajectories
+from coop_assembly.planning.motion import display_trajectories
 
 @pytest.fixture
 def test_file_name():
-    return 'YJ_12_bars_point2triangle.json'
-    # return 'single_tet_point2triangle.json'
+    # return 'YJ_12_bars_point2triangle.json'
+    return 'single_tet_point2triangle.json'
+
+@pytest.fixture
+def test_file_dict():
+    fd = {
+        '12_bars' : 'YJ_12_bars_point2triangle.json',
+        'single_tet' : 'single_tet_point2triangle.json',
+    }
+    return fd
 
 def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     """connect pybullet env and load the bar system
@@ -83,8 +91,8 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
         remove_handles(handles)
 
 @pytest.mark.regression
-def test_regression(viewer, test_file_name, collision, motion, stiffness, animate, revisit):
-    bar_struct, o_struct = load_structure(test_file_name, viewer)
+def test_regression(viewer, test_file_dict, file_spec, collision, motion, stiffness, animate, revisit):
+    bar_struct, o_struct = load_structure(test_file_dict[file_spec], viewer)
     fixed_obstacles, robot = load_world()
 
     n_attempts = 10
@@ -94,7 +102,7 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
         print('#'*10)
         with WorldSaver():
             plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness,
-                revisit=revisit, verbose=False if n_attempts>1 else True)
+                revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False)
             print(data)
         if plan is None:
             cprint('#{}: plan not found'.format(i), 'red')
@@ -104,6 +112,7 @@ def test_regression(viewer, test_file_name, collision, motion, stiffness, animat
             cprint('#{}: plan found'.format(i), 'green')
 
     print('#'*10)
+    print('revisit: {}'.format(revisit))
     print('collision: {}'.format(collision))
     print('{} : {} / {}'.format(test_file_name, success, n_attempts))
 
@@ -187,7 +196,6 @@ def test_stream(viewer, test_file_name, collision):
             print('command found!')
             attach_traj = command.trajectories[0]
             time_step = None if has_gui() else 0.1
-            # step_trajectory(attach_traj, attach_traj.attachments, time_step)
             display_trajectories([attach_traj], time_step=time_step, #video=True,
                                  animate=True)
             print('*'*10)

@@ -1,45 +1,77 @@
 import time
 import numpy as np
+from termcolor import cprint
+
 from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     multiply, invert, inverse_kinematics, plan_direct_joint_motion, Attachment, set_joint_positions, plan_joint_motion, \
     get_configuration, wait_for_user, point_from_pose, HideOutput, load_pybullet, draw_pose, unit_quat, create_obj, \
     add_body_name, get_pose, pose_from_tform, connect, WorldSaver, get_sample_fn, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
-    add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color
+    add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color, \
+    joints_from_names, INF
+
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import wait_if_gui
+from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS
+from .stream import ENABLE_SELF_COLLISION, get_element_body_in_goal_pose
 
 ##################################################
 
-def step_trajectory(trajectory, attachments={}, time_step=np.inf):
-    for _ in trajectory.iterate():
-        for attachment in attachments:
-            attachment.assign()
-        if time_step == np.inf:
-            wait_for_user()
-        else:
-            wait_for_duration(time_step)
+def compute_motion(robot, fixed_obstacles, element_from_index,
+                   printed_elements, start_conf, end_conf,
+                   collisions=True, max_time=INF, smooth=100):
+    # TODO: can also just plan to initial conf and then shortcut
+    joints = joints_from_names(robot, IK_JOINT_NAMES)
+    assert len(joints) == len(end_conf)
+    weights = JOINT_WEIGHTS
+    resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
+    disabled_collisions = get_disabled_collisions(robot)
+    custom_limits = {}
 
-def step_plan(plan, **kwargs):
-    wait_for_user()
-    attachments = {}
-    for action, args in plan:
-        trajectory = args[-1]
-        if action == 'move':
-            step_trajectory(trajectory, attachments, **kwargs)
-        elif action == 'pick':
-            attachment = trajectory.attachments.pop()
-            step_trajectory(trajectory, attachments, **kwargs)
-            attachments[attachment.child] = attachment
-            step_trajectory(trajectory.reverse(), attachments, **kwargs)
-        elif action == 'place':
-            attachment = trajectory.attachments.pop()
-            step_trajectory(trajectory, attachments, **kwargs)
-            del attachments[attachment.child]
-            step_trajectory(trajectory.reverse(), attachments, **kwargs)
-        else:
-            raise NotImplementedError(action)
-    wait_for_user()
+    element_obstacles = get_element_body_in_goal_pose(element_from_index, printed_elements)
+    obstacles = set(fixed_obstacles) | element_obstacles
+    hulls = {}
+
+    if not collisions:
+        hulls = {}
+        obstacles = []
+
+    # sample_fn = get_sample_fn(robot, joints, custom_limits=custom_limits)
+    # distance_fn = get_distance_fn(robot, joints, weights=weights)
+    # extend_fn = get_extend_fn(robot, joints, resolutions=resolutions)
+    # #collision_fn = get_collision_fn(robot, joints, obstacles, attachments={}, self_collisions=SELF_COLLISIONS,
+    # #                                disabled_collisions=disabled_collisions, custom_limits=custom_limits, max_distance=0.)
+    # collision_fn = get_element_collision_fn(robot, obstacles)
+
+    # def element_collision_fn(q):
+    #     if collision_fn(q):
+    #         return True
+    #     #for body in get_bodies_in_region(get_aabb(robot)): # Perform per link?
+    #     #    if (element_from_body.get(body, None) in printed_elements) and pairwise_collision(robot, body):
+    #     #        return True
+    #     for hull, bodies in hulls.items():
+    #         if pairwise_collision(robot, hull) and any(pairwise_collision(robot, body) for body in bodies):
+    #             return True
+    #     return False
+
+    # path = None
+    # if check_initial_end(start_conf, end_conf, collision_fn):
+    #     path = birrt(start_conf, end_conf, distance_fn, sample_fn, extend_fn, element_collision_fn,
+    #                  restarts=50, iterations=100, smooth=smooth, max_time=max_time)
+
+    set_joint_positions(robot, joints, start_conf)
+    path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles,
+                             self_collisions=ENABLE_SELF_COLLISION, disabled_collisions=disabled_collisions,
+                             weights=weights, resolutions=resolutions,
+                             restarts=50, iterations=100, smooth=100)
+
+    # for hull in hulls:
+    #     remove_body(hull)
+    if path is None:
+        cprint('Failed to find a motion plan!', 'red')
+        return None
+
+    return MotionTrajectory(robot, joints, path)
 
 ###################################
 
@@ -118,35 +150,3 @@ def display_trajectories(trajectories, animate=True, time_step=0.02, video=False
     # if video_saver is not None:
     #     video_saver.restore()
     wait_if_gui()
-
-##################################################
-
-def simulate_trajectory(trajectory, time_step=0.0):
-    start_time = time.time()
-    for sim_time in simulate_controller(trajectory_controller(trajectory.robot, trajectory.joints, trajectory.path)):
-        if time_step:
-            time.sleep(time_step)
-        #print(sim_time, elapsed_time(start_time))
-
-def simulate_plan(plan, time_step=0.0, real_time=False): #time_step=np.inf
-    wait_for_user()
-    enable_gravity()
-    if real_time:
-        enable_real_time()
-    for action, args in plan:
-        trajectory = args[-1]
-        if action == 'move':
-            simulate_trajectory(trajectory, time_step)
-        elif action == 'pick':
-            attachment = trajectory.attachments.pop()
-            simulate_trajectory(trajectory, time_step)
-            add_fixed_constraint(attachment.child, attachment.parent, attachment.parent_link)
-            simulate_trajectory(trajectory.reverse(), time_step)
-        elif action == 'place':
-            ttachment = trajectory.attachments.pop()
-            simulate_trajectory(trajectory, time_step)
-            remove_fixed_constraint(attachment.child, attachment.parent, attachment.parent_link)
-            simulate_trajectory(trajectory.reverse(), time_step)
-        else:
-            raise NotImplementedError(action)
-    wait_for_user()

@@ -33,13 +33,14 @@ CUSTOM_LIMITS = {
 }
 
 # joint resolution used in transit motions
-RESOLUTION = 0.1
+RESOLUTION = 0.01
 
-INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
+# INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
+INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
 
 # TODO: compute joint weight as np.reciprocal(joint velocity bound) from URDF
-# JOINT_WEIGHTS = np.array([0.3078557810844393, 0.443600199302506, 0.23544367607317915,
-#                           0.03637161028426032, 0.04644626184081511, 0.015054267683041092])
+JOINT_WEIGHTS = np.reciprocal([6.28318530718, 5.23598775598, 6.28318530718,
+                               6.6497044501, 6.77187749774, 10.7337748998]) # sec / radian
 
 #########################################
 
