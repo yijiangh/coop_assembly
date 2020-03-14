@@ -11,7 +11,7 @@ from pybullet_planning import INF, get_movable_joints, get_joint_positions, rand
 from coop_assembly.help_functions import METER_SCALE
 from coop_assembly.planning import draw_element, check_connected
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
-from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
+from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_pick_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands, Command
 from .motion import compute_motion
 from .robot_setup import INITIAL_CONF
@@ -70,7 +70,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
 
-    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=verbose) #max_attempts=n_attempts
+    ik_gen = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=verbose) #max_attempts=n_attempts
 
     final_conf = initial_conf # TODO: allow choice of config
     final_printed = all_elements

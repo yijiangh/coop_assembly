@@ -36,6 +36,8 @@ ANGLE = np.pi/6
 POS_STEP_SIZE = 0.005
 ORI_STEP_SIZE = np.pi/18
 
+RETREAT_DISTANCE = 0.025
+
 # collision checking safe margin
 MAX_DISTANCE = 0.0
 
@@ -145,13 +147,12 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
 # rotational goal pose x grasp sliding
 # the approach pose is independent of grasp and symmetry, can be generated independently
 
-def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True,
+def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True,
     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS,
     allow_failure=False, verbose=False, **kwargs):
 
     robot = end_effector.robot
     ee_from_tool = invert(end_effector.tool_from_root)
-    # ik_joints = get_movable_joints(robot)
     ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
     robot_base_link = link_from_name(robot, BASE_LINK_NAME)
     if IK_MODULE:
@@ -166,6 +167,9 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
     pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=collision) # max_attempts=max_attempts,
+
+    retreat_distance = RETREAT_DISTANCE
+    retreat_vector = retreat_distance*np.array([0, 0, -1])
 
     def gen_fn(index, printed=[], diagnosis=False):
         body = element_from_index[index].body
@@ -192,7 +196,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
                 # TODO: grasp should be sampled here
                 pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
                 attach_pose = pre_attach_poses[-1]
-                approach_pose = pre_attach_poses[0]
+                retreat_pose = pre_attach_poses[0]
 
                 if IK_MODULE:
                     attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
@@ -211,7 +215,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
                 set_pose(body, pregrasp_poses[-1])
                 attachment = create_attachment(robot, tool_link, body)
 
-                approach_conf = inverse_kinematics(robot, tool_link, approach_pose)
+                approach_conf = inverse_kinematics(robot, tool_link, retreat_pose)
                 if (approach_conf is None):
                     if verbose : print('approach ik failure.')
                     continue
@@ -219,8 +223,7 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
                     if verbose : print('approach collision failure.')
                     continue
 
-                set_joint_positions(robot, ik_joints, approach_conf)
-
+                # set_joint_positions(robot, ik_joints, approach_conf)
                 # path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
                 #                                 obstacles=obstacles,
                 #                                 self_collisions=ENABLE_SELF_COLLISION,
@@ -229,15 +232,32 @@ def get_ik_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=T
                 # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
                 # TODO: ladder graph-based Cartesian planning
                 path = [approach_conf, attach_conf]
-
-                if path is None: # TODO: retreat, can just reverse
-                    if verbose : print('direct motion failure.')
+                if path is None:
+                    if verbose : print('direct approach motion failure.')
                     continue
+                approach_traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
 
-                traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
+                # * retreat motion
+                # // retreat_traj = approach_traj.reverse()
+                # // retreat_traj.attachments = []
+                set_joint_positions(robot, ik_joints, attach_conf)
+                retreat_pose = multiply(attach_pose, (retreat_vector, unit_quat()))
+                retreat_conf = inverse_kinematics(robot, tool_link, retreat_pose)
+                if (retreat_conf is None):
+                    if verbose : print('retreat ik failure.')
+                    continue
+                if collision_fn(retreat_conf, diagnosis):
+                    if verbose : print('retreat collision failure.')
+                    continue
+                path = [attach_conf, retreat_conf][1:]
+                if path is None:
+                    if verbose : print('direct retreat motion failure.')
+                    continue
+                retreat_traj = MotionTrajectory(robot, ik_joints, path, attachments=[])
+
                 if verbose:
                     cprint('E#{} | Attempts: {}'.format(index, attempt), 'green')
-                yield Command([traj]),
+                yield Command([approach_traj, retreat_traj]),
                 break
             else:
                 # this will run if no break is called, prevent a StopIteraton error

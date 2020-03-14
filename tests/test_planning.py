@@ -17,10 +17,11 @@ from coop_assembly.planning import load_world, set_camera, wait_if_gui
 from coop_assembly.planning import color_structure, draw_ordered, draw_element, label_elements, label_connector
 from coop_assembly.planning import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
 
-from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_ik_gen_fn, get_pregrasp_gen_fn
+from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_pick_gen_fn, get_pregrasp_gen_fn
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
 from coop_assembly.planning.motion import display_trajectories
+from coop_assembly.planning.utils import flatten_commands
 
 @pytest.fixture
 def test_file_name():
@@ -101,7 +102,7 @@ def test_regression(viewer, test_file_dict, file_spec, collision, motion, stiffn
     for i in range(n_attempts):
         print('#'*10)
         with WorldSaver():
-            plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motion=motion, stiffness=stiffness,
+            plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motions=motion, stiffness=stiffness,
                 revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False)
             print(data)
         if plan is None:
@@ -113,6 +114,7 @@ def test_regression(viewer, test_file_dict, file_spec, collision, motion, stiffn
 
     print('#'*10)
     print('revisit: {}'.format(revisit))
+    print('motion: {}'.format(motion))
     print('collision: {}'.format(collision))
     print('{} : {} / {}'.format(test_file_name, success, n_attempts))
 
@@ -159,7 +161,7 @@ def test_stream(viewer, test_file_name, collision):
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
         reverse_grasp=True, safety_margin_length=0.005)
-    ik_gen = get_ik_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=True) #max_attempts=n_attempts,
+    pick_gen = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=True) #max_attempts=n_attempts,
 
     # body_pose = element_from_index[chosen].goal_pose.value
     for _ in range(n_attempts):
@@ -180,7 +182,7 @@ def test_stream(viewer, test_file_name, collision):
         handles.extend(draw_pose(p, length=0.05))
 
         # * sample pick trajectory
-        command, = next(ik_gen(chosen, printed=printed, diagnosis=False))
+        command, = next(pick_gen(chosen, printed=printed, diagnosis=False))
 
         if not command:
             print('no command found')
@@ -194,9 +196,9 @@ def test_stream(viewer, test_file_name, collision):
             print('-'*10)
         else:
             print('command found!')
-            attach_traj = command.trajectories[0]
+            trajs = flatten_commands([command])
             time_step = None if has_gui() else 0.1
-            display_trajectories([attach_traj], time_step=time_step, #video=True,
+            display_trajectories(trajs, time_step=time_step, #video=True,
                                  animate=True)
             print('*'*10)
 
