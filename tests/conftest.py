@@ -10,6 +10,7 @@ def pytest_addoption(parser):
     parser.addoption('--animate', action='store_false', help='animate trajectories')
     parser.addoption('--revisit', action='store_true')
     parser.addoption('--fn', default='single_tet')
+    parser.addoption('--n_trails', default=10)
 
 @pytest.fixture
 def viewer(request):
@@ -42,6 +43,10 @@ def revisit(request):
 @pytest.fixture
 def file_spec(request):
     return request.config.getoption("--fn")
+
+@pytest.fixture
+def n_trails(request):
+    return request.config.getoption("--n_trails")
 
 #TODO: test a main function with argparse
 # https://stackoverflow.com/questions/18160078/how-do-you-write-tests-for-the-argparse-portion-of-a-python-module

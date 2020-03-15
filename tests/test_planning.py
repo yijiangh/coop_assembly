@@ -38,20 +38,6 @@ def test_file_dict():
 
 def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     """connect pybullet env and load the bar system
-
-    Parameters
-    ----------
-    test_file_name : [type]
-        [description]
-    viewer : [type]
-        [description]
-    color : tuple, optional
-        [description], by default (1,0,0,0)
-
-    Returns
-    -------
-    [type]
-        [description]
     """
     connect(use_gui=viewer)
     with LockRenderer():
@@ -92,11 +78,11 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
         remove_handles(handles)
 
 @pytest.mark.regression
-def test_regression(viewer, test_file_dict, file_spec, collision, motion, stiffness, animate, revisit):
+def test_regression(viewer, test_file_dict, file_spec, collision, motion, stiffness, animate, revisit, n_trails):
     bar_struct, o_struct = load_structure(test_file_dict[file_spec], viewer)
     fixed_obstacles, robot = load_world()
 
-    n_attempts = 10
+    n_attempts = int(n_trails)
     success = 0
     splan = None
     for i in range(n_attempts):
@@ -116,7 +102,7 @@ def test_regression(viewer, test_file_dict, file_spec, collision, motion, stiffn
     print('revisit: {}'.format(revisit))
     print('motion: {}'.format(motion))
     print('collision: {}'.format(collision))
-    print('{} : {} / {}'.format(test_file_name, success, n_attempts))
+    print('{} : {} / {}'.format(test_file_dict[file_spec], success, n_attempts))
 
     # reset_simulation()
     # disconnect()

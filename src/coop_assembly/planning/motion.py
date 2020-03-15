@@ -8,17 +8,17 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     add_body_name, get_pose, pose_from_tform, connect, WorldSaver, get_sample_fn, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color, \
-    joints_from_names, INF
+    joints_from_names, INF, wait_for_user, check_initial_end, BASE_LINK
 
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import wait_if_gui
-from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS
+from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
 from .stream import ENABLE_SELF_COLLISION, get_element_body_in_goal_pose
 
 ##################################################
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
-                   printed_elements, start_conf, end_conf,
+                   printed_elements, start_conf, end_conf, attachments=[],
                    collisions=True, max_time=INF, smooth=100):
     # TODO: can also just plan to initial conf and then shortcut
     joints = joints_from_names(robot, IK_JOINT_NAMES)
@@ -39,8 +39,8 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
     # sample_fn = get_sample_fn(robot, joints, custom_limits=custom_limits)
     # distance_fn = get_distance_fn(robot, joints, weights=weights)
     # extend_fn = get_extend_fn(robot, joints, resolutions=resolutions)
-    # #collision_fn = get_collision_fn(robot, joints, obstacles, attachments={}, self_collisions=SELF_COLLISIONS,
-    # #                                disabled_collisions=disabled_collisions, custom_limits=custom_limits, max_distance=0.)
+    # collision_fn = get_collision_fn(robot, joints, obstacles, attachments=attachments, self_collisions=ENABLE_SELF_COLLISION,
+    #                                 disabled_collisions=disabled_collisions, custom_limits=custom_limits, max_distance=0.)
     # collision_fn = get_element_collision_fn(robot, obstacles)
 
     # def element_collision_fn(q):
@@ -55,13 +55,39 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
     #     return False
 
     # path = None
+
     # if check_initial_end(start_conf, end_conf, collision_fn):
     #     path = birrt(start_conf, end_conf, distance_fn, sample_fn, extend_fn, element_collision_fn,
     #                  restarts=50, iterations=100, smooth=smooth, max_time=max_time)
 
     set_joint_positions(robot, joints, start_conf)
-    path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles,
+    extra_disabled_collisions = set()
+    for attach in attachments:
+        attach.assign()
+        # prune the link that's adjacent to the attach link to disable end effector / bar collision checks
+        extra_disabled_collisions.add(((robot, link_from_name(robot, EE_LINK_NAME)), (attach.child, BASE_LINK)))
+
+    # from pybullet_planning import get_link_name, get_name
+    # for ig in list(extra_disabled_collisions):
+    #     b1 = ig[0][0]
+    #     b2 = ig[1][0]
+    #     l1 = ig[0][1]
+    #     l2 = ig[1][1]
+    #     b1_name = get_name(b1)
+    #     b2_name = get_name(b2)
+    #     l1_name = get_link_name(b1, l1)
+    #     l2_name = get_link_name(b2, l2)
+    #     print('disabled: (Body #{0}, Link #{1}) - (Body #{2} Link #{3})'.format(
+    #         b1_name, l1_name, b2_name, l2_name))
+
+    # collision_fn = get_collision_fn(robot, joints, obstacles, attachments=attachments, self_collisions=ENABLE_SELF_COLLISION,
+    #                                 disabled_collisions=disabled_collisions, extra_disabled_collisions=extra_disabled_collisions,
+    #                                 custom_limits=custom_limits, max_distance=0.)
+    # print('Initial conf collision-free: ', check_initial_end(start_conf, end_conf, collision_fn, diagnosis=True))
+
+    path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=attachments,
                              self_collisions=ENABLE_SELF_COLLISION, disabled_collisions=disabled_collisions,
+                             extra_disabled_collisions=extra_disabled_collisions,
                              weights=weights, resolutions=resolutions,
                              restarts=50, iterations=100, smooth=100)
 
@@ -71,7 +97,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         cprint('Failed to find a motion plan!', 'red')
         return None
 
-    return MotionTrajectory(robot, joints, path)
+    return MotionTrajectory(robot, joints, path, attachments=attachments)
 
 ###################################
 

@@ -69,34 +69,25 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
 
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
+    pick_gen_fn = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=verbose) #max_attempts=n_attempts
 
-    ik_gen = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=verbose) #max_attempts=n_attempts
-
-    final_conf = initial_conf # TODO: allow choice of config
+    # TODO: allow choice of config
+    final_conf = initial_conf
     final_printed = all_elements
     queue = []
     visited = {final_printed: Node(None, None)}
 
-    # outgoing_from_element = outgoing_from_edges(partial_orders)
-    def add_successors(printed, conf):
-        # only_ground = printed <= ground_elements
+    def add_successors(printed, attachments, conf):
         num_remaining = len(printed) - 1
         # assert 0 <= num_remaining
         for element in randomize(printed):
             visits = 0
             priority = (num_remaining, random.random())
-            heapq.heappush(queue, (visits, priority, printed, element, conf))
-            # if not (printed): # and implies(is_ground(element, ground_nodes), only_ground):
-            #     for directed in get_directions(element):
-            #         visits = 0
-            #         # bias = heuristic_fn(printed, directed, conf)
-            #         # priority = (num_remaining, bias, random.random())
-            #         priority = (num_remaining, random.random())
-            #         heapq.heappush(queue, (visits, priority, printed, directed, conf))
+            heapq.heappush(queue, (visits, priority, printed, element, attachments, conf))
 
     if check_connected(connectors, grounded_elements, all_elements):
     # and (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):
-        add_successors(final_printed, final_conf)
+        add_successors(final_printed, [], final_conf)
 
     # if has_gui():
     #     sequence = sorted(final_printed, key=lambda e: heuristic_fn(final_printed, e, conf=None), reverse=True)
@@ -108,7 +99,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     min_remaining = len(all_elements)
     num_evaluated = max_backtrack = extrusion_failures = transit_failures = stiffness_failures = 0
     while queue and (elapsed_time(start_time) < max_time): #  and check_memory(): #max_memory):
-        visits, priority, printed, element, current_conf = heapq.heappop(queue)
+        visits, priority, printed, element, current_attachments, current_conf = heapq.heappop(queue)
         num_remaining = len(printed)
         backtrack = num_remaining - min_remaining
         max_backtrack = max(max_backtrack, backtrack)
@@ -141,30 +132,34 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
         if revisit and visits < MAX_REVISIT:
             heapq.heappush(queue, (visits + 1, priority, printed, element, current_conf))
 
-        command, = next(ik_gen(element, printed=next_printed))
+        command, = next(pick_gen_fn(element, printed=next_printed))
         if command is None:
             if verbose:
                 cprint('<'*5, 'red')
                 cprint('Pick planning failure.', 'red')
             extrusion_failures += 1
             continue
+
+        # transit_start_conf = command.end_conf
+        # TODO: use pick conf
+        transit_start_conf = initial_conf
         if motions and not lazy:
+            # transit to the start of last pick conf
             motion_traj = compute_motion(robot, obstacles, element_from_index, printed,
-                                         command.end_conf, current_conf, collisions=collision,
+                                         transit_start_conf, current_conf,
+                                         collisions=collision, attachments=current_attachments,
                                          max_time=max_time - elapsed_time(start_time))
             if motion_traj is None:
                 transit_failures += 1
+                if verbose:
+                    cprint('%'*5, 'red')
+                    cprint('Transit planning failure.', 'yellow')
                 continue
             command.trajectories.append(motion_traj)
 
         if num_remaining < min_remaining:
             min_remaining = num_remaining
             if verbose : cprint('New best: {}'.format(num_remaining), 'green')
-            #if has_gui():
-            #    # TODO: change link transparency
-            #    remove_all_debug()
-            #    draw_model(next_printed, node_points, ground_nodes)
-            #    wait_for_duration(0.5)
 
         visited[next_printed] = Node(command, printed) # TODO: be careful when multiple trajs
         if not next_printed:
@@ -172,11 +167,11 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             commands = retrace_commands(visited, next_printed, reverse=True)
             plan = flatten_commands(commands)
 
-            # * return to start config transit
+            # * start config transit
             if motions and not lazy:
-                print('initial path: ', initial_conf)
                 motion_traj = compute_motion(robot, obstacles, element_bodies, frozenset(),
-                                             initial_conf, plan[0].start_conf, collisions=collision,
+                                             initial_conf, plan[0].start_conf,
+                                             collisions=collision, attachments=command.trajectories[0].attachments,
                                              max_time=max_time - elapsed_time(start_time))
                 if motion_traj is None:
                     plan = None
@@ -190,7 +185,8 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             break
             # if plan is not None:
             #     break
-        add_successors(next_printed, command.start_conf)
+
+        add_successors(next_printed, command.trajectories[0].attachments, command.start_conf)
 
     data = {
         #'memory': get_memory_in_kb(), # May need to update instead

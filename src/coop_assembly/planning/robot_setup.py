@@ -86,7 +86,7 @@ def get_picknplace_end_effector_urdf():
 #################################
 
 # TOOL_LINK: TCP link
-# EE_LINK: attach link
+# EE_LINK: attach link for EE geometry (i.e. the flange link)
 (ROBOT_URDF, BASE_LINK_NAME, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, DISABLED_SELF_COLLISION_LINK_NAMES), \
 (WORKSPACE_URDF, WORKSPACE_ROBOT_DISABLED_LINK_NAMES) = get_picknplace_robot_data()
 
