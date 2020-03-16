@@ -87,7 +87,7 @@ def test_regression(viewer, test_file_dict, file_spec, collision, motion, stiffn
     splan = None
     for i in range(n_attempts):
         print('#'*10)
-        with WorldSaver():
+        with LockRenderer(True):
             plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motions=motion, stiffness=stiffness,
                 revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False)
             print(data)

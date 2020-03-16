@@ -1,6 +1,7 @@
 import time
 import numpy as np
 from termcolor import cprint
+from itertools import product
 
 from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     multiply, invert, inverse_kinematics, plan_direct_joint_motion, Attachment, set_joint_positions, plan_joint_motion, \
@@ -8,12 +9,13 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     add_body_name, get_pose, pose_from_tform, connect, WorldSaver, get_sample_fn, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color, \
-    joints_from_names, INF, wait_for_user, check_initial_end, BASE_LINK
+    joints_from_names, INF, wait_for_user, check_initial_end, BASE_LINK, get_aabb, aabb_union, aabb_overlap, BodySaver, draw_aabb, \
+    step_simulation
 
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import wait_if_gui
 from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
-from .stream import ENABLE_SELF_COLLISION, get_element_body_in_goal_pose
+from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose
 
 ##################################################
 
@@ -86,10 +88,29 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
     # print('Initial conf collision-free: ', check_initial_end(start_conf, end_conf, collision_fn, diagnosis=True))
 
     path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=attachments,
-                             self_collisions=ENABLE_SELF_COLLISION, disabled_collisions=disabled_collisions,
+                             self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
                              extra_disabled_collisions=extra_disabled_collisions,
                              weights=weights, resolutions=resolutions,
-                             restarts=50, iterations=100, smooth=100)
+                             restarts=50, iterations=100, smooth=100, max_distance=0.002)
+
+    # * sweeping volume check for attachment
+    # attachment_aabbs = []
+    # obstacle_aabbs = {ob : get_aabb(ob) for ob in list(obstacles)}
+    # with BodySaver(robot):
+    #     for conf in path:
+    #         set_joint_positions(robot, joints, conf)
+    #         for attach in attachments:
+    #             attach.assign()
+    #         # a dict for each timestep in the traj
+    #         attachment_aabbs.append({attach.child : get_aabb(attach.child) for attach in attachments})
+
+    #         # for at in attachments:
+    #         #     draw_aabb(get_aabb(at.child))
+    #         # wait_if_gui()
+    # # for each attachment, union all the aabbs across all timesteps
+    # swept_attachments = {attach.child : aabb_union(at_aabbs[attach.child] for at_aabbs in attachment_aabbs) for attach in attachments}
+    # swept_overlap = [(obstacle_name, at_name) for obstacle_name, at_name in product(swept_attachments, obstacle_aabbs)
+    #                  if aabb_overlap(obstacle_aabbs[obstacle_name], swept_attachments[at_name])]
 
     # for hull in hulls:
     #     remove_body(hull)

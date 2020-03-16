@@ -69,7 +69,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
 
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
-    pick_gen_fn = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=verbose) #max_attempts=n_attempts
+    pick_gen_fn = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=False)
 
     # TODO: allow choice of config
     final_conf = initial_conf

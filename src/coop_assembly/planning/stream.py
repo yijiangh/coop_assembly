@@ -16,14 +16,15 @@ from pybullet_planning import link_from_name, set_pose, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, has_gui, \
     disconnect, unit_pose, Point, get_distance, sample_tool_ik, joints_from_names, interval_generator, get_floating_body_collision_fn, \
-    interpolate_poses, create_attachment, plan_cartesian_motion, INF, GREEN, set_color
+    interpolate_poses, create_attachment, plan_cartesian_motion, INF, GREEN, set_color, get_all_links, step_simulation, get_aabb, \
+    get_bodies_in_region, pairwise_link_collision, BASE_LINK
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
 from .utils import wait_if_gui, Command
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 
 # TODO: fix self collision
-ENABLE_SELF_COLLISION = False
+ENABLE_SELF_COLLISIONS = False
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 100
 GRASP_MAX_ATTEMPTS = 100
@@ -179,7 +180,7 @@ def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision
             obstacles = set()
         # attachment is assumed to be empty here, since pregrasp sampler guarantees that
         collision_fn = get_collision_fn(robot, ik_joints, obstacles=obstacles, attachments=[],
-                                        self_collisions=ENABLE_SELF_COLLISION,
+                                        self_collisions=ENABLE_SELF_COLLISIONS,
                                         disabled_collisions=disabled_collisions,
                                         custom_limits=get_custom_limits(robot),
                                         max_distance=MAX_DISTANCE)
