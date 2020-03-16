@@ -68,9 +68,11 @@ class Trajectory(object):
             yield conf
 
 class MotionTrajectory(Trajectory):
-    def __init__(self, robot, joints, path, attachments=[]):
+    def __init__(self, robot, joints, path, attachments=[], element=None, tag=None):
         super(MotionTrajectory, self).__init__(robot, joints, path)
         self.attachments = attachments
+        self.element = element
+        self.tag = tag
     def reverse(self):
         return self.__class__(self.robot, self.joints, self.path[::-1], self.attachments)
     def iterate(self):
@@ -81,3 +83,9 @@ class MotionTrajectory(Trajectory):
             yield conf
     def __repr__(self):
         return 'm({},{})'.format(len(self.joints), len(self.path))
+    def to_data(self):
+        data = {}
+        data['element'] = self.element
+        data['tag'] = self.tag
+        data['path'] = self.path
+        return data

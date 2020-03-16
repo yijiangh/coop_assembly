@@ -194,7 +194,6 @@ def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision
                     if verbose : print('pregrasp failure.')
                     continue
 
-                # TODO: grasp should be sampled here
                 pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
                 attach_pose = pre_attach_poses[-1]
                 retreat_pose = pre_attach_poses[0]
@@ -238,7 +237,7 @@ def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision
                 if path is None:
                     if verbose : print('direct approach motion failure.')
                     continue
-                approach_traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment])
+                approach_traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment], tag='place_approach', element=index)
 
                 # * retreat motion
                 # // retreat_traj = approach_traj.reverse()
@@ -256,7 +255,7 @@ def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision
                 if path is None:
                     if verbose : print('direct retreat motion failure.')
                     continue
-                retreat_traj = MotionTrajectory(robot, ik_joints, path, attachments=[])
+                retreat_traj = MotionTrajectory(robot, ik_joints, path, attachments=[], tag='place_retreat', element=index)
 
                 if verbose:
                     cprint('E#{} | Attempts: {}'.format(index, attempt), 'green')

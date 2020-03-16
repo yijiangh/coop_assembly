@@ -91,7 +91,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
                              self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
                              extra_disabled_collisions=extra_disabled_collisions,
                              weights=weights, resolutions=resolutions,
-                             restarts=50, iterations=100, smooth=100, max_distance=0.002)
+                             restarts=50, iterations=100, smooth=100, max_distance=0.0)
 
     # * sweeping volume check for attachment
     # attachment_aabbs = []

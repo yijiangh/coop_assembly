@@ -4,8 +4,9 @@ from collections import defaultdict, deque
 # from pddlstream.utils import get_connected_components
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize
-from coop_assembly.help_functions.shared_const import METER_SCALE
 
+from coop_assembly.data_structure.utils import MotionTrajectory
+from coop_assembly.help_functions.shared_const import METER_SCALE
 from .robot_setup import get_picknplace_robot_data, BUILT_PLATE_Z, EE_LINK_NAME, INITIAL_CONF
 
 def wait_if_gui(enable=True):
@@ -33,6 +34,16 @@ def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
     return obstacles, robot
 
 ##################################################
+
+def get_index_from_bodies(element_from_index):
+    return {element_from_index[e].body : element_from_index[e].index for e in element_from_index}
+
+##################################################
+
+def recover_sequence(plan, element_from_index):
+    if plan is None:
+        return plan
+    return [traj.element for traj in plan if isinstance(traj, MotionTrajectory) and traj.tag == 'place_approach']
 
 def flatten_commands(commands):
     if commands is None:

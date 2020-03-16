@@ -9,12 +9,11 @@ from pybullet_planning import INF, get_movable_joints, get_joint_positions, rand
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name
 
 from coop_assembly.help_functions import METER_SCALE
-from coop_assembly.planning import draw_element, check_connected
-from coop_assembly.planning import TOOL_LINK_NAME, EE_LINK_NAME
-from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_pick_gen_fn, get_pregrasp_gen_fn
-from .utils import flatten_commands, Command
+from .visualization import draw_element
+from .stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_pick_gen_fn, get_pregrasp_gen_fn
+from .utils import flatten_commands, Command, check_connected
 from .motion import compute_motion
-from .robot_setup import INITIAL_CONF
+from .robot_setup import INITIAL_CONF, TOOL_LINK_NAME, EE_LINK_NAME
 
 MAX_REVISIT = 5
 

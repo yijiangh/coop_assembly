@@ -277,6 +277,7 @@ class BarStructure(Network):
                                                 goal_supports=None)
         return element_from_index
 
+
     def get_axis_pts_from_element(self, scale=METER_SCALE):
         """[summary]
 
