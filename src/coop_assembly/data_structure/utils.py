@@ -3,7 +3,7 @@ import numpy as np
 
 from pybullet_planning import point_from_pose
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
-    create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver
+    create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, refine_path, set_pose, create_attachment
 from coop_assembly.planning.robot_setup import TOOL_LINK_NAME
 
 ##################################################
@@ -66,6 +66,8 @@ class Trajectory(object):
         for conf in self.path:
             set_joint_positions(self.robot, self.joints, conf)
             yield conf
+    def refine(self, num_steps):
+       self.path = refine_path(self.robot, self.joints, self.path, num_steps)
 
 class MotionTrajectory(Trajectory):
     def __init__(self, robot, joints, path, attachments=[], element=None, tag=None):
@@ -82,10 +84,16 @@ class MotionTrajectory(Trajectory):
                 attachment.assign()
             yield conf
     def __repr__(self):
-        return 'm({},{})'.format(len(self.joints), len(self.path))
+        return 'm({},{},E{},{})'.format(len(self.joints), len(self.path),self.element,self.tag)
     def to_data(self):
         data = {}
         data['element'] = self.element
         data['tag'] = self.tag
         data['path'] = self.path
         return data
+    @classmethod
+    def from_data(cls, data, robot, joints, attachments):
+        path = data['path']
+        element = data['element']
+        tag = data['tag']
+        return cls(robot, joints, path, attachments=attachments, element=element, tag=tag)

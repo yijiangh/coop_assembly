@@ -8,6 +8,7 @@ from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_p
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from .robot_setup import get_picknplace_robot_data, BUILT_PLATE_Z, EE_LINK_NAME, INITIAL_CONF
+from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 
 def wait_if_gui(enable=True):
     if has_gui() and enable:
@@ -26,7 +27,7 @@ def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
         set_static(robot)
         set_joint_positions(robot, joints_from_names(robot, joint_names), INITIAL_CONF)
         if use_floor:
-            floor = create_plane()
+            floor = create_plane(color=GROUND_COLOR)
             obstacles.append(floor)
             set_point(floor, Point(x=1.2, z=built_plate_z))
         else:

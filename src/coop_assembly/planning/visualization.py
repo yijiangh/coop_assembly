@@ -7,6 +7,10 @@ from coop_assembly.help_functions.shared_const import METER_SCALE
 BAR_LINE_WIDTH = 1.0
 CONNECTOR_LINE_WIDTH = 1.0
 
+GROUND_COLOR = 0.8*np.ones(3)
+BACKGROUND_COLOR = [0.9, 0.9, 1.0] # 229, 229, 255
+SHADOWS = False
+
 ###########################################
 
 def draw_element(axis_endpts, element, color=RED):

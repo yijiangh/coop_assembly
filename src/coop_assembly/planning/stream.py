@@ -148,6 +148,9 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
 # rotational goal pose x grasp sliding
 # the approach pose is independent of grasp and symmetry, can be generated independently
 
+# choosing joint resolution:
+# http://openrave.org/docs/0.6.6/openravepy/databases.linkstatistics/
+
 def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True,
     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS,
     allow_failure=False, verbose=False, **kwargs):

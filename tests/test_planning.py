@@ -6,14 +6,15 @@ from termcolor import cprint
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
-    dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN
+    dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
+    set_joint_positions, create_attachment
 
-from coop_assembly.data_structure import BarStructure, OverallStructure
+from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
-from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME
+from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES
 from coop_assembly.planning.utils import load_world, wait_if_gui
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
@@ -23,6 +24,7 @@ from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_ge
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure
+from coop_assembly.planning.validator import validate_trajectories
 
 @pytest.fixture
 def test_file_name():
@@ -48,13 +50,38 @@ def test_load_robot(viewer):
 
 @pytest.mark.check_sweep
 def test_capture_pregrasp_sweep_collision(viewer, results_dir):
-    file_name = '12_bars_solution_20-03-16_17-27-03.json'
+    # file_name = '12_bars_solution_20-03-16_17-27-03.json'
+    file_name = '12_bars_solution_20-03-17_11-58-04.json'
     with open(os.path.join(results_dir, file_name), 'r') as f:
         json_data = json.loads(f.read())
     file_spec = json_data['problem']
-    bar_struct, o_struct = load_structure(file_spec, viewer, RED)
+    bar_struct, o_struct = load_structure(file_spec, viewer)
     fixed_obstacles, robot = load_world()
-    wait_if_gui()
+    joints = joints_from_names(robot, IK_JOINT_NAMES)
+
+    element_from_index = bar_struct.get_element_from_index()
+    plan = []
+    for traj_data in json_data['plan']:
+        path = traj_data['path']
+        element = traj_data['element']
+        tag = traj_data['tag']
+        attachments = []
+        if element is not None and tag=='place_approach':
+            tool_link = link_from_name(robot, TOOL_LINK_NAME)
+            # create attachment
+            body = element_from_index[element].body
+            set_pose(body, element_from_index[element].goal_pose.value)
+            set_joint_positions(robot, joints, path[-1])
+            attachments = [create_attachment(robot, tool_link, body)]
+            # transit 2 place
+            plan[-1].attachments = attachments
+        plan.append(MotionTrajectory.from_data(traj_data, robot, joints, attachments))
+
+    valid = validate_trajectories(element_from_index, fixed_obstacles, plan, allow_failure=has_gui())
+    assert not valid
+
+    reset_simulation()
+    disconnect()
 
 @pytest.mark.regression
 def test_regression(viewer, file_spec, collision, motion, stiffness, animate, revisit, n_trails, write):
@@ -90,7 +117,8 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, animate, re
             plan_path = '{}_solution_{}.json'.format(file_spec, get_date())
             save_path = os.path.join(here, 'results', plan_path)
             with open(save_path, 'w') as f:
-               json.dump({'problem' : file_spec, 'plan' : [p.to_data() for p in splan]}, f)
+               json.dump({'problem' : file_spec,
+                          'plan' : [p.to_data() for p in splan]}, f)
             cprint('Result saved to: {}'.format(save_path), 'green')
         if watch:
             time_step = None if has_gui() else 0.01

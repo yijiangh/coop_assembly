@@ -4,6 +4,7 @@ from .visualization import set_camera
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
+from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 
 PICKNPLACE_DIRECTORY = os.path.join('..', '..', '..', 'tests', 'test_data')
 PICKNPLACE_FILENAMES = {
@@ -24,7 +25,7 @@ def get_assembly_path(assembly_name):
 def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     """connect pybullet env and load the bar system
     """
-    connect(use_gui=viewer)
+    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     with LockRenderer():
         b_struct_data, o_struct_data, _ = parse_saved_structure_data(get_assembly_path(test_file_name))
         o_struct = OverallStructure.from_data(o_struct_data)

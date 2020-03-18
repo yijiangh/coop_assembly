@@ -10,12 +10,55 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color, \
     joints_from_names, INF, wait_for_user, check_initial_end, BASE_LINK, get_aabb, aabb_union, aabb_overlap, BodySaver, draw_aabb, \
-    step_simulation
+    step_simulation, SE3
 
+from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
-from .utils import wait_if_gui
+from .utils import wait_if_gui, get_index_from_bodies
 from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose
+
+##################################################
+
+def compute_element_se3_motion(fixed_obstacles, element_from_index, printed_elements, initial_conf, final_conf, collision=True):
+    # use bounding box
+    group = SE3
+    size = 4.
+    custom_limits = {
+        'x': (0.0, size),
+        'y': (0.0, size),
+        'z': (0.0, size),
+    }
+
+    element_obstacles = get_element_body_in_goal_pose(element_from_index, printed_elements)
+    obstacles = set(fixed_obstacles) | element_obstacles
+    if not collisions:
+        obstacles = []
+
+    client = get_client(client) # client is the new client for the body
+    collision_id = clone_collision_shape(body, BASE_LINK, client)
+    visual_id = clone_visual_shape(body, BASE_LINK, client)
+    element_robot = create_flying_body(group, collision_id, visual_id)
+
+    body_link = get_links(element_robot)[-1]
+    joints = get_movable_joints(element_robot)
+    joint_from_group = dict(zip(group, joints))
+    print(joint_from_group)
+    #print(get_aabb(element_robot, body_link))
+    dump_body(element_robot, fixed=False)
+    custom_limits = {joint_from_group[j]: l for j, l in custom_limits.items()}
+
+    # initial_point = size*np.array([-1., -1., 0])
+    # final_point = -initial_point
+    # initial_euler = np.array([0,0,np.pi/2])
+    # initial_conf = np.concatenate([initial_point, initial_euler])
+    # final_conf = np.concatenate([final_point, initial_euler])
+
+    set_joint_positions(element_robot, joints, initial_conf)
+    path = plan_joint_motion(element_robot, joints, final_conf, obstacles=obstacles,
+                             self_collisions=False, custom_limits=custom_limits)
+
+    return path
 
 ##################################################
 
@@ -69,48 +112,16 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         # prune the link that's adjacent to the attach link to disable end effector / bar collision checks
         extra_disabled_collisions.add(((robot, link_from_name(robot, EE_LINK_NAME)), (attach.child, BASE_LINK)))
 
-    # from pybullet_planning import get_link_name, get_name
-    # for ig in list(extra_disabled_collisions):
-    #     b1 = ig[0][0]
-    #     b2 = ig[1][0]
-    #     l1 = ig[0][1]
-    #     l2 = ig[1][1]
-    #     b1_name = get_name(b1)
-    #     b2_name = get_name(b2)
-    #     l1_name = get_link_name(b1, l1)
-    #     l2_name = get_link_name(b2, l2)
-    #     print('disabled: (Body #{0}, Link #{1}) - (Body #{2} Link #{3})'.format(
-    #         b1_name, l1_name, b2_name, l2_name))
-
-    # collision_fn = get_collision_fn(robot, joints, obstacles, attachments=attachments, self_collisions=ENABLE_SELF_COLLISION,
-    #                                 disabled_collisions=disabled_collisions, extra_disabled_collisions=extra_disabled_collisions,
-    #                                 custom_limits=custom_limits, max_distance=0.)
-    # print('Initial conf collision-free: ', check_initial_end(start_conf, end_conf, collision_fn, diagnosis=True))
-
     path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=attachments,
                              self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
                              extra_disabled_collisions=extra_disabled_collisions,
                              weights=weights, resolutions=resolutions,
                              restarts=50, iterations=100, smooth=100, max_distance=0.0)
 
-    # * sweeping volume check for attachment
-    # attachment_aabbs = []
-    # obstacle_aabbs = {ob : get_aabb(ob) for ob in list(obstacles)}
-    # with BodySaver(robot):
-    #     for conf in path:
-    #         set_joint_positions(robot, joints, conf)
-    #         for attach in attachments:
-    #             attach.assign()
-    #         # a dict for each timestep in the traj
-    #         attachment_aabbs.append({attach.child : get_aabb(attach.child) for attach in attachments})
-
-    #         # for at in attachments:
-    #         #     draw_aabb(get_aabb(at.child))
-    #         # wait_if_gui()
-    # # for each attachment, union all the aabbs across all timesteps
-    # swept_attachments = {attach.child : aabb_union(at_aabbs[attach.child] for at_aabbs in attachment_aabbs) for attach in attachments}
-    # swept_overlap = [(obstacle_name, at_name) for obstacle_name, at_name in product(swept_attachments, obstacle_aabbs)
-    #                  if aabb_overlap(obstacle_aabbs[obstacle_name], swept_attachments[at_name])]
+    element=None
+    if len(attachments) > 0:
+        index_from_body = get_index_from_bodies(element_from_index)
+        element = index_from_body[attachments[0].child]
 
     # for hull in hulls:
     #     remove_body(hull)
@@ -118,7 +129,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         cprint('Failed to find a motion plan!', 'red')
         return None
 
-    return MotionTrajectory(robot, joints, path, attachments=attachments)
+    return MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit2place')
 
 ###################################
 
@@ -180,15 +191,15 @@ def display_trajectories(trajectories, animate=True, time_step=0.02, video=False
         if isinstance(trajectory, MotionTrajectory):
             for attach in trajectory.attachments:
                 set_color(attach.child, BLUE)
-
-        # if isinstance(trajectory, PrintTrajectory):
         #     if not trajectory.path:
         #         color = colors[len(printed_elements)]
         #         handles.append(draw_element(node_points, trajectory.element, color=color))
         #         #wait_for_user()
         #     is_connected = (trajectory.n1 in connected_nodes) # and (trajectory.n2 in connected_nodes)
-        #     print('{}) {:9} | Connected: {} | Ground: {} | Length: {}'.format(
-        #         i, str(trajectory), is_connected, is_ground(trajectory.element, ground_nodes), len(trajectory.path)))
+            is_connected = True
+            print('{}) {:9} | Connected: {} | Ground: {} | Length: {}'.format(
+                i, str(trajectory), is_connected, True, len(trajectory.path)))
+                # is_ground(trajectory.element, ground_nodes)
         #     if not is_connected:
         #         wait_for_user()
         #     connected_nodes.add(trajectory.n2)

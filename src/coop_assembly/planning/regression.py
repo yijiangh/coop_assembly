@@ -168,7 +168,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
             # * start config transit
             if motions and not lazy:
-                motion_traj = compute_motion(robot, obstacles, element_bodies, frozenset(),
+                motion_traj = compute_motion(robot, obstacles, element_from_index, frozenset(),
                                              initial_conf, plan[0].start_conf,
                                              collisions=collision, attachments=command.trajectories[0].attachments,
                                              max_time=max_time - elapsed_time(start_time))
