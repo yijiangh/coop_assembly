@@ -19,7 +19,7 @@ from pybullet_planning import link_from_name, set_pose, \
     interpolate_poses, create_attachment, plan_cartesian_motion, INF, GREEN, BLUE, RED, set_color, get_all_links, step_simulation, get_aabb, \
     get_bodies_in_region, pairwise_link_collision, BASE_LINK, get_client, clone_collision_shape, clone_visual_shape, get_movable_joints, \
     create_flying_body, SE3, euler_from_quat, create_shape, get_cylinder_geometry, wait_if_gui, set_joint_positions, dump_body, get_links, \
-    get_link_pose, get_joint_positions, intrinsic_euler_from_quat
+    get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
 from .utils import Command
@@ -156,7 +156,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
 
 def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision=True,
     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS,
-    allow_failure=False, verbose=False, **kwargs):
+    allow_failure=False, verbose=False, bar_only=False, **kwargs):
 
     robot = end_effector.robot
     ee_from_tool = invert(end_effector.tool_from_root)
@@ -179,6 +179,7 @@ def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision
     retreat_vector = retreat_distance*np.array([0, 0, -1])
 
     def gen_fn(index, printed=[], diagnosis=False):
+        assert implies(bar_only, element_from_index[index].element_robot is not None)
         body = element_from_index[index].body
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
@@ -200,20 +201,18 @@ def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision
                     if verbose : print('pregrasp failure.')
                     continue
 
-                # TODO: create from cloned body
-                p1, p2 = element_from_index[index].axis_endpoints
-                radius = element_from_index[index].radius
-                height = max(np.linalg.norm(p2 - p1), 0)
-                collision_id, visual_id = create_shape(get_cylinder_geometry(radius=radius, height=height), color=(1,0,0,0.6))
-                element_robot = create_flying_body(SE3, collision_id, visual_id)
-                element_joints = get_movable_joints(element_robot)
-                # TODO customized joints
-                # body_link = get_links(element_robot)[-1]
-                # plink = get_link_pose(element_robot, body_link)
-
-                yield Command([MotionTrajectory(element_robot, element_joints, [np.concatenate([p[0], intrinsic_euler_from_quat(p[1])]) for p in pregrasp_poses], \
-                    tag='place_approach', element=index)]),
-                break
+                if bar_only:
+                    element_robot = element_from_index[index].element_robot
+                    element_joints = get_movable_joints(element_robot)
+                    element_body_link = get_links(element_robot)[-1]
+                    attach_conf = np.concatenate([pregrasp_poses[-1][0], intrinsic_euler_from_quat(pregrasp_poses[-1][1])])
+                    set_joint_positions(element_robot, element_joints, attach_conf)
+                    set_pose(body, pregrasp_poses[-1])
+                    attachment = create_attachment(element_robot, element_body_link, body)
+                    yield Command([MotionTrajectory(element_robot, element_joints,
+                        [np.concatenate([p[0], intrinsic_euler_from_quat(p[1])]) for p in pregrasp_poses], \
+                        attachments=[attachment], tag='place_approach', element=index)]),
+                    break
 
                 pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
                 attach_pose = pre_attach_poses[-1]

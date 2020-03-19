@@ -19,7 +19,7 @@ from compas.datastructures.network import Network
 from compas.geometry import is_point_on_line
 from compas.geometry import scale_vector
 from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points, find_points_extreme, \
-    compute_contact_line_between_bars, create_bar_body
+    compute_contact_line_between_bars, create_bar_body, create_bar_flying_body
 from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
 from pybullet_planning import create_plane, set_point, Point, get_pose
@@ -98,11 +98,14 @@ class BarStructure(Network):
     def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False):
         v_key = self.add_vertex()
         bar_body = create_bar_body(_axis_endpoints, radius)
+        goal_pose = get_pose(bar_body)
         self.vertex[v_key].update({"bar_type":_bar_type,
                                    "axis_endpoints":_axis_endpoints,
                                    "index_sol":None,    # tangent plane config
                                    "mean_point":None,   # mean point used for local axis construction
                                    "pb_body":bar_body,  # pybullet body
+                                   "pb_element_robot":None,
+                                   "goal_pose":goal_pose,
                                    'radius':radius,
                                    "grounded":grounded,
                                    "element_type":"mobile",
@@ -246,7 +249,18 @@ class BarStructure(Network):
         int
             [description]
         """
+        if 'pb_body' not in self.vertex[bar_v_key] or self.vertex[bar_v_key]['pb_body'] is None:
+            axis_pts = self.get_bar_axis_end_pts(bar_v_key)
+            radius = self.vertex[bar_v_key]['radius']
+            self.vertex[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius)
         return self.vertex[bar_v_key]['pb_body']
+
+    def get_bar_element_robot(self, bar_v_key):
+        if 'pb_element_robot' not in self.vertex[bar_v_key] or self.vertex[bar_v_key]['pb_element_robot'] is None:
+            axis_pts = self.get_bar_axis_end_pts(bar_v_key)
+            radius = self.vertex[bar_v_key]['radius']
+            self.vertex[bar_v_key]['pb_element_robot'] = create_bar_flying_body(np.array(axis_pts)*METER_SCALE, radius*METER_SCALE)
+        return self.vertex[bar_v_key]['pb_element_robot']
 
     ##################################
     # export dict info for planning
@@ -264,13 +278,15 @@ class BarStructure(Network):
     def get_element_from_index(self):
         element_from_index = {}
         for index in self.vertices():
-            body = self.get_bar_pb_body(index)
             axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=METER_SCALE)]
-            # TODO: make sure the body is not moved
-            goal_pose = get_pose(body)
+            radius=self.vertex[index]['radius']*METER_SCALE
+            body = self.get_bar_pb_body(index)
+            element_robot = self.get_bar_element_robot(index)
+            goal_pose = self.vertex[index]['goal_pose']
             # all data in Element is in meter
-            element_from_index[index] = Element(index=index, body=body,
-                                                axis_endpoints=axis_pts, radius=self.vertex[index]['radius']*METER_SCALE,
+            element_from_index[index] = Element(index=index, body=body, element_robot=element_robot,
+                                                axis_endpoints=axis_pts,
+                                                radius=radius,
                                                 initial_pose=WorldPose(index, None),
                                                 goal_pose=WorldPose(index, goal_pose),
                                                 grasps=None,

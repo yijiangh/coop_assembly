@@ -7,9 +7,10 @@ import numpy as np
 
 # from pddlstream.utils import outgoing_from_edges
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
-    remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name
+    remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
+    set_joint_positions
 
-from coop_assembly.help_functions import METER_SCALE
+from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .visualization import draw_element
 from .stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_pick_gen_fn, get_pregrasp_gen_fn
@@ -45,7 +46,7 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
     return prior_commands + [command]
 
 ##################################################
-BAR_INITIAL_POINT = np.array([0.4, 0, 1.0])
+BAR_INITIAL_POINT = np.array([0.4, 0, 0.4])
 BAR_INITIAL_EULER = np.array([0, 0, 0])
 
 def regression(robot, obstacles, bar_struct, partial_orders=[],
@@ -55,8 +56,8 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     joints = get_movable_joints(robot)
     initial_conf = INITIAL_CONF if not bar_only else np.concatenate([BAR_INITIAL_POINT, BAR_INITIAL_EULER])
 
-    axis_pts_from_element = bar_struct.get_axis_pts_from_element()
-    element_bodies = bar_struct.get_element_bodies()
+    # axis_pts_from_element = bar_struct.get_axis_pts_from_element()
+    # element_bodies = bar_struct.get_element_bodies()
     element_from_index = bar_struct.get_element_from_index()
     all_elements = frozenset(element_from_index)
     grounded_elements = bar_struct.get_grounded_bar_keys()
@@ -70,9 +71,8 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
     # if checker is None:
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
-
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
-    pick_gen_fn = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=False)
+    pick_gen_fn = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=False, bar_only=bar_only)
 
     # TODO: allow choice of config
     final_conf = initial_conf
@@ -90,8 +90,10 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
     if check_connected(connectors, grounded_elements, all_elements):
     # and (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):
-        # TODO body only base
-        add_successors(final_printed, Command([MotionTrajectory(robot, joints, [final_conf])]))
+        final_command = Command([MotionTrajectory(robot, joints, [final_conf])])
+            #if not bar_only \
+            # else Command([MotionTrajectory(None, None, [final_conf])])
+        add_successors(final_printed, final_command)
 
     # if has_gui():
     #     sequence = sorted(final_printed, key=lambda e: heuristic_fn(final_printed, e, conf=None), reverse=True)
@@ -144,22 +146,24 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             extrusion_failures += 1
             continue
 
-        # transit_start_conf = command.end_conf
         # TODO: use pick conf
+        # transit_start_conf = command.end_conf
         transit_start_conf = initial_conf
         if motions and not lazy:
             # transit to the start of last pick conf
-            motion_traj = compute_motion(current_command.start_robot, obstacles, element_from_index, printed,
-                                         transit_start_conf, current_command.start_conf,
-                                         collisions=collision, attachments=current_command.trajectories[0].attachments,
-                                         max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
-            if motion_traj is None:
-                transit_failures += 1
-                if verbose:
-                    cprint('%'*5, 'red')
-                    cprint('Transit planning failure.', 'yellow')
-                continue
-            command.trajectories.append(motion_traj)
+            if not(bar_only and len(printed) == len(all_elements)):
+                # skip to final conf transit motion if bar_only
+                motion_traj = compute_motion(current_command.start_robot, obstacles, element_from_index, printed,
+                                             transit_start_conf, current_command.start_conf,
+                                             collisions=collision, attachments=current_command.trajectories[0].attachments,
+                                             max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
+                if motion_traj is None:
+                    transit_failures += 1
+                    if verbose:
+                        cprint('%'*5, 'red')
+                        cprint('Transit planning failure.', 'yellow')
+                    continue
+                command.trajectories.append(motion_traj)
 
         if num_remaining < min_remaining:
             min_remaining = num_remaining
@@ -172,16 +176,16 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             plan = flatten_commands(commands)
 
             # * start config transit
-            # if motions and not lazy:
-                # motion_traj = compute_motion(robot, obstacles, element_from_index, frozenset(),
-                #                              initial_conf, plan[0].start_conf,
-                #                              collisions=collision, attachments=command.trajectories[0].attachments,
-                #                              max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
-                # if motion_traj is None:
-                #     plan = None
-                #     transit_failures += 1
-                # else:
-                #     plan.insert(0, motion_traj)
+            if motions and not lazy:
+                motion_traj = compute_motion(plan[0].robot, obstacles, element_from_index, frozenset(),
+                                             initial_conf, plan[0].start_conf,
+                                             collisions=collision, attachments=command.trajectories[0].attachments,
+                                             max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
+                if motion_traj is None:
+                    plan = None
+                    transit_failures += 1
+                else:
+                    plan.insert(0, motion_traj)
             # TODO: lazy
             # if motions and lazy:
             #     plan = compute_motions(robot, obstacles, element_bodies, initial_conf, plan,
@@ -191,6 +195,12 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             #     break
 
         add_successors(next_printed, command)
+
+    if bar_only:
+        # reset all element_robots to clear the visual scene
+        for e in element_from_index:
+            e_robot = element_from_index[e].element_robot
+            set_joint_positions(e_robot, get_movable_joints(e_robot), np.zeros(6))
 
     data = {
         #'memory': get_memory_in_kb(), # May need to update instead

@@ -84,7 +84,7 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir):
     disconnect()
 
 @pytest.mark.regression
-def test_regression(viewer, file_spec, collision, motion, stiffness, animate, revisit, n_trails, write, baronly):
+def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revisit, n_trails, write, baronly):
     bar_struct, o_struct = load_structure(file_spec, viewer)
     fixed_obstacles, robot = load_world()
 
@@ -110,7 +110,8 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, animate, re
     print('collision: {}'.format(collision))
     print('{} : {} / {}'.format(file_spec, success, n_attempts))
 
-    watch = viewer
+    # watch = viewer
+    watch = watch
     if (splan is not None):
         if write:
             here = os.path.dirname(__file__)
@@ -123,7 +124,10 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, animate, re
         if watch:
             time_step = None if has_gui() else 0.01
             display_trajectories(splan, time_step=time_step, #video=True,
-                                 animate=animate)
+                                 animate=False)
+        if collision:
+            assert validate_trajectories(bar_struct.get_element_from_index(), fixed_obstacles, splan, \
+                grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=has_gui(), bar_only=baronly, refine_num=10)
     reset_simulation()
     disconnect()
 

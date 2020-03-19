@@ -33,8 +33,8 @@ def save_dir():
 
 @pytest.mark.gen_from_pts
 # @pytest.mark.parametrize('test_set_name', [('single_cube'), ('YJ_12_bars')])
-# @pytest.mark.parametrize('test_set_name', [('YJ_12_bars')])
-@pytest.mark.parametrize('test_set_name', [('single_tet')])
+@pytest.mark.parametrize('test_set_name', [('YJ_12_bars')])
+# @pytest.mark.parametrize('test_set_name', [('single_tet')])
 @pytest.mark.parametrize('radius', [(3.17), ])
 # @pytest.mark.parametrize('pt_search_method', [('point2point'), ])
 @pytest.mark.parametrize('pt_search_method', [('point2triangle'), ])

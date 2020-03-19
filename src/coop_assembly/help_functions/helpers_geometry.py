@@ -10,6 +10,8 @@
 
 created on 28.06.2019
 author: stefanaparascho
+
+Modified by Yijiang Huang starting Jan. 2020
 '''
 
 import math
@@ -30,6 +32,9 @@ from compas.geometry import distance_point_point, distance_point_line, distance_
 from coop_assembly.help_functions.shared_const import EPS, NODE_CORRECTION_TOP_DISTANCE, NODE_CORRECTION_SINE_ANGLE, \
     HAS_PYBULLET, METER_SCALE, USE_BOX, TOL, EPS
 
+from pybullet_planning import quat_from_euler, create_box, set_color, set_point, set_quat, dump_body, create_cylinder, \
+    get_aabb, draw_aabb, apply_alpha, draw_pose, get_pose, add_line, wait_for_user, Euler, STATIC_MASS, RED, create_shape, \
+    get_cylinder_geometry, create_flying_body, get_movable_joints, SE3
 
 ###############################################
 
@@ -79,15 +84,7 @@ def Frame_to_plane_data(frame):
 
 ###############################################
 
-def create_bar_body(axis_end_pts, radius, use_box=USE_BOX, color=(1,0,0,0)):
-    if not HAS_PYBULLET:
-        return None
-
-    import numpy as np
-    from pybullet_planning import quat_from_euler, create_box, set_color, set_point, set_quat, dump_body, create_cylinder, \
-        get_aabb, draw_aabb, apply_alpha, draw_pose, get_pose, add_line, wait_for_user
-    from pybullet_planning import Euler, STATIC_MASS, RED
-
+def create_bar_body(axis_end_pts, radius, use_box=USE_BOX, color=apply_alpha(RED, 0)):
     p1, p2 = axis_end_pts
     p1 = np.array(p1) * METER_SCALE
     p2 = np.array(p2) * METER_SCALE
@@ -124,6 +121,16 @@ def create_bar_body(axis_end_pts, radius, use_box=USE_BOX, color=(1,0,0,0)):
     # draw_pose(get_pose(body), length=5e-3)
 
     return body
+
+def create_bar_flying_body(axis_end_pts, radius, use_box=USE_BOX, color=apply_alpha(RED, 0.2)):
+    p1, p2 = axis_end_pts
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    height = max(np.linalg.norm(p2 - p1), 0)
+    collision_id, visual_id = create_shape(get_cylinder_geometry(radius=radius, height=height), color=color)
+    element_robot = create_flying_body(SE3, collision_id, visual_id)
+    # element_joints = get_movable_joints(element_robot)
+    return element_robot
 
 ###############################################
 

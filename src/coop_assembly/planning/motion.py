@@ -10,7 +10,7 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color, \
     joints_from_names, INF, wait_for_user, check_initial_end, BASE_LINK, get_aabb, aabb_union, aabb_overlap, BodySaver, draw_aabb, \
-    step_simulation, SE3
+    step_simulation, SE3, get_links
 
 from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
@@ -18,56 +18,18 @@ from .utils import wait_if_gui, get_index_from_bodies
 from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE
 
-##################################################
-
-def compute_element_se3_motion(fixed_obstacles, element_from_index, printed_elements, initial_conf, final_conf, collision=True):
-    # use bounding box
-    group = SE3
-    size = 4.
-    custom_limits = {
-        'x': (0.0, size),
-        'y': (0.0, size),
-        'z': (0.0, size),
-    }
-
-    element_obstacles = get_element_body_in_goal_pose(element_from_index, printed_elements)
-    obstacles = set(fixed_obstacles) | element_obstacles
-    if not collisions:
-        obstacles = []
-
-    client = get_client() # client is the new client for the body
-    collision_id = clone_collision_shape(body, BASE_LINK, client)
-    visual_id = clone_visual_shape(body, BASE_LINK, client)
-    element_robot = create_flying_body(group, collision_id, visual_id)
-
-    body_link = get_links(element_robot)[-1]
-    joints = get_movable_joints(element_robot)
-    joint_from_group = dict(zip(group, joints))
-    print(joint_from_group)
-    #print(get_aabb(element_robot, body_link))
-    dump_body(element_robot, fixed=False)
-    custom_limits = {joint_from_group[j]: l for j, l in custom_limits.items()}
-
-    # initial_point = size*np.array([-1., -1., 0])
-    # final_point = -initial_point
-    # initial_euler = np.array([0,0,np.pi/2])
-    # initial_conf = np.concatenate([initial_point, initial_euler])
-    # final_conf = np.concatenate([final_point, initial_euler])
-
-    set_joint_positions(element_robot, joints, initial_conf)
-    path = plan_joint_motion(element_robot, joints, final_conf, obstacles=obstacles,
-                             self_collisions=False, custom_limits=custom_limits)
-
-    return path
+DIAGNOSIS = False
 
 ##################################################
 
+# TODO: derived from bounding box
 BAR_CUSTOM_LIMITS = {
     'x': (0.25, 1.0),
     'y': (-1.0, 1.0),
-    'z': (-0.3, 3.0),
+    'z': (-0.3, 0.4),
 }
-BAR_RESOLUTION = [0.05]*3 + [np.pi/18]*3
+BAR_RESOLUTION = [0.001]*3 + [np.pi/180]*3
+# BAR_RESOLUTION = [0.1]*3 + [np.pi/6]*3
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
@@ -88,7 +50,6 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         disabled_collisions = {}
         custom_limits = {}
         joint_from_group = dict(zip(SE3, joints))
-        print('joint from group: ', joint_from_group)
         custom_limits = {joint_from_group[j]: l for j, l in BAR_CUSTOM_LIMITS.items()}
 
     assert len(joints) == len(end_conf)
@@ -103,14 +64,14 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
     for attach in attachments:
         attach.assign()
         # prune the link that's adjacent to the attach link to disable end effector / bar collision checks
-        if not bar_only:
-            extra_disabled_collisions.add(((robot, link_from_name(robot, EE_LINK_NAME)), (attach.child, BASE_LINK)))
+        ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
+        extra_disabled_collisions.add(((robot, ee_link), (attach.child, BASE_LINK)))
 
     path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=attachments,
                              self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
                              extra_disabled_collisions=extra_disabled_collisions,
-                             weights=weights, resolutions=resolutions,
-                             restarts=50, iterations=100, smooth=100, max_distance=0.0)
+                             weights=weights, resolutions=resolutions, custom_limits=custom_limits,
+                             restarts=50, iterations=100, smooth=100, max_distance=0.0, diagnosis=DIAGNOSIS)
 
     element=None
     if len(attachments) > 0:
