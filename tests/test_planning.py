@@ -7,7 +7,7 @@ from termcolor import cprint
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
-    set_joint_positions, create_attachment
+    set_joint_positions, create_attachment, wait_if_gui
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -15,7 +15,7 @@ from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES
-from coop_assembly.planning.utils import load_world, wait_if_gui
+from coop_assembly.planning.utils import load_world
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
@@ -159,7 +159,7 @@ def test_stream(viewer, test_file_name, collision):
 
     # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
-    wait_if_gui(False)
+    # wait_if_gui()
 
     n_attempts = 10
     # tool_pose = Pose(euler=Euler(yaw=np.pi/2))
@@ -187,9 +187,10 @@ def test_stream(viewer, test_file_name, collision):
         gripper_from_bar = grasp.attach
         set_pose(element_from_index[chosen].body, p)
         world_from_ee = end_effector_from_body(p, gripper_from_bar)
-        end_effector.set_pose(world_from_ee)
-        handles.extend(draw_pose(world_from_ee, length=0.05))
-        handles.extend(draw_pose(p, length=0.05))
+
+        # end_effector.set_pose(world_from_ee)
+        # handles.extend(draw_pose(world_from_ee, length=0.05))
+        # handles.extend(draw_pose(p, length=0.05))
 
         # * sample pick trajectory
         command, = next(pick_gen(chosen, printed=printed, diagnosis=False))
@@ -214,7 +215,6 @@ def test_stream(viewer, test_file_name, collision):
 
         wait_if_gui()
         remove_handles(handles)
-
 
 def test_color_structure(viewer, test_file_name):
     bar_struct, _ = load_structure(test_file_name, viewer)

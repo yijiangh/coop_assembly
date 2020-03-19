@@ -270,7 +270,7 @@ class BarStructure(Network):
             goal_pose = get_pose(body)
             # all data in Element is in meter
             element_from_index[index] = Element(index=index, body=body,
-                                                axis_endpoints=axis_pts,
+                                                axis_endpoints=axis_pts, radius=self.vertex[index]['radius']*METER_SCALE,
                                                 initial_pose=WorldPose(index, None),
                                                 goal_pose=WorldPose(index, goal_pose),
                                                 grasps=None,

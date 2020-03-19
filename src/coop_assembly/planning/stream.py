@@ -16,12 +16,15 @@ from pybullet_planning import link_from_name, set_pose, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, has_gui, \
     disconnect, unit_pose, Point, get_distance, sample_tool_ik, joints_from_names, interval_generator, get_floating_body_collision_fn, \
-    interpolate_poses, create_attachment, plan_cartesian_motion, INF, GREEN, set_color, get_all_links, step_simulation, get_aabb, \
-    get_bodies_in_region, pairwise_link_collision, BASE_LINK
+    interpolate_poses, create_attachment, plan_cartesian_motion, INF, GREEN, BLUE, RED, set_color, get_all_links, step_simulation, get_aabb, \
+    get_bodies_in_region, pairwise_link_collision, BASE_LINK, get_client, clone_collision_shape, clone_visual_shape, get_movable_joints, \
+    create_flying_body, SE3, euler_from_quat, create_shape, get_cylinder_geometry, wait_if_gui, set_joint_positions, dump_body, get_links, \
+    get_link_pose, get_joint_positions, intrinsic_euler_from_quat
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
-from .utils import wait_if_gui, Command
+from .utils import Command
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
+from coop_assembly.help_functions.shared_const import METER_SCALE
 
 # TODO: fix self collision
 ENABLE_SELF_COLLISIONS = False
@@ -30,11 +33,11 @@ PREGRASP_MAX_ATTEMPTS = 100
 GRASP_MAX_ATTEMPTS = 100
 
 # pregrasp delta sample
-EPSILON = 0.01
-ANGLE = np.pi/6
+EPSILON = 0.05
+ANGLE = np.pi/3
 
 # pregrasp interpolation
-POS_STEP_SIZE = 0.005
+POS_STEP_SIZE = 0.002
 ORI_STEP_SIZE = np.pi/18
 
 RETREAT_DISTANCE = 0.025
@@ -196,6 +199,20 @@ def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision
                 if not pregrasp_poses:
                     if verbose : print('pregrasp failure.')
                     continue
+
+                # TODO: create from cloned body
+                p1, p2 = element_from_index[index].axis_endpoints
+                radius = element_from_index[index].radius
+                height = max(np.linalg.norm(p2 - p1), 0)
+                collision_id, visual_id = create_shape(get_cylinder_geometry(radius=radius, height=height), color=(1,0,0,0.2))
+                element_robot = create_flying_body(SE3, collision_id, visual_id)
+                element_joints = get_movable_joints(element_robot)
+                # body_link = get_links(element_robot)[-1]
+                # plink = get_link_pose(element_robot, body_link)
+
+                yield Command([MotionTrajectory(element_robot, element_joints, [np.concatenate([p[0], intrinsic_euler_from_quat(p[1])]) for p in pregrasp_poses], \
+                    tag='place_approach', element=index)]),
+                break
 
                 pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
                 attach_pose = pre_attach_poses[-1]

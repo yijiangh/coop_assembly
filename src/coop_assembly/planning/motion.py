@@ -35,7 +35,7 @@ def compute_element_se3_motion(fixed_obstacles, element_from_index, printed_elem
     if not collisions:
         obstacles = []
 
-    client = get_client(client) # client is the new client for the body
+    client = get_client() # client is the new client for the body
     collision_id = clone_collision_shape(body, BASE_LINK, client)
     visual_id = clone_visual_shape(body, BASE_LINK, client)
     element_robot = create_flying_body(group, collision_id, visual_id)
