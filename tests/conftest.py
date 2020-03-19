@@ -5,6 +5,7 @@ def pytest_addoption(parser):
     parser.addoption('--viewer', action='store_true', help='Enables the pybullet viewer')
     parser.addoption('--write', action='store_true', help='Export results')
     parser.addoption('--collision', action='store_false', help='disable collision checking')
+    parser.addoption('--baronly', action='store_true', help='only planning motion for the bars')
     parser.addoption('--stiffness', action='store_false', help='disable stiffness')
     parser.addoption('--motion', action='store_true', help='enable transit motion')
     parser.addoption('--animate', action='store_false', help='animate trajectories')
@@ -23,6 +24,10 @@ def write(request):
 @pytest.fixture
 def collision(request):
     return request.config.getoption("--collision")
+
+@pytest.fixture
+def baronly(request):
+    return request.config.getoption("--baronly")
 
 @pytest.fixture
 def stiffness(request):

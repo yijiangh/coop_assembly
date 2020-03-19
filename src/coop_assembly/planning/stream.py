@@ -204,9 +204,10 @@ def get_pick_gen_fn(end_effector, element_from_index, fixed_obstacles, collision
                 p1, p2 = element_from_index[index].axis_endpoints
                 radius = element_from_index[index].radius
                 height = max(np.linalg.norm(p2 - p1), 0)
-                collision_id, visual_id = create_shape(get_cylinder_geometry(radius=radius, height=height), color=(1,0,0,0.2))
+                collision_id, visual_id = create_shape(get_cylinder_geometry(radius=radius, height=height), color=(1,0,0,0.6))
                 element_robot = create_flying_body(SE3, collision_id, visual_id)
                 element_joints = get_movable_joints(element_robot)
+                # TODO customized joints
                 # body_link = get_links(element_robot)[-1]
                 # plink = get_link_pose(element_robot, body_link)
 

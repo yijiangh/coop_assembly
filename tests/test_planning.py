@@ -84,7 +84,7 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir):
     disconnect()
 
 @pytest.mark.regression
-def test_regression(viewer, file_spec, collision, motion, stiffness, animate, revisit, n_trails, write):
+def test_regression(viewer, file_spec, collision, motion, stiffness, animate, revisit, n_trails, write, baronly):
     bar_struct, o_struct = load_structure(file_spec, viewer)
     fixed_obstacles, robot = load_world()
 
@@ -95,7 +95,7 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, animate, re
         print('#'*10)
         with LockRenderer(True):
             plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motions=motion, stiffness=stiffness,
-                revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False)
+                revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False, bar_only=baronly)
             print(data)
         if plan is None:
             cprint('#{}: plan not found'.format(i), 'red')

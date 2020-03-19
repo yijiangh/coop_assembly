@@ -16,7 +16,7 @@ from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import wait_if_gui, get_index_from_bodies
 from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
-from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose
+from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE
 
 ##################################################
 
@@ -62,55 +62,49 @@ def compute_element_se3_motion(fixed_obstacles, element_from_index, printed_elem
 
 ##################################################
 
+BAR_CUSTOM_LIMITS = {
+    'x': (0.25, 1.0),
+    'y': (-1.0, 1.0),
+    'z': (-0.3, 3.0),
+}
+BAR_RESOLUTION = [0.05]*3 + [np.pi/18]*3
+
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
-                   collisions=True, max_time=INF, smooth=100):
+                   collisions=True, max_time=INF, smooth=100, bar_only=False):
     # TODO: can also just plan to initial conf and then shortcut
-    joints = joints_from_names(robot, IK_JOINT_NAMES)
+    if not bar_only:
+        joints = joints_from_names(robot, IK_JOINT_NAMES)
+        weights = JOINT_WEIGHTS
+        resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
+        disabled_collisions = get_disabled_collisions(robot)
+        custom_limits = {}
+    else:
+        joints = get_movable_joints(robot)
+        weights = np.ones(len(joints))
+        # resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
+        # resolutions = np.array([POS_STEP_SIZE]*3 + [ORI_STEP_SIZE]*3)
+        resolutions = BAR_RESOLUTION
+        disabled_collisions = {}
+        custom_limits = {}
+        joint_from_group = dict(zip(SE3, joints))
+        print('joint from group: ', joint_from_group)
+        custom_limits = {joint_from_group[j]: l for j, l in BAR_CUSTOM_LIMITS.items()}
+
     assert len(joints) == len(end_conf)
-    weights = JOINT_WEIGHTS
-    resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
-    disabled_collisions = get_disabled_collisions(robot)
-    custom_limits = {}
 
     element_obstacles = get_element_body_in_goal_pose(element_from_index, printed_elements)
     obstacles = set(fixed_obstacles) | element_obstacles
-    hulls = {}
-
     if not collisions:
-        hulls = {}
         obstacles = []
-
-    # sample_fn = get_sample_fn(robot, joints, custom_limits=custom_limits)
-    # distance_fn = get_distance_fn(robot, joints, weights=weights)
-    # extend_fn = get_extend_fn(robot, joints, resolutions=resolutions)
-    # collision_fn = get_collision_fn(robot, joints, obstacles, attachments=attachments, self_collisions=ENABLE_SELF_COLLISION,
-    #                                 disabled_collisions=disabled_collisions, custom_limits=custom_limits, max_distance=0.)
-    # collision_fn = get_element_collision_fn(robot, obstacles)
-
-    # def element_collision_fn(q):
-    #     if collision_fn(q):
-    #         return True
-    #     #for body in get_bodies_in_region(get_aabb(robot)): # Perform per link?
-    #     #    if (element_from_body.get(body, None) in printed_elements) and pairwise_collision(robot, body):
-    #     #        return True
-    #     for hull, bodies in hulls.items():
-    #         if pairwise_collision(robot, hull) and any(pairwise_collision(robot, body) for body in bodies):
-    #             return True
-    #     return False
-
-    # path = None
-
-    # if check_initial_end(start_conf, end_conf, collision_fn):
-    #     path = birrt(start_conf, end_conf, distance_fn, sample_fn, extend_fn, element_collision_fn,
-    #                  restarts=50, iterations=100, smooth=smooth, max_time=max_time)
 
     set_joint_positions(robot, joints, start_conf)
     extra_disabled_collisions = set()
     for attach in attachments:
         attach.assign()
         # prune the link that's adjacent to the attach link to disable end effector / bar collision checks
-        extra_disabled_collisions.add(((robot, link_from_name(robot, EE_LINK_NAME)), (attach.child, BASE_LINK)))
+        if not bar_only:
+            extra_disabled_collisions.add(((robot, link_from_name(robot, EE_LINK_NAME)), (attach.child, BASE_LINK)))
 
     path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=attachments,
                              self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
@@ -123,8 +117,6 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         index_from_body = get_index_from_bodies(element_from_index)
         element = index_from_body[attachments[0].child]
 
-    # for hull in hulls:
-    #     remove_body(hull)
     if path is None:
         cprint('Failed to find a motion plan!', 'red')
         return None

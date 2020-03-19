@@ -70,6 +70,12 @@ class Command(object):
     @property
     def end_conf(self):
         return self.trajectories[-1].end_conf
+    @property
+    def start_robot(self):
+        return self.trajectories[0].robot
+    @property
+    def end_robot(self):
+        return self.trajectories[-1].robot
     # @property
     # def elements(self):
     #     return recover_sequence(self.trajectories)
