@@ -28,7 +28,7 @@ BAR_CUSTOM_LIMITS = {
     'y': (-1.0, 1.0),
     'z': (-0.3, 0.4),
 }
-BAR_RESOLUTION = [0.001]*3 + [np.pi/180]*3
+BAR_RESOLUTION = [0.002]*3 + [np.pi/180]*3
 # BAR_RESOLUTION = [0.1]*3 + [np.pi/6]*3
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
@@ -86,7 +86,20 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
 
 ###################################
 
-def display_trajectories(trajectories, animate=True, time_step=0.02, video=False):
+def display_trajectories(trajectories, time_step=0.02, video=False, animate=True):
+    """[summary]
+
+    Parameters
+    ----------
+    trajectories : [type]
+        [description]
+    time_step : float, optional
+        [description], by default 0.02
+    video : bool, optional
+        [description], by default False
+    animate : bool, optional
+        if set to False, display sequence colormap only, skip trajectory animation, by default True
+    """
     # node_points, ground_nodes,
     if trajectories is None:
         return
@@ -99,21 +112,23 @@ def display_trajectories(trajectories, animate=True, time_step=0.02, video=False
     #     disconnect()
     #     return
 
-    # video_saver = None
-    # if video:
-    #     handles = draw_model(planned_elements, node_points, ground_nodes) # Allows user to adjust the camera
-    #     wait_for_user()
-    #     remove_all_debug()
-    #     wait_for_duration(0.1)
-    #     video_saver = VideoSaver('video.mp4') # has_gui()
-    #     time_step = 0.001
-    # else:
-    #     wait_for_user()
+    video_saver = None
+    if video:
+        # handles = draw_model(planned_elements, node_points, ground_nodes) # Allows user to adjust the camera
+        wait_if_gui()
+        # remove_all_debug()
+        # wait_for_duration(0.1)
+        # video_saver = VideoSaver('video.mp4') # has_gui()
+        # time_step = 0.001
+    else:
+        wait_if_gui('Ready to simulate trajectories.')
 
     #element_bodies = dict(zip(planned_elements, create_elements(node_points, planned_elements)))
     #for body in element_bodies.values():
     #    set_color(body, (1, 0, 0, 0))
     # connected_nodes = set(ground_nodes)
+    # TODO: resolution depends on bar distance to convex hull of obstacles
+    # TODO: fine resolution still results in collision?
     printed_elements = []
     print('Trajectories:', len(trajectories))
     for i, trajectory in enumerate(trajectories):

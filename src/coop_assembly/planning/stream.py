@@ -37,8 +37,8 @@ EPSILON = 0.05
 ANGLE = np.pi/3
 
 # pregrasp interpolation
-POS_STEP_SIZE = 0.002
-ORI_STEP_SIZE = np.pi/18
+POS_STEP_SIZE = 0.001
+ORI_STEP_SIZE = np.pi/180
 
 RETREAT_DISTANCE = 0.025
 
@@ -111,6 +111,9 @@ def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
         pose = Pose(point=[x,y,z], euler=Euler(roll=roll, pitch=pitch, yaw=yaw))
         yield pose
 
+def pose2conf(pose):
+    return np.concatenate([np.array(pose[0]), intrinsic_euler_from_quat(np.array(pose[1]))])
+
 def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRASP_MAX_ATTEMPTS, collision=True):
     pose_gen = get_delta_pose_generator()
 
@@ -126,6 +129,12 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
 
         ee_collision_fn = get_floating_body_collision_fn(body, obstacles, max_distance=MAX_DISTANCE)
 
+        ## element robot's collision body will be inflated a bit
+        # element_robot = element_from_index[index].element_robot
+        # element_joints = get_movable_joints(element_robot)
+        # element_robot_collision_fn = get_collision_fn(element_robot, element_joints, obstacles=obstacles, attachments=[],
+        #                                               max_distance=MAX_DISTANCE)
+
         for _ in range(max_attempts):
             delta_pose = next(pose_gen)
             offset_pose = multiply(pose.value, delta_pose)
@@ -135,6 +144,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
                 # TODO: if colliding at the world_from_bar pose, use local velocity + normal check
                 # TODO: normal can be derived from
                 if ee_collision_fn(p):
+                # if element_robot_collision_fn(pose2conf(p)):
                     is_colliding = True
                     break
             if not is_colliding:

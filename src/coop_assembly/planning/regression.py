@@ -46,7 +46,7 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
     return prior_commands + [command]
 
 ##################################################
-BAR_INITIAL_POINT = np.array([0.4, 0, 0.4])
+BAR_INITIAL_POINT = np.array([0.4, 0, 0.2])
 BAR_INITIAL_EULER = np.array([0, 0, 0])
 
 def regression(robot, obstacles, bar_struct, partial_orders=[],

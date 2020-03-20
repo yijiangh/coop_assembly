@@ -7,7 +7,7 @@ from termcolor import cprint
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
-    set_joint_positions, create_attachment, wait_if_gui
+    set_joint_positions, create_attachment, wait_if_gui, apply_alpha
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -85,8 +85,9 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir):
 
 @pytest.mark.regression
 def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revisit, n_trails, write, baronly):
-    bar_struct, o_struct = load_structure(file_spec, viewer)
+    bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
+    # wait_if_gui()
 
     n_attempts = int(n_trails)
     success = 0
@@ -122,7 +123,8 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
                           'plan' : [p.to_data() for p in splan]}, f)
             cprint('Result saved to: {}'.format(save_path), 'green')
         if watch:
-            time_step = None if has_gui() else 0.01
+            # time_step = None if has_gui() else 0.01
+            time_step = 0.01
             display_trajectories(splan, time_step=time_step, #video=True,
                                  animate=False)
         if collision:

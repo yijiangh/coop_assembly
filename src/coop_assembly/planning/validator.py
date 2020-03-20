@@ -3,7 +3,7 @@ from termcolor import cprint
 
 from pybullet_planning import has_gui, wait_for_user, connect, reset_simulation, \
     disconnect, wait_for_duration, BLACK, RED, GREEN, BLUE, remove_all_debug, apply_alpha, pairwise_collision, \
-    set_color, refine_path, get_collision_fn, link_from_name, BASE_LINK, get_links, wait_if_gui
+    set_color, refine_path, get_collision_fn, link_from_name, BASE_LINK, get_links, wait_if_gui, set_pose
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .stream import ENABLE_SELF_COLLISIONS
 from .robot_setup import get_disabled_collisions, EE_LINK_NAME
@@ -36,9 +36,10 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
                                         extra_disabled_collisions=extra_disabled_collisions,
                                         custom_limits={}, #get_custom_limits(robot),
                                         max_distance=0)
-        if isinstance(trajectory, MotionTrajectory) and \
-            (trajectory.tag == 'transit2place'):
-            trajectory.refine(refine_num)
+
+        # if isinstance(trajectory, MotionTrajectory) and \
+        #     (trajectory.tag == 'transit2place'):
+        #     trajectory.refine(refine_num)
 
         path = list(trajectory.iterate())
         for t, conf in enumerate(path):
@@ -48,7 +49,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
             if trajectory.tag == 'place_approach' and t > len(path)-5:
                 continue
             if collision_fn(conf, diagnosis=has_gui()):
-                print('Collision on trajectory {} | Element: {} | {}'.format(i, trajectory.element, trajectory.tag))
+                print('Collision on trajectory {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag))
                 if not allow_failure:
                     return False
 
@@ -56,6 +57,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
             and ((not bar_only and trajectory.tag == 'place_retreat') or (bar_only and trajectory.tag == 'place_approach')):
             # set into goal pose
             body = element_from_index[trajectory.element].body
+            set_pose(body, element_from_index[trajectory.element].goal_pose.value)
             if trajectory.element in grounded_elements:
                 set_color(body, apply_alpha(BLACK))
             else:
