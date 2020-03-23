@@ -123,6 +123,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
     else:
         wait_if_gui('Ready to simulate trajectories.')
 
+    # remove_all_debug()
     #element_bodies = dict(zip(planned_elements, create_elements(node_points, planned_elements)))
     #for body in element_bodies.values():
     #    set_color(body, (1, 0, 0, 0))

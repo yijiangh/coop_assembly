@@ -50,6 +50,7 @@ def test_load_robot(viewer):
 # def test_run_planner():
 #     pass
 
+@pytest.mark.wip_pddlstream_parse
 def test_parse_pddlstream(viewer, file_spec, collision):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
@@ -57,24 +58,27 @@ def test_parse_pddlstream(viewer, file_spec, collision):
     robots = [robot]
     element_from_index = bar_struct.get_element_from_index()
     grounded_elements = bar_struct.get_grounded_bar_keys()
-    trajectories = [] # presampled trajectories
+    contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
+    connectors = list(contact_from_connectors.keys())
 
-    pddlstream_problem = get_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements,
-                                        trajectories=trajectories, collisions=collision, # disable=disable,
+    pddlstream_problem = get_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors,
+                                        collisions=collision, # disable=disable,
                                         precompute_collisions=True)
     print('Init:', pddlstream_problem.init)
-    assert ('Robot', 'r0') in pddlstream_problem.init
-    assert ('Idle', 'r0') in pddlstream_problem.init
+    # assert ('Robot', 'r0') in pddlstream_problem.init
+    # assert ('Idle', 'r0') in pddlstream_problem.init
     assert all([('Grounded', i) in pddlstream_problem.init for i in grounded_elements])
     assert all([('Element', i) in pddlstream_problem.init for i in element_from_index])
     assert all([('Printed', i) in pddlstream_problem.init for i in element_from_index])
+    assert all([('Joined', e1, e2) in pddlstream_problem.init for e1, e2 in connectors])
+    assert all([('Joined', e2, e1) in pddlstream_problem.init for e1, e2 in connectors])
 
     print('Goal:', pddlstream_problem.goal)
     assert 'and' == pddlstream_problem.goal[0]
     assert set([('Removed', i) for i in element_from_index]) <= set(pddlstream_problem.goal)
 
 @pytest.mark.wip_pddl
-def test_solve_pddlstream(viewer, file_spec, collision):
+def test_solve_pddlstream(viewer, file_spec, collision, baronly):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
@@ -84,25 +88,27 @@ def test_solve_pddlstream(viewer, file_spec, collision):
     element_from_index = bar_struct.get_element_from_index()
     grounded_elements = bar_struct.get_grounded_bar_keys()
     element_from_index = bar_struct.get_element_from_index()
+    contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
+    connectors = list(contact_from_connectors.keys())
 
-    plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, collision=collision)
+    plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
+        collision=collision, bar_only=baronly)
 
-    data = {}
     if plan is None:
-        return None, data
+        cprint('No plan found.', 'red')
+    else:
+        if has_gui():
+            saver.restore()
+            #label_nodes(node_points)
+            commands = [action.args[-1] for action in reversed(plan) if action.name == 'print']
+            trajectories = flatten_commands(commands)
 
-    if has_gui():
-        saver.restore()
-        #label_nodes(node_points)
-        commands = [action.args[-1] for action in reversed(plan) if action.name == 'print']
-        trajectories = flatten_commands(commands)
+            elements = recover_sequence(trajectories, element_from_index)
+            endpts_from_element = bar_struct.get_axis_pts_from_element()
+            draw_ordered(elements, endpts_from_element)
+            wait_if_gui('Ready to simulate trajectory.')
 
-        elements = recover_sequence(trajectories, element_from_index)
-        endpts_from_element = bar_struct.get_axis_pts_from_element()
-        draw_ordered(elements, endpts_from_element)
-        wait_if_gui('Ready to simulate trajectory.')
-
-        display_trajectories(trajectories, time_step=0.02)
+            display_trajectories(trajectories, time_step=0.02)
 
 @pytest.mark.check_sweep
 def test_capture_pregrasp_sweep_collision(viewer, results_dir):
