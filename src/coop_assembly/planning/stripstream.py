@@ -1,4 +1,7 @@
 import numpy as np
+import cProfile
+import pstats
+
 from pddlstream.algorithms.downward import set_cost_scale
 from pddlstream.algorithms.focused import solve_focused #, CURRENT_STREAM_PLAN
 from pddlstream.algorithms.disabled import process_stream_plan
@@ -119,19 +122,24 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
     # planner = 'max-astar'
 
-    with LockRenderer(lock=False):
+    pr = cProfile.Profile()
+    pr.enable()
+    with LockRenderer(lock=True):
         # solution = solve_incremental(pddlstream_problem, planner='add-random-lazy', max_time=600,
         #                             max_planner_time=300, debug=True)
         solution = solve_focused(pddlstream_problem, stream_info=stream_info, max_time=max_time,
                                  effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
                                  max_skeletons=None, bind=True, max_failures=0,  # 0 | INF
-                                 planner=planner, max_planner_time=60, debug=False, reorder=False,
+                                 planner=planner, max_planner_time=60, debug=True, reorder=False,
                                  initial_complexity=1)
+
+    pr.disable()
+    pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
 
     print_solution(solution)
     plan, _, certificate = solution
-    print(certificate.all_facts)
-    print(certificate.preimage_facts)
+    print('certificate all_facts:', certificate.all_facts)
+    print('certificate preimage_facts:', certificate.preimage_facts)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
     return plan
@@ -226,7 +234,7 @@ def get_wild_print_gen_fn(robots, static_obstacles, element_from_index, grounded
     #     gen_fn_from_robot[robot] = get_pick_gen_fn(end_effector, element_from_index, static_obstacles, collision=collisions, \
     #                                verbose=False, bar_only=bar_only)
 
-    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, static_obstacles, collision=False) # max_attempts=max_attempts,
+    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, static_obstacles, collision=collisions) # max_attempts=max_attempts,
 
     # def wild_gen_fn(name, element):
     #     # TODO: could cache this

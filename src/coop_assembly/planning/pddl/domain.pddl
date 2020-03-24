@@ -19,22 +19,11 @@
                        (Printed ?e)
                        ; Caelan use partial ordering to enforce connectivity
                        ; (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
-                       (forall (?e2) (imply (Element ?e2) (or (Connected ?e2) (Removed ?e2)) ) )
+                       (Connected ?e)
                   )
     :effect (and (Removed ?e)
                  (not (Printed ?e)))
   )
-
-;   (:derived (Supported ?e2) ; Single support
-;    (and (Element ?e2) (Printed ?e2)
-;        (or (and (Grounded ?e2))
-;            (exists (?e1) (and (Supports ?e1 ?e2) (Supported ?e1)))))
-;   )
-  ;(:derived (Supported ?n) ; All support
-  ;  (and (Node ?n)
-  ;       ; TODO: bug in focused algorithm (preimage fact not achievable)
-  ;       (forall (?e) (imply (Supports ?e ?n) (Printed ?e))))
-  ;)
 
   (:derived (Connected ?e2)
    (or (Grounded ?e2)
