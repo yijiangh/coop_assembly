@@ -46,7 +46,7 @@ class Conf(object):
 
 def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
                    printed=set(), removed=set(),
-                   temporal=False, transit=False, return_home=False, checker=None, **kwargs):
+                   temporal=False, transit=False, return_home=True, checker=None, **kwargs):
     assert not removed & printed
     remaining = set(element_from_index) - removed - printed
     element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
@@ -92,8 +92,8 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
         ])
 
     goal_literals = []
-    if return_home:
-        goal_literals.extend(('AtConf', r, q) for r, q in initial_confs.items())
+    # if return_home:
+    #     goal_literals.extend(('AtConf', r, q) for r, q in initial_confs.items())
     goal_literals.extend(('Removed', e) for e in remaining)
     goal = And(*goal_literals)
 
@@ -109,6 +109,8 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     print('Init:', pddlstream_problem.init)
     print('Goal:', pddlstream_problem.goal)
 
+    # creates unique free variable for each output during the focused algorithm
+    # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
     stream_info = {
         'sample-print': StreamInfo(PartialInputs(unique=True)),
         # 'sample-move': StreamInfo(PartialInputs(unique=True)),
@@ -138,8 +140,9 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 
     print_solution(solution)
     plan, _, certificate = solution
-    print('certificate all_facts:', certificate.all_facts)
-    print('certificate preimage_facts:', certificate.preimage_facts)
+    # print('certificate all_facts:', certificate.all_facts)
+    # preimage facts: the facts that support the returned plan
+    # print('certificate preimage_facts:', certificate.preimage_facts)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
     return plan
@@ -224,7 +227,7 @@ def get_wild_move_gen_fn(robots, static_obstacles, element_bodies, partial_order
     return wild_gen_fn
 
 def get_wild_print_gen_fn(robots, static_obstacles, element_from_index, grounded_elements,
-                          collisions=True, bar_only=False, **kwargs):
+                          collisions=True, bar_only=False, max_attempts=25, **kwargs):
     # TODO: could reuse end-effector trajectories
     # gen_fn_from_robot = {}
     # for robot in robots:
@@ -251,13 +254,21 @@ def get_wild_print_gen_fn(robots, static_obstacles, element_from_index, grounded
     #         yield WildOutput(outputs, [('Dummy',)] + facts)
     # return wild_gen_fn
 
-    def dummpy_gen_fn(element):
-        while True:
+    def dummpy_gen_fn(element, fluents=[]):
+        for _ in range(max_attempts):
             # TODO element_robot
             # q1 = Conf(robots[0], positions=None, element=element)
             body = element_from_index[element].body
             world_pose = element_from_index[element].goal_pose
-            pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed=[]))
+            printed = []
+            for fact in fluents:
+                if fact[0] == 'printed':
+                    printed.append(fact[1])
+                else:
+                    raise NotImplementedError(fact[0])
+            pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed=printed))
+            if not pregrasp_poses:
+                continue
 
             element_robot = element_from_index[element].element_robot
             element_joints = get_movable_joints(element_robot)
@@ -272,4 +283,5 @@ def get_wild_print_gen_fn(robots, static_obstacles, element_from_index, grounded
             outputs = [(command,)]
             facts = []
             yield WildOutput(outputs, [('Dummy',)] + facts)
+            break
     return dummpy_gen_fn

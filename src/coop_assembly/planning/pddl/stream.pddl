@@ -2,7 +2,7 @@
   (:stream sample-print
     :inputs (?e)
     :domain (Element ?e)
-    ; :fluents (Printed)
+    :fluents (Printed)
     :outputs (?t)
     :certified (and (PrintAction ?e ?t)
                     (Traj ?t)
