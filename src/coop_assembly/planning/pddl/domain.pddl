@@ -9,6 +9,7 @@
     (Connected ?e)
     (Joined ?e1 ?e2)
     (Traj ?t)
+    (Collision ?t ?e)
     ; (Order ?e1 ?e2)
   )
 
@@ -19,6 +20,7 @@
                        (Printed ?e)
                        ; Caelan use partial ordering to enforce connectivity
                        ; (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
+                       (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
                        (Connected ?e)
                   )
     :effect (and (Removed ?e)

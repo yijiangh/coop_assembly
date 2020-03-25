@@ -13,7 +13,7 @@ from pybullet_planning import INF, get_movable_joints, get_joint_positions, rand
 from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .visualization import draw_element
-from .stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_pick_gen_fn, get_pregrasp_gen_fn
+from .stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands, Command, check_connected
 from .motion import compute_motion
 from .robot_setup import INITIAL_CONF, TOOL_LINK_NAME, EE_LINK_NAME
@@ -72,7 +72,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     # if checker is None:
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
-    pick_gen_fn = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=False, bar_only=bar_only)
+    pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only)
 
     # TODO: allow choice of config
     final_conf = initial_conf

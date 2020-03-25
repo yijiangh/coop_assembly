@@ -20,7 +20,7 @@ from coop_assembly.planning.visualization import color_structure, draw_ordered, 
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 
-from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_pick_gen_fn, get_pregrasp_gen_fn
+from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure
@@ -92,10 +92,11 @@ def test_solve_pddlstream(viewer, file_spec, collision, baronly):
     connectors = list(contact_from_connectors.keys())
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collision=collision, bar_only=baronly)
+        collisions=collision, bar_only=baronly)
 
     if plan is None:
         cprint('No plan found.', 'red')
+        assert False, 'No plan found.'
     else:
         if has_gui():
             saver.restore()
@@ -174,7 +175,6 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
     print('{} : {} / {}'.format(file_spec, success, n_attempts))
 
     # watch = viewer
-    watch = watch
     if (splan is not None):
         if write:
             here = os.path.dirname(__file__)
@@ -186,7 +186,7 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
             cprint('Result saved to: {}'.format(save_path), 'green')
         if watch:
             # time_step = None if has_gui() else 0.01
-            time_step = 0.01
+            time_step = 0.01 if baronly else 0.1
             display_trajectories(splan, time_step=time_step, #video=True,
                                  animate=False)
         if collision:
@@ -239,7 +239,7 @@ def test_stream(viewer, test_file_name, collision):
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
         reverse_grasp=True, safety_margin_length=0.005)
-    pick_gen = get_pick_gen_fn(end_effector, element_from_index, obstacles, collision=collision, verbose=True) #max_attempts=n_attempts,
+    pick_gen = get_place_gen_fn(end_effector, element_from_index, obstacles, collisions=collision, verbose=True) #max_attempts=n_attempts,
 
     # body_pose = element_from_index[chosen].goal_pose.value
     for _ in range(n_attempts):

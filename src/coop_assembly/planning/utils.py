@@ -3,7 +3,8 @@ from collections import defaultdict, deque
 
 # from pddlstream.utils import get_connected_components
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
-    create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize
+    create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize, pairwise_link_collision, \
+    BASE_LINK
 
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
@@ -50,6 +51,16 @@ def flatten_commands(commands):
     if commands is None:
         return None
     return [traj for command in commands for traj in command.trajectories]
+
+##################################################
+
+def prune_dominated(trajectories):
+    start_len = len(trajectories)
+    for traj1 in list(trajectories):
+        if any((traj1 != traj2) and (traj2.colliding <= traj1.colliding)
+               for traj2 in trajectories):
+            trajectories.remove(traj1)
+    return len(trajectories) == start_len
 
 ##################################################
 

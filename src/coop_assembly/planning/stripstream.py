@@ -1,12 +1,14 @@
 import numpy as np
 import cProfile
 import pstats
+from termcolor import cprint
 
 from pddlstream.algorithms.downward import set_cost_scale
+from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused #, CURRENT_STREAM_PLAN
 from pddlstream.algorithms.disabled import process_stream_plan
 from pddlstream.language.constants import And, PDDLProblem, print_solution, DurativeAction, Equal
-from pddlstream.language.generator import from_test
+from pddlstream.language.generator import from_test, from_gen_fn, from_fn
 from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput
 from pddlstream.language.function import FunctionInfo
 from pddlstream.utils import read, get_file_path, inclusive_range
@@ -15,7 +17,7 @@ from pddlstream.language.temporal import compute_duration, get_end
 from pybullet_planning import has_gui, get_movable_joints, get_configuration, set_configuration, WorldSaver, LockRenderer, \
     wait_if_gui, EndEffector, link_from_name, joints_from_names, intrinsic_euler_from_quat, get_links, create_attachment, \
     set_joint_positions, get_links, set_pose
-from .stream import get_element_body_in_goal_pose, get_pick_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn
+from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn
 from .utils import flatten_commands, recover_sequence, Command
 from .visualization import draw_ordered
 from .motion import display_trajectories
@@ -45,7 +47,7 @@ class Conf(object):
 ##################################################
 
 def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
-                   printed=set(), removed=set(),
+                   printed=set(), removed=set(), collisions=True,
                    temporal=False, transit=False, return_home=True, checker=None, **kwargs):
     assert not removed & printed
     remaining = set(element_from_index) - removed - printed
@@ -63,8 +65,8 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
         #'test-cfree': from_test(get_test_cfree(element_bodies)),
         # 'sample-move': get_wild_move_gen_fn(robots, obstacles, element_from_index,
         #                                     partial_orders=partial_orders, **kwargs),
-        'sample-print': get_wild_print_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                              partial_orders=partial_orders, **kwargs),
+        'sample-print': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+                                              partial_orders=partial_orders, collisions=collisions, **kwargs)),
         #'test-stiffness': from_test(test_stiffness),
     }
 
@@ -111,10 +113,10 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 
     # creates unique free variable for each output during the focused algorithm
     # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
-    stream_info = {
-        'sample-print': StreamInfo(PartialInputs(unique=True)),
+    # stream_info = {
+    #     'sample-print': StreamInfo(PartialInputs(unique=True)),
         # 'sample-move': StreamInfo(PartialInputs(unique=True)),
-    }
+    # }
 
     # Reachability heuristics good for detecting dead-ends
     # Infeasibility from the start means disconnected or collision
@@ -127,13 +129,14 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     pr = cProfile.Profile()
     pr.enable()
     with LockRenderer(lock=True):
-        # solution = solve_incremental(pddlstream_problem, planner='add-random-lazy', max_time=600,
-        #                             max_planner_time=300, debug=True)
-        solution = solve_focused(pddlstream_problem, stream_info=stream_info, max_time=max_time,
-                                 effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
-                                 max_skeletons=None, bind=True, max_failures=0,  # 0 | INF
-                                 planner=planner, max_planner_time=60, debug=True, reorder=False,
-                                 initial_complexity=1)
+        # ? incremental algorithm does not support fluent attachments?
+        solution = solve_incremental(pddlstream_problem, planner=planner, max_time=600,
+                                    max_planner_time=300, debug=True)
+        # solution = solve_focused(pddlstream_problem, max_time=max_time, #stream_info=stream_info,
+        #                          effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
+        #                          max_skeletons=None, bind=True, max_failures=0,  # 0 | INF
+        #                          planner=planner, max_planner_time=60, debug=True, reorder=False,
+        #                          initial_complexity=1)
 
     pr.disable()
     pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
@@ -180,108 +183,16 @@ def stripstream(robot, obstacles, bar_struct, **kwargs):
 
 ###############################################################
 
-def get_wild_move_gen_fn(robots, static_obstacles, element_bodies, partial_orders=set(), collisions=True, bar_only=False, **kwargs):
-    # incoming_supporters, _ = neighbors_from_orders(partial_orders)
+def get_wild_place_gen_fn(robot, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, **kwargs):
+    end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
+                               tool_link=link_from_name(robot, TOOL_LINK_NAME),
+                               visual=False, collision=True)
+    pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, collisions=collisions, verbose=False,
+        bar_only=bar_only, precompute_collisions=True)
 
-    def wild_gen_fn(name, conf1, conf2, *args):
-        is_initial = (conf1.element is None) and (conf2.element is not None)
-        is_goal = (conf1.element is not None) and (conf2.element is None)
-        if is_initial:
-            supporters = []
-        elif is_goal:
-            supporters = list(element_bodies)
-        # else:
-        #     supporters = [conf1.element]  # TODO: can also do according to levels
-        #     retrace_supporters(conf1.element, incoming_supporters, supporters)
-        element_obstacles = {element_bodies[e] for e in supporters}
-        obstacles = set(static_obstacles) | element_obstacles
-        if not collisions:
-            obstacles = set()
-
-        robot = index_from_name(robots, name)
-        conf1.assign()
-        joints = get_movable_joints(robot)
-        joints = joints_from_names(robot, IK_JOINT_NAMES)
-        # TODO: break into pieces at the furthest part from the structure
-
-        weights = JOINT_WEIGHTS
-        resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
-        disabled_collisions = get_disabled_collisions(robot)
-        custom_limits = {}
-
-        path = [conf1, conf2]
-        # path = plan_joint_motion(robot, joints, conf2.positions, obstacles=obstacles,
-        #                          self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
-        #                          weights=weights, resolutions=resolutions,
-        #                          restarts=3, iterations=100, smooth=100)
-        if not path:
-            return
-        path = [conf1.positions] + path[1:-1] + [conf2.positions]
-        traj = MotionTrajectory(robot, joints, path)
-        command = Command([traj])
-        outputs = [(command,)]
-        facts = []
-        #facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-        yield WildOutput(outputs, [('Dummy',)] + facts) # To force to be wild
-
+    def wild_gen_fn(element):
+        for t, in gen_fn(element):
+            outputs = [(t,)]
+            facts = [('Collision', t, e2) for e2 in t.colliding] if collisions else []
+            yield WildOutput(outputs, facts)
     return wild_gen_fn
-
-def get_wild_print_gen_fn(robots, static_obstacles, element_from_index, grounded_elements,
-                          collisions=True, bar_only=False, max_attempts=25, **kwargs):
-    # TODO: could reuse end-effector trajectories
-    # gen_fn_from_robot = {}
-    # for robot in robots:
-    #     end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
-    #                                tool_link=link_from_name(robot, TOOL_LINK_NAME),
-    #                                visual=False, collision=True)
-    #     gen_fn_from_robot[robot] = get_pick_gen_fn(end_effector, element_from_index, static_obstacles, collision=collisions, \
-    #                                verbose=False, bar_only=bar_only)
-
-    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, static_obstacles, collision=collisions) # max_attempts=max_attempts,
-
-    # def wild_gen_fn(name, element):
-    #     # TODO: could cache this
-    #     # sequence = [result.get_mapping()['?e'].value for result in CURRENT_STREAM_PLAN]
-    #     # index = sequence.index(element)
-    #     # printed = sequence[:index]
-    #     # TODO: this might need to be recomputed per iteration
-    #     robot = index_from_name(robots, name)
-    #     for command, in gen_fn_from_robot[robot](element):
-    #         q1 = Conf(robot, command.start_conf, element=element)
-    #         q2 = Conf(robot, command.end_conf, element=element)
-    #         outputs = [(q1, q2, command)]
-    #         facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-    #         yield WildOutput(outputs, [('Dummy',)] + facts)
-    # return wild_gen_fn
-
-    def dummpy_gen_fn(element, fluents=[]):
-        for _ in range(max_attempts):
-            # TODO element_robot
-            # q1 = Conf(robots[0], positions=None, element=element)
-            body = element_from_index[element].body
-            world_pose = element_from_index[element].goal_pose
-            printed = []
-            for fact in fluents:
-                if fact[0] == 'printed':
-                    printed.append(fact[1])
-                else:
-                    raise NotImplementedError(fact[0])
-            pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed=printed))
-            if not pregrasp_poses:
-                continue
-
-            element_robot = element_from_index[element].element_robot
-            element_joints = get_movable_joints(element_robot)
-            element_body_link = get_links(element_robot)[-1]
-            attach_conf = np.concatenate([pregrasp_poses[-1][0], intrinsic_euler_from_quat(pregrasp_poses[-1][1])])
-            set_joint_positions(element_robot, element_joints, attach_conf)
-            set_pose(body, pregrasp_poses[-1])
-            attachment = create_attachment(element_robot, element_body_link, body)
-            command = Command([MotionTrajectory(element_robot, element_joints,
-                               [np.concatenate([p[0], intrinsic_euler_from_quat(p[1])]) for p in pregrasp_poses], \
-                               attachments=[attachment], tag='place_approach', element=element)])
-            outputs = [(command,)]
-            facts = []
-            yield WildOutput(outputs, [('Dummy',)] + facts)
-            break
-    return dummpy_gen_fn
