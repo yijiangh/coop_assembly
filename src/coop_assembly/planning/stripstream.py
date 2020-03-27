@@ -3,6 +3,12 @@ import cProfile
 import pstats
 from termcolor import cprint
 
+import os, sys
+here = os.path.abspath(os.path.dirname(__file__))
+sys.path.extend([
+    os.path.join(here, 'pddlstream/'),
+])
+
 from pddlstream.algorithms.downward import set_cost_scale
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused #, CURRENT_STREAM_PLAN
@@ -66,7 +72,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
         # 'sample-move': get_wild_move_gen_fn(robots, obstacles, element_from_index,
         #                                     partial_orders=partial_orders, **kwargs),
         'sample-print': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                              partial_orders=partial_orders, collisions=collisions, **kwargs)),
+                                              partial_orders=partial_orders, collisions=collisions, **kwargs),
         #'test-stiffness': from_test(test_stiffness),
     }
 
@@ -115,7 +121,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
     # stream_info = {
     #     'sample-print': StreamInfo(PartialInputs(unique=True)),
-        # 'sample-move': StreamInfo(PartialInputs(unique=True)),
+    #     # 'sample-move': StreamInfo(PartialInputs(unique=True)),
     # }
 
     # Reachability heuristics good for detecting dead-ends
@@ -130,7 +136,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     pr.enable()
     with LockRenderer(lock=True):
         # ? incremental algorithm does not support fluent attachments?
-        solution = solve_incremental(pddlstream_problem, planner=planner, max_time=600,
+        solution = solve_incremental(pddlstream_problem, verbose=True, planner=planner, max_time=600,
                                     max_planner_time=300, debug=True)
         # solution = solve_focused(pddlstream_problem, max_time=max_time, #stream_info=stream_info,
         #                          effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
@@ -139,13 +145,13 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
         #                          initial_complexity=1)
 
     pr.disable()
-    pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
+    # pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
 
     print_solution(solution)
     plan, _, certificate = solution
-    # print('certificate all_facts:', certificate.all_facts)
+    print('-'*10)
+    print('certificate: ', certificate)
     # preimage facts: the facts that support the returned plan
-    # print('certificate preimage_facts:', certificate.preimage_facts)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
     return plan
@@ -183,7 +189,9 @@ def stripstream(robot, obstacles, bar_struct, **kwargs):
 
 ###############################################################
 
-def get_wild_place_gen_fn(robot, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, **kwargs):
+def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], \
+    collisions=True, bar_only=False, **kwargs):
+    robot = robots[0]
     end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
                                tool_link=link_from_name(robot, TOOL_LINK_NAME),
                                visual=False, collision=True)
@@ -191,7 +199,7 @@ def get_wild_place_gen_fn(robot, obstacles, element_from_index, grounded_element
         bar_only=bar_only, precompute_collisions=True)
 
     def wild_gen_fn(element):
-        for t, in gen_fn(element):
+        for t, in pick_gen_fn(element):
             outputs = [(t,)]
             facts = [('Collision', t, e2) for e2 in t.colliding] if collisions else []
             yield WildOutput(outputs, facts)

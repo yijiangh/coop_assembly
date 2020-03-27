@@ -368,6 +368,6 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
         else:
             if verbose:
                 cprint('E#{} | Attempts: {} | Max attempts exceeded!'.format(element, max_grasp), 'red')
-            yield None,
-            # return
+            return
+            # yield None,
     return gen_fn

@@ -1,0 +1,3 @@
+[submodule "src/coop_assembly/planning/pddlstream"]
+	path = src/coop_assembly/planning/pddlstream
+	url = https://github.com/caelan/pddlstream.git

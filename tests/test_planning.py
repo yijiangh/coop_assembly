@@ -109,7 +109,8 @@ def test_solve_pddlstream(viewer, file_spec, collision, baronly):
             draw_ordered(elements, endpts_from_element)
             wait_if_gui('Ready to simulate trajectory.')
 
-            display_trajectories(trajectories, time_step=0.02)
+            time_step = None
+            display_trajectories(trajectories, time_step=time_step)
 
 @pytest.mark.check_sweep
 def test_capture_pregrasp_sweep_collision(viewer, results_dir):
@@ -186,7 +187,7 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
             cprint('Result saved to: {}'.format(save_path), 'green')
         if watch:
             # time_step = None if has_gui() else 0.01
-            time_step = 0.01 if baronly else 0.1
+            time_step = 0.01 if baronly else None
             display_trajectories(splan, time_step=time_step, #video=True,
                                  animate=False)
         if collision:
@@ -283,6 +284,7 @@ def test_stream(viewer, test_file_name, collision):
 
         wait_if_gui()
         remove_handles(handles)
+
 
 def test_color_structure(viewer, test_file_name):
     bar_struct, _ = load_structure(test_file_name, viewer)
