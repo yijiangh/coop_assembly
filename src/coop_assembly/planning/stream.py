@@ -189,9 +189,9 @@ def command_collision(command, bodies, end_effector=None):
                     if not collisions[idx]:
                         collisions[idx] |= pairwise_collision(attach.child, body)
 
-                    if collisions[idx]:
-                        print('colliding E{} - E{}'.format(attach.child, body))
-                        wait_if_gui()
+                    # if collisions[idx]:
+                    #     print('colliding E{} - E{}'.format(attach.child, body))
+                    #     wait_if_gui()
 
         # tool_link_name = TOOL_LINK_NAME if end_effector else get_link_name(robot, get_links(robot)[-1])
         # for tool_pose in randomize(trajectory.get_link_path(tool_link_name)): # TODO: bisect
@@ -209,10 +209,11 @@ def command_collision(command, bodies, end_effector=None):
                 if not collisions[i]:
                     collisions[i] |= pairwise_collision(trajectory.robot, body)
 
-                if collisions[idx]:
-                    print('colliding R{} - E{}'.format(trajectory.robot, body))
-                    dump_body(trajectory.robot)
-                    wait_if_gui()
+                # if collisions[idx]:
+                #     print('colliding R{} - E{}'.format(trajectory.robot, body))
+                #     dump_body(trajectory.robot)
+                #     wait_if_gui()
+
     #for element, unsafe in zip(elements, collisions):
     #    command.safe_per_element[element] = unsafe
     return collisions

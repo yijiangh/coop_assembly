@@ -51,16 +51,16 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
             # for attach in trajectory.attachments:
             #     set_color(attach.child, GREEN)
             if collision_fn(conf, diagnosis=has_gui()):
-                if trajectory.tag == 'place_approach' and \
-                    not bar_only and len(path) >= 2 and t > len(path)-2:
-                        pass
-                else:
-                    cprint('Collision on trajectory {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag), 'red')
+                # if trajectory.tag == 'place_approach' and \
+                #     not bar_only and len(path) >= 2 and t > len(path)-2:
+                #         pass
+                # else:
+                cprint('Collision on trajectory {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag), 'red')
+                valid = False
                 if not allow_failure:
                     return False
             if watch:
                 print('Traj {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag))
-                valid = False
                 wait_if_gui()
 
         if isinstance(trajectory, MotionTrajectory) \

@@ -93,7 +93,7 @@ def test_solve_pddlstream(viewer, file_spec, collision, baronly, write):
     connectors = list(contact_from_connectors.keys())
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collisions=collision, bar_only=baronly)
+        collisions=collision, bar_only=baronly, algorithm='incremental', debug=False)
 
     if plan is None:
         cprint('No plan found.', 'red')
@@ -139,6 +139,8 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec,
     handles.extend(label_elements({e:element_from_index[e].body for e in element_from_index}, body_index=False))
 
     plan = []
+    # dump_world()
+    print('*'*10)
     for traj_data in json_data['plan']:
         path = traj_data['path']
         element = traj_data['element']
@@ -158,7 +160,10 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec,
         traj = MotionTrajectory.from_data(traj_data, robot, joints, attachments)
         plan.append(traj)
 
-        if element is not None and tag=='place_approach':
+    element_seq = recover_sequence(plan, element_from_index)
+    for traj in plan:
+        if traj.element is not None and traj.tag=='place_approach':
+            print('E{} : future E{}'.format(traj.element, element_seq[element_seq.index(traj.element):]))
             command = Command([traj])
             elements_order = [e for e in element_from_index if (e != element)]
             bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
@@ -170,8 +175,8 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec,
                     command.set_safe(element2)
             facts = [('Collision', command, e2) for e2 in command.colliding]
             print('Collision facts: ', facts)
-            # if element == 3:
-            #     wait_if_gui('should be element 9')
+            # * checking (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
+            assert set(command.colliding) <= set(element_seq[element_seq.index(traj.element):])
 
         print('------------')
 

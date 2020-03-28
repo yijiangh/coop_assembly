@@ -110,11 +110,12 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 ##################################################
 
 def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
-                     collisions=True, disable=False, max_time=30, bar_only=False, **kwargs):
+                     collisions=True, disable=False, max_time=30, bar_only=False, algorithm='incremental', debug=False, **kwargs):
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
                                         collisions=collisions, bar_only=bar_only, **kwargs)
     print('Init:', pddlstream_problem.init)
     print('Goal:', pddlstream_problem.goal)
+    print('='*10)
 
     # creates unique free variable for each output during the focused algorithm
     # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
@@ -134,22 +135,24 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     pr = cProfile.Profile()
     pr.enable()
     with LockRenderer(lock=True):
-        # ? incremental algorithm does not support fluent attachments?
-        solution = solve_incremental(pddlstream_problem, verbose=True, planner=planner, max_time=600,
-                                    max_planner_time=300, debug=True)
-        # solution = solve_focused(pddlstream_problem, max_time=max_time, #stream_info=stream_info,
-        #                          effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
-        #                          max_skeletons=None, bind=True, max_failures=0,  # 0 | INF
-        #                          planner=planner, max_planner_time=60, debug=True, reorder=False,
-        #                          initial_complexity=1)
-
+        if algorithm == 'incremental':
+            solution = solve_incremental(pddlstream_problem, verbose=True, planner=planner, max_time=600,
+                                        max_planner_time=300, debug=debug)
+        elif algorithm == 'incremental':
+            solution = solve_focused(pddlstream_problem, max_time=max_time, #stream_info=stream_info,
+                                     effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
+                                     max_skeletons=None, bind=True, max_failures=0,  # 0 | INF
+                                     planner=planner, max_planner_time=60, debug=debug, reorder=False, verbose=True,
+                                     initial_complexity=1)
+        else:
+            raise NotImplementedError(algorithm)
     pr.disable()
     # pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
 
     print_solution(solution)
     plan, _, certificate = solution
     print('-'*10)
-    print('certificate: ', certificate)
+    # print('certificate: ', certificate)
     # preimage facts: the facts that support the returned plan
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
