@@ -83,7 +83,7 @@ def Frame_to_plane_data(frame):
     return (data['point'], data['xaxis'], data['yaxis'], cross_vectors(data['xaxis'], data['yaxis']))
 
 ###############################################
-SHRINK_RADIUS = 0.001 # meter
+SHRINK_RADIUS = 0.0001 # meter
 def create_bar_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0)):
     """inputs are in millimeter
     """

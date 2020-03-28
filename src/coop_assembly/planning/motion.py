@@ -10,7 +10,7 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color, \
     joints_from_names, INF, wait_for_user, check_initial_end, BASE_LINK, get_aabb, aabb_union, aabb_overlap, BodySaver, draw_aabb, \
-    step_simulation, SE3, get_links
+    step_simulation, SE3, get_links, remove_all_debug
 
 from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
@@ -123,7 +123,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
     else:
         wait_if_gui('Ready to simulate trajectories.')
 
-    # remove_all_debug()
+    remove_all_debug()
     #element_bodies = dict(zip(planned_elements, create_elements(node_points, planned_elements)))
     #for body in element_bodies.values():
     #    set_color(body, (1, 0, 0, 0))
@@ -176,4 +176,4 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
 
     # if video_saver is not None:
     #     video_saver.restore()
-    wait_if_gui()
+    wait_if_gui('Simulation finished.')

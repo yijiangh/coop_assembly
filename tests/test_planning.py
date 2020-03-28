@@ -79,7 +79,7 @@ def test_parse_pddlstream(viewer, file_spec, collision):
     assert set([('Removed', i) for i in element_from_index]) <= set(pddlstream_problem.goal)
 
 @pytest.mark.wip_pddl
-def test_solve_pddlstream(viewer, file_spec, collision, baronly, write):
+def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
@@ -88,12 +88,11 @@ def test_solve_pddlstream(viewer, file_spec, collision, baronly, write):
     saver = WorldSaver()
     element_from_index = bar_struct.get_element_from_index()
     grounded_elements = bar_struct.get_grounded_bar_keys()
-    element_from_index = bar_struct.get_element_from_index()
     contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
     connectors = list(contact_from_connectors.keys())
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collisions=collision, bar_only=baronly, algorithm='incremental', debug=False)
+        collisions=collision, bar_only=bar_only, algorithm='incremental', debug=False)
 
     if plan is None:
         cprint('No plan found.', 'red')
@@ -116,12 +115,21 @@ def test_solve_pddlstream(viewer, file_spec, collision, baronly, write):
             endpts_from_element = bar_struct.get_axis_pts_from_element()
             draw_ordered(elements, endpts_from_element)
             wait_if_gui('Ready to simulate trajectory.')
-
-            time_step = None
+            for e in element_from_index:
+               set_color(element_from_index[e].body, (1, 0, 0, 0))
+            # time_step = None
+            time_step = 0.1 if bar_only else None
             display_trajectories(trajectories, time_step=time_step)
+        if collision:
+            valid = validate_trajectories(bar_struct.get_element_from_index(), fixed_obstacles, trajectories, \
+                grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=has_gui(), bar_only=bar_only, refine_num=10)
+            cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
+            assert valid
+    reset_simulation()
+    disconnect()
 
 @pytest.mark.check_sweep
-def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec, watch, baronly):
+def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec, watch, bar_only):
     if not result_file_spec:
         return
     # file_name = '12_bars_solution_20-03-16_17-27-03.json'
@@ -188,7 +196,7 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec,
     disconnect()
 
 @pytest.mark.regression
-def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revisit, n_trails, write, baronly):
+def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revisit, n_trails, write, bar_only):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
     # wait_if_gui()
@@ -200,7 +208,7 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
         print('#'*10)
         with LockRenderer(True):
             plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motions=motion, stiffness=stiffness,
-                revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False, bar_only=baronly)
+                revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False, bar_only=bar_only)
             print(data)
         if plan is None:
             cprint('#{}: plan not found'.format(i), 'red')
@@ -227,12 +235,12 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
             cprint('Result saved to: {}'.format(save_path), 'green')
         if watch:
             # time_step = None if has_gui() else 0.01
-            time_step = 0.01 if baronly else None
+            time_step = 0.01 if bar_only else None
             display_trajectories(splan, time_step=time_step, #video=True,
                                  animate=False)
         if collision:
             assert validate_trajectories(bar_struct.get_element_from_index(), fixed_obstacles, splan, \
-                grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=has_gui(), bar_only=baronly, refine_num=10)
+                grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=has_gui(), bar_only=bar_only, refine_num=10)
     reset_simulation()
     disconnect()
 

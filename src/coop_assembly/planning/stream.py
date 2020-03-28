@@ -396,14 +396,17 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
 
                 yield command,
                 break
-            else:
-                # this will run if no break is called, prevent a StopIteraton error
-                # https://docs.python.org/3/tutorial/controlflow.html#break-and-continue-statements-and-else-clauses-on-loops
-                if allow_failure:
-                    yield None,
+            # else:
+            #     # this will run if no break is called, prevent a StopIteraton error
+            #     # https://docs.python.org/3/tutorial/controlflow.html#break-and-continue-statements-and-else-clauses-on-loops
+                # if allow_failure:
+                    # yield None,
         else:
             if verbose:
                 cprint('E#{} | Attempts: {} | Max attempts exceeded!'.format(element, max_grasp), 'red')
-            return
-            # yield None,
+
+            if allow_failure:
+                yield None,
+            else:
+                return
     return gen_fn
