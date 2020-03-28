@@ -83,8 +83,10 @@ def Frame_to_plane_data(frame):
     return (data['point'], data['xaxis'], data['yaxis'], cross_vectors(data['xaxis'], data['yaxis']))
 
 ###############################################
-
-def create_bar_body(axis_end_pts, radius, use_box=USE_BOX, color=apply_alpha(RED, 0)):
+SHRINK_RADIUS = 0.001 # meter
+def create_bar_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0)):
+    """inputs are in millimeter
+    """
     p1, p2 = axis_end_pts
     p1 = np.array(p1) * METER_SCALE
     p2 = np.array(p2) * METER_SCALE
@@ -98,7 +100,7 @@ def create_bar_body(axis_end_pts, radius, use_box=USE_BOX, color=apply_alpha(RED
     theta = np.math.acos(z / np.linalg.norm(delta))
     quat = quat_from_euler(Euler(pitch=theta, yaw=phi))
     # p1 is z=-height/2, p2 is z=+height/2
-    diameter = 2*radius*METER_SCALE
+    diameter = 2*(bar_radius*METER_SCALE - SHRINK_RADIUS)
 
     if use_box:
         # Much smaller than cylinder
@@ -122,7 +124,10 @@ def create_bar_body(axis_end_pts, radius, use_box=USE_BOX, color=apply_alpha(RED
 
     return body
 
-def create_bar_flying_body(axis_end_pts, radius, use_box=USE_BOX, color=apply_alpha(RED, 0.2)):
+def create_bar_flying_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0.2)):
+    """input is in meter
+    """
+    radius = bar_radius - SHRINK_RADIUS
     p1, p2 = axis_end_pts
     p1 = np.array(p1)
     p2 = np.array(p2)

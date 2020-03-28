@@ -11,7 +11,7 @@ from .robot_setup import get_disabled_collisions, EE_LINK_NAME
 ##################################################
 
 def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
-    grounded_elements={}, allow_failure=False, bar_only=False, refine_num=10):
+    grounded_elements={}, allow_failure=False, bar_only=False, refine_num=10, watch=False):
     if trajectories is None:
         return False
     # TODO: combine all validation procedures
@@ -27,6 +27,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
         attachments = trajectory.attachments
         extra_disabled_collisions = set()
         for attach in trajectory.attachments:
+            set_color(attach.child, GREEN)
             ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
             extra_disabled_collisions.add(((robot, ee_link), (attach.child, BASE_LINK)))
         disabled_collisions = {} if bar_only else get_disabled_collisions(trajectory.robot)
@@ -40,18 +41,27 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
         # if isinstance(trajectory, MotionTrajectory) and \
         #     (trajectory.tag == 'transit2place'):
         #     trajectory.refine(refine_num)
+        # TODO
+        # trajectory.refine(refine_num)
 
+        valid = True
         path = list(trajectory.iterate())
         for t, conf in enumerate(path):
             # if any(pairwise_collision(trajectory.robot, body) for body in obstacles):
-                # for attach in trajectory.attachments:
-                #     set_color(attach.child, GREEN)
-            if trajectory.tag == 'place_approach' and t > len(path)-5:
-                continue
+            # for attach in trajectory.attachments:
+            #     set_color(attach.child, GREEN)
             if collision_fn(conf, diagnosis=has_gui()):
-                print('Collision on trajectory {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag))
+                if trajectory.tag == 'place_approach' and \
+                    not bar_only and len(path) >= 2 and t > len(path)-2:
+                        pass
+                else:
+                    cprint('Collision on trajectory {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag), 'red')
                 if not allow_failure:
                     return False
+            if watch:
+                print('Traj {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag))
+                valid = False
+                wait_if_gui()
 
         if isinstance(trajectory, MotionTrajectory) \
             and ((not bar_only and trajectory.tag == 'place_retreat') or (bar_only and trajectory.tag == 'place_approach')):
@@ -64,4 +74,4 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
                 set_color(body, apply_alpha(BLUE))
             obstacles.append(body)
         # wait_if_gui()
-    return True
+    return valid

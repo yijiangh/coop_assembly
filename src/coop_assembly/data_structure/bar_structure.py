@@ -22,7 +22,7 @@ from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_
     compute_contact_line_between_bars, create_bar_body, create_bar_flying_body
 from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
-from pybullet_planning import create_plane, set_point, Point, get_pose
+from pybullet_planning import create_plane, set_point, Point, get_pose, apply_alpha, RED, set_color, has_body, dump_world, get_bodies
 
 from .utils import Element, WorldPose
 
@@ -118,7 +118,7 @@ class BarStructure(Network):
         return v_key
         # TODO: bisect search for local disassembly motion
 
-    def create_pb_bodies(self, color=(1,1,1,0)):
+    def create_pb_bodies(self, color=apply_alpha(RED, 0)):
         """create pybullet bodies for all elements, useful when the BarStructure is reconstructed from json data
 
         Parameters
@@ -127,8 +127,7 @@ class BarStructure(Network):
             [description], by default (1,1,1,0)
         """
         for v in self.vertices():
-            self.vertex[v]['pb_body'] = create_bar_body(self.vertex[v]['axis_endpoints'], \
-                self.vertex[v]['radius'], color=color)
+            self.get_bar_pb_body(v, color=color)
 
     def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[], grounded=None):
         """create an edge connecting bar v_key1 and v_key2 or update edge attributes if edge exists already
@@ -236,7 +235,7 @@ class BarStructure(Network):
         end_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
         return (scale_vector(end_pts[0], scale), scale_vector(end_pts[1], scale))
 
-    def get_bar_pb_body(self, bar_v_key):
+    def get_bar_pb_body(self, bar_v_key, color=apply_alpha(RED, 0)):
         """get pybullet body of a particular bar
 
         Parameters
@@ -249,23 +248,28 @@ class BarStructure(Network):
         int
             [description]
         """
-        if 'pb_body' not in self.vertex[bar_v_key] or self.vertex[bar_v_key]['pb_body'] is None:
+        if 'pb_body' not in self.vertex[bar_v_key] or \
+            self.vertex[bar_v_key]['pb_body'] is None or \
+            self.vertex[bar_v_key]['pb_body'] not in get_bodies():
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
             radius = self.vertex[bar_v_key]['radius']
             self.vertex[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius)
+        set_color(self.vertex[bar_v_key]['pb_body'], color)
         return self.vertex[bar_v_key]['pb_body']
 
-    def get_bar_element_robot(self, bar_v_key):
-        if 'pb_element_robot' not in self.vertex[bar_v_key] or self.vertex[bar_v_key]['pb_element_robot'] is None:
+    def get_bar_element_robot(self, bar_v_key, color=apply_alpha(RED, 0)):
+        if 'pb_element_robot' not in self.vertex[bar_v_key] or self.vertex[bar_v_key]['pb_element_robot'] is None or \
+            self.vertex[bar_v_key]['pb_element_robot'] not in get_bodies():
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
             radius = self.vertex[bar_v_key]['radius']
             self.vertex[bar_v_key]['pb_element_robot'] = create_bar_flying_body(np.array(axis_pts)*METER_SCALE, radius*METER_SCALE)
+        set_color(self.vertex[bar_v_key]['pb_element_robot'], color)
         return self.vertex[bar_v_key]['pb_element_robot']
 
     ##################################
     # export dict info for planning
 
-    def get_element_bodies(self):
+    def get_element_bodies(self, color=apply_alpha(RED, 0)):
         """[summary]
 
         Returns
@@ -273,7 +277,7 @@ class BarStructure(Network):
         dict
             bar vkey -> pb body
         """
-        return {v : self.get_bar_pb_body(v) for v in self.vertices()}
+        return {v : self.get_bar_pb_body(v, color) for v in self.vertices()}
 
     def get_element_from_index(self):
         element_from_index = {}
@@ -314,6 +318,10 @@ class BarStructure(Network):
     def get_grounded_bar_keys(self):
         # return frozenset(filter(lambda e: is_ground(e, ground_nodes), elements))
         return frozenset([bv for bv, attr in self.vertices(True) if attr['grounded']])
+
+    ##################################
+    # mutual collision check
+    # def check
 
     ##################################
     # structural model extraction

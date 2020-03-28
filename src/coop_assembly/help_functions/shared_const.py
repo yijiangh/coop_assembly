@@ -25,10 +25,10 @@ def is_ironpython():
 
 IPY = is_ironpython()
 
-try:
-    import pybullet_planning
-    HAS_PYBULLET = True
-except ImportError:
-    print('Cannot import pybullet_plannig, related features disabled.')
-    HAS_PYBULLET = False
+# try:
+import pybullet_planning
+HAS_PYBULLET = True
+# except ImportError:
+    # print('Cannot import pybullet_plannig, related features disabled.')
+    # HAS_PYBULLET = False
 

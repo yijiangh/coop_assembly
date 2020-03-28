@@ -232,9 +232,8 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
             raise RuntimeError('Tet generation fails at #{} ({}) -> {}'.format(tet_id, tri_node_ids, new_vertex_id))
             # break
 
-    if HAS_PYBULLET:
-        reset_simulation()
-        disconnect()
+    reset_simulation()
+    disconnect()
 
 def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     new_vertex_pt, new_vertex_id, radius,

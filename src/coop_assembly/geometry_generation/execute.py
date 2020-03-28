@@ -47,16 +47,6 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
     o_struct = OverallStructure(b_struct)
     generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_ids,
         correct=correct, check_collision=check_collision, viewer=viewer)
-
-    # offset_d1, offset_d2 = 5, 5
-    # nb_rot, nb_trans = 4, 4
-
-    # from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset
-    # seq = [v for v in b_struct.vertex]
-    # for v in b_struct.vertex:
-    #     calculate_gripping_plane(b_struct, v, b_struct.vertex[v]["mean_point"], nb_rot=nb_rot, nb_trans=nb_trans)
-    #     calculate_offset(o_struct, b_struct, v, offset_d1, offset_d2, seq)
-
     return (b_struct.data, o_struct.data)
 
 

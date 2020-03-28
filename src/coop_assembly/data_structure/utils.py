@@ -51,7 +51,7 @@ class Trajectory(object):
         if not self.path:
             return None
         return self.path[-1]
-    def get_link_path(self, link_name=TOOL_LINK_NAME):
+    def get_link_path(self, link_name):
         link = link_from_name(self.robot, link_name)
         if link not in self.path_from_link:
             with BodySaver(self.robot):

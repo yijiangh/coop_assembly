@@ -19,7 +19,7 @@ from pybullet_planning import link_from_name, set_pose, \
     interpolate_poses, create_attachment, plan_cartesian_motion, INF, GREEN, BLUE, RED, set_color, get_all_links, step_simulation, get_aabb, \
     get_bodies_in_region, pairwise_link_collision, BASE_LINK, get_client, clone_collision_shape, clone_visual_shape, get_movable_joints, \
     create_flying_body, SE3, euler_from_quat, create_shape, get_cylinder_geometry, wait_if_gui, set_joint_positions, dump_body, get_links, \
-    get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize
+    get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
 from .utils import Command, prune_dominated
@@ -140,7 +140,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
             offset_pose = multiply(pose.value, delta_pose)
             is_colliding = False
             offset_path = list(interpolate_poses(offset_pose, pose.value, pos_step_size=POS_STEP_SIZE, ori_step_size=ORI_STEP_SIZE))
-            for p in offset_path[:-1]:
+            for p in offset_path: #[:-1]
                 # TODO: if colliding at the world_from_bar pose, use local velocity + normal check
                 # TODO: normal can be derived from
                 if ee_collision_fn(p):
@@ -156,38 +156,70 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
 
 ######################################
 
-def command_collision(end_effector, command, bodies):
+def command_collision(command, bodies, end_effector=None):
+    """check if a command's trajectories collide with the given bodies.
+       Return a list of [True/False] corresponding to the id used in ``bodies``
+       Critical in pddlstream formulation.
+    """
     # TODO: each new addition makes collision checking more expensive
     #offset = 4
     #for robot_conf in trajectory[offset:-offset]:
     collisions = [False for _ in range(len(bodies))]
-    # Orientation remains the same for the extrusion trajectory
     idx_from_body = dict(zip(bodies, range(len(bodies))))
     # TODO: use bounding cylinder for each element
     # TODO: separate into another method. Sort paths by tool poses first
+
+    # * checking end effector and attachments only
     for trajectory in command.trajectories:
-        for tool_pose in randomize(trajectory.get_link_path()): # TODO: bisect
-            end_effector.set_pose(tool_pose)
+        robot = trajectory.robot
+        for conf in randomize(trajectory.path):
+            # TODO: bisect or refine
+            joints = get_movable_joints(robot)
+            set_joint_positions(robot, joints, conf)
+            for attach in trajectory.attachments:
+                attach.assign()
+                set_color(attach.child, (0,1,0,0.5))
+
             #for body, _ in get_bodies_in_region(tool_aabb):
             for i, body in enumerate(bodies):
                 if body not in idx_from_body: # Robot
                     continue
                 idx = idx_from_body[body]
-                if not collisions[idx]:
-                    collisions[idx] |= pairwise_collision(end_effector.body, body)
+                for attach in trajectory.attachments:
+                    if not collisions[idx]:
+                        collisions[idx] |= pairwise_collision(attach.child, body)
+
+                    if collisions[idx]:
+                        print('colliding E{} - E{}'.format(attach.child, body))
+                        wait_if_gui()
+
+        # tool_link_name = TOOL_LINK_NAME if end_effector else get_link_name(robot, get_links(robot)[-1])
+        # for tool_pose in randomize(trajectory.get_link_path(tool_link_name)): # TODO: bisect
+        #     joints = get_movable_joints(robot)
+        # if end_effector:
+        #     end_effector.set_pose(tool_pose)
+        # if not collisions[idx]:
+        #     collisions[idx] |= pairwise_collision(end_effector.body, body)
+
+    # * checking robot bodies
     for trajectory in command.trajectories:
         for robot_conf in randomize(trajectory.path):
             set_joint_positions(trajectory.robot, trajectory.joints, robot_conf)
             for i, body in enumerate(bodies):
                 if not collisions[i]:
                     collisions[i] |= pairwise_collision(trajectory.robot, body)
+
+                if collisions[idx]:
+                    print('colliding R{} - E{}'.format(trajectory.robot, body))
+                    dump_body(trajectory.robot)
+                    wait_if_gui()
     #for element, unsafe in zip(elements, collisions):
     #    command.safe_per_element[element] = unsafe
     return collisions
 
 ######################################
 
-def compute_place_path(end_effector, pregrasp_poses, grasp, index, element_from_index, collision_fn, bar_only=False, verbose=False,\
+def compute_place_path(pregrasp_poses, grasp, index, element_from_index, collision_fn, bar_only=False, end_effector=None, verbose=False,\
     diagnosis=False, retreat_vector=np.array([0, 0, -1])):
     body = element_from_index[index].body
     if bar_only:
@@ -202,6 +234,8 @@ def compute_place_path(end_effector, pregrasp_poses, grasp, index, element_from_
             [np.concatenate([p[0], intrinsic_euler_from_quat(p[1])]) for p in pregrasp_poses], \
             attachments=[attachment], tag='place_approach', element=index)])
         return command
+    else:
+        assert end_effector is not None
 
     robot = end_effector.robot
     ee_from_tool = invert(end_effector.tool_from_root)
@@ -292,7 +326,7 @@ def compute_place_path(end_effector, pregrasp_poses, grasp, index, element_from_
 
 def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisions=True,
     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, bar_only=False,
-    precompute_collisions=False, **kwargs):
+    precompute_collisions=False):
     if not collisions:
         precompute_collisions = False
     robot = end_effector.robot
@@ -327,20 +361,21 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
             world_pose = world_pose_t[0]
             grasp = grasp_t[0]
             for _ in range(max_attempts):
+                # when used in pddlstream, the pregrasp sampler assumes no elements assembled at all time
                 pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed))
                 if not pregrasp_poses:
                     if verbose : print('pregrasp failure.')
                     continue
 
-                command = compute_place_path(end_effector, pregrasp_poses, grasp, element, element_from_index, collision_fn, bar_only=bar_only, verbose=verbose,\
-                    diagnosis=diagnosis, retreat_vector=retreat_vector)
+                command = compute_place_path(pregrasp_poses, grasp, element, element_from_index, collision_fn, bar_only=bar_only,
+                    end_effector=end_effector,  verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector)
                 if command is None:
                     continue
 
                 command.update_safe(printed)
                 if precompute_collisions:
-                    bodies_order = [element_from_index[e].body for e in elements_order]
-                    colliding = command_collision(end_effector, command, bodies_order)
+                    bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
+                    colliding = command_collision(command, bodies_order, end_effector=end_effector)
                     for element2, unsafe in zip(elements_order, colliding):
                         if unsafe:
                             command.set_unsafe(element2)

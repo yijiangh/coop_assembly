@@ -1,7 +1,7 @@
 import colorsys
 import numpy as np
 from pybullet_planning import RED, BLUE, GREEN, BLACK, add_line, set_color, apply_alpha, get_visual_data, \
-    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration
+    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name
 from coop_assembly.help_functions.shared_const import METER_SCALE
 
 BAR_LINE_WIDTH = 1.0
@@ -99,20 +99,21 @@ def set_camera(node_points, camera_dir=[1, 1, 1], camera_dist=0.25):
 
 ######################################################
 
-def label_element(element_bodies, element):
+def label_element(element_bodies, element, tag=None):
     element_body = element_bodies[element]
+    tag = '-'+tag if tag is not None else ''
     return [
-        add_text('b'+str(element), position=(0, 0, 0), parent=element_body),
+        add_text('b'+str(element)+tag, position=(0, 0, 0), parent=element_body),
         # add_text(element[1], position=(0, 0, +0.02), parent=element_body),
     ]
 
 
-def label_elements(element_bodies):
+def label_elements(element_bodies, body_index=False):
     handles = []
     # +z points parallel to each element body
     for element, body in element_bodies.items():
-        handles.extend(label_element(element_bodies, element))
-        handles.extend(draw_pose(get_pose(body), length=0.02))
+        handles.extend(label_element(element_bodies, element, tag=get_name(body) if body_index else None))
+        # handles.extend(draw_pose(get_pose(body), length=0.02))
         # wait_for_user()
     return handles
 

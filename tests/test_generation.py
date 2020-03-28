@@ -20,30 +20,27 @@ from coop_assembly.geometry_generation.execute import execute_from_points
 from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset, contact_info_from_seq
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
-from coop_assembly.planning.visualization import set_camera
+from coop_assembly.planning.visualization import set_camera, SHADOWS, BACKGROUND_COLOR, label_elements
+from coop_assembly.planning.utils import load_world
+
+from coop_assembly.geometry_generation.generate_tetrahedra import generate_structure_from_points
 
 from pybullet_planning import connect, wait_for_user, set_camera_pose, create_plane, get_pose, set_pose, multiply, \
-    set_color, RED, BLUE, apply_alpha, set_point, Point, unit_pose, draw_pose, tform_from_pose, Pose, Point, Euler, tform_point
+    set_color, RED, BLUE, GREEN, TAN, GREY, apply_alpha, set_point, Point, unit_pose, draw_pose, tform_from_pose, Pose, Point, Euler, tform_point, \
+    pairwise_collision_info, draw_collision_diagnosis, pairwise_collision, dump_world, get_bodies
 
 @pytest.fixture
 def save_dir():
     here = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(here, 'test_data')
 
-
 @pytest.mark.gen_from_pts
-# @pytest.mark.parametrize('test_set_name', [('single_cube'), ('YJ_12_bars')])
-@pytest.mark.parametrize('test_set_name', [('YJ_12_bars')])
-# @pytest.mark.parametrize('test_set_name', [('single_tet')])
 @pytest.mark.parametrize('radius', [(3.17), ])
-# @pytest.mark.parametrize('pt_search_method', [('point2point'), ])
-@pytest.mark.parametrize('pt_search_method', [('point2triangle'), ])
-# @pytest.mark.parametrize('pt_search_method', [('point2point'), ('point2triangle')])
-def test_generate_from_points(viewer, points_library, test_set_name, radius, pt_search_method, save_dir, write):
-
-    points, base_tri_pts = points_library[test_set_name]
+@pytest.mark.parametrize('pt_search_method', [('point2triangle'), ]) #('point2point'), ('point2triangle')
+def test_generate_from_points(save_dir, points_library, viewer, file_spec, radius, pt_search_method, write):
+    points, base_tri_pts = points_library[file_spec]
     print('\n' + '#'*10)
-    print('Testing generate from point for set: {}, total # of pts: {}'.format(test_set_name, len(points)))
+    print('Testing generate from point for set: {}, total # of pts: {}'.format(file_spec, len(points)))
 
     # affine transf, in millimeter
     tform = Pose(Point(0,0,0))
@@ -75,56 +72,40 @@ def test_generate_from_points(viewer, points_library, test_set_name, radius, pt_
     else:
         raise NotImplementedError('search method not implemented!')
 
-    b_struct_data, o_struct_data = execute_from_points(points, tet_node_ids, radius, correct=False, check_collision=True, viewer=viewer)
+    # b_struct_data, o_struct_data = execute_from_points(points, tet_node_ids, radius, correct=False, check_collision=True, viewer=viewer)
+    b_struct = BarStructure()
+    o_struct = OverallStructure(b_struct)
+    generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_ids,
+        correct=False, check_collision=True, viewer=viewer)
+
     if write:
-        export_structure_data(save_dir, b_struct_data, o_struct_data, file_name=test_set_name+'_'+pt_search_method+'.json')
+        export_structure_data(save_dir, b_struct.data, o_struct.data, file_name=file_spec+'_'+pt_search_method+'.json')
 
-    if viewer:
-        wait_for_user()
-
-@pytest.mark.gen_grasp_planes
-@pytest.mark.parametrize('test_file_name', [('YJ_12_bars_point2triangle.json'),])
-def test_gen_grasp_planes(viewer, test_file_name, save_dir):
-    b_struct_data, o_struct_data, _ = parse_saved_structure_data(os.path.join(save_dir, test_file_name))
-
-    built_plate_z = -25
-
-    connect(use_gui=viewer)
-    floor = create_plane()
-    set_point(floor, Point(x=1.2, z=built_plate_z*1e-3))
-    # draw_pose(unit_pose())
-
-    o_struct = OverallStructure.from_data(o_struct_data)
-    b_struct = BarStructure.from_data(b_struct_data)
-    b_struct.create_pb_bodies()
-    o_struct.struct_bar = b_struct # TODO: better way to do this
-
+    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
+    # _, _ = load_world()
+    dump_world()
+    element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 0))
     set_camera([attr['point_xyz'] for v, attr in o_struct.vertices(True)])
 
-    nb_rot, nb_trans = 4, 4
-    rot_angle = np.pi / 6
-    trans_distance = 30
+    handles = []
+    handles.extend(label_elements(element_bodies))
 
-    for v in b_struct.vertex:
-        bar_body = b_struct.get_bar_pb_body(v)
-        set_color(bar_body, apply_alpha(RED, 0.1))
+    # * checking mutual collision between bars
+    # TODO move this complete assembly collision sanity check to bar structure class
+    contact_from_connectors = b_struct.get_connectors(scale=1e-3)
+    connectors = list(contact_from_connectors.keys())
+    for bar1, bar2 in connectors:
+        b1_body = b_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.1))
+        b2_body = b_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.1))
+        assert len(get_bodies()) == len(element_bodies)
+        # dump_world()
 
-    seq = [v for v in b_struct.vertex]
-    for v in b_struct.vertex:
-        print('################')
-        print('bar #{}'.format(v))
+        if pairwise_collision(b1_body, b2_body):
+            cr = pairwise_collision_info(b1_body, b2_body)
+            draw_collision_diagnosis(cr, focus_camera=True)
+            if not viewer:
+                assert False, '{}-{} collision!'.format(b1_body, b2_body)
+        print('-'*10)
 
-        bar_body = b_struct.get_bar_pb_body(v)
-        world_from_bar = get_pose(bar_body)
-
-        calculate_gripping_plane(b_struct, v, b_struct.vertex[v]["mean_point"], nb_rot=nb_rot, nb_trans=nb_trans)
-        calculate_offset(o_struct, b_struct, v, rot_angle=rot_angle, trans_distance=trans_distance, sequence=seq, scale=1e-3,
-            obstacles=[floor], built_plate_z=built_plate_z, method='SP') # sample
-
-        # world_from_tf = pb_pose_from_Transformation(tf)
-        # set_pose(bar_body, multiply(world_from_tf, world_from_bar))
-        # set_color(bar_body, BLUE)
-        # wait_for_user()
-
-        set_pose(bar_body, world_from_bar)
-        set_color(bar_body, apply_alpha(RED, 0.5))
+    if viewer:
+        wait_for_user('Done.')

@@ -112,8 +112,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
                      collisions=True, disable=False, max_time=30, bar_only=False, **kwargs):
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
-                                        collisions=collisions, disable=disable,
-                                        precompute_collisions=True, **kwargs)
+                                        collisions=collisions, bar_only=bar_only, **kwargs)
     print('Init:', pddlstream_problem.init)
     print('Goal:', pddlstream_problem.goal)
 
@@ -189,14 +188,12 @@ def stripstream(robot, obstacles, bar_struct, **kwargs):
 
 ###############################################################
 
-def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], \
-    collisions=True, bar_only=False, **kwargs):
+def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, **kwargs):
     robot = robots[0]
     end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
                                tool_link=link_from_name(robot, TOOL_LINK_NAME),
                                visual=False, collision=True)
-    pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, collisions=collisions, verbose=False,
-        bar_only=bar_only, precompute_collisions=True)
+    pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, precompute_collisions=True, collisions=collisions, **kwargs)
 
     def wild_gen_fn(element):
         for t, in pick_gen_fn(element):

@@ -11,6 +11,7 @@ def pytest_addoption(parser):
     parser.addoption('--watch', action='store_true', help='watch trajectories')
     parser.addoption('--revisit', action='store_true')
     parser.addoption('--fn', default='single_tet')
+    parser.addoption('--rfn', help='result file name')
     parser.addoption('--n_trails', default=10)
 
 @pytest.fixture
@@ -52,6 +53,10 @@ def file_spec(request):
 @pytest.fixture
 def n_trails(request):
     return request.config.getoption("--n_trails")
+
+@pytest.fixture
+def result_file_spec(request):
+    return request.config.getoption("--rfn")
 
 #TODO: test a main function with argparse
 # https://stackoverflow.com/questions/18160078/how-do-you-write-tests-for-the-argparse-portion-of-a-python-module
