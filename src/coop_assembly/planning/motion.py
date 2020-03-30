@@ -22,6 +22,10 @@ DIAGNOSIS = False
 
 ##################################################
 
+BAR_INITIAL_POINT = np.array([0.4, 0, 0.2])
+BAR_INITIAL_EULER = np.array([0, 0, 0])
+BAR_INITIAL_CONF = np.concatenate([BAR_INITIAL_POINT, BAR_INITIAL_EULER])
+
 # TODO: derived from bounding box
 BAR_CUSTOM_LIMITS = {
     'x': (0.25, 1.0),
@@ -142,7 +146,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
             for attach in trajectory.attachments:
                 set_color(attach.child, GREEN)
 
-        for _ in trajectory.iterate():
+        for conf in trajectory.iterate():
             # TODO: the robot body could be different
             # if isinstance(trajectory, PrintTrajectory):
             #     current_point = point_from_pose(trajectory.end_effector.get_tool_pose())
@@ -153,7 +157,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
             #     last_point = current_point
 
             if time_step is None:
-                wait_for_user()
+                wait_for_user('{}'.format(conf))
             else:
                 wait_for_duration(time_step)
 

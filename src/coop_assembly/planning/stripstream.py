@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm
 import cProfile
 import pstats
 from termcolor import cprint
@@ -26,13 +27,14 @@ from pybullet_planning import has_gui, get_movable_joints, get_configuration, se
 from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn
 from .utils import flatten_commands, recover_sequence, Command
 from .visualization import draw_ordered
-from .motion import display_trajectories, compute_motion
+from .motion import display_trajectories, compute_motion, BAR_INITIAL_CONF
 from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions, INITIAL_CONF
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions import METER_SCALE
 
 STRIPSTREAM_ALGORITHM = 'stripstream'
 ROBOT_TEMPLATE = 'r{}'
+ELEMENT_ROBOT_TEMPLATE = 'e{}'
 
 def index_from_name(robots, name):
     return robots[int(name[1:])]
@@ -54,14 +56,17 @@ class Conf(object):
 
 def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
                    printed=set(), removed=set(), collisions=True,
-                   temporal=False, transit=False, return_home=True, checker=None, **kwargs):
+                   temporal=False, transit=False, return_home=True, checker=None, bar_only=False, **kwargs):
     assert not removed & printed
     remaining = set(element_from_index) - removed - printed
     element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
     obstacles = set(static_obstacles) | element_obstacles
 
     partial_orders = set()
-    initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot) for i, robot in enumerate(robots)}
+    if not bar_only:
+        initial_confs = {ROBOT_TEMPLATE.format(i): INITIAL_CONF for i, robot in enumerate(robots)}
+    else:
+        initial_confs = {ELEMENT_ROBOT_TEMPLATE.format(i): BAR_INITIAL_CONF for i in element_from_index}
 
     domain_pddl = read(get_file_path(__file__, 'pddl/temporal.pddl' if temporal else 'pddl/domain.pddl'))
     stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
@@ -70,31 +75,30 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     stream_map = {
         #'test-cfree': from_test(get_test_cfree(element_bodies)),
         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                            partial_orders=partial_orders, collisions=collisions, **kwargs),
+                                            partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
         'sample-print': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                              partial_orders=partial_orders, collisions=collisions, **kwargs),
+                                              partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
         'test-stiffness': from_test(test_stiffness),
     }
 
-    robot = robots[0]
-    init = [
-        ('Robot', robot),
-        ('Conf', robot, np.array(INITIAL_CONF)),
-        ('AtConf', robot, np.array(INITIAL_CONF)),
-        ('CanMove', robot),
-    ]
+    init = []
+    # robot = robots[0]
+    # init = [
+    #     ('Robot', robot),
+    #     ('Conf', robot, np.array(INITIAL_CONF)),
+    #     ('AtConf', robot, np.array(INITIAL_CONF)),
+    #     ('CanMove', robot),
+    # ]
     # if transit:
     #     init.append(('Move',))
-    # for name, conf in initial_confs.items():
-    #     # robot = index_from_name(robots, name)
-    #     # init_node = -robot
-    #     # init_node = '{}-q0'.format(robot)
-    #     init.extend([
-    #         ('Robot', name),
-    #         ('Conf', name, conf),
-    #         ('AtConf', name, conf),
-    #         ('Idle', name),
-    #     ])
+    for name, conf in initial_confs.items():
+        robot = index_from_name(robots, name)
+        init.extend([
+            ('Robot', name),
+            ('Conf', name, conf),
+            ('AtConf', name, conf),
+            ('CanMove', name),
+        ])
     init.extend(('Grounded', e) for e in grounded_elements)
     init.extend(('Joined', e1, e2) for e1, e2 in connectors)
     init.extend(('Joined', e2, e1) for e1, e2 in connectors)
@@ -203,6 +207,7 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
                                tool_link=link_from_name(robot, TOOL_LINK_NAME),
                                visual=False, collision=True)
     pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, precompute_collisions=True, collisions=collisions, **kwargs)
+    # TODO gen_fn dict
 
     def wild_gen_fn(_, element):
         for command, in pick_gen_fn(element):
@@ -214,20 +219,27 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
             yield WildOutput(outputs, facts)
     return wild_gen_fn
 
-def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, **kwargs):
-    robot = robots[0]
-    ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
+def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, **kwargs):
     # end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
     #                            tool_link=link_from_name(robot, TOOL_LINK_NAME),
     #                            visual=False, collision=True)
     # pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, precompute_collisions=True, collisions=collisions, **kwargs)
 
     # def wild_gen_fn(_, start_conf, end_conf):
-    def wild_gen_fn(_, end_conf):
-        start_conf = INITIAL_CONF
+    def wild_gen_fn(robot_name, q, current_command):
+        transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
+        assert norm(q - current_command.start_conf) < 1e-8, 'norm {}'.format(norm(q - current_command.start_conf))
+        robot = index_from_name(robots, robot_name)
         traj = compute_motion(robot, obstacles, element_from_index,
-                       [], start_conf, end_conf, attachments=[],
-                       collisions=collisions, max_time=INF, smooth=100, **kwargs)
+                       [], transit_start_conf, current_command.start_conf, attachments=[],
+                       collisions=collisions, max_time=INF, smooth=100, bar_only=bar_only, **kwargs)
+
+        assert norm(q - np.array(traj.end_conf)) < 1e-8, 'norm {}'.format(norm(q - np.array(traj.end_conf)))
+
+        # traj = compute_motion(robot, obstacles, element_from_index, [],
+        #                       transit_start_conf, current_command.start_conf,
+        #                       collisions=collision, attachments=current_command.trajectories[0].attachments,
+        #                       max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
         # for t, in pick_gen_fn(element):
         #     outputs = [(t,)]
         #     facts = [('Collision', t, e2) for e2 in t.colliding] if collisions else []

@@ -105,6 +105,11 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
         for i in islice(range(len(tmp_commands)), 0, None, 2):
             commands.extend([tmp_commands[i+1], tmp_commands[i]])
         trajectories = flatten_commands(commands)
+        for t in trajectories:
+            print(t.tag)
+            print('st: {} \nend: {}'.format(t.start_conf, t.end_conf))
+            print('====')
+
         if write:
             here = os.path.dirname(__file__)
             plan_path = '{}_pddl_solution_{}.json'.format(file_spec, get_date())

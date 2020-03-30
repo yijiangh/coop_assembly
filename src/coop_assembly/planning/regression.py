@@ -15,7 +15,7 @@ from coop_assembly.data_structure.utils import MotionTrajectory
 from .visualization import draw_element
 from .stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands, Command, check_connected
-from .motion import compute_motion
+from .motion import compute_motion, BAR_INITIAL_POINT, BAR_INITIAL_EULER
 from .robot_setup import INITIAL_CONF, TOOL_LINK_NAME, EE_LINK_NAME
 
 MAX_REVISIT = 5
@@ -46,8 +46,6 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
     return prior_commands + [command]
 
 ##################################################
-BAR_INITIAL_POINT = np.array([0.4, 0, 0.2])
-BAR_INITIAL_EULER = np.array([0, 0, 0])
 
 def regression(robot, obstacles, bar_struct, partial_orders=[],
                max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
