@@ -1,30 +1,60 @@
 (define (domain construction)
   (:requirements :strips :equality)
   (:predicates
+    (Robot ?r)
     (Element ?e)
     (Printed ?e)
     (Removed ?e)
-    (PrintAction ?e ?t)
+    (PrintAction ?r ?e ?q1 ?q2 ?t)
+    (MoveAction ?r ?q2 ?t)
     (Grounded ?e)
     (Connected ?e)
     (Joined ?e1 ?e2)
+    (Stiff)
     (Traj ?t)
     (Collision ?t ?e)
     ; (Order ?e1 ?e2)
+    (CanMove ?r)
+    (Conf ?r ?q)
+    (AtConf ?r ?q)
   )
 
-  ;;;; removing the element
+  (:action move
+    ; TODO ?r can be element_robot or robot
+    ; :parameters (?r ?q1 ?q2 ?t)
+    :parameters (?r ?q2 ?t)
+    :precondition (and ; (Conf ?r ?q1)
+                       (Conf ?r ?q2)
+                    ;    (AtConf ?r ?q1)
+                       (CanMove ?r)
+                       (MoveAction ?r ?q2 ?t)
+                    ;    (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
+                       )
+    :effect (and ;(not (AtConf ?r ?q1))
+                 (AtConf ?r ?q2)
+                 (not (CanMove ?r)) ; switch to avoid transit forever
+                 )
+  )
+
+  ; print = remove the element
   (:action print
-    :parameters (?e ?t)
-    :precondition (and (PrintAction ?e ?t)
+    :parameters (?r ?e ?q1 ?q2 ?t)
+    :precondition (and (PrintAction ?r ?e ?q1 ?q2 ?t)
                        (Printed ?e)
+                       ; (Stiff)
                        ; Caelan use partial ordering to enforce connectivity
                        ; (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
                        (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
                        (Connected ?e)
-                  )
+                       (AtConf ?r ?q1) ; this will force a move action
+                       (not (CanMove ?r))
+                       )
     :effect (and (Removed ?e)
-                 (not (Printed ?e)))
+                 (not (Printed ?e))
+                 (CanMove ?r)
+                ;  (AtConf ?r ?q2)
+                ;  (not (AtConf ?r ?q1))
+                 )
   )
 
   (:derived (Connected ?e2)

@@ -34,7 +34,8 @@ CUSTOM_LIMITS = {
 
 # joint resolution used in transit motions
 # 0.003 captures pregrasp collision
-RESOLUTION = 0.003
+# RESOLUTION = 0.003
+RESOLUTION = 0.01
 
 # INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
 INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]

@@ -22,12 +22,12 @@ from pddlstream.language.temporal import compute_duration, get_end
 
 from pybullet_planning import has_gui, get_movable_joints, get_configuration, set_configuration, WorldSaver, LockRenderer, \
     wait_if_gui, EndEffector, link_from_name, joints_from_names, intrinsic_euler_from_quat, get_links, create_attachment, \
-    set_joint_positions, get_links, set_pose
+    set_joint_positions, get_links, set_pose, INF
 from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn
 from .utils import flatten_commands, recover_sequence, Command
 from .visualization import draw_ordered
-from .motion import display_trajectories
-from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions
+from .motion import display_trajectories, compute_motion
+from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions, INITIAL_CONF
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions import METER_SCALE
 
@@ -69,14 +69,20 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
     stream_map = {
         #'test-cfree': from_test(get_test_cfree(element_bodies)),
-        # 'sample-move': get_wild_move_gen_fn(robots, obstacles, element_from_index,
-        #                                     partial_orders=partial_orders, **kwargs),
+        'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+                                            partial_orders=partial_orders, collisions=collisions, **kwargs),
         'sample-print': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, **kwargs),
-        #'test-stiffness': from_test(test_stiffness),
+        'test-stiffness': from_test(test_stiffness),
     }
 
-    init = []
+    robot = robots[0]
+    init = [
+        ('Robot', robot),
+        ('Conf', robot, np.array(INITIAL_CONF)),
+        ('AtConf', robot, np.array(INITIAL_CONF)),
+        ('CanMove', robot),
+    ]
     # if transit:
     #     init.append(('Move',))
     # for name, conf in initial_confs.items():
@@ -119,10 +125,10 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 
     # creates unique free variable for each output during the focused algorithm
     # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
-    # stream_info = {
-    #     'sample-print': StreamInfo(PartialInputs(unique=True)),
-    #     # 'sample-move': StreamInfo(PartialInputs(unique=True)),
-    # }
+    stream_info = {
+        'sample-print': StreamInfo(PartialInputs(unique=True)),
+        'sample-move': StreamInfo(PartialInputs(unique=True)),
+    }
 
     # Reachability heuristics good for detecting dead-ends
     # Infeasibility from the start means disconnected or collision
@@ -138,8 +144,8 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
         if algorithm == 'incremental':
             solution = solve_incremental(pddlstream_problem, verbose=True, planner=planner, max_time=600,
                                         max_planner_time=300, debug=debug)
-        elif algorithm == 'incremental':
-            solution = solve_focused(pddlstream_problem, max_time=max_time, #stream_info=stream_info,
+        elif algorithm == 'focused':
+            solution = solve_focused(pddlstream_problem, max_time=max_time, stream_info=stream_info,
                                      effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
                                      max_skeletons=None, bind=True, max_failures=0,  # 0 | INF
                                      planner=planner, max_planner_time=60, debug=debug, reorder=False, verbose=True,
@@ -198,9 +204,43 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
                                visual=False, collision=True)
     pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, precompute_collisions=True, collisions=collisions, **kwargs)
 
-    def wild_gen_fn(element):
-        for t, in pick_gen_fn(element):
-            outputs = [(t,)]
-            facts = [('Collision', t, e2) for e2 in t.colliding] if collisions else []
+    def wild_gen_fn(_, element):
+        for command, in pick_gen_fn(element):
+            q1 = np.array(command.start_conf)
+            q2 = np.array(command.end_conf)
+            outputs = [(q1, q2, command)]
+            facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
+            print('facts:', facts)
             yield WildOutput(outputs, facts)
     return wild_gen_fn
+
+def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, **kwargs):
+    robot = robots[0]
+    ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
+    # end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
+    #                            tool_link=link_from_name(robot, TOOL_LINK_NAME),
+    #                            visual=False, collision=True)
+    # pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, precompute_collisions=True, collisions=collisions, **kwargs)
+
+    # def wild_gen_fn(_, start_conf, end_conf):
+    def wild_gen_fn(_, end_conf):
+        start_conf = INITIAL_CONF
+        traj = compute_motion(robot, obstacles, element_from_index,
+                       [], start_conf, end_conf, attachments=[],
+                       collisions=collisions, max_time=INF, smooth=100, **kwargs)
+        # for t, in pick_gen_fn(element):
+        #     outputs = [(t,)]
+        #     facts = [('Collision', t, e2) for e2 in t.colliding] if collisions else []
+        #     yield WildOutput(outputs, facts)
+        # traj = MotionTrajectory(robot, ik_joints, [start_conf, end_conf], tag='transit2place')
+        command = Command([traj])
+        outputs = [(command,)]
+        facts = []
+        yield WildOutput(outputs, facts)
+    return wild_gen_fn
+
+def test_stiffness(fluents=[]):
+    assert all(fact[0] == 'printed' for fact in fluents)
+    # TODO: to use the non-skeleton focused algorithm, need to remove the negative axiom upon success
+    # elements = {fact[1] for fact in fluents}
+    return True

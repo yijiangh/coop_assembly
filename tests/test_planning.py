@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 import json
 from termcolor import cprint
+from itertools import islice
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
@@ -79,7 +80,7 @@ def test_parse_pddlstream(viewer, file_spec, collision):
     assert set([('Removed', i) for i in element_from_index]) <= set(pddlstream_problem.goal)
 
 @pytest.mark.wip_pddl
-def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write):
+def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
@@ -92,13 +93,17 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write):
     connectors = list(contact_from_connectors.keys())
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collisions=collision, bar_only=bar_only, algorithm='incremental', debug=False)
+        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=True)
 
     if plan is None:
         cprint('No plan found.', 'red')
         assert False, 'No plan found.'
     else:
-        commands = [action.args[-1] for action in reversed(plan) if action.name == 'print']
+        tmp_commands = [action.args[-1] for action in reversed(plan)] # if action.name == 'print'
+        commands = []
+        # TODO formulate problem s.t. transit happens after pick
+        for i in islice(range(len(tmp_commands)), 0, None, 2):
+            commands.extend([tmp_commands[i+1], tmp_commands[i]])
         trajectories = flatten_commands(commands)
         if write:
             here = os.path.dirname(__file__)
