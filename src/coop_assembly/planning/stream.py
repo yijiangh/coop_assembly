@@ -220,7 +220,7 @@ def command_collision(command, bodies, end_effector=None):
 
 ######################################
 
-def compute_place_path(pregrasp_poses, grasp, index, element_from_index, collision_fn, bar_only=False, end_effector=None, verbose=False,\
+def compute_place_path(pregrasp_poses, grasp, index, element_from_index, collision_fn=None, bar_only=False, end_effector=None, verbose=False,\
     diagnosis=False, retreat_vector=np.array([0, 0, -1])):
     body = element_from_index[index].body
     if bar_only:
@@ -236,7 +236,7 @@ def compute_place_path(pregrasp_poses, grasp, index, element_from_index, collisi
             attachments=[attachment], tag='place_approach', element=index)])
         return command
     else:
-        assert end_effector is not None
+        assert end_effector is not None and collision_fn is not None
 
     robot = end_effector.robot
     ee_from_tool = invert(end_effector.tool_from_root)
@@ -330,9 +330,11 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
     precompute_collisions=False):
     if not collisions:
         precompute_collisions = False
-    robot = end_effector.robot
-    ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
-    disabled_collisions = get_disabled_collisions(robot)
+    if not bar_only:
+        # TODO reformulate
+        robot = end_effector.robot
+        ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
+        disabled_collisions = get_disabled_collisions(robot)
 
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
@@ -351,11 +353,12 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
         elements_order = [e for e in element_from_index if (e != element) and (element_from_index[e].body not in obstacles)]
 
         # attachment is assumed to be empty here, since pregrasp sampler guarantees that
-        collision_fn = get_collision_fn(robot, ik_joints, obstacles=obstacles, attachments=[],
-                                        self_collisions=ENABLE_SELF_COLLISIONS,
-                                        disabled_collisions=disabled_collisions,
-                                        custom_limits=get_custom_limits(robot),
-                                        max_distance=MAX_DISTANCE)
+        if not bar_only:
+            collision_fn = get_collision_fn(robot, ik_joints, obstacles=obstacles, attachments=[],
+                                            self_collisions=ENABLE_SELF_COLLISIONS,
+                                            disabled_collisions=disabled_collisions,
+                                            custom_limits=get_custom_limits(robot),
+                                            max_distance=MAX_DISTANCE)
 
         trajectories = []
         for attempt, (world_pose_t, grasp_t) in enumerate(zip(islice(goal_pose_gen_fn(element), max_grasp), islice(grasp_gen(element), max_grasp))):
@@ -368,7 +371,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
                     if verbose : print('pregrasp failure.')
                     continue
 
-                command = compute_place_path(pregrasp_poses, grasp, element, element_from_index, collision_fn, bar_only=bar_only,
+                command = compute_place_path(pregrasp_poses, grasp, element, element_from_index, collision_fn=collision_fn if not bar_only else None, bar_only=bar_only,
                     end_effector=end_effector,  verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector)
                 if command is None:
                     continue

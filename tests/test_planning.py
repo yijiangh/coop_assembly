@@ -1,6 +1,7 @@
 import os
 import pytest
 import numpy as np
+from numpy.linalg import norm
 import json
 from termcolor import cprint
 from itertools import islice
@@ -53,7 +54,7 @@ def test_load_robot(viewer):
 #     pass
 
 @pytest.mark.wip_pddlstream_parse
-def test_parse_pddlstream(viewer, file_spec, collision):
+def test_parse_pddlstream(viewer, file_spec, collision, bar_only):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
@@ -67,8 +68,8 @@ def test_parse_pddlstream(viewer, file_spec, collision):
                                         collisions=collision, # disable=disable,
                                         precompute_collisions=True)
     print('Init:', pddlstream_problem.init)
-    # assert ('Robot', 'r0') in pddlstream_problem.init
-    # assert ('Idle', 'r0') in pddlstream_problem.init
+    # if not bar_only:
+    #     assert ('Robot', 'r0') in pddlstream_problem.init
     assert all([('Grounded', i) in pddlstream_problem.init for i in grounded_elements])
     assert all([('Element', i) in pddlstream_problem.init for i in element_from_index])
     assert all([('Printed', i) in pddlstream_problem.init for i in element_from_index])
@@ -80,7 +81,7 @@ def test_parse_pddlstream(viewer, file_spec, collision):
     assert set([('Removed', i) for i in element_from_index]) <= set(pddlstream_problem.goal)
 
 @pytest.mark.wip_pddl
-def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm):
+def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
@@ -99,12 +100,19 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
         cprint('No plan found.', 'red')
         assert False, 'No plan found.'
     else:
-        tmp_commands = [action.args[-1] for action in reversed(plan)] # if action.name == 'print'
+        # TODO split into a function for reorganizing the actions
         commands = []
-        # TODO formulate problem s.t. transit happens after pick
-        for i in islice(range(len(tmp_commands)), 0, None, 2):
-            commands.extend([tmp_commands[i+1], tmp_commands[i]])
+        print_actions = [action for action in reversed(plan) if action.name == 'print']
+        for pc in print_actions:
+            print_command = pc.args[-1]
+            robot_name = pc.args[0]
+            for action in plan:
+                if action.name == 'move' and action.args[0] == robot_name and norm(action.args[1]-print_command.start_conf)<1e-8:
+                    commands.append(action.args[-1])
+                    break
+            commands.append(print_command)
         trajectories = flatten_commands(commands)
+
         for t in trajectories:
             print(t.tag)
             print('st: {} \nend: {}'.format(t.start_conf, t.end_conf))
@@ -118,7 +126,7 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
                json.dump({'problem' : file_spec,
                           'plan' : [p.to_data() for p in trajectories]}, f)
             cprint('Result saved to: {}'.format(save_path), 'green')
-        if has_gui():
+        if watch and has_gui():
             saver.restore()
             #label_nodes(node_points)
             elements = recover_sequence(trajectories, element_from_index)
@@ -128,7 +136,7 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
             for e in element_from_index:
                set_color(element_from_index[e].body, (1, 0, 0, 0))
             # time_step = None
-            time_step = 0.1 if bar_only else None
+            time_step = 0.01 if bar_only else 0.05
             display_trajectories(trajectories, time_step=time_step)
         if collision:
             valid = validate_trajectories(bar_struct.get_element_from_index(), fixed_obstacles, trajectories, \

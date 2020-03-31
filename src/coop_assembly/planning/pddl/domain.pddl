@@ -18,10 +18,10 @@
     (Conf ?r ?q)
     (AtConf ?r ?q)
     (AtStart ?q ?t)
+    (Assigned ?r ?e)
   )
 
   (:action move
-    ; TODO ?r can be element_robot or robot
     ; :parameters (?r ?q1 ?q2 ?t)
     :parameters (?r ?q2 ?t2)
     :precondition (and ; (Conf ?r ?q1)
@@ -30,7 +30,7 @@
                        (Traj ?r ?t2)
                        (CanMove ?r)
                        (MoveAction ?r ?q2 ?t2)
-                    ;    (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
+                       (forall (?e2) (imply (Collision ?t2 ?e2) (Removed ?e2)))
                        )
     :effect (and ;(not (AtConf ?r ?q1))
                  (AtConf ?r ?q2)
@@ -46,10 +46,10 @@
                        ; (Stiff)
                        ; Caelan use partial ordering to enforce connectivity
                        ; (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
-                       (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
                        (Connected ?e)
                        (AtConf ?r ?q1) ; this will force a move action
                        (not (CanMove ?r))
+                       (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
                        )
     :effect (and (Removed ?e)
                  (not (Printed ?e))

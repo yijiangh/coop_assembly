@@ -57,6 +57,7 @@ class Conf(object):
 def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
                    printed=set(), removed=set(), collisions=True,
                    temporal=False, transit=False, return_home=True, checker=None, bar_only=False, **kwargs):
+    # TODO update removed & printed
     assert not removed & printed
     remaining = set(element_from_index) - removed - printed
     element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
@@ -66,6 +67,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     if not bar_only:
         initial_confs = {ROBOT_TEMPLATE.format(i): INITIAL_CONF for i, robot in enumerate(robots)}
     else:
+        robots = [element_from_index[e].element_robot for e in element_from_index]
         initial_confs = {ELEMENT_ROBOT_TEMPLATE.format(i): BAR_INITIAL_CONF for i in element_from_index}
 
     domain_pddl = read(get_file_path(__file__, 'pddl/temporal.pddl' if temporal else 'pddl/domain.pddl'))
@@ -92,7 +94,6 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     # if transit:
     #     init.append(('Move',))
     for name, conf in initial_confs.items():
-        robot = index_from_name(robots, name)
         init.extend([
             ('Robot', name),
             ('Conf', name, conf),
@@ -108,6 +109,11 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
             ('Element', e),
             ('Printed', e),
         ])
+    if not bar_only:
+        for rname in initial_confs:
+            init.extend([('Assigned', rname, e) for e in remaining])
+    else:
+        init.extend([('Assigned', rname, e) for e, rname in zip(remaining, initial_confs)])
 
     goal_literals = []
     # if return_home:
@@ -159,6 +165,12 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     pr.disable()
     # pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
 
+    if bar_only:
+        # reset all element_robots to clear the visual scene
+        for e in element_from_index:
+            e_robot = element_from_index[e].element_robot
+            set_joint_positions(e_robot, get_movable_joints(e_robot), np.zeros(6))
+
     print_solution(solution)
     plan, _, certificate = solution
     print('-'*10)
@@ -201,37 +213,43 @@ def stripstream(robot, obstacles, bar_struct, **kwargs):
 
 ###############################################################
 
-def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, **kwargs):
-    robot = robots[0]
-    end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
-                               tool_link=link_from_name(robot, TOOL_LINK_NAME),
-                               visual=False, collision=True)
-    pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, precompute_collisions=True, collisions=collisions, **kwargs)
-    # TODO gen_fn dict
+def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, **kwargs):
+    gen_fn_from_robot = {}
+    for robot in robots:
+        ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
+        tool_link = link_from_name(robot, TOOL_LINK_NAME) if not bar_only else get_links(robot)[-1]
+        # TODO end_effector is unused in bar_only setting
+        end_effector = EndEffector(robot, ee_link=ee_link,
+                                   tool_link=tool_link,
+                                   visual=False, collision=True)
+        pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, \
+            precompute_collisions=True, collisions=collisions, bar_only=bar_only, **kwargs)
+        gen_fn_from_robot[robot] = pick_gen_fn
 
-    def wild_gen_fn(_, element):
-        for command, in pick_gen_fn(element):
+    def wild_gen_fn(robot_name, element):
+        robot = index_from_name(robots, robot_name)
+        for command, in gen_fn_from_robot[robot](element):
             q1 = np.array(command.start_conf)
             q2 = np.array(command.end_conf)
             outputs = [(q1, q2, command)]
+            # Caelan said that we might not to use wild facts to enforce collision-free
             facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
             print('facts:', facts)
             yield WildOutput(outputs, facts)
     return wild_gen_fn
 
 def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, **kwargs):
-    # end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
-    #                            tool_link=link_from_name(robot, TOOL_LINK_NAME),
-    #                            visual=False, collision=True)
-    # pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, precompute_collisions=True, collisions=collisions, **kwargs)
+    # TODO initial confs
+    # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
 
-    # def wild_gen_fn(_, start_conf, end_conf):
     def wild_gen_fn(robot_name, q, current_command):
         transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
         assert norm(q - current_command.start_conf) < 1e-8, 'norm {}'.format(norm(q - current_command.start_conf))
+
         robot = index_from_name(robots, robot_name)
+        attachments = current_command.trajectories[0].attachments
         traj = compute_motion(robot, obstacles, element_from_index,
-                       [], transit_start_conf, current_command.start_conf, attachments=[],
+                       [], transit_start_conf, current_command.start_conf, attachments=attachments,
                        collisions=collisions, max_time=INF, smooth=100, bar_only=bar_only, **kwargs)
 
         assert norm(q - np.array(traj.end_conf)) < 1e-8, 'norm {}'.format(norm(q - np.array(traj.end_conf)))
@@ -240,12 +258,15 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
         #                       transit_start_conf, current_command.start_conf,
         #                       collisions=collision, attachments=current_command.trajectories[0].attachments,
         #                       max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
-        # for t, in pick_gen_fn(element):
-        #     outputs = [(t,)]
-        #     facts = [('Collision', t, e2) for e2 in t.colliding] if collisions else []
-        #     yield WildOutput(outputs, facts)
-        # traj = MotionTrajectory(robot, ik_joints, [start_conf, end_conf], tag='transit2place')
         command = Command([traj])
+        # bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
+        # colliding = command_collision(command, bodies_order, end_effector=end_effector)
+        # for element2, unsafe in zip(elements_order, colliding):
+        #     if unsafe:
+        #         command.set_unsafe(element2)
+        #     else:
+        #         command.set_safe(element2)
+        # facts = [('Collision', t, e2) for e2 in t.colliding] if collisions else []
         outputs = [(command,)]
         facts = []
         yield WildOutput(outputs, facts)

@@ -15,7 +15,7 @@
 
   (:stream sample-print
     :inputs (?r ?e)
-    :domain (and (Robot ?r) (Element ?e))
+    :domain (and (Robot ?r) (Element ?e) (Assigned ?r ?e))
     ; :fluents (Printed)
     :outputs (?q1 ?q2 ?t)
     :certified (and (PrintAction ?r ?e ?q1 ?q2 ?t)
