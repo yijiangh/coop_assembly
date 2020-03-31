@@ -47,8 +47,8 @@
                        ; Caelan use partial ordering to enforce connectivity
                        ; (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
                        (Connected ?e)
-                       (AtConf ?r ?q1) ; this will force a move action
-                       (not (CanMove ?r))
+                    ;    (AtConf ?r ?q1) ; this will force a move action
+                    ;    (not (CanMove ?r))
                        (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
                        )
     :effect (and (Removed ?e)

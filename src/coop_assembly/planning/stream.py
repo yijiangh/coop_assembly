@@ -156,7 +156,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
 
 ######################################
 
-def command_collision(command, bodies, end_effector=None):
+def command_collision(command, bodies):
     """check if a command's trajectories collide with the given bodies.
        Return a list of [True/False] corresponding to the id used in ``bodies``
        Critical in pddlstream formulation.
@@ -379,7 +379,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
                 command.update_safe(printed)
                 if precompute_collisions:
                     bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-                    colliding = command_collision(command, bodies_order, end_effector=end_effector)
+                    colliding = command_collision(command, bodies_order)
                     for element2, unsafe in zip(elements_order, colliding):
                         if unsafe:
                             command.set_unsafe(element2)

@@ -24,7 +24,7 @@ from pddlstream.language.temporal import compute_duration, get_end
 from pybullet_planning import has_gui, get_movable_joints, get_configuration, set_configuration, WorldSaver, LockRenderer, \
     wait_if_gui, EndEffector, link_from_name, joints_from_names, intrinsic_euler_from_quat, get_links, create_attachment, \
     set_joint_positions, get_links, set_pose, INF
-from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn
+from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn, command_collision
 from .utils import flatten_commands, recover_sequence, Command
 from .visualization import draw_ordered
 from .motion import display_trajectories, compute_motion, BAR_INITIAL_CONF
@@ -234,7 +234,7 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
             outputs = [(q1, q2, command)]
             # Caelan said that we might not to use wild facts to enforce collision-free
             facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-            print('facts:', facts)
+            cprint('print facts: {}'.format(facts), 'yellow')
             yield WildOutput(outputs, facts)
     return wild_gen_fn
 
@@ -248,8 +248,8 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
 
         robot = index_from_name(robots, robot_name)
         attachments = current_command.trajectories[0].attachments
-        traj = compute_motion(robot, obstacles, element_from_index,
-                       [], transit_start_conf, current_command.start_conf, attachments=attachments,
+        traj = compute_motion(robot, obstacles, element_from_index, [],
+                       transit_start_conf, current_command.start_conf, attachments=attachments,
                        collisions=collisions, max_time=INF, smooth=100, bar_only=bar_only, **kwargs)
 
         assert norm(q - np.array(traj.end_conf)) < 1e-8, 'norm {}'.format(norm(q - np.array(traj.end_conf)))
@@ -259,16 +259,21 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
         #                       collisions=collision, attachments=current_command.trajectories[0].attachments,
         #                       max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
         command = Command([traj])
-        # bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-        # colliding = command_collision(command, bodies_order, end_effector=end_effector)
-        # for element2, unsafe in zip(elements_order, colliding):
-        #     if unsafe:
-        #         command.set_unsafe(element2)
-        #     else:
-        #         command.set_safe(element2)
-        # facts = [('Collision', t, e2) for e2 in t.colliding] if collisions else []
+
+        elements_order = [e for e in element_from_index if (e != current_command.trajectories[0].element)]
+            # and (element_from_index[e].body not in obstacles)]
+        bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
+        colliding = command_collision(command, bodies_order)
+        for element2, unsafe in zip(elements_order, colliding):
+            if unsafe:
+                command.set_unsafe(element2)
+            else:
+                command.set_safe(element2)
+        facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
+        cprint('transit facts: {}'.format(facts), 'yellow')
+
         outputs = [(command,)]
-        facts = []
+        # facts = []
         yield WildOutput(outputs, facts)
     return wild_gen_fn
 
