@@ -27,7 +27,7 @@ from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_ge
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure
-from coop_assembly.planning.validator import validate_trajectories
+from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream
 
@@ -94,7 +94,7 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
     connectors = list(contact_from_connectors.keys())
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=True)
+        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=False)
 
     if plan is None:
         cprint('No plan found.', 'red')
@@ -107,16 +107,16 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
             print_command = pc.args[-1]
             robot_name = pc.args[0]
             for action in plan:
-                if action.name == 'move' and action.args[0] == robot_name and norm(action.args[1]-print_command.start_conf)<1e-8:
+                if action.name == 'move' and action.args[0] == robot_name and norm(action.args[1].positions-print_command.start_conf)<1e-8:
                     commands.append(action.args[-1])
                     break
             commands.append(print_command)
         trajectories = flatten_commands(commands)
 
-        for t in trajectories:
-            print(t.tag)
-            print('st: {} \nend: {}'.format(t.start_conf, t.end_conf))
-            print('====')
+        # for t in trajectories:
+        #     print(t.tag)
+        #     print('st: {} \nend: {}'.format(t.start_conf, t.end_conf))
+        #     print('====')
 
         if write:
             here = os.path.dirname(__file__)
@@ -139,8 +139,8 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
             time_step = 0.01 if bar_only else 0.05
             display_trajectories(trajectories, time_step=time_step)
         if collision:
-            valid = validate_trajectories(bar_struct.get_element_from_index(), fixed_obstacles, trajectories, \
-                grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=has_gui(), bar_only=bar_only, refine_num=10)
+            valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui(), \
+                bar_only=bar_only, refine_num=1)
             cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
             assert valid
     reset_simulation()
@@ -191,9 +191,9 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec,
         if traj.element is not None and traj.tag=='place_approach':
             print('E{} : future E{}'.format(traj.element, element_seq[element_seq.index(traj.element):]))
             command = Command([traj])
-            elements_order = [e for e in element_from_index if (e != element)]
+            elements_order = [e for e in element_from_index if (e != traj.element)]
             bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-            colliding = command_collision(command, bodies_order, end_effector=None)
+            colliding = command_collision(command, bodies_order)
             for element2, unsafe in zip(elements_order, colliding):
                 if unsafe:
                     command.set_unsafe(element2)
@@ -257,8 +257,9 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
             display_trajectories(splan, time_step=time_step, #video=True,
                                  animate=False)
         if collision:
-            assert validate_trajectories(bar_struct.get_element_from_index(), fixed_obstacles, splan, \
-                grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=has_gui(), bar_only=bar_only, refine_num=10)
+            valid = validate_pddl_plan(splan, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui(), \
+                bar_only=bar_only, refine_num=1)
+            assert valid
     reset_simulation()
     disconnect()
 

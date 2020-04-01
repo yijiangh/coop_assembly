@@ -12,7 +12,7 @@ sys.path.extend([
 
 from pddlstream.algorithms.downward import set_cost_scale
 from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.algorithms.focused import solve_focused #, CURRENT_STREAM_PLAN
+from pddlstream.algorithms.focused import solve_focused
 from pddlstream.algorithms.disabled import process_stream_plan
 from pddlstream.language.constants import And, PDDLProblem, print_solution, DurativeAction, Equal
 from pddlstream.language.generator import from_test, from_gen_fn, from_fn
@@ -65,10 +65,10 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
     partial_orders = set()
     if not bar_only:
-        initial_confs = {ROBOT_TEMPLATE.format(i): INITIAL_CONF for i, robot in enumerate(robots)}
+        initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot, INITIAL_CONF) for i, robot in enumerate(robots)}
     else:
         robots = [element_from_index[e].element_robot for e in element_from_index]
-        initial_confs = {ELEMENT_ROBOT_TEMPLATE.format(i): BAR_INITIAL_CONF for i in element_from_index}
+        initial_confs = {ELEMENT_ROBOT_TEMPLATE.format(i): Conf(robot, BAR_INITIAL_CONF) for i, robot in enumerate(robots)}
 
     domain_pddl = read(get_file_path(__file__, 'pddl/temporal.pddl' if temporal else 'pddl/domain.pddl'))
     stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
@@ -171,10 +171,13 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             e_robot = element_from_index[e].element_robot
             set_joint_positions(e_robot, get_movable_joints(e_robot), np.zeros(6))
 
+    print(solution)
     print_solution(solution)
-    plan, _, certificate = solution
+    plan, _, facts = solution
     print('-'*10)
-    # print('certificate: ', certificate)
+    print('certified facts: ')
+    for fact in facts:
+        print(fact)
     # preimage facts: the facts that support the returned plan
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
@@ -229,12 +232,14 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
     def wild_gen_fn(robot_name, element):
         robot = index_from_name(robots, robot_name)
         for command, in gen_fn_from_robot[robot](element):
-            q1 = np.array(command.start_conf)
-            q2 = np.array(command.end_conf)
+            q1 = Conf(robot, np.array(command.start_conf), element)
+            q2 = Conf(robot, np.array(command.end_conf), element)
             outputs = [(q1, q2, command)]
-            # Caelan said that we might not to use wild facts to enforce collision-free
+            # TODO Caelan said that we might not have to use wild facts to enforce collision-free
             facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-            cprint('print facts: {}'.format(facts), 'yellow')
+            cprint('print facts: {}'.format(command.colliding), 'yellow')
+            # sequence = [result.get_mapping()['?e'].value for result in CURRENT_STREAM_PLAN]
+            # print(CURRENT_STREAM_PLAN)
             yield WildOutput(outputs, facts)
     return wild_gen_fn
 
@@ -244,7 +249,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
 
     def wild_gen_fn(robot_name, q, current_command):
         transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
-        assert norm(q - current_command.start_conf) < 1e-8, 'norm {}'.format(norm(q - current_command.start_conf))
+        assert norm(q.positions - current_command.start_conf) < 1e-8, 'norm {}'.format(norm(q.positions - current_command.start_conf))
 
         robot = index_from_name(robots, robot_name)
         attachments = current_command.trajectories[0].attachments
@@ -252,7 +257,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
                        transit_start_conf, current_command.start_conf, attachments=attachments,
                        collisions=collisions, max_time=INF, smooth=100, bar_only=bar_only, **kwargs)
 
-        assert norm(q - np.array(traj.end_conf)) < 1e-8, 'norm {}'.format(norm(q - np.array(traj.end_conf)))
+        assert norm(q.positions - np.array(traj.end_conf)) < 1e-8, 'norm {}'.format(norm(q.positions - np.array(traj.end_conf)))
 
         # traj = compute_motion(robot, obstacles, element_from_index, [],
         #                       transit_start_conf, current_command.start_conf,
@@ -270,7 +275,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
             else:
                 command.set_safe(element2)
         facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-        cprint('transit facts: {}'.format(facts), 'yellow')
+        cprint('transit facts: {}'.format(command.colliding), 'yellow')
 
         outputs = [(command,)]
         # facts = []

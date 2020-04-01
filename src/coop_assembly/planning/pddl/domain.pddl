@@ -44,12 +44,14 @@
     :precondition (and (PrintAction ?r ?e ?q1 ?q2 ?t)
                        (Printed ?e)
                        ; (Stiff)
+                       (Connected ?e)
+                       (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
+                       ;;; comment the following two if no transit
+                       (AtConf ?r ?q1) ; this will force a move action
+                       (not (CanMove ?r))
+                       ;;;
                        ; Caelan use partial ordering to enforce connectivity
                        ; (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
-                       (Connected ?e)
-                    ;    (AtConf ?r ?q1) ; this will force a move action
-                    ;    (not (CanMove ?r))
-                       (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
                        )
     :effect (and (Removed ?e)
                  (not (Printed ?e))
