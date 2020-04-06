@@ -8,7 +8,7 @@ from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 
 PICKNPLACE_DIRECTORY = os.path.join('..', '..', '..', 'tests', 'test_data')
 PICKNPLACE_FILENAMES = {
-    '12_bars' : 'YJ_12_bars_point2triangle.json',
+    '12_bars' : '12_bars_point2triangle.json',
     'single_tet' : 'single_tet_point2triangle.json',
 }
 

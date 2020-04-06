@@ -94,7 +94,7 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
     connectors = list(contact_from_connectors.keys())
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=False)
+        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=True)
 
     if plan is None:
         cprint('No plan found.', 'red')
