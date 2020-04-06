@@ -178,7 +178,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     print('certified facts: ')
     for fact in facts[0]:
         print(fact)
-    print('-'*10)
+
     print('preimage facts: ')
     for fact in facts[1]:
         print(fact)
