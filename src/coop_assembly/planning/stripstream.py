@@ -76,8 +76,8 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
     stream_map = {
         #'test-cfree': from_test(get_test_cfree(element_bodies)),
-        # 'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-        #                                     partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
+        'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+                                            partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
         'sample-print': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
         # 'test-stiffness': from_test(test_stiffness),
@@ -90,8 +90,8 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
         init.extend([
             ('Robot', name),
             ('Conf', name, conf),
-            # ('AtConf', name, conf),
-            # ('CanMove', name),
+            ('AtConf', name, conf),
+            ('CanMove', name),
         ])
     init.extend(('Grounded', e) for e in grounded_elements)
     init.extend(('Joined', e1, e2) for e1, e2 in connectors)
@@ -130,7 +130,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
     stream_info = {
         'sample-print': StreamInfo(PartialInputs(unique=True)),
-        # 'sample-move': StreamInfo(PartialInputs(unique=True)),
+        'sample-move': StreamInfo(PartialInputs(unique=True)),
     }
 
     # Reachability heuristics good for detecting dead-ends
@@ -151,9 +151,10 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             solution = solve_focused(pddlstream_problem, max_time=max_time, stream_info=stream_info,
                                      planner=planner, max_planner_time=60,
                                      max_skeletons=None, bind=True, # * this two arguments should not be changed
-                                    #  effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
-                                    # max_failures=0,  # 0 | INF
-                                    #  reorder=False, initial_complexity=1,
+                                     # TODO some of the following parameters accelerate the planning quite a lot
+                                     effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
+                                     max_failures=0,  # 0 | INF
+                                     reorder=False, initial_complexity=1,
                                      debug=debug, verbose=True, visualize=False)
         else:
             raise NotImplementedError(algorithm)
@@ -170,15 +171,15 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     print_solution(solution)
     plan, _, facts = solution
     print('-'*10)
-    print('certified facts: ')
-    for fact in facts[0]:
-        print(fact)
+    # print('certified facts: ')
+    # for fact in facts[0]:
+    #     print(fact)
 
-    if facts[1] is not None:
-        # preimage facts: the facts that support the returned plan
-        print('preimage facts: ')
-        for fact in facts[1]:
-            print(fact)
+    # if facts[1] is not None:
+    #     # preimage facts: the facts that support the returned plan
+    #     print('preimage facts: ')
+    #     for fact in facts[1]:
+    #         print(fact)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
     return plan

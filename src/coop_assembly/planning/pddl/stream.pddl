@@ -1,17 +1,16 @@
 (define (stream construction)
-;    (:stream sample-move
-;     :inputs (?r ?q1 ?t1)
-;     :domain (and (Robot ?r)
-;                  (Conf ?r ?q1)
-;                  (AtStart ?q1 ?t1)
-;                  (Traj ?r ?t1)
-;                  )
-;     :outputs (?t2)
-;     :certified (and (MoveAction ?r ?q1 ?t2)
-;                     ; (MoveAction ?r ?q2 ?q1 ?t)
-;                     (Traj ?r ?t2)
-;                     )
-;   )
+   (:stream sample-move
+    :inputs (?r ?q1 ?t1)
+    :domain (and (Robot ?r)
+                 (Conf ?r ?q1)
+                 (AtStart ?q1 ?t1)
+                 (Traj ?r ?t1)
+                 )
+    :outputs (?t2)
+    :certified (and (MoveAction ?r ?q1 ?t2)
+                    (Traj ?r ?t2)
+                    )
+  )
 
   (:stream sample-print
     :inputs (?r ?e)
@@ -21,7 +20,7 @@
                     (Conf ?r ?q1)
                     (Conf ?r ?q2)
                     (Traj ?r ?t)
-                    ; (AtStart ?q1 ?t)
+                    (AtStart ?q1 ?t)
                     )
   )
 
