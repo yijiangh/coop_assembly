@@ -3,10 +3,10 @@
   (:predicates
     (Robot ?r)
     (Element ?e)
-    (Printed ?e)
+    (Assembled ?e)
     (Removed ?e)
-    (PrintAction ?r ?e ?q1 ?q2 ?t)
-    (MoveAction ?r ?q ?t)
+    (PlaceAction ?r ?e ?q1 ?q2 ?t)
+    (MoveAction ?r ?q1 ?q2 ?t)
     (Grounded ?e)
     (Connected ?e)
     (Joined ?e1 ?e2)
@@ -22,29 +22,29 @@
   )
 
   (:action move
-    ; :parameters (?r ?q1 ?q2 ?t)
-    :parameters (?r ?q2 ?t2)
+    :parameters (?r ?q1 ?q2 ?t2)
+    ; :parameters (?r ?q2 ?t2)
     :precondition (and
-                    ; (Conf ?r ?q1)
-                    ; (AtConf ?r ?q1)
-                       (Conf ?r ?q2)
-                       (Traj ?r ?t2)
-                       (CanMove ?r)
-                       (MoveAction ?r ?q2 ?t2)
-                       (forall (?e2) (imply (Collision ?t2 ?e2) (Removed ?e2)))
+                        (Conf ?r ?q1)
+                        (Conf ?r ?q2)
+                        (Traj ?r ?t2)
+                        (AtConf ?r ?q1)
+                        (CanMove ?r)
+                        (MoveAction ?r ?q1 ?q2 ?t2)
+                        (forall (?e2) (imply (Collision ?t2 ?e2) (Removed ?e2)))
                        )
     :effect (and
-                ;(not (AtConf ?r ?q1))
+                 (not (AtConf ?r ?q1))
                  (AtConf ?r ?q2)
                  (not (CanMove ?r)) ; switch to avoid transit forever
                  )
   )
 
-  ; print = remove the element
-  (:action print
+  ; place = remove the element
+  (:action place
     :parameters (?r ?e ?q1 ?q2 ?t)
-    :precondition (and (PrintAction ?r ?e ?q1 ?q2 ?t)
-                       (Printed ?e)
+    :precondition (and (PlaceAction ?r ?e ?q1 ?q2 ?t)
+                       (Assembled ?e)
                        ; (Stiff)
                        (Connected ?e)
                        (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
@@ -53,7 +53,7 @@
                        (not (CanMove ?r))
                        )
     :effect (and (Removed ?e)
-                 (not (Printed ?e))
+                 (not (Assembled ?e))
                  (CanMove ?r)
                  )
   )
@@ -61,7 +61,7 @@
   (:derived (Connected ?e2)
    (or (Grounded ?e2)
        (exists (?e1) (and (Joined ?e1 ?e2)
-                          (Printed ?e1)
+                          (Assembled ?e1)
                           (Connected ?e1)
                      )
        )

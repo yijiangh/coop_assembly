@@ -1,22 +1,24 @@
 (define (stream construction)
    (:stream sample-move
-    :inputs (?r ?q1 ?t1)
+    ;;; t1 is the target print traj, we need its attachment info
+    :inputs (?r ?q1 ?q2 ?t1)
     :domain (and (Robot ?r)
                  (Conf ?r ?q1)
-                 (AtStart ?q1 ?t1)
+                 (Conf ?r ?q2)
+                 (AtStart ?q2 ?t1)
                  (Traj ?r ?t1)
                  )
     :outputs (?t2)
-    :certified (and (MoveAction ?r ?q1 ?t2)
+    :certified (and (MoveAction ?r ?q1 ?q2 ?t2)
                     (Traj ?r ?t2)
                     )
   )
 
-  (:stream sample-print
+  (:stream sample-place
     :inputs (?r ?e)
     :domain (and (Robot ?r) (Element ?e) (Assigned ?r ?e))
     :outputs (?q1 ?q2 ?t)
-    :certified (and (PrintAction ?r ?e ?q1 ?q2 ?t)
+    :certified (and (PlaceAction ?r ?e ?q1 ?q2 ?t)
                     (Conf ?r ?q1)
                     (Conf ?r ?q2)
                     (Traj ?r ?t)

@@ -14,6 +14,7 @@ def pytest_addoption(parser):
     parser.addoption('--rfn', help='result file name')
     parser.addoption('--n_trails', default=1)
     parser.addoption('--alg', default='incremental')
+    parser.addoption('--debug_mode', action='store_true', help='debug verbose mode')
 
 @pytest.fixture
 def viewer(request):
@@ -63,5 +64,6 @@ def result_file_spec(request):
 def algorithm(request):
     return request.config.getoption("--alg")
 
-#TODO: test a main function with argparse
-# https://stackoverflow.com/questions/18160078/how-do-you-write-tests-for-the-argparse-portion-of-a-python-module
+@pytest.fixture
+def debug_mode(request):
+    return request.config.getoption("--debug_mode")

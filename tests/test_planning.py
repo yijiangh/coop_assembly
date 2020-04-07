@@ -82,8 +82,8 @@ def test_parse_pddlstream(viewer, file_spec, collision, bar_only):
     assert set([('Removed', i) for i in element_from_index]) <= set(pddlstream_problem.goal)
 
 @pytest.mark.wip_pddl
-def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch):
-    run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch)
+def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug_mode):
+    run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug=debug_mode)
 
 @pytest.mark.check_sweep
 def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec, watch, bar_only):

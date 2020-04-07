@@ -23,7 +23,7 @@ DIAGNOSIS = False
 ##################################################
 
 BAR_INITIAL_POINT = np.array([0.4, 0, 0.2])
-BAR_INITIAL_EULER = np.array([0, 0, 0])
+BAR_INITIAL_EULER = np.array([0, np.pi/2, 0])
 BAR_INITIAL_CONF = np.concatenate([BAR_INITIAL_POINT, BAR_INITIAL_EULER])
 
 # TODO: derived from bounding box
@@ -32,12 +32,12 @@ BAR_CUSTOM_LIMITS = {
     'y': (-1.0, 1.0),
     'z': (-0.3, 0.4),
 }
-BAR_RESOLUTION = [0.002]*3 + [np.pi/180]*3
-# BAR_RESOLUTION = [0.1]*3 + [np.pi/6]*3
+# BAR_RESOLUTION = [0.003]*3 + [np.pi/60]*3
+BAR_RESOLUTION = [0.1]*3 + [np.pi/6]*3
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
-                   collisions=True, max_time=INF, smooth=100, bar_only=False):
+                   collisions=True, bar_only=False, **kwargs):
     # TODO: can also just plan to initial conf and then shortcut
     if not bar_only:
         joints = joints_from_names(robot, IK_JOINT_NAMES)
@@ -75,16 +75,15 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
                              self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
                              extra_disabled_collisions=extra_disabled_collisions,
                              weights=weights, resolutions=resolutions, custom_limits=custom_limits,
-                             restarts=50, iterations=100, smooth=100, max_distance=0.0, diagnosis=DIAGNOSIS)
+                             diagnosis=DIAGNOSIS, **kwargs)
+    if path is None:
+        cprint('Failed to find a motion plan!', 'red')
+        return None
 
     element=None
     if len(attachments) > 0:
         index_from_body = get_index_from_bodies(element_from_index)
         element = index_from_body[attachments[0].child]
-
-    if path is None:
-        cprint('Failed to find a motion plan!', 'red')
-        return None
 
     return MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit2place')
 

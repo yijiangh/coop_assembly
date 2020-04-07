@@ -40,6 +40,8 @@ def index_from_name(robots, name):
     return robots[int(name[1:])]
 
 class Conf(object):
+    """wrapper for robot (incl. the element robot) configurations in pddlstream formulation
+    """
     def __init__(self, robot, positions=None, element=None):
         self.robot = robot
         self.joints = get_movable_joints(self.robot)
@@ -78,7 +80,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
         #'test-cfree': from_test(get_test_cfree(element_bodies)),
         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                             partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
-        'sample-print': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+        'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
         # 'test-stiffness': from_test(test_stiffness),
     }
@@ -100,7 +102,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     for e in remaining:
         init.extend([
             ('Element', e),
-            ('Printed', e),
+            ('Assembled', e),
         ])
     if not bar_only:
         for rname in initial_confs:
@@ -122,14 +124,15 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
                      collisions=True, disable=False, max_time=30, bar_only=False, algorithm='incremental', debug=False, **kwargs):
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
                                         collisions=collisions, bar_only=bar_only, **kwargs)
-    print('Init:', pddlstream_problem.init)
-    print('Goal:', pddlstream_problem.goal)
+    # if debug:
+    #     print('Init:', pddlstream_problem.init)
+    #     print('Goal:', pddlstream_problem.goal)
     print('='*10)
 
     # creates unique free variable for each output during the focused algorithm
     # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
     stream_info = {
-        'sample-print': StreamInfo(PartialInputs(unique=True)),
+        'sample-place': StreamInfo(PartialInputs(unique=True)),
         'sample-move': StreamInfo(PartialInputs(unique=True)),
     }
 
@@ -148,18 +151,39 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             solution = solve_incremental(pddlstream_problem, planner=planner, max_time=600,
                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm == 'focused':
-            solution = solve_focused(pddlstream_problem, max_time=max_time, stream_info=stream_info,
-                                     planner=planner, max_planner_time=60,
-                                     max_skeletons=None, bind=True, # * this two arguments should not be changed
-                                     # TODO some of the following parameters accelerate the planning quite a lot
+            # * max_skeletons=None, bind=False is focus
+            # * max_skeletons=None, bind=True is binding
+            # * max_skeletons!=None is adaptive
+            # ? max_time: the maximum amount of time to apply streams
+            # ? max_planner_time: maximal time allowed for the discrete search at each iter
+            # ? effort_weight: a multiplier for stream effort compared to action costs
+            # ? unit_efforts: use unit stream efforts rather than estimated numeric efforts
+            # ? unit_costs: use unit action costs rather than numeric costs
+            # ? reorder: if True, stream plans are reordered to minimize the expected sampling overhead
+            # ? initial_complexity: the initial effort limit
+            solution = solve_focused(pddlstream_problem, stream_info=stream_info,
+                                     planner=planner, max_planner_time=60, max_time=max_time,
+                                     max_skeletons=None, bind=False,
+                                     # ---
                                      effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
                                      max_failures=0,  # 0 | INF
                                      reorder=False, initial_complexity=1,
+                                     # ---
                                      debug=debug, verbose=True, visualize=False)
+            # single_tet:
+            # reorder False:
+            # External: sample-move | n: 348 | p_success: 0.573 | overhead: 0.032
+            # External: sample-print | n: 1531 | p_success: 0.958 | overhead: 0.066
+            #          2255823 function calls (2244996 primitive calls) in 2.215 seconds
+            # reorder True:
+            # External: sample-move | n: 368 | p_success: 0.577 | overhead: 0.030
+            # External: sample-print | n: 1561 | p_success: 0.958 | overhead: 0.065
+            #          3324783 function calls (3309547 primitive calls) in 4.802 seconds
         else:
             raise NotImplementedError(algorithm)
     pr.disable()
-    # pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
+    if debug:
+        pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
 
     if bar_only:
         # reset all element_robots to clear the visual scene
@@ -171,49 +195,19 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     print_solution(solution)
     plan, _, facts = solution
     print('-'*10)
-    # print('certified facts: ')
-    # for fact in facts[0]:
-    #     print(fact)
-
-    # if facts[1] is not None:
-    #     # preimage facts: the facts that support the returned plan
-    #     print('preimage facts: ')
-    #     for fact in facts[1]:
+    # if debug:
+    #     print('certified facts: ')
+    #     for fact in facts[0]:
     #         print(fact)
+
+    #     if facts[1] is not None:
+    #         # preimage facts: the facts that support the returned plan
+    #         print('preimage facts: ')
+    #         for fact in facts[1]:
+    #             print(fact)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
     return plan
-
-##################################################
-
-def stripstream(robot, obstacles, bar_struct, **kwargs):
-    robots = [robot]
-    saver = WorldSaver()
-    element_from_index = bar_struct.get_element_from_index()
-    grounded_elements = bar_struct.get_grounded_bar_keys()
-    element_from_index = bar_struct.get_element_from_index()
-
-    plan = solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, **kwargs)
-    # plan = solve_serialized(robots, obstacles, node_points, element_bodies, ground_nodes, layer_from_n, **kwargs)
-
-    data = {}
-    if plan is None:
-        return None, data
-
-    if has_gui():
-        saver.restore()
-        #label_nodes(node_points)
-        commands = [action.args[-1] for action in reversed(plan) if action.name == 'print']
-        trajectories = flatten_commands(commands)
-
-        elements = recover_sequence(trajectories, element_from_index)
-        endpts_from_element = bar_struct.get_axis_pts_from_element()
-        draw_ordered(elements, endpts_from_element)
-        wait_if_gui('Ready to simulate trajectory.')
-
-        display_trajectories(trajectories, time_step=0.02)
-
-    return None, data
 
 ###############################################################
 
@@ -248,17 +242,22 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
     # TODO initial confs
     # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
 
-    def wild_gen_fn(robot_name, q, current_command):
-        transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
-        assert norm(q.positions - current_command.start_conf) < 1e-8, 'norm {}'.format(norm(q.positions - current_command.start_conf))
+    def wild_gen_fn(robot_name, q1, q2, current_command):
+        # transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
+        # assert norm(q1.positions - transit_start_conf) < 1e-8
+        assert norm(q2.positions - current_command.start_conf) < 1e-8
 
         robot = index_from_name(robots, robot_name)
         attachments = current_command.trajectories[0].attachments
         traj = compute_motion(robot, obstacles, element_from_index, [],
-                       transit_start_conf, current_command.start_conf, attachments=attachments,
-                       collisions=collisions, max_time=INF, smooth=100, bar_only=bar_only, **kwargs)
+                       q1.positions, q2.positions, attachments=attachments,
+                       collisions=collisions, bar_only=bar_only,
+                       restarts=3, iterations=100, smooth=100, max_distance=0.0)
+        if not traj:
+            cprint('Transit sampling failed.', 'red')
+            return
 
-        assert norm(q.positions - np.array(traj.end_conf)) < 1e-8, 'norm {}'.format(norm(q.positions - np.array(traj.end_conf)))
+        # assert norm(q.positions - np.array(traj.end_conf)) < 1e-8, 'norm {}'.format(norm(q.positions - np.array(traj.end_conf)))
 
         # traj = compute_motion(robot, obstacles, element_from_index, [],
         #                       transit_start_conf, current_command.start_conf,
@@ -276,7 +275,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
             else:
                 command.set_safe(element2)
         facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-        cprint('transit facts: {}'.format(command.colliding), 'yellow')
+        cprint('transit facts: {}'.format(command.colliding), 'grey')
 
         outputs = [(command,)]
         # facts = []

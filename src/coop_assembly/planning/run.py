@@ -30,14 +30,14 @@ from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_ge
     get_element_body_in_goal_pose
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.motion import display_trajectories
-from coop_assembly.planning.parsing import load_structure
+from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream
 
 ########################################
 
-def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch):
+def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug=False):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
@@ -50,7 +50,7 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
     connectors = list(contact_from_connectors.keys())
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=False)
+        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=debug)
 
     if plan is None:
         cprint('No plan found.', 'red')
@@ -58,12 +58,13 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
     else:
         # TODO split into a function for reorganizing the actions
         commands = []
-        print_actions = [action for action in reversed(plan) if action.name == 'print']
-        for pc in print_actions:
+        place_actions = [action for action in reversed(plan) if action.name == 'place']
+        for pc in place_actions:
             print_command = pc.args[-1]
             robot_name = pc.args[0]
             for action in plan:
-                if action.name == 'move' and action.args[0] == robot_name and norm(action.args[1].positions-print_command.start_conf)<1e-8:
+                if action.name == 'move' and action.args[0] == robot_name and \
+                    norm(action.args[2].positions-print_command.start_conf)<1e-8:
                     commands.append(action.args[-1])
                     break
             commands.append(print_command)
@@ -109,28 +110,26 @@ def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--algorithm', default='incremental')
-    parser.add_argument('-v', '--viewer', action='store_true', help='Enables the pybullet viewer')
-    parser.add_argument('--write', action='store_true', help='Export results')
     parser.add_argument('-c', '--collision', action='store_false', help='disable collision checking')
-    parser.add_argument('-bar', '--bar_only', action='store_true', help='only planning motion for the bars')
-    parser.add_argument('-s', '--stiffness', action='store_false', help='disable stiffness')
-    parser.add_argument('-m', '--motion', action='store_true', help='enable transit motion')
-    parser.add_argument('--watch', action='store_true', help='watch trajectories')
-    parser.add_argument('--revisit', action='store_true')
-    parser.add_argument('--fn', default='single_tet')
-    parser.add_argument('--rfn', help='result file name')
-    parser.add_argument('--n_trails', default=1)
+    parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for the bars')
+    parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
+    parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')
+    parser.add_argument('-wr', '--write', action='store_true', help='Export results')
+    parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
+    # parser.add_argument('-s', '--stiffness', action='store_false', help='disable stiffness')
+    # parser.add_argument('-m', '--motion', action='store_true', help='enable transit motion')
+    # parser.add_argument('--rfn', help='result file name')
+    # parser.add_argument('--revisit', action='store_true', help='revisit in regression')
 
     return parser
 
 def main():
     parser = create_parser()
-    # parser.add_argument('-p', '--problem', default='choreo_brick_demo', help='The name of the problem to solve')
-    # parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
+    parser.add_argument('-p', '--problem', default='single_tet', choices=PICKNPLACE_FILENAMES, help='The name of the problem to solve')
+    parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     args = parser.parse_args()
     print('Arguments:', args)
-
-    run_pddlstream(args.viewer, args.fn, args.collision, args.bar_only, args.write, args.algorithm, args.watch)
+    run_pddlstream(args.viewer, args.problem, args.collision, args.bar_only, args.write, args.algorithm, args.watch, debug=args.debug)
 
 if __name__ == '__main__':
     main()
