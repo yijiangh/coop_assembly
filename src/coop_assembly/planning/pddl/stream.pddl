@@ -15,15 +15,15 @@
 
   (:stream sample-print
     :inputs (?r ?e)
-    :domain (and (Robot ?r) (Element ?e)) ; (Assigned ?r ?e)
+    :domain (and (Robot ?r) (Element ?e) (Assigned ?r ?e))
     :outputs (?q1 ?q2 ?t)
     :certified (and (PrintAction ?r ?e ?q1 ?q2 ?t)
                     (Conf ?r ?q1)
                     (Conf ?r ?q2)
                     (Traj ?r ?t)
+                    ; (AtStart ?q1 ?t)
                     )
   )
-  ; (AtStart ?q1 ?t)
 
 ;   (:stream test-stiffness
 ; ;    :fluents (Printed)

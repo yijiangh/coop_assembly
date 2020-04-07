@@ -108,5 +108,4 @@ def validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, allow_failure=
         print('------------')
     valid = validate_trajectories(element_from_index, fixed_obstacles, trajectories, \
         grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=allow_failure, watch=watch, **kwargs)
-    cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
     return valid

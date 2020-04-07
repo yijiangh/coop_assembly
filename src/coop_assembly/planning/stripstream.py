@@ -84,13 +84,6 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     }
 
     init = []
-    # robot = robots[0]
-    # init = [
-    #     ('Robot', robot),
-    #     ('Conf', robot, np.array(INITIAL_CONF)),
-    #     ('AtConf', robot, np.array(INITIAL_CONF)),
-    #     ('CanMove', robot),
-    # ]
     # if transit:
     #     init.append(('Move',))
     for name, conf in initial_confs.items():
@@ -100,20 +93,20 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
             # ('AtConf', name, conf),
             # ('CanMove', name),
         ])
-    # init.extend(('Grounded', e) for e in grounded_elements)
-    # init.extend(('Joined', e1, e2) for e1, e2 in connectors)
-    # init.extend(('Joined', e2, e1) for e1, e2 in connectors)
+    init.extend(('Grounded', e) for e in grounded_elements)
+    init.extend(('Joined', e1, e2) for e1, e2 in connectors)
+    init.extend(('Joined', e2, e1) for e1, e2 in connectors)
 
     for e in remaining:
         init.extend([
             ('Element', e),
             ('Printed', e),
         ])
-    # if not bar_only:
-    #     for rname in initial_confs:
-    #         init.extend([('Assigned', rname, e) for e in remaining])
-    # else:
-    #     init.extend([('Assigned', rname, e) for e, rname in zip(remaining, initial_confs)])
+    if not bar_only:
+        for rname in initial_confs:
+            init.extend([('Assigned', rname, e) for e in remaining])
+    else:
+        init.extend([('Assigned', rname, e) for e, rname in zip(remaining, initial_confs)])
 
     goal_literals = []
     # if return_home:
@@ -156,10 +149,12 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm == 'focused':
             solution = solve_focused(pddlstream_problem, max_time=max_time, stream_info=stream_info,
+                                     planner=planner, max_planner_time=60,
+                                     max_skeletons=None, bind=True, # * this two arguments should not be changed
                                     #  effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
-                                    #  max_skeletons=None, bind=True, max_failures=0,  # 0 | INF
+                                    # max_failures=0,  # 0 | INF
                                     #  reorder=False, initial_complexity=1,
-                                     planner=planner, max_planner_time=60, debug=debug, verbose=True, visualize=False)
+                                     debug=debug, verbose=True, visualize=False)
         else:
             raise NotImplementedError(algorithm)
     pr.disable()
@@ -179,10 +174,11 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     for fact in facts[0]:
         print(fact)
 
-    print('preimage facts: ')
-    for fact in facts[1]:
-        print(fact)
-    # preimage facts: the facts that support the returned plan
+    if facts[1] is not None:
+        # preimage facts: the facts that support the returned plan
+        print('preimage facts: ')
+        for fact in facts[1]:
+            print(fact)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
     return plan
