@@ -37,7 +37,7 @@ from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream
 
 ########################################
 
-def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch):
+def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
@@ -130,7 +130,7 @@ def main():
     args = parser.parse_args()
     print('Arguments:', args)
 
-    test_solve_pddlstream(args.viewer, args.fn, args.collision, args.bar_only, args.write, args.algorithm, args.watch)
+    run_pddlstream(args.viewer, args.fn, args.collision, args.bar_only, args.write, args.algorithm, args.watch)
 
 if __name__ == '__main__':
     main()

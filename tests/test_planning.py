@@ -30,6 +30,7 @@ from coop_assembly.planning.parsing import load_structure
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream
+from coop_assembly.planning.run import run_pddlstream
 
 @pytest.fixture
 def test_file_name():
@@ -82,69 +83,7 @@ def test_parse_pddlstream(viewer, file_spec, collision, bar_only):
 
 @pytest.mark.wip_pddl
 def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch):
-    bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
-    fixed_obstacles, robot = load_world()
-
-    robots = [robot]
-
-    saver = WorldSaver()
-    element_from_index = bar_struct.get_element_from_index()
-    grounded_elements = bar_struct.get_grounded_bar_keys()
-    contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
-    connectors = list(contact_from_connectors.keys())
-
-    plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=True)
-
-    if plan is None:
-        cprint('No plan found.', 'red')
-        assert False, 'No plan found.'
-    else:
-        # TODO split into a function for reorganizing the actions
-        commands = []
-        print_actions = [action for action in reversed(plan) if action.name == 'print']
-        for pc in print_actions:
-            print_command = pc.args[-1]
-            robot_name = pc.args[0]
-            for action in plan:
-                if action.name == 'move' and action.args[0] == robot_name and norm(action.args[1].positions-print_command.start_conf)<1e-8:
-                    commands.append(action.args[-1])
-                    break
-            commands.append(print_command)
-        trajectories = flatten_commands(commands)
-
-        # for t in trajectories:
-        #     print(t.tag)
-        #     print('st: {} \nend: {}'.format(t.start_conf, t.end_conf))
-        #     print('====')
-
-        if write:
-            here = os.path.dirname(__file__)
-            plan_path = '{}_pddl_solution_{}.json'.format(file_spec, get_date())
-            save_path = os.path.join(here, 'results', plan_path)
-            with open(save_path, 'w') as f:
-               json.dump({'problem' : file_spec,
-                          'plan' : [p.to_data() for p in trajectories]}, f)
-            cprint('Result saved to: {}'.format(save_path), 'green')
-        if watch and has_gui():
-            saver.restore()
-            #label_nodes(node_points)
-            elements = recover_sequence(trajectories, element_from_index)
-            endpts_from_element = bar_struct.get_axis_pts_from_element()
-            draw_ordered(elements, endpts_from_element)
-            wait_if_gui('Ready to simulate trajectory.')
-            for e in element_from_index:
-               set_color(element_from_index[e].body, (1, 0, 0, 0))
-            # time_step = None
-            time_step = 0.01 if bar_only else 0.05
-            display_trajectories(trajectories, time_step=time_step)
-        if collision:
-            valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui(), \
-                bar_only=bar_only, refine_num=1)
-            cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
-            assert valid
-    reset_simulation()
-    disconnect()
+    run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch)
 
 @pytest.mark.check_sweep
 def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec, watch, bar_only):
