@@ -64,7 +64,8 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
             robot_name = pc.args[0]
             for action in plan:
                 if action.name == 'move' and action.args[0] == robot_name and \
-                    norm(action.args[2].positions-print_command.start_conf)<1e-8:
+                    norm(action.args[1].positions-print_command.start_conf)<1e-8:
+                    # norm(action.args[2].positions-print_command.start_conf)<1e-8:
                     commands.append(action.args[-1])
                     break
             commands.append(print_command)

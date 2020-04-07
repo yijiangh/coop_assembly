@@ -79,9 +79,11 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     stream_map = {
         #'test-cfree': from_test(get_test_cfree(element_bodies)),
         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                            partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
+                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
+                                               initial_confs=initial_confs,**kwargs),
         'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                              partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, **kwargs),
+                                              partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
+                                              initial_confs=initial_confs, **kwargs),
         # 'test-stiffness': from_test(test_stiffness),
     }
 
@@ -121,7 +123,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 ##################################################
 
 def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
-                     collisions=True, disable=False, max_time=30, bar_only=False, algorithm='incremental', debug=False, **kwargs):
+                     collisions=True, disable=False, max_time=60, bar_only=False, algorithm='incremental', debug=False, **kwargs):
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
                                         collisions=collisions, bar_only=bar_only, **kwargs)
     # if debug:
@@ -151,6 +153,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             solution = solve_incremental(pddlstream_problem, planner=planner, max_time=600,
                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm == 'focused':
+            # TODO what can we tell about a problem if it requires many iterations?
             # * max_skeletons=None, bind=False is focus
             # * max_skeletons=None, bind=True is binding
             # * max_skeletons!=None is adaptive
@@ -211,7 +214,8 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 
 ###############################################################
 
-def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, **kwargs):
+def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
+    bar_only=False, initial_confs={}, **kwargs):
     gen_fn_from_robot = {}
     for robot in robots:
         ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
@@ -232,39 +236,33 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
             outputs = [(q1, q2, command)]
             # TODO Caelan said that we might not have to use wild facts to enforce collision-free
             facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
+            # facts.append(('AtConf', robot_name, initial_confs[robot_name]))
             cprint('print facts: {}'.format(command.colliding), 'yellow')
-            # sequence = [result.get_mapping()['?e'].value for result in CURRENT_STREAM_PLAN]
-            # print(CURRENT_STREAM_PLAN)
             yield WildOutput(outputs, facts)
     return wild_gen_fn
 
-def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, **kwargs):
+def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, \
+    initial_confs={}, **kwargs):
     # TODO initial confs
     # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
 
-    def wild_gen_fn(robot_name, q1, q2, current_command):
+    def wild_gen_fn(robot_name, q2, current_command):
         # transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
         # assert norm(q1.positions - transit_start_conf) < 1e-8
+        init_q = initial_confs[robot_name]
         assert norm(q2.positions - current_command.start_conf) < 1e-8
 
         robot = index_from_name(robots, robot_name)
         attachments = current_command.trajectories[0].attachments
         traj = compute_motion(robot, obstacles, element_from_index, [],
-                       q1.positions, q2.positions, attachments=attachments,
+                       init_q.positions, q2.positions, attachments=attachments,
                        collisions=collisions, bar_only=bar_only,
                        restarts=3, iterations=100, smooth=100, max_distance=0.0)
         if not traj:
             cprint('Transit sampling failed.', 'red')
             return
 
-        # assert norm(q.positions - np.array(traj.end_conf)) < 1e-8, 'norm {}'.format(norm(q.positions - np.array(traj.end_conf)))
-
-        # traj = compute_motion(robot, obstacles, element_from_index, [],
-        #                       transit_start_conf, current_command.start_conf,
-        #                       collisions=collision, attachments=current_command.trajectories[0].attachments,
-        #                       max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
         command = Command([traj])
-
         elements_order = [e for e in element_from_index if (e != current_command.trajectories[0].element)]
             # and (element_from_index[e].body not in obstacles)]
         bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
@@ -276,6 +274,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
                 command.set_safe(element2)
         facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
         cprint('transit facts: {}'.format(command.colliding), 'grey')
+        cprint('E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
 
         outputs = [(command,)]
         # facts = []
