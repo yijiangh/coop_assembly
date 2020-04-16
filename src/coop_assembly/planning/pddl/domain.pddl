@@ -55,8 +55,8 @@
     :effect (and (Removed ?e)
                  (CanMove ?r)
                  (not (Assembled ?e))
-                ;  (AtConf ?r ?q2)
                  (not (AtConf ?r ?q1))
+                ;  (AtConf ?r ?q2)
                  )
   )
 

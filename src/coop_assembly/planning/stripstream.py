@@ -32,7 +32,11 @@ from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, IK_JOINT_NAMES, JOINT_WEI
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions import METER_SCALE
 
-STRIPSTREAM_ALGORITHM = 'stripstream'
+STRIPSTREAM_ALGORITHM = [
+    'incremental',
+    'focused',
+]
+
 ROBOT_TEMPLATE = 'r{}'
 ELEMENT_ROBOT_TEMPLATE = 'e{}'
 
@@ -52,7 +56,7 @@ class Conf(object):
     def assign(self):
         set_configuration(self.robot, self.positions)
     def __repr__(self):
-        return '{}(E#{})'.format(self.__class__.__name__, self.element)
+        return '{}(E{})'.format(self.__class__.__name__, self.element)
 
 ##################################################
 
@@ -126,9 +130,9 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
                      collisions=True, disable=False, max_time=60, bar_only=False, algorithm='incremental', debug=False, **kwargs):
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
                                         collisions=collisions, bar_only=bar_only, **kwargs)
-    # if debug:
-    #     print('Init:', pddlstream_problem.init)
-    #     print('Goal:', pddlstream_problem.goal)
+    if debug:
+        print('Init:', pddlstream_problem.init)
+        print('Goal:', pddlstream_problem.goal)
     print('='*10)
 
     # creates unique free variable for each output during the focused algorithm
@@ -173,17 +177,8 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
                                      reorder=False, initial_complexity=1,
                                      # ---
                                      debug=debug, verbose=True, visualize=False)
-            # single_tet:
-            # reorder False:
-            # External: sample-move | n: 348 | p_success: 0.573 | overhead: 0.032
-            # External: sample-print | n: 1531 | p_success: 0.958 | overhead: 0.066
-            #          2255823 function calls (2244996 primitive calls) in 2.215 seconds
-            # reorder True:
-            # External: sample-move | n: 368 | p_success: 0.577 | overhead: 0.030
-            # External: sample-print | n: 1561 | p_success: 0.958 | overhead: 0.065
-            #          3324783 function calls (3309547 primitive calls) in 4.802 seconds
         else:
-            raise NotImplementedError(algorithm)
+            raise NotImplementedError('Algorithm |{}| not in {}'.format(algorithm, STRIPSTREAM_ALGORITHM))
     pr.disable()
     if debug:
         pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
@@ -198,16 +193,15 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     print_solution(solution)
     plan, _, facts = solution
     print('-'*10)
-    # if debug:
-    #     print('certified facts: ')
-    #     for fact in facts[0]:
-    #         print(fact)
-
-    #     if facts[1] is not None:
-    #         # preimage facts: the facts that support the returned plan
-    #         print('preimage facts: ')
-    #         for fact in facts[1]:
-    #             print(fact)
+    if debug:
+        print('certified facts: ')
+        for fact in facts[0]:
+            print(fact)
+        if facts[1] is not None:
+            # preimage facts: the facts that support the returned plan
+            print('preimage facts: ')
+            for fact in facts[1]:
+                print(fact)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
     return plan
@@ -273,7 +267,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
             else:
                 command.set_safe(element2)
         facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-        cprint('transit facts: {}'.format(command.colliding), 'grey')
+        cprint('transit facts: {}'.format(command.colliding), 'blue')
         cprint('E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
 
         outputs = [(command,)]

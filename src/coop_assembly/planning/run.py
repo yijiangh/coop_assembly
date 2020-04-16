@@ -33,7 +33,7 @@ from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
-from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream
+from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM
 
 ########################################
 
@@ -110,13 +110,13 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
 def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--algorithm', default='incremental')
+    parser.add_argument('-a', '--algorithm', default='incremental', choices=STRIPSTREAM_ALGORITHM, help='Stripstream algorithms')
     parser.add_argument('-c', '--collision', action='store_false', help='disable collision checking')
-    parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for the bars')
-    parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
+    parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for floating bars')
     parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')
     parser.add_argument('-wr', '--write', action='store_true', help='Export results')
     parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
+    parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
     # parser.add_argument('-s', '--stiffness', action='store_false', help='disable stiffness')
     # parser.add_argument('-m', '--motion', action='store_true', help='enable transit motion')
     # parser.add_argument('--rfn', help='result file name')
