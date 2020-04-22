@@ -8,7 +8,7 @@ from coop_assembly.data_structure.utils import MotionTrajectory
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, command_collision
 from .robot_setup import get_disabled_collisions, EE_LINK_NAME
 from .utils import recover_sequence, Command
-from .visualization import label_elements
+from .visualization import label_elements, visualize_collision_digraph
 
 ##################################################
 
@@ -81,9 +81,10 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
 
 ##############################################
 
-def validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, allow_failure=False, watch=False, **kwargs):
+def validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, allow_failure=False, watch=False, debug=False, **kwargs):
     element_from_index = bar_struct.get_element_from_index()
     element_seq = recover_sequence(trajectories, element_from_index)
+    collision_facts = []
     for traj in trajectories:
         if traj.element is not None and traj.tag=='place_approach':
             print('E{} : future E{}'.format(traj.element, element_seq[element_seq.index(traj.element):]))
@@ -98,6 +99,7 @@ def validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, allow_failure=
                     command.set_safe(element2)
             facts = [('Collision', command, e2) for e2 in command.colliding]
             print('Collision facts: ', command.colliding)
+            collision_facts.extend(facts)
             # * checking (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
             valid = set(command.colliding) <= set(element_seq[element_seq.index(traj.element):])
             if not valid:
@@ -106,6 +108,12 @@ def validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, allow_failure=
                 cprint('Collision facts violated!', 'red')
                 wait_if_gui()
         print('------------')
+
+    # * visualize the collision constraint directional graph
+    # https://networkx.github.io/documentation/stable/tutorial.html#directed-graphs
+    if debug:
+        visualize_collision_digraph(collision_facts)
+
     valid = validate_trajectories(element_from_index, fixed_obstacles, trajectories, \
         grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=allow_failure, watch=watch, **kwargs)
     return valid

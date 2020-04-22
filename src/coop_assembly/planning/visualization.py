@@ -124,3 +124,45 @@ def label_connector(connector_pts, c, **kwargs):
 
 def label_points(points, **kwargs):
     return [add_text(node, position=point, **kwargs) for node, point in enumerate(points)]
+
+######################################################
+
+import networkx as nx
+import matplotlib.pyplot as plt
+
+def visualize_collision_digraph(collision_facts):
+    t_edges = {}
+    p_edges = {}
+    for fact in collision_facts:
+        if fact[0] not in ['Collision', 'collision']:
+            continue
+        traj, e = fact[1].trajectories[0], fact[2]
+        carried_element = traj.element
+        if 'transit' in traj.tag:
+            # transition traj
+            t_edges[(e, carried_element)] = 1
+        else:
+            # place traj
+            p_edges[(e, carried_element)] = 1
+    # collision directional graph
+    G = nx.DiGraph()
+    for edge, weight in t_edges.items():
+        G.add_edge(*edge, weight=weight)
+    for edge, weight in p_edges.items():
+        G.add_edge(*edge, weight=weight)
+
+    # plotting
+    plt.subplots()
+    # nodal positions
+    pos = nx.shell_layout(G)
+    # nodes
+    nx.draw_networkx_nodes(G, pos, node_size=700)
+    # edges
+    nx.draw_networkx_edges(G, pos, edgelist=list(t_edges.keys()), width=3, edge_color='r')
+    nx.draw_networkx_edges(
+        G, pos, edgelist=list(p_edges.keys()), width=3, alpha=0.5, edge_color="b" #, style="dashed"
+    )
+    # labels
+    nx.draw_networkx_labels(G, pos, font_size=20)
+
+    plt.show()

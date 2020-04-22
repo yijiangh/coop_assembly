@@ -100,8 +100,8 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
                 time_step = 0.01 if bar_only else 0.05
             display_trajectories(trajectories, time_step=time_step)
         if collision:
-            valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui(), \
-                bar_only=bar_only, refine_num=1)
+            valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui() or debug, \
+                bar_only=bar_only, refine_num=1, debug=debug)
             cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
             assert valid
     reset_simulation()
