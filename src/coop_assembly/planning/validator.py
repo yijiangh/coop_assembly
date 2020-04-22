@@ -23,6 +23,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
         set_color(element.body, np.zeros(4))
 
     print('Trajectories:', len(trajectories))
+    valid = True
     obstacles = list(fixed_obstacles)
     for i, trajectory in enumerate(trajectories):
         robot = trajectory.robot
@@ -47,7 +48,6 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
         # TODO
         # trajectory.refine(refine_num)
 
-        valid = True
         path = list(trajectory.iterate())
         for t, conf in enumerate(path):
             # if any(pairwise_collision(trajectory.robot, body) for body in obstacles):

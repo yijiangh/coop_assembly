@@ -28,9 +28,12 @@ BAR_INITIAL_CONF = np.concatenate([BAR_INITIAL_POINT, BAR_INITIAL_EULER])
 
 # TODO: derived from bounding box
 BAR_CUSTOM_LIMITS = {
-    'x': (0.25, 1.0),
-    'y': (-1.0, 1.0),
-    'z': (-0.3, 0.4),
+    # 'x': (0.25, 1.0),
+    # 'y': (-1.0, 1.0),
+    # 'z': (-0.3, 0.4),
+    'x': (0., 2.0),
+    'y': (-2.0, 2.0),
+    'z': (-0.3, 1.5),
 }
 # BAR_RESOLUTION = [0.003]*3 + [np.pi/60]*3
 BAR_RESOLUTION = [0.1]*3 + [np.pi/6]*3
@@ -156,7 +159,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
             #     last_point = current_point
 
             if time_step is None:
-                wait_for_user('{}'.format(conf))
+                wait_for_user() #'{}'.format(conf))
             else:
                 wait_for_duration(time_step)
 

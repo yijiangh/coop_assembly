@@ -24,7 +24,8 @@ requirements = [
     'scipy>=1.3.1',
     'pybullet_planning', # TODO: pin version
     'termcolor',
-    # 'pychoreo',
+    'matplotlib',
+    'networkx',
     # 'pycddlib',
 ]
 keywords_list = ['robotic assembly', 'double-tangent frame structure', 'digital fabrication', 'architecture']

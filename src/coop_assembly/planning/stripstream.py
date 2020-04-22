@@ -3,6 +3,8 @@ from numpy.linalg import norm
 import cProfile
 import pstats
 from termcolor import cprint
+import matplotlib.pyplot as plt
+import networkx as nx
 
 import os, sys
 here = os.path.abspath(os.path.dirname(__file__))
@@ -35,7 +37,15 @@ from coop_assembly.help_functions import METER_SCALE
 STRIPSTREAM_ALGORITHM = [
     'incremental',
     'focused',
+    'binding',
+    'adaptive',
 ]
+
+SS_OPTIONS = {
+    'focused' : {'max_skeletons':None, 'bind':False},
+    'binding' : {'max_skeletons':None, 'bind':True},
+    'adaptive': {'max_skeletons':1,    'bind':False},
+}
 
 ROBOT_TEMPLATE = 'r{}'
 ELEMENT_ROBOT_TEMPLATE = 'e{}'
@@ -127,7 +137,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 ##################################################
 
 def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
-                     collisions=True, disable=False, max_time=60, bar_only=False, algorithm='incremental', debug=False, **kwargs):
+                     collisions=True, disable=False, max_time=60*4, bar_only=False, algorithm='incremental', debug=False, **kwargs):
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
                                         collisions=collisions, bar_only=bar_only, **kwargs)
     if debug:
@@ -147,8 +157,10 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     set_cost_scale(1)
     # planner = 'ff-ehc'
     # planner = 'ff-lazy-tiebreak' # Branching factor becomes large. Rely on preferred. Preferred should also be cheaper
-    planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
     # planner = 'max-astar'
+
+    # planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
+    planner = 'ff-lazy'
 
     pr = cProfile.Profile()
     pr.enable()
@@ -156,11 +168,8 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
         if algorithm == 'incremental':
             solution = solve_incremental(pddlstream_problem, planner=planner, max_time=600,
                                         max_planner_time=300, debug=debug, verbose=True)
-        elif algorithm == 'focused':
+        elif algorithm in SS_OPTIONS:
             # TODO what can we tell about a problem if it requires many iterations?
-            # * max_skeletons=None, bind=False is focus
-            # * max_skeletons=None, bind=True is binding
-            # * max_skeletons!=None is adaptive
             # ? max_time: the maximum amount of time to apply streams
             # ? max_planner_time: maximal time allowed for the discrete search at each iter
             # ? effort_weight: a multiplier for stream effort compared to action costs
@@ -170,13 +179,13 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             # ? initial_complexity: the initial effort limit
             solution = solve_focused(pddlstream_problem, stream_info=stream_info,
                                      planner=planner, max_planner_time=60, max_time=max_time,
-                                     max_skeletons=None, bind=False,
+                                     max_skeletons=SS_OPTIONS[algorithm]['max_skeletons'], bind=SS_OPTIONS[algorithm]['bind'],
                                      # ---
                                      effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
                                      max_failures=0,  # 0 | INF
                                      reorder=False, initial_complexity=1,
                                      # ---
-                                     debug=debug, verbose=True, visualize=False)
+                                     debug=debug, verbose=True, visualize=debug)
         else:
             raise NotImplementedError('Algorithm |{}| not in {}'.format(algorithm, STRIPSTREAM_ALGORITHM))
     pr.disable()
@@ -194,16 +203,57 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     plan, _, facts = solution
     print('-'*10)
     if debug:
-        print('certified facts: ')
-        for fact in facts[0]:
-            print(fact)
+        # cprint('certified facts: ', 'yellow')
+        # for fact in facts[0]:
+        #     print(fact)
         if facts[1] is not None:
             # preimage facts: the facts that support the returned plan
-            print('preimage facts: ')
+            cprint('preimage facts: ', 'green')
             for fact in facts[1]:
                 print(fact)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
+
+    # TODO: plot the collision constraint graph
+    # TODO: visualize the collision constraint directional graph
+    # https://networkx.github.io/documentation/stable/tutorial.html#directed-graphs
+    if debug:
+        t_edges = {}
+        p_edges = {}
+        for fact in facts[1]:
+            if fact[0] == 'collision':
+                traj, e = fact[1].trajectories[0], fact[2]
+                carried_element = traj.element
+                if 'transit' in traj.tag:
+                    # transition traj
+                    t_edges[(carried_element, e)] = 1
+                else:
+                    # place traj
+                    p_edges[(carried_element, e)] = 1
+        # collision directional graph
+        G = nx.DiGraph()
+        for edge, weight in t_edges.items():
+            G.add_edge(*edge, weight=weight)
+        for edge, weight in p_edges.items():
+            G.add_edge(*edge, weight=weight)
+
+        # plotting
+        plt.subplots()
+        # nodal positions
+        pos = nx.shell_layout(G)
+        # nodes
+        nx.draw_networkx_nodes(G, pos) #, node_size=700)
+        # edges
+        nx.draw_networkx_edges(G, pos, edgelist=list(t_edges.keys()), width=3, edge_color='r')
+        nx.draw_networkx_edges(
+            G, pos, edgelist=list(p_edges.keys()), width=3, alpha=0.5, edge_color="b" #, style="dashed"
+        )
+        # labels
+        nx.draw_networkx_labels(G, pos, font_size=20)
+
+        plt.show()
+
+    # is the irrelevant predicated discarded at the end?
     return plan
 
 ###############################################################
@@ -224,6 +274,7 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
 
     def wild_gen_fn(robot_name, element):
         robot = index_from_name(robots, robot_name)
+        print('-'*3)
         for command, in gen_fn_from_robot[robot](element):
             q1 = Conf(robot, np.array(command.start_conf), element)
             q2 = Conf(robot, np.array(command.end_conf), element)
@@ -246,12 +297,14 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
         init_q = initial_confs[robot_name]
         assert norm(q2.positions - current_command.start_conf) < 1e-8
 
+        print('-'*3)
         robot = index_from_name(robots, robot_name)
         attachments = current_command.trajectories[0].attachments
+
         traj = compute_motion(robot, obstacles, element_from_index, [],
                        init_q.positions, q2.positions, attachments=attachments,
-                       collisions=collisions, bar_only=bar_only,
-                       restarts=3, iterations=100, smooth=100, max_distance=0.0)
+                       collisions=collisions, bar_only=bar_only)
+                    #    restarts=3, iterations=100, smooth=100, max_distance=0.0)
         if not traj:
             cprint('Transit sampling failed.', 'red')
             return
@@ -266,9 +319,10 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
                 command.set_unsafe(element2)
             else:
                 command.set_safe(element2)
+
         facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
+        cprint('Transit E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
         cprint('transit facts: {}'.format(command.colliding), 'blue')
-        cprint('E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
 
         outputs = [(command,)]
         # facts = []

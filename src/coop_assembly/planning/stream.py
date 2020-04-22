@@ -394,7 +394,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
                     continue
 
                 # if verbose:
-                cprint('E#{} | Attempts: {} | Trajectories: {} | Colliding: {}'.format(element, attempt, len(trajectories), \
+                cprint('Place E#{} | Attempts: {} | Trajectories: {} | Colliding: {}'.format(element, attempt, len(trajectories), \
                         sorted(len(t.colliding) for t in trajectories)), 'green')
 
                 yield command,

@@ -37,7 +37,7 @@ from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream,
 
 ########################################
 
-def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug=False):
+def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug=False, step_sim=False):
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
@@ -56,6 +56,7 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
         cprint('No plan found.', 'red')
         assert False, 'No plan found.'
     else:
+        # TODO use acyclic graph to retract the correct order, the adaptive algorithm works well
         # TODO split into a function for reorganizing the actions
         commands = []
         place_actions = [action for action in reversed(plan) if action.name == 'place']
@@ -93,8 +94,10 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
             wait_if_gui('Ready to simulate trajectory.')
             for e in element_from_index:
                set_color(element_from_index[e].body, (1, 0, 0, 0))
-            # time_step = None
-            time_step = 0.01 if bar_only else 0.05
+            if step_sim:
+                time_step = None
+            else:
+                time_step = 0.01 if bar_only else 0.05
             display_trajectories(trajectories, time_step=time_step)
         if collision:
             valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui(), \
@@ -110,10 +113,11 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
 def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--algorithm', default='incremental', choices=STRIPSTREAM_ALGORITHM, help='Stripstream algorithms')
+    parser.add_argument('-a', '--algorithm', default='focused', choices=STRIPSTREAM_ALGORITHM, help='Stripstream algorithms')
     parser.add_argument('-c', '--collision', action='store_false', help='disable collision checking')
     parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for floating bars')
     parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')
+    parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
     parser.add_argument('-wr', '--write', action='store_true', help='Export results')
     parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
     parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
@@ -130,7 +134,20 @@ def main():
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     args = parser.parse_args()
     print('Arguments:', args)
-    run_pddlstream(args.viewer, args.problem, args.collision, args.bar_only, args.write, args.algorithm, args.watch, debug=args.debug)
+
+    success_cnt = 0
+    for i in range(int(args.n_trails)):
+        try:
+            run_pddlstream(args.viewer, args.problem, args.collision, args.bar_only, args.write, args.algorithm, args.watch, \
+                debug=args.debug, step_sim=args.step_sim)
+        except:
+            cprint('#{}: plan not found'.format(i), 'red')
+            continue
+        cprint('#{}: plan found'.format(i), 'green')
+        success_cnt += 1
+
+    print('#'*10)
+    print('{} : {} / {}'.format(args.problem, success_cnt, args.n_trails))
 
 if __name__ == '__main__':
     main()

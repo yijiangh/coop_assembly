@@ -10,7 +10,7 @@ def pytest_addoption(parser):
     parser.addoption('--motion', action='store_true', help='enable transit motion')
     parser.addoption('--watch', action='store_true', help='watch trajectories')
     parser.addoption('--revisit', action='store_true')
-    parser.addoption('--fn', default='single_tet')
+    parser.addoption('--problem', default='single_tet')
     parser.addoption('--rfn', help='result file name')
     parser.addoption('--n_trails', default=1)
     parser.addoption('--alg', default='incremental')
@@ -50,7 +50,7 @@ def revisit(request):
 
 @pytest.fixture
 def file_spec(request):
-    return request.config.getoption("--fn")
+    return request.config.getoption("--problem")
 
 @pytest.fixture
 def n_trails(request):
