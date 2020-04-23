@@ -29,6 +29,12 @@
                     )
   )
 
+  (:stream test-cfree
+    :inputs (?r ?t ?e)
+    :domain (and (Robot ?r) (Traj ?r ?t) (Element ?e))
+    :certified (CollisionFree ?t ?e)
+  )
+
 ;   (:stream test-stiffness
 ; ;    :fluents (Printed)
 ;    :certified (Stiff)

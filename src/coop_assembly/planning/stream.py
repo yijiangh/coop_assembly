@@ -385,6 +385,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
                             command.set_unsafe(element2)
                         else:
                             command.set_safe(element2)
+
                 # if not is_ground(element, ground_nodes) and (neighboring_elements <= command.colliding):
                 #     continue # TODO If all neighbors collide
                 trajectories.append(command)

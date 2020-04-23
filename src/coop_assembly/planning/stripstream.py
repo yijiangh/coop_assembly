@@ -15,7 +15,7 @@ from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused
 from pddlstream.algorithms.disabled import process_stream_plan
 from pddlstream.language.constants import And, PDDLProblem, print_solution, DurativeAction, Equal
-from pddlstream.language.generator import from_test, from_gen_fn, from_fn
+from pddlstream.language.generator import from_test, from_gen_fn, from_fn, empty_gen
 from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput
 from pddlstream.language.function import FunctionInfo
 from pddlstream.utils import read, get_file_path, inclusive_range
@@ -89,13 +89,13 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     constant_map = {}
 
     stream_map = {
-        #'test-cfree': from_test(get_test_cfree(element_bodies)),
         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                                partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
                                                initial_confs=initial_confs,**kwargs),
         'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
                                               initial_confs=initial_confs, **kwargs),
+        'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
 
@@ -238,11 +238,13 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
             q1 = Conf(robot, np.array(command.start_conf), element)
             q2 = Conf(robot, np.array(command.end_conf), element)
             outputs = [(q1, q2, command)]
-            # TODO Caelan said that we might not have to use wild facts to enforce collision-free
-            facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
+            facts = []
+            # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
             # facts.append(('AtConf', robot_name, initial_confs[robot_name]))
-            cprint('print facts: {}'.format(command.colliding), 'yellow')
+            # cprint('print facts: {}'.format(command.colliding), 'yellow')
             yield WildOutput(outputs, facts)
+            # yield (q1, q2, command),
+
     return wild_gen_fn
 
 def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, \
@@ -278,15 +280,22 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
                 command.set_unsafe(element2)
             else:
                 command.set_safe(element2)
+        # return command,
 
-        facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-        cprint('Transit E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
-        cprint('transit facts: {}'.format(command.colliding), 'blue')
-
+        # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
+        # cprint('Transit E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
+        # cprint('transit facts: {}'.format(command.colliding), 'blue')
         outputs = [(command,)]
-        # facts = []
+        facts = []
         yield WildOutput(outputs, facts)
     return wild_gen_fn
+
+def get_test_cfree():
+    def test_fn(robot_name, traj, element):
+        # robot = index_from_name(robots, robot_name)
+        return element not in traj.colliding
+        # return element in traj.colliding
+    return test_fn
 
 def test_stiffness(fluents=[]):
     assert all(fact[0] == 'printed' for fact in fluents)

@@ -11,7 +11,8 @@
     (Connected ?e)
     (Joined ?e1 ?e2)
     (Traj ?r ?t)
-    (Collision ?t ?e)
+    (CollisionFree ?t ?e)
+    (SafeTraj ?t)
     (CanMove ?r)
     (Conf ?r ?q)
     (AtConf ?r ?q)
@@ -31,7 +32,8 @@
                         (Traj ?r ?t2)
                         (CanMove ?r)
                         (MoveAction ?r ?q2 ?t2)
-                        (forall (?e2) (imply (Collision ?t2 ?e2) (Removed ?e2)))
+                        ; (forall (?e2) (imply (Collision ?t2 ?e2) (Removed ?e2)))
+                        (SafeTraj ?t2)
                        )
     :effect (and
                 ;  (not (AtConf ?r ?q1))
@@ -47,10 +49,11 @@
                        (Assembled ?e)
                        ; (Stiff)
                        (Connected ?e)
-                       (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
+                    ;    (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
+                       (SafeTraj ?t)
                        ;;; comment the following two if no transit
-                       (AtConf ?r ?q1) ; this will force a move action
-                       (not (CanMove ?r))
+                    ;    (AtConf ?r ?q1) ; this will force a move action
+                    ;    (not (CanMove ?r))
                        )
     :effect (and (Removed ?e)
                  (CanMove ?r)
@@ -69,4 +72,16 @@
        )
    )
   )
+
+  (:derived (SafeTraj ?t)
+   (forall (?e2) (imply (Assembled ?e2)
+                        (CollisionFree ?t ?e2)
+                  ))
+  )
+
+;   (:derived (UnsafeTraj ?t)
+;    (exists (?e2) (and (Assembled ?e2)
+;                       (Collision ?t ?e2)
+;                   )
+;    )
 )
