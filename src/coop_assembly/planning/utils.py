@@ -55,6 +55,7 @@ def flatten_commands(commands):
 ##################################################
 
 def prune_dominated(trajectories):
+    # prune trajectory with more collision elements
     start_len = len(trajectories)
     for traj1 in list(trajectories):
         if any((traj1 != traj2) and (traj2.colliding <= traj1.colliding)

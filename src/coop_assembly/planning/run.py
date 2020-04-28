@@ -37,8 +37,8 @@ from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream,
 
 ########################################
 
-def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug=False, step_sim=False):
-    bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
+def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
+    bar_struct, o_struct = load_structure(args.problem, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
     robots = [robot]
@@ -50,14 +50,14 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
     connectors = list(contact_from_connectors.keys())
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
-        collisions=collision, bar_only=bar_only, algorithm=algorithm, debug=debug)
+        collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
+        debug=debug, teleops=args.teleops)
 
     if plan is None:
         cprint('No plan found.', 'red')
         assert False, 'No plan found.'
     else:
-        # TODO use acyclic graph to retract the correct order, the adaptive algorithm works well
-        # TODO split into a function for reorganizing the actions
+        cprint('plan found.', 'green')
         commands = []
         place_actions = [action for action in reversed(plan) if action.name == 'place']
         for pc in place_actions:
@@ -72,17 +72,12 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
             commands.append(print_command)
         trajectories = flatten_commands(commands)
 
-        # for t in trajectories:
-        #     print(t.tag)
-        #     print('st: {} \nend: {}'.format(t.start_conf, t.end_conf))
-        #     print('====')
-
         if write:
             here = os.path.dirname(__file__)
-            plan_path = '{}_pddl_solution_{}.json'.format(file_spec, get_date())
+            plan_path = '{}_pddl_solution_{}.json'.format(args.file_spec, get_date())
             save_path = os.path.join(here, 'results', plan_path)
             with open(save_path, 'w') as f:
-               json.dump({'problem' : file_spec,
+               json.dump({'problem' : args.file_spec,
                           'plan' : [p.to_data() for p in trajectories]}, f)
             cprint('Result saved to: {}'.format(save_path), 'green')
         if watch and has_gui():
@@ -97,13 +92,16 @@ def run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, wat
             if step_sim:
                 time_step = None
             else:
-                time_step = 0.01 if bar_only else 0.05
+                time_step = 0.01 if args.bar_only else 0.05
             display_trajectories(trajectories, time_step=time_step)
-        if collision:
+        # verify
+        if args.collisions:
             valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui() or debug, \
-                bar_only=bar_only, refine_num=1, debug=debug)
+                bar_only=args.bar_only, refine_num=1, debug=debug)
             cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
             assert valid
+        else:
+            cprint('Collision disabled, no verfication performed.', 'yellow')
     reset_simulation()
     disconnect()
 
@@ -114,13 +112,11 @@ def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--algorithm', default='focused', choices=STRIPSTREAM_ALGORITHM, help='Stripstream algorithms')
-    parser.add_argument('-c', '--collision', action='store_false', help='disable collision checking')
+    parser.add_argument('-c', '--collisions', action='store_false', help='disable collision checking')
     parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for floating bars')
-    parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')
-    parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
-    parser.add_argument('-wr', '--write', action='store_true', help='Export results')
-    parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
-    parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
+    parser.add_argument('-co', '--costs', action='store_true', help='turn on cost_effective planning')
+    parser.add_argument('-to', '--teleops', action='store_true', help='use teleop for trajectories (turn off in-between traj planning)')
+
     # parser.add_argument('-s', '--stiffness', action='store_false', help='disable stiffness')
     # parser.add_argument('-m', '--motion', action='store_true', help='enable transit motion')
     # parser.add_argument('--rfn', help='result file name')
@@ -132,22 +128,29 @@ def main():
     parser = create_parser()
     parser.add_argument('-p', '--problem', default='single_tet', choices=PICKNPLACE_FILENAMES, help='The name of the problem to solve')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
+    parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
+    parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')
+    parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
+    parser.add_argument('-wr', '--write', action='store_true', help='Export results')
+    parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
     args = parser.parse_args()
     print('Arguments:', args)
 
     success_cnt = 0
-    for i in range(int(args.n_trails)):
-        try:
-            run_pddlstream(args.viewer, args.problem, args.collision, args.bar_only, args.write, args.algorithm, args.watch, \
-                debug=args.debug, step_sim=args.step_sim)
-        except:
-            cprint('#{}: plan not found'.format(i), 'red')
-            continue
-        cprint('#{}: plan found'.format(i), 'green')
-        success_cnt += 1
-
-    print('#'*10)
-    print('{} : {} / {}'.format(args.problem, success_cnt, args.n_trails))
+    if int(args.n_trails) == 1:
+        # one-shot run, expose assertion errors
+        run_pddlstream(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write)
+    else:
+        for i in range(int(args.n_trails)):
+            try:
+                run_pddlstream(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write)
+            except:
+                cprint('#{}: plan not found'.format(i), 'red')
+                continue
+            cprint('#{}: plan found'.format(i), 'green')
+            success_cnt += 1
+        print('#'*10)
+        print('{} : {} / {}'.format(args.problem, success_cnt, args.n_trails))
 
 if __name__ == '__main__':
     main()

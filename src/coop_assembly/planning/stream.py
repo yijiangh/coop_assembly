@@ -114,7 +114,7 @@ def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
 def pose2conf(pose):
     return np.concatenate([np.array(pose[0]), intrinsic_euler_from_quat(np.array(pose[1]))])
 
-def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRASP_MAX_ATTEMPTS, collision=True):
+def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRASP_MAX_ATTEMPTS, collision=True, teleops=False):
     pose_gen = get_delta_pose_generator()
 
     def gen_fn(index, pose, printed, diagnosis=False):
@@ -139,8 +139,11 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
             delta_pose = next(pose_gen)
             offset_pose = multiply(pose.value, delta_pose)
             is_colliding = False
-            offset_path = list(interpolate_poses(offset_pose, pose.value, pos_step_size=POS_STEP_SIZE, ori_step_size=ORI_STEP_SIZE))
-            for p in offset_path: #[:-1]
+            if not teleops:
+                offset_path = list(interpolate_poses(offset_pose, pose.value, pos_step_size=POS_STEP_SIZE, ori_step_size=ORI_STEP_SIZE))
+            else:
+                offset_path = [offset_pose, pose.value]
+            for p in offset_path: # [:-1]
                 # TODO: if colliding at the world_from_bar pose, use local velocity + normal check
                 # TODO: normal can be derived from
                 if ee_collision_fn(p):
@@ -170,6 +173,9 @@ def command_collision(command, bodies):
     # TODO: separate into another method. Sort paths by tool poses first
 
     # * checking end effector and attachments only
+    # this is done prior to the robot body
+    # because this checking is less expensive and more indicative of success
+    # than the full placement motion of the robot
     for trajectory in command.trajectories:
         robot = trajectory.robot
         for conf in randomize(trajectory.path):
@@ -221,9 +227,12 @@ def command_collision(command, bodies):
 ######################################
 
 def compute_place_path(pregrasp_poses, grasp, index, element_from_index, collision_fn=None, bar_only=False, end_effector=None, verbose=False,\
-    diagnosis=False, retreat_vector=np.array([0, 0, -1])):
+    diagnosis=False, retreat_vector=np.array([0, 0, -1]), teleops=False):
+    """ IK computation, attachment. EE path is given.
+    """
     body = element_from_index[index].body
     if bar_only:
+        # no inverse kinematics involved in the bar_only mode
         element_robot = element_from_index[index].element_robot
         element_joints = get_movable_joints(element_robot)
         element_body_link = get_links(element_robot)[-1]
@@ -288,6 +297,7 @@ def compute_place_path(pregrasp_poses, grasp, index, element_from_index, collisi
     #                                 disabled_collisions=disabled_collisions,
     #                                 attachments=[])
     # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
+    # TODO if teleops
     # TODO: ladder graph-based Cartesian planning
     path = [approach_conf, attach_conf]
     if path is None:
@@ -296,8 +306,6 @@ def compute_place_path(pregrasp_poses, grasp, index, element_from_index, collisi
     approach_traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment], tag='place_approach', element=index)
 
     # * retreat motion
-    # // retreat_traj = approach_traj.reverse()
-    # // retreat_traj.attachments = []
     set_joint_positions(robot, ik_joints, attach_conf)
     retreat_pose = multiply(attach_pose, (retreat_vector, unit_quat()))
     retreat_conf = inverse_kinematics(robot, tool_link, retreat_pose)
@@ -327,7 +335,7 @@ def compute_place_path(pregrasp_poses, grasp, index, element_from_index, collisi
 
 def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisions=True,
     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, bar_only=False,
-    precompute_collisions=False):
+    precompute_collisions=False, teleops=False):
     if not collisions:
         precompute_collisions = False
     if not bar_only:
@@ -338,7 +346,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
 
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
-    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=collisions) # max_attempts=max_attempts,
+    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=collisions, teleops=teleops) # max_attempts=max_attempts,
 
     retreat_distance = RETREAT_DISTANCE
     retreat_vector = retreat_distance*np.array([0, 0, -1])
@@ -360,10 +368,12 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
                                             custom_limits=get_custom_limits(robot),
                                             max_distance=MAX_DISTANCE)
 
+        # keep track of sampled traj, prune newly sampled one with more collided element
         trajectories = []
         for attempt, (world_pose_t, grasp_t) in enumerate(zip(islice(goal_pose_gen_fn(element), max_grasp), islice(grasp_gen(element), max_grasp))):
             world_pose = world_pose_t[0]
             grasp = grasp_t[0]
+            # * ik iterations, usually 1 is enough
             for _ in range(max_attempts):
                 # when used in pddlstream, the pregrasp sampler assumes no elements assembled at all time
                 pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed))
@@ -372,7 +382,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
                     continue
 
                 command = compute_place_path(pregrasp_poses, grasp, element, element_from_index, collision_fn=collision_fn if not bar_only else None, bar_only=bar_only,
-                    end_effector=end_effector,  verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector)
+                    end_effector=end_effector,  verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector, teleops=teleops)
                 if command is None:
                     continue
 

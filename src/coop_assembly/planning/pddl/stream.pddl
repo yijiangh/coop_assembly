@@ -32,7 +32,7 @@
   (:stream test-cfree
     :inputs (?r ?t ?e)
     :domain (and (Robot ?r) (Traj ?r ?t) (Element ?e))
-    :certified (CollisionFree ?t ?e)
+    :certified (CollisionFree ?r ?t ?e)
   )
 
 ;   (:stream test-stiffness

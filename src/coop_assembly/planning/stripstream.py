@@ -25,7 +25,7 @@ from pybullet_planning import has_gui, get_movable_joints, get_configuration, se
     wait_if_gui, EndEffector, link_from_name, joints_from_names, intrinsic_euler_from_quat, get_links, create_attachment, \
     set_joint_positions, get_links, set_pose, INF
 from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn, command_collision
-from .utils import flatten_commands, recover_sequence, Command
+from .utils import flatten_commands, recover_sequence, Command, get_index_from_bodies
 from .visualization import draw_ordered
 from .motion import display_trajectories, compute_motion, BAR_INITIAL_CONF
 from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions, INITIAL_CONF
@@ -40,9 +40,9 @@ STRIPSTREAM_ALGORITHM = [
 ]
 
 SS_OPTIONS = {
-    'focused' : {'max_skeletons':None, 'bind':False},
-    'binding' : {'max_skeletons':None, 'bind':True},
-    'adaptive': {'max_skeletons':1,    'bind':False},
+    'focused' : {'max_skeletons':None, 'bind':False, 'search_sample_ratio':0,},
+    'binding' : {'max_skeletons':None, 'bind':True, 'search_sample_ratio':0,},
+    'adaptive': {'max_skeletons':INF, 'bind':True, 'search_sample_ratio':0,},
 }
 
 ROBOT_TEMPLATE = 'r{}'
@@ -70,7 +70,7 @@ class Conf(object):
 
 def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
                    printed=set(), removed=set(), collisions=True,
-                   temporal=False, transit=False, return_home=True, checker=None, bar_only=False, **kwargs):
+                   transit=False, return_home=True, checker=None, bar_only=False, teleops=False, **kwargs):
     # TODO update removed & printed
     assert not removed & printed
     remaining = set(element_from_index) - removed - printed
@@ -84,17 +84,18 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
         robots = [element_from_index[e].element_robot for e in element_from_index]
         initial_confs = {ELEMENT_ROBOT_TEMPLATE.format(i): Conf(robot, BAR_INITIAL_CONF) for i, robot in enumerate(robots)}
 
-    domain_pddl = read(get_file_path(__file__, 'pddl/temporal.pddl' if temporal else 'pddl/domain.pddl'))
+    domain_pddl = read(get_file_path(__file__, 'pddl/domain.pddl'))
     stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
     constant_map = {}
 
     stream_map = {
         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                                partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
-                                               initial_confs=initial_confs,**kwargs),
+                                               initial_confs=initial_confs, teleops=teleops, **kwargs),
         'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
-                                              initial_confs=initial_confs, **kwargs),
+                                              initial_confs=initial_confs, teleops=teleops, **kwargs),
+        # ? if tested in collision, certify CollisionFree
         'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
@@ -135,20 +136,14 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 ##################################################
 
 def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
-                     collisions=True, disable=False, max_time=60*4, bar_only=False, algorithm='incremental', debug=False, **kwargs):
+                     collisions=True, disable=False, max_time=60*4, bar_only=False, algorithm='incremental',
+                     debug=False, costs=False, teleops=False, **kwargs):
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
-                                        collisions=collisions, bar_only=bar_only, **kwargs)
+                                        collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
     if debug:
         print('Init:', pddlstream_problem.init)
         print('Goal:', pddlstream_problem.goal)
     print('='*10)
-
-    # creates unique free variable for each output during the focused algorithm
-    # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
-    stream_info = {
-        'sample-place': StreamInfo(PartialInputs(unique=True)),
-        'sample-move': StreamInfo(PartialInputs(unique=True)),
-    }
 
     # Reachability heuristics good for detecting dead-ends
     # Infeasibility from the start means disconnected or collision
@@ -158,15 +153,31 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     # planner = 'max-astar'
 
     # planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
-    planner = 'ff-lazy'
+    # planner = 'ff-lazy' | 'ff-wastar3'
+
+    def get_planner(costs):
+        return 'ff-astar' if costs else 'ff-wastar3'
+    success_cost = 0 if costs else INF
 
     pr = cProfile.Profile()
     pr.enable()
     with LockRenderer(lock=True):
         if algorithm == 'incremental':
-            solution = solve_incremental(pddlstream_problem, planner=planner, max_time=600,
+            solution = solve_incremental(pddlstream_problem, planner=get_planner(costs), max_time=600,
+                                        success_cost=success_cost, unit_costs=not costs,
                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm in SS_OPTIONS:
+            # creates unique free variable for each output during the focused algorithm
+            # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
+            stream_info = {
+                'sample-place': StreamInfo(PartialInputs(unique=True)),
+                'sample-move': StreamInfo(PartialInputs(unique=True)),
+                'test-cfree': StreamInfo(negate=True),
+            }
+            # TODO: effort_weight=0 will lead to noplan found
+            effort_weight = 1e-3 if costs else None
+            # effort_weight = 1e-3 if costs else 1 # | 0
+
             # TODO what can we tell about a problem if it requires many iterations?
             # ? max_time: the maximum amount of time to apply streams
             # ? max_planner_time: maximal time allowed for the discrete search at each iter
@@ -175,15 +186,22 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             # ? unit_costs: use unit action costs rather than numeric costs
             # ? reorder: if True, stream plans are reordered to minimize the expected sampling overhead
             # ? initial_complexity: the initial effort limit
+            # ? max_failure only applies if max_skeletons=None
+            # ? success_cost is the max cost of allowed solutions
+            #   success_cost=0 runs the planner in a true anytime mode
+            #   success_cost=INF terminates whenever any plan is found
             solution = solve_focused(pddlstream_problem, stream_info=stream_info,
-                                     planner=planner, max_planner_time=60, max_time=max_time,
-                                     max_skeletons=SS_OPTIONS[algorithm]['max_skeletons'], bind=SS_OPTIONS[algorithm]['bind'],
+                                     planner=get_planner(costs), max_planner_time=60, max_time=max_time,
+                                     max_skeletons=SS_OPTIONS[algorithm]['max_skeletons'],
+                                     bind=SS_OPTIONS[algorithm]['bind'],
+                                     search_sample_ratio=SS_OPTIONS[algorithm]['search_sample_ratio'],
                                      # ---
-                                     effort_weight=None, unit_efforts=True, unit_costs=False, # TODO: effort_weight=None vs 0
+                                     unit_costs=not costs, success_cost=success_cost,
+                                     unit_efforts=True, effort_weight=effort_weight,
                                      max_failures=0,  # 0 | INF
                                      reorder=False, initial_complexity=1,
                                      # ---
-                                     debug=debug, verbose=True, visualize=debug)
+                                     debug=debug, verbose=True, visualize=False)
         else:
             raise NotImplementedError('Algorithm |{}| not in {}'.format(algorithm, STRIPSTREAM_ALGORITHM))
     pr.disable()
@@ -200,15 +218,15 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     print_solution(solution)
     plan, _, facts = solution
     print('-'*10)
-    if debug:
-        # cprint('certified facts: ', 'yellow')
-        # for fact in facts[0]:
-        #     print(fact)
-        if facts[1] is not None:
-            # preimage facts: the facts that support the returned plan
-            cprint('preimage facts: ', 'green')
-            for fact in facts[1]:
-                print(fact)
+    # if debug:
+    #     # cprint('certified facts: ', 'yellow')
+    #     # for fact in facts[0]:
+    #     #     print(fact)
+    #     if facts[1] is not None:
+    #         # preimage facts: the facts that support the returned plan
+    #         cprint('preimage facts: ', 'green')
+    #         for fact in facts[1]:
+    #             print(fact)
     # TODO: post-process by calling planner again
     # TODO: could solve for trajectories conditioned on the sequence
 
@@ -218,7 +236,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 ###############################################################
 
 def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
-    bar_only=False, initial_confs={}, **kwargs):
+    bar_only=False, initial_confs={}, teleops=False, **kwargs):
     gen_fn_from_robot = {}
     for robot in robots:
         ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
@@ -228,7 +246,7 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
                                    tool_link=tool_link,
                                    visual=False, collision=True)
         pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, \
-            precompute_collisions=True, collisions=collisions, bar_only=bar_only, **kwargs)
+            precompute_collisions=True, collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
         gen_fn_from_robot[robot] = pick_gen_fn
 
     def wild_gen_fn(robot_name, element):
@@ -248,7 +266,7 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
     return wild_gen_fn
 
 def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, \
-    initial_confs={}, **kwargs):
+    initial_confs={}, teleops=False, **kwargs):
     # TODO initial confs
     # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
 
@@ -262,25 +280,35 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
         robot = index_from_name(robots, robot_name)
         attachments = current_command.trajectories[0].attachments
 
-        traj = compute_motion(robot, obstacles, element_from_index, [],
-                       init_q.positions, q2.positions, attachments=attachments,
-                       collisions=collisions, bar_only=bar_only)
-                    #    restarts=3, iterations=100, smooth=100, max_distance=0.0)
-        if not traj:
-            cprint('Transit sampling failed.', 'red')
-            return
-
+        if not teleops:
+            traj = compute_motion(robot, obstacles, element_from_index, [],
+                           init_q.positions, q2.positions, attachments=attachments,
+                           collisions=collisions, bar_only=bar_only)
+                        #    restarts=3, iterations=100, smooth=100, max_distance=0.0)
+            if not traj:
+                cprint('Transit sampling failed.', 'red')
+                # TODO what's the impact of return here?
+                return
+        else:
+            path = [init_q.positions, q2.positions]
+            joints = joints_from_names(robot, IK_JOINT_NAMES) if not bar_only else get_movable_joints(robot)
+            element=None
+            if len(attachments) > 0:
+                index_from_body = get_index_from_bodies(element_from_index)
+                element = index_from_body[attachments[0].child]
+            traj = MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit2place')
         command = Command([traj])
-        elements_order = [e for e in element_from_index if (e != current_command.trajectories[0].element)]
-            # and (element_from_index[e].body not in obstacles)]
-        bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-        colliding = command_collision(command, bodies_order)
-        for element2, unsafe in zip(elements_order, colliding):
-            if unsafe:
-                command.set_unsafe(element2)
-            else:
-                command.set_safe(element2)
-        # return command,
+
+        if collisions:
+            elements_order = [e for e in element_from_index if (e != current_command.trajectories[0].element)]
+                # and (element_from_index[e].body not in obstacles)]
+            bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
+            colliding = command_collision(command, bodies_order)
+            for element2, unsafe in zip(elements_order, colliding):
+                if unsafe:
+                    command.set_unsafe(element2)
+                else:
+                    command.set_safe(element2)
 
         # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
         # cprint('Transit E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
@@ -292,9 +320,8 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
 
 def get_test_cfree():
     def test_fn(robot_name, traj, element):
-        # robot = index_from_name(robots, robot_name)
+        # return True if no collision detected
         return element not in traj.colliding
-        # return element in traj.colliding
     return test_fn
 
 def test_stiffness(fluents=[]):
