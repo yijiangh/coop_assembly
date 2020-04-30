@@ -42,7 +42,7 @@ STRIPSTREAM_ALGORITHM = [
 SS_OPTIONS = {
     'focused' : {'max_skeletons':None, 'bind':False, 'search_sample_ratio':0,},
     'binding' : {'max_skeletons':None, 'bind':True, 'search_sample_ratio':0,},
-    'adaptive': {'max_skeletons':INF, 'bind':True, 'search_sample_ratio':0,},
+    'adaptive': {'max_skeletons':INF, 'bind':True, 'search_sample_ratio':2,},
 }
 
 ROBOT_TEMPLATE = 'r{}'
@@ -68,7 +68,19 @@ class Conf(object):
 
 ##################################################
 
-def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
+from itertools import product
+
+def compute_orders(elements_from_layer):
+    # elements_from_layer = compute_elements_from_layer(elements, layer_from_n)
+    partial_orders = set()
+    layers = sorted(elements_from_layer)
+    for layer in layers[:-1]:
+        partial_orders.update(product(elements_from_layer[layer], elements_from_layer[layer+1]))
+    return partial_orders
+
+##################################################
+
+def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors, elements_from_layer={},
                    printed=set(), removed=set(), collisions=True,
                    transit=False, return_home=True, checker=None, bar_only=False, teleops=False, **kwargs):
     # TODO update removed & printed
@@ -77,7 +89,10 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
     obstacles = set(static_obstacles) | element_obstacles
 
-    partial_orders = set()
+    partial_orders = compute_orders(elements_from_layer)
+    print('Partial orders: ', partial_orders)
+    # input()
+
     if not bar_only:
         initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot, INITIAL_CONF) for i, robot in enumerate(robots)}
     else:
@@ -113,6 +128,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     init.extend(('Grounded', e) for e in grounded_elements)
     init.extend(('Joined', e1, e2) for e1, e2 in connectors)
     init.extend(('Joined', e2, e1) for e1, e2 in connectors)
+    init.extend(('Order',) + tup for tup in partial_orders)
 
     for e in remaining:
         init.extend([
@@ -135,10 +151,11 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
 ##################################################
 
-def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
+def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, elements_from_layer={},
                      collisions=True, disable=False, max_time=60*4, bar_only=False, algorithm='incremental',
                      debug=False, costs=False, teleops=False, **kwargs):
-    pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors,
+
+    pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, elements_from_layer=elements_from_layer,
                                         collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
     if debug:
         print('Init:', pddlstream_problem.init)

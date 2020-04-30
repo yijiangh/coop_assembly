@@ -40,10 +40,20 @@ def draw_ordered(elements, axis_endpts):
     pb debug handles
         [description]
     """
-    colors = sample_colors(len(elements))
     handles = []
+    colors = sample_colors(len(elements))
     for element, color in zip(elements, colors):
         handles.append(draw_element(axis_endpts, element, color=color))
+    return handles
+
+
+def draw_partial_ordered(elements_from_layer, axis_endpts):
+    handles = []
+    colors = sample_colors(len(elements_from_layer.keys()))
+    for layer, color in zip(elements_from_layer, colors):
+        for e in list(elements_from_layer[layer]):
+            e_id = e if isinstance(e, int) else e.index
+            handles.append(draw_element(axis_endpts, e_id, color=color))
     return handles
 
 

@@ -9,6 +9,7 @@ from numpy.linalg import norm
 import json
 from termcolor import cprint
 from itertools import islice
+from collections import defaultdict
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
@@ -49,7 +50,11 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
     connectors = list(contact_from_connectors.keys())
 
-    plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, \
+    elements_from_layer = defaultdict(set)
+    for v in bar_struct.vertices():
+        elements_from_layer[bar_struct.vertex[v]['layer']].add(v)
+
+    plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, elements_from_layer=elements_from_layer,
         collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
         debug=debug, teleops=args.teleops)
 

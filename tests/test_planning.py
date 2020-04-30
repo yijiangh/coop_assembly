@@ -1,6 +1,7 @@
 import os
 import pytest
 import numpy as np
+from collections import defaultdict
 from numpy.linalg import norm
 import json
 from termcolor import cprint
@@ -18,7 +19,7 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES
 from coop_assembly.planning.utils import load_world
-from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera
+from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera, draw_partial_ordered
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 
@@ -34,8 +35,8 @@ from coop_assembly.planning.run import run_pddlstream
 
 @pytest.fixture
 def test_file_name():
-    # return 'YJ_12_bars_point2triangle.json'
-    return 'single_tet_point2triangle.json'
+    return '12_bars_point2triangle.json'
+    # return 'single_tet_point2triangle.json'
 
 @pytest.fixture
 def results_dir():
@@ -207,8 +208,8 @@ def test_rotate_goal_pose_gen(viewer, test_file_name):
         remove_handles(handles)
 
 @pytest.mark.stream
-def test_stream(viewer, test_file_name, collision):
-    bar_struct, _ = load_structure(test_file_name, viewer)
+def test_stream(viewer, file_spec, collision):
+    bar_struct, _ = load_structure(file_spec, viewer)
     element_bodies = bar_struct.get_element_bodies()
     element_from_index = bar_struct.get_element_from_index()
 
@@ -280,26 +281,34 @@ def test_stream(viewer, test_file_name, collision):
         remove_handles(handles)
 
 
-def test_color_structure(viewer, test_file_name):
-    bar_struct, _ = load_structure(test_file_name, viewer)
+def test_color_structure(viewer, file_spec):
+    bar_struct, _ = load_structure(file_spec, viewer)
     element_bodies = bar_struct.get_element_bodies()
     printed = set([0,1,2,3])
     color_structure(element_bodies, printed, 4)
     wait_if_gui()
 
 
-def test_draw_ordered(viewer, test_file_name):
-    bar_struct, _ = load_structure(test_file_name, viewer)
+@pytest.mark.draw
+def test_draw_ordered(viewer, file_spec):
+    bar_struct, _ = load_structure(file_spec, viewer)
     endpts_from_element = bar_struct.get_axis_pts_from_element()
-    draw_ordered(list(bar_struct.vertices()), endpts_from_element)
+    h = draw_ordered(list(bar_struct.vertices()), endpts_from_element)
+    wait_if_gui()
+    remove_handles(h)
+
+    elements_from_layer = defaultdict(set)
+    for v in bar_struct.vertices():
+        elements_from_layer[bar_struct.vertex[v]['layer']].add(v)
+    draw_partial_ordered(elements_from_layer, endpts_from_element)
     wait_if_gui()
 
 
-def test_connector(viewer):
-    test_file_name = 'YJ_12_bars_point2triangle.json'
+@pytest.mark.connector
+def test_connector(viewer, file_spec):
     # visual test
-    bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
-    element_bodies = bar_struct.get_element_bodies()
+    bar_struct, _ = load_structure(file_spec, viewer)
+    element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
     handles = []
     handles.extend(label_elements(element_bodies))
     wait_if_gui()
@@ -343,10 +352,9 @@ def test_connector(viewer):
     grounded_elements = bar_struct.get_grounded_bar_keys()
     assert check_connected(connectors, grounded_elements, printed_elements)
 
-def test_connector_debug(viewer):
-    test_file_name = 'single_tet_point2triangle.json'
+def test_connector_debug(viewer, file_spec):
     # visual test
-    bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
+    bar_struct, _ = load_structure(file_spec, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()
     handles = []
     handles.extend(label_elements(element_bodies))
@@ -368,9 +376,8 @@ def test_connector_debug(viewer):
     printed_elements = set([0,3])
     assert check_connected(connectors, grounded_elements, printed_elements)
 
-def test_contact_to_ground(viewer):
-    test_file_name = 'YJ_12_bars_point2triangle.json'
-    bar_struct, _ = load_structure(test_file_name, viewer, color=(1,0,0,0.3))
+def test_contact_to_ground(viewer, file_spec):
+    bar_struct, _ = load_structure(file_spec, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()
     handles = []
     handles.extend(label_elements(element_bodies))

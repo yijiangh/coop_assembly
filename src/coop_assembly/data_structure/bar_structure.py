@@ -113,7 +113,8 @@ class BarStructure(Network):
                                    "crosec_values":_crosec_values,
                                    "zdir":_zdir,
                                    "bar_parameters":_bar_parameters,
-                                   "exchange_values":{}
+                                   "exchange_values":{},
+                                   "layer":None, # tet group ids to indicate assembly partial ordering
                                    })
         return v_key
         # TODO: bisect search for local disassembly motion
@@ -287,6 +288,7 @@ class BarStructure(Network):
             body = self.get_bar_pb_body(index)
             element_robot = self.get_bar_element_robot(index)
             goal_pose = self.vertex[index]['goal_pose']
+            layer = self.vertex[index]['layer']
             # all data in Element is in meter
             element_from_index[index] = Element(index=index, body=body, element_robot=element_robot,
                                                 axis_endpoints=axis_pts,
@@ -294,9 +296,9 @@ class BarStructure(Network):
                                                 initial_pose=WorldPose(index, None),
                                                 goal_pose=WorldPose(index, goal_pose),
                                                 grasps=None,
-                                                goal_supports=None)
+                                                goal_supports=None,
+                                                layer=layer)
         return element_from_index
-
 
     def get_axis_pts_from_element(self, scale=METER_SCALE):
         """[summary]

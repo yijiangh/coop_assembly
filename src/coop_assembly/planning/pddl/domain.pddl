@@ -20,8 +20,8 @@
     (AtConf ?r ?q)
     (AtStart ?q ?t)
     (Assigned ?r ?e)
+    (Order ?e1 ?e2)
     ; (Stiff)
-    ; (Order ?e1 ?e2)
   )
 
   (:action move
@@ -51,6 +51,8 @@
                        (Assembled ?e)
                        ; (Stiff)
                        (Connected ?e)
+                       ; e2 must be remove before e
+                       (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
                        ;;; Collision constraint
                        (not (UnSafeTraj ?r ?t))
                        ;;; comment the following two if no transit

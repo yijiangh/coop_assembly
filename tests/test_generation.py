@@ -68,7 +68,7 @@ def test_generate_from_points(save_dir, points_library, viewer, file_spec, radiu
         penalty_cost = 2.0
         print('pt search strategy: {} | heuristic: {} | penalty cost: {}'.format(pt_search_method, ordering_heuristic, penalty_cost))
         heuristic_fn = get_pt2tri_search_heuristic_fn(points, penalty_cost, ordering_heuristic)
-        tet_node_ids = point2triangle_tet_sequencing(points, start_tri_ids)
+        tet_node_ids = point2triangle_tet_sequencing(points, start_tri_ids, heuristic_fn=heuristic_fn)
     else:
         raise NotImplementedError('search method not implemented!')
 

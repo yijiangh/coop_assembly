@@ -124,6 +124,11 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     b_struct.update_bar_lengths()
 
     tet_id = 0
+    # tagging layer id using tet_id for partial ordering
+    b_struct.vertex[b_v0_key].update({"layer":tet_id})
+    b_struct.vertex[b_v1_key].update({"layer":tet_id})
+    b_struct.vertex[b_v2_key].update({"layer":tet_id})
+
     # these are vertex's index in the Overall_Structure network
     o_v0_key = o_struct.add_node(pt_0, v_key=base_tri_ids[0], t_key=tet_id)
     o_v1_key = o_struct.add_node(pt_1, v_key=base_tri_ids[1], t_key=tet_id)
@@ -231,6 +236,12 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
         if success is None:
             raise RuntimeError('Tet generation fails at #{} ({}) -> {}'.format(tet_id, tri_node_ids, new_vertex_id))
             # break
+        else:
+            new_bars = success[2]
+            # tagging layer id using tet_id for partial ordering
+            b_struct.vertex[new_bars[0]].update({"layer":tet_id+1})
+            b_struct.vertex[new_bars[1]].update({"layer":tet_id+1})
+            b_struct.vertex[new_bars[2]].update({"layer":tet_id+1})
 
     reset_simulation()
     disconnect()
@@ -479,4 +490,4 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     find_bar_ends(b_struct, b_v3_1)
     find_bar_ends(b_struct, b_v3_2)
 
-    return o_struct, b_struct
+    return o_struct, b_struct, (b_v0, b_v1, b_v2)
