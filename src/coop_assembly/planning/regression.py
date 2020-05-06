@@ -5,7 +5,13 @@ from collections import namedtuple
 from termcolor import cprint
 import numpy as np
 
-# from pddlstream.utils import outgoing_from_edges
+import os, sys
+here = os.path.abspath(os.path.dirname(__file__))
+sys.path.extend([
+    os.path.join(here, 'pddlstream/'),
+])
+from pddlstream.utils import outgoing_from_edges
+
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
     set_joint_positions
@@ -80,13 +86,16 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
     queue = []
     visited = {final_printed: Node(None, None)}
 
+    outgoing_from_element = outgoing_from_edges(partial_orders)
     def add_successors(printed, command):
         num_remaining = len(printed) - 1
         # assert 0 <= num_remaining
         for element in randomize(printed):
-            visits = 0
-            priority = (num_remaining, random.random())
-            heapq.heappush(queue, (visits, priority, printed, element, command))
+            # if not (outgoing_from_element[element] & printed) and implies(is_ground(element, ground_nodes), only_ground):
+            if not (outgoing_from_element[element] & printed):
+                visits = 0
+                priority = (num_remaining, random.random())
+                heapq.heappush(queue, (visits, priority, printed, element, command))
 
     if check_connected(connectors, grounded_elements, all_elements):
     # and (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):

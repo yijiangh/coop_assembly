@@ -143,6 +143,7 @@ def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec,
 
 @pytest.mark.regression
 def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revisit, n_trails, write, bar_only):
+    # TODO: retire this in the light of run.py
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
     # wait_if_gui()

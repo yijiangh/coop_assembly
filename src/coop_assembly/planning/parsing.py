@@ -10,6 +10,8 @@ PICKNPLACE_DIRECTORY = os.path.join('..', '..', '..', 'tests', 'test_data')
 PICKNPLACE_FILENAMES = {
     '12_bars' : '12_bars_point2triangle.json',
     'single_tet' : 'single_tet_point2triangle.json',
+    # just an alias, I always mistype...
+    'single_tets.json' : 'single_tet_point2triangle.json',
 }
 
 def get_assembly_path(assembly_name):

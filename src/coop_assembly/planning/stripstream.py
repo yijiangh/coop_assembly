@@ -80,7 +80,7 @@ def compute_orders(elements_from_layer):
 
 ##################################################
 
-def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors, elements_from_layer={},
+def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                    printed=set(), removed=set(), collisions=True,
                    transit=False, return_home=True, checker=None, bar_only=False, teleops=False, **kwargs):
     # TODO update removed & printed
@@ -88,11 +88,6 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     remaining = set(element_from_index) - removed - printed
     element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
     obstacles = set(static_obstacles) | element_obstacles
-
-    partial_orders = compute_orders(elements_from_layer)
-    # partial_orders = []
-    print('Partial orders: ', partial_orders)
-    input("Enter to proceed.")
 
     if not bar_only:
         initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot, INITIAL_CONF) for i, robot in enumerate(robots)}

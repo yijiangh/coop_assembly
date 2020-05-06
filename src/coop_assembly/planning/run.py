@@ -29,12 +29,12 @@ from coop_assembly.planning.utils import get_element_neighbors, get_connector_fr
 
 from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose
-from coop_assembly.planning.regression import regression
 from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
-from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM
+from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
+from coop_assembly.planning.regression import regression
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
@@ -60,33 +60,49 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     if args.partial_ordering:
         for v in bar_struct.vertices():
             elements_from_layer[bar_struct.vertex[v]['layer']].add(v)
+        partial_orders = compute_orders(elements_from_layer)
+    else:
+        partial_orders = []
+    print('Partial orders: ', partial_orders)
+    input("Enter to proceed.")
 
-    plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, elements_from_layer=elements_from_layer,
-        collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
-        debug=debug, teleops=args.teleops)
+    if args.algorithm in STRIPSTREAM_ALGORITHM:
+        plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
+            collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
+            debug=debug, teleops=args.teleops)
+    elif args.algorithm == 'regression':
+        with LockRenderer(True):
+            plan, data = regression(robot, fixed_obstacles, bar_struct, collision=args.collisions, motions=True, stiffness=True,
+                revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
+    else:
+        raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
 
     if plan is None:
         cprint('No plan found.', 'red')
         assert False, 'No plan found.'
     else:
         cprint('plan found.', 'green')
-        commands = []
-        place_actions = [action for action in reversed(plan) if action.name == 'place']
-        for pc in place_actions:
-            print_command = pc.args[-1]
-            robot_name = pc.args[0]
-            for action in plan:
-                if action.name == 'move' and action.args[0] == robot_name and \
-                    norm(action.args[1].positions-print_command.start_conf)<1e-8:
-                    # norm(action.args[2].positions-print_command.start_conf)<1e-8:
-                    commands.append(action.args[-1])
-                    break
-            commands.append(print_command)
-        trajectories = flatten_commands(commands)
+        if args.algorithm in STRIPSTREAM_ALGORITHM:
+            commands = []
+            place_actions = [action for action in reversed(plan) if action.name == 'place']
+            for pc in place_actions:
+                print_command = pc.args[-1]
+                robot_name = pc.args[0]
+                for action in plan:
+                    if action.name == 'move' and action.args[0] == robot_name and \
+                        norm(action.args[1].positions-print_command.start_conf)<1e-8:
+                        # norm(action.args[2].positions-print_command.start_conf)<1e-8:
+                        commands.append(action.args[-1])
+                        break
+                commands.append(print_command)
+            trajectories = flatten_commands(commands)
+        else:
+            # regression plan is flattened already
+            trajectories = plan
 
         if write:
             here = os.path.dirname(__file__)
-            plan_path = '{}_pddl_solution_{}.json'.format(args.file_spec, get_date())
+            plan_path = '{}_{}_solution_{}.json'.format(args.file_spec, args.algorithm, get_date())
             save_path = os.path.join(here, 'results', plan_path)
             with open(save_path, 'w') as f:
                json.dump({'problem' : args.file_spec,
@@ -123,7 +139,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
 def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--algorithm', default='focused', choices=STRIPSTREAM_ALGORITHM, help='Stripstream algorithms')
+    parser.add_argument('-a', '--algorithm', default='focused', choices=ALGORITHMS, help='Stripstream algorithms')
     parser.add_argument('-c', '--collisions', action='store_false', help='disable collision checking')
     parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for floating bars')
     parser.add_argument('-po', '--partial_ordering', action='store_true', help='use partial ordering (if-any)')
