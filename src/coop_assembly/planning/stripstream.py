@@ -90,8 +90,9 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     obstacles = set(static_obstacles) | element_obstacles
 
     partial_orders = compute_orders(elements_from_layer)
+    # partial_orders = []
     print('Partial orders: ', partial_orders)
-    # input()
+    input("Enter to proceed.")
 
     if not bar_only:
         initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot, INITIAL_CONF) for i, robot in enumerate(robots)}

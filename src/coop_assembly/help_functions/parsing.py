@@ -4,9 +4,11 @@ import datetime
 from collections import OrderedDict
 from termcolor import cprint
 
-def export_structure_data(save_dir, bar_struct_data, overall_struct_data, radius=-1, file_name=None, indent=None):
+def export_structure_data(bar_struct_data, overall_struct_data, radius=-1, save_dir='', file_name=None, indent=None):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+    # else:
+    #     raise ValueError('directory not exists: {}'.format(save_dir))
 
     data = OrderedDict()
     data['write_time'] = str(datetime.datetime.now())

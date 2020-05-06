@@ -7,7 +7,7 @@ def pytest_addoption(parser):
     parser.addoption('--collision', action='store_false', help='disable collision checking')
     parser.addoption('--bar_only', action='store_true', help='only planning motion for the bars')
     parser.addoption('--stiffness', action='store_false', help='disable stiffness')
-    parser.addoption('--motion', action='store_true', help='enable transit motion')
+    parser.addoption('--motion', action='store_false', help='disable transit motion (only works for regression now)')
     parser.addoption('--watch', action='store_true', help='watch trajectories')
     parser.addoption('--revisit', action='store_true')
     parser.addoption('--problem', default='single_tet')

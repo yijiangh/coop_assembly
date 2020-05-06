@@ -36,7 +36,13 @@ from coop_assembly.planning.validator import validate_trajectories, validate_pdd
 from coop_assembly.planning.utils import recover_sequence, Command
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM
 
+ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
+
 ########################################
+# two_tets
+# po, adaptive: 6 s
+# po, focused: 24 s
+# po, binding: 34 s
 
 def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
     bar_struct, o_struct = load_structure(args.problem, viewer, apply_alpha(RED, 0))
@@ -51,8 +57,9 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     connectors = list(contact_from_connectors.keys())
 
     elements_from_layer = defaultdict(set)
-    for v in bar_struct.vertices():
-        elements_from_layer[bar_struct.vertex[v]['layer']].add(v)
+    if args.partial_ordering:
+        for v in bar_struct.vertices():
+            elements_from_layer[bar_struct.vertex[v]['layer']].add(v)
 
     plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, elements_from_layer=elements_from_layer,
         collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
@@ -119,6 +126,7 @@ def create_parser():
     parser.add_argument('-a', '--algorithm', default='focused', choices=STRIPSTREAM_ALGORITHM, help='Stripstream algorithms')
     parser.add_argument('-c', '--collisions', action='store_false', help='disable collision checking')
     parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for floating bars')
+    parser.add_argument('-po', '--partial_ordering', action='store_true', help='use partial ordering (if-any)')
     parser.add_argument('-co', '--costs', action='store_true', help='turn on cost_effective planning')
     parser.add_argument('-to', '--teleops', action='store_true', help='use teleop for trajectories (turn off in-between traj planning)')
 
@@ -131,7 +139,7 @@ def create_parser():
 
 def main():
     parser = create_parser()
-    parser.add_argument('-p', '--problem', default='single_tet', choices=PICKNPLACE_FILENAMES, help='The name of the problem to solve')
+    parser.add_argument('-p', '--problem', default='single_tet', help='The name of the problem to solve')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
     parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')

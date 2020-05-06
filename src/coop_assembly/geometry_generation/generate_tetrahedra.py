@@ -13,7 +13,7 @@ author: stefanaparascho
 
 edited on 17.12.2019 by Yijiang Huang, yijiangh@mit.edu
 '''
-import sys
+import sys, os
 import random
 import itertools
 import math
@@ -151,7 +151,7 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
 
 
 def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_ids,
-    correct=True, check_collision=False, viewer=False):
+    correct=True, check_collision=False, viewer=False, verbose=True):
     """generate double-tangent tet design from a given list of points and tet sequence indices.
 
     There are three types of parameters to be resolved at each step of the generation process:
@@ -202,6 +202,8 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
     # parameters: connection side of the bar, existing bars of the node that the new bar is connecting to
     # the process iterates through over all four possible connection sides, and consequently runs through
     # all possible bar pairs that a new bar connect to in a side
+    if not verbose:
+        sys.stdout = open(os.devnull, 'w')
     connect(use_gui=viewer)
 
     print('Generate the first triangle.')

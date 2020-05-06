@@ -25,6 +25,9 @@ from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_
 class OverallStructure(Network):
     """this class defines the overall structure in which a node is represented by a network.vertex and a bar by a network.edge does not include connectors - these are referenced through the additional bar_structure class
 
+    Note: this data structure is only used to connect design intent (vertices to cover) with the the actual bar system.
+    We only use the `BarStructure` in the assembly planning pipeline.
+
     The Overall_Structure is the abstract Network structure in which bars are modelled as edges and nodes (points where multiple bars would ideally come together) as vertices. This does not include the geometric information about the bars' actual position or endpoints, but only an idealised point where tetrahedra edges would be located.
 
     Each bar has two representations:

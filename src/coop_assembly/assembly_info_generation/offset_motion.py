@@ -8,7 +8,7 @@ from pybullet_planning import get_floating_body_collision_fn, multiply, get_pose
     get_distance
 from pybullet_planning import Euler, Pose
 from pybullet_planning import RED, BLUE
-from compas_fab.backends.pybullet import pb_pose_from_Transformation, Frame_from_pb_pose
+# from compas_fab.backends.pybullet import pb_pose_from_Transformation, Frame_from_pb_pose
 
 ######################################
 

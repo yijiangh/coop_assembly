@@ -19,9 +19,10 @@ def read(*names, **kwargs):
     ).read()
 
 requirements = [
-    'compas>=0.10',
-    'compas_fab',
-    'scipy>=1.3.1',
+    # 'compas=0.10',
+    'compas',
+    # 'compas_fab',
+    'scipy>=1.2.0',
     'pybullet_planning', # TODO: pin version
     'termcolor',
     'matplotlib',

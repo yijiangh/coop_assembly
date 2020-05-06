@@ -5,7 +5,7 @@ import numpy as np
 
 from compas.datastructures import Network
 from compas.geometry import scale_vector
-from compas_fab.backends.pybullet import pb_pose_from_Transformation
+# from compas_fab.backends.pybullet import pb_pose_from_Transformation
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.help_functions import find_point_id, tet_surface_area, \
@@ -79,7 +79,7 @@ def test_generate_from_points(save_dir, points_library, viewer, file_spec, radiu
         correct=False, check_collision=True, viewer=viewer)
 
     if write:
-        export_structure_data(save_dir, b_struct.data, o_struct.data, file_name=file_spec+'_'+pt_search_method+'.json')
+        export_structure_data(b_struct.data, o_struct.data, save_dir=save_dir, file_name=file_spec+'_'+pt_search_method+'.json')
 
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     # _, _ = load_world()

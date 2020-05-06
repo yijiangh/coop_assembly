@@ -49,9 +49,10 @@ def compute_distance_from_grounded_node(elements, node_points, ground_node_ids):
         {node_id (int) : cost (float)}
     """
     neighbors = adjacent_from_edges(elements)
-    edge_costs = {edge: distance_point_point(node_points[edge[0]], node_points[edge[1]])
+    edge_costs = {tuple(edge) : distance_point_point(node_points[edge[0]], node_points[edge[1]]) \
                   for edge in elements}
     # undirected edges
+
     edge_costs.update({edge[::-1]: distance for edge, distance in edge_costs.items()})
 
     cost_from_node = {}
@@ -91,10 +92,11 @@ def point2point_shortest_distance_tet_sequencing(points, cost_from_node):
     # TODO: add a penalty cost for coplanar nodes?
     added_pt_ids = []
     tet_node_ids = []
+    cost_from_node = {int(k) : v for k, v in cost_from_node.items()}
     for pt_id, score in sorted(cost_from_node.items(), key=lambda item: item[1]):
         # if pt_id not in start_tri_ids and len(added_pt_ids) >= 3:
         if len(added_pt_ids) >= 3:
-            dists = [distance_point_point(points[pt_id], points[prev_node]) for prev_node in added_pt_ids]
+            dists = [distance_point_point(points[int(pt_id)], points[prev_node]) for prev_node in added_pt_ids]
             # use distance to previous nodes to sort previous nodes' indices
             sorted_added_ids = [added_id for dist, added_id in sorted(zip(dists, added_pt_ids)) \
                 if added_id != pt_id]

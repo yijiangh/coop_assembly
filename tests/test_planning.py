@@ -181,7 +181,7 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
             cprint('Result saved to: {}'.format(save_path), 'green')
         if watch:
             # time_step = None if has_gui() else 0.01
-            time_step = 0.01 if bar_only else None
+            time_step = 0.01 # if bar_only else None
             display_trajectories(splan, time_step=time_step, #video=True,
                                  animate=False)
         if collision:
