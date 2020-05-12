@@ -27,7 +27,8 @@ from pybullet_planning import connect, wait_if_gui, dump_world, apply_alpha, dra
     pairwise_collision_info, get_bodies, RED, TAN
 
 
-def execute_from_points(points, tet_node_ids, radius, check_collision=False, correct=True, viewer=False, verbose=False, scale=1.0, write=False, **kwargs):
+def execute_from_points(points, tet_node_ids, radius, check_collision=False, correct=True, viewer=False, verbose=False, scale=1.0, write=False, \
+        return_network=False, **kwargs):
     """Main entry point for the design system, for direct, xfunc or rpc call
 
     Parameters
@@ -56,9 +57,6 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
         correct=correct, check_collision=check_collision, viewer=viewer, verbose=verbose)
 
     endpts_from_element = bar_struct.get_axis_pts_from_element(scale=scale)
-    # # contact_from_connectors = bar_struct.get_connectors(scale=scale)
-    # # connectors = list(contact_from_connectors.keys())
-    # return endpts_from_element, contact_from_connectors, connectors
 
     if write:
         export_structure_data(bar_struct.data, o_struct.data, **kwargs)
@@ -89,9 +87,13 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
     print('No collision in connectors found.')
     wait_if_gui('Done.')
 
-    return endpts_from_element
-
-    # return (bar_struct.data, o_struct.data)
+    # contact_from_connectors = bar_struct.get_connectors(scale=scale)
+    # connectors = list(contact_from_connectors.keys())
+    if return_network:
+        return bar_struct, o_struct
+        # return (bar_struct.data, o_struct.data)
+    else:
+        return endpts_from_element
 
 def test_connect(viewer=False):
     """Just checking if we can sprawn the pybullet GUI.
@@ -101,6 +103,9 @@ def test_connect(viewer=False):
     viewer : bool, optional
         [description], by default False
     """
-    connect(use_gui=viewer)
-    dump_world()
-    wait_if_gui()
+    # connect(use_gui=viewer)
+    # dump_world()
+    # wait_if_gui()
+    print("hahaha")
+    a = 10
+    return a

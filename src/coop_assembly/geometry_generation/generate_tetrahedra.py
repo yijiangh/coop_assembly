@@ -19,12 +19,12 @@ import itertools
 import math
 import warnings
 
-from compas.geometry.basic import add_vectors, normalize_vector, vector_from_points, scale_vector, \
+from compas.geometry import add_vectors, normalize_vector, vector_from_points, scale_vector, \
     cross_vectors, subtract_vectors
-from compas.geometry.distance import distance_point_point
-from compas.geometry.transformations import rotate_points
-from compas.geometry.angles import angle_vectors
-from compas.geometry.average import centroid_points
+from compas.geometry import distance_point_point
+from compas.geometry import rotate_points
+from compas.geometry import angle_vectors
+from compas.geometry import centroid_points
 
 from coop_assembly.help_functions.helpers_geometry import calculate_coord_sys, calculate_bar_z, \
     dropped_perpendicular_points, update_bar_lengths, correct_point, find_bar_ends, compute_contact_line_between_bars, \
@@ -197,19 +197,23 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
     # input for the calculation of the three new bars:
     # 1. vertex points that represent the new node's location
     # 2. three pairs of bar axes of the existing bars that the three new bars will connect to their base
+    # ! Note: needs to be cautious in relating bar index in the BarStructure to
+    # ! an "edge" index in the OverallStructure
 
     # collision checks
     # parameters: connection side of the bar, existing bars of the node that the new bar is connecting to
     # the process iterates through over all four possible connection sides, and consequently runs through
     # all possible bar pairs that a new bar connect to in a side
     if not verbose:
+        # used when rpc call is made to get around stdout error
         sys.stdout = open(os.devnull, 'w')
     connect(use_gui=viewer)
 
-    print('Generate the first triangle.')
+    print('='*20)
+    print('Generating the first triangle.')
     base_tri_ids = tet_node_ids[0][0]
     base_tri_pts = [points[node_id] for node_id in base_tri_ids]
-    generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids)
+    b_struct, o_struct = generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids)
 
     for tet_id, (tri_node_ids, new_vertex_id) in enumerate(tet_node_ids):
         print('='*20)
@@ -231,6 +235,7 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
             # ? why reverse?
             connected_o_edge_pairs.reverse()
             connected_edges_from_vert[o_vert_id] = connected_o_edge_pairs
+        assert(len(connected_edges_from_vert)==3)
 
         success = add_tetra(o_struct, b_struct, connected_edges_from_vert,
                             vertex_pt, new_vertex_id, radius,
@@ -294,10 +299,13 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     assert bool_add or (b_vert_ids is not None and len(b_vert_ids) == 3)
     assert len(connected_edges_from_vert) == 3
 
+    # ! Note: needs to be cautious in relating bar index in the BarStructure to
+    # ! an "edge" index in the OverallStructure
     tri_node_ids = list(connected_edges_from_vert.keys())
+    # each is a list of o_edge id pairs (representing a pair of bars)
     comb_bars_1, comb_bars_2, comb_bars_3 = connected_edges_from_vert.values()
 
-    # * finding the mean point?
+    # * finding the mean point of three contact midpoints
     jnd = 0
     bars1 = comb_bars_1[jnd]
     bars2 = comb_bars_2[jnd]
@@ -347,6 +355,7 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     #                 pt_new  = add_vectors(pt_mean, vec_n)
 
     if correct:
+        # change new target vertex point position using the SP heuristic
         pt_new = correct_point(b_struct, o_struct, pt_new, [(b_v1_1, b_v1_2), (b_v2_1, b_v2_2), (b_v3_1, b_v3_2)], o_v_key=o_v_key)
 
     print('------')
@@ -358,10 +367,10 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
         b1_1 = b_struct.vertex[b_v1_1]
 
         b_v1_2 = o_struct.get_bar_vertex_key(bars1[1])
-        # b_v1_2 = o_struct.edge[bars1[1][0]][bars1[1][1]]["vertex_bar"]
         b1_2 = b_struct.vertex[b_v1_2]
 
         if correct:
+            # change new target vertex point position using the SP heuristic
             pt_new = correct_point(b_struct, o_struct, pt_new,
                                    [(b_v1_1, b_v1_2), (b_v2_1, b_v2_2), (b_v3_1, b_v3_2)], o_v_key=o_v_key)
 
@@ -369,9 +378,10 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
                                b_v1_1, b_v1_2, b_struct, pt_mean, radius,
                                b_v0_n=None if bool_add else b_v0, check_collision=check_collision)
 
-        if ret_ft:
-            print('Bar chosen: #{}-({}) + #{}-({})'.format(b_v1_1, bars1[0], b_v1_2, bars1[1]))
-            b_v0, end_pts_0 = ret_ft
+        if ret_ft is not None:
+            print('Bar chosen: #B{}-(oe{}) + #B{}-(oe{})'.format(b_v1_1, bars1[0], b_v1_2, bars1[1]))
+            # unboxing results
+            b_struct, b_v0, _ = ret_ft
             break
         else:
             if j == len(comb_bars_1)-1:
@@ -382,12 +392,11 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     print('Finding second tangent bar...')
     for j, bar_jnd_2 in enumerate(comb_bars_2):
         bars2 = bar_jnd_2
-        b2_1 = b_struct.vertex[o_struct.edge[bars2[0][0]]
-                               [bars2[0][1]]["vertex_bar"]]
-        b_v2_1 = o_struct.edge[bars2[0][0]][bars2[0][1]]["vertex_bar"]
-        b2_2 = b_struct.vertex[o_struct.edge[bars2[1][0]]
-                            [bars2[1][1]]["vertex_bar"]]
-        b_v2_2 = o_struct.edge[bars2[1][0]][bars2[1][1]]["vertex_bar"]
+        b_v2_1 = o_struct.get_bar_vertex_key(bars2[0])
+        b2_1 = b_struct.vertex[b_v2_1]
+
+        b_v2_2 = o_struct.get_bar_vertex_key(bars2[1])
+        b2_2 = b_struct.vertex[b_v2_2]
 
         if correct:
             pt_new = correct_point(b_struct, o_struct, pt_new,
@@ -399,11 +408,10 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
             ret_st = second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2,
                                     b_struct, b_v0, pt_new, radius, max_len, pt_mean, b_v1, check_collision=check_collision)
         if ret_st:
-            b_v1, pt2, end_pts_1 = ret_st
-            print('Bar chosen: #{}-({}) + #{}-({})'.format(b_v2_1, bars2[0], b_v2_2, bars2[1]))
+            b_v1, _, _ = ret_st
+            print('Bar chosen: #B{}-(oe{}) + #B{}-(oe{})'.format(b_v2_1, bars2[0], b_v2_2, bars2[1]))
             break
         else:
-            # print("tangent 2 not found")
             if j == len(comb_bars_2) - 1:
                 # print("no point found for second tangent calculation - 430, add_tetra")
                 raise RuntimeError("no point found for second tangent calculation - 430, add_tetra")
@@ -412,12 +420,11 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     print('Finding third tangent bar...')
     for j, bar_jnd_3 in enumerate(comb_bars_3):
         bars3 = bar_jnd_3
-        b3_1 = b_struct.vertex[o_struct.edge[bars3[0][0]]
-                               [bars3[0][1]]["vertex_bar"]]
-        b_v3_1 = o_struct.edge[bars3[0][0]][bars3[0][1]]["vertex_bar"]
-        b3_2 = b_struct.vertex[o_struct.edge[bars3[1][0]]
-                            [bars3[1][1]]["vertex_bar"]]
-        b_v3_2 = o_struct.edge[bars3[1][0]][bars3[1][1]]["vertex_bar"]
+        b_v3_1 = o_struct.get_bar_vertex_key(bars3[0])
+        b3_1 = b_struct.vertex[b_v3_1]
+
+        b_v3_2 = o_struct.get_bar_vertex_key(bars3[1])
+        b3_2 = b_struct.vertex[b_v3_2]
 
         if correct:
             pt_new = correct_point(b_struct, o_struct, pt_new,
@@ -429,8 +436,8 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
             ret_tt = third_tangent(b_struct, b_v0, b_v1, b3_1, b3_2, pt_mean_3,
                                 max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v2, check_collision=check_collision)
         if ret_tt:
-            b_v2, pt3, end_pts_2 = ret_tt
-            print('Bar chosen: #{}-({}) + #{}-({})'.format(b_v3_1, bars3[0], b_v3_2, bars3[1]))
+            b_v2, _, _ = ret_tt
+            print('Bar chosen: #B{}-(oe{}) + #B{}-(oe{})'.format(b_v3_1, bars3[0], b_v3_2, bars3[1]))
             break
         else:
             # print("tangent 3 not found")
@@ -460,18 +467,6 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     # * OverallStructure update
     if bool_add:
         o_n_new = o_struct.add_node(pt_new, v_key=new_vertex_id)
-
-    ### check length of bar and adjust gripper position ###
-    # pt_bar_1    = b_struct.vertex[b_v0]["axis_endpoints"]
-    # pt_bar_2    = b_struct.vertex[b_v1]["axis_endpoints"]
-    # pt_bar_3    = b_struct.vertex[b_v2]["axis_endpoints"]
-
-    # adjust_gripping_plane(pt_bar_1, pt_new, b_struct, b_v0)
-    # adjust_gripping_plane(pt_bar_2, pt_new, b_struct, b_v1)
-    # adjust_gripping_plane(pt_bar_3, pt_new, b_struct, b_v2)
-    ### ###
-
-    if bool_add:
         o_n1 = tri_node_ids[0]
         o_n2 = tri_node_ids[1]
         o_n3 = tri_node_ids[2]

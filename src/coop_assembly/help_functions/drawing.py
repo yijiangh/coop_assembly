@@ -13,7 +13,7 @@ author: stefanaparascho
 '''
 
 from compas.utilities.colors import color_to_colordict
-from compas.geometry.basic import add_vectors, scale_vector
+from compas.geometry import add_vectors, scale_vector
 
 from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points
 

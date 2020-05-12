@@ -10,14 +10,14 @@ import itertools
 import math
 
 from compas.geometry import Transformation, Frame, Rotation, Translation
-from compas.geometry.basic import add_vectors, normalize_vector, vector_from_points, scale_vector, cross_vectors, subtract_vectors,\
+from compas.geometry import add_vectors, normalize_vector, vector_from_points, scale_vector, cross_vectors, subtract_vectors,\
     length_vector, length_vector, norm_vector
-from compas.geometry.distance import distance_point_point, distance_point_line, distance_line_line, closest_point_on_line
-from compas.geometry.transformations import rotate_points
-from compas.geometry.angles import angle_vectors
-from compas.geometry.average import centroid_points
+from compas.geometry import distance_point_point, distance_point_line, distance_line_line, closest_point_on_line
+from compas.geometry import rotate_points
+from compas.geometry import angle_vectors
+from compas.geometry import centroid_points
 from compas.geometry import translate_points, rotate_points_xy, project_points_plane, Plane, intersection_line_plane, rotate_points
-from compas.geometry.queries import is_point_on_line
+from compas.geometry import is_point_on_line
 
 from coop_assembly.help_functions.helpers_geometry import calculate_bar_z, calculate_coord_sys, Frame_to_plane_data
 from coop_assembly.help_functions.debug_utils import deprecation_error

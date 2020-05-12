@@ -121,17 +121,16 @@ def compute_candidate_nodes(all_nodes, grounded_nodes, built_nodes):
         nodes = grounded_nodes
     return {node for node in set(all_nodes) - set(built_nodes)} # if_buildable()
 
-def add_successors(queue, all_nodes, grounded_nodes, heuristic_fn, built_nodes, built_triangles, verbose=False):
-    remaining = all_nodes - built_nodes
-    num_remaining = len(remaining) - 1
-    assert 0 <= num_remaining
-    candidate_nodes = compute_candidate_nodes(all_nodes, grounded_nodes, built_nodes)
-    if verbose : print('add successors: candidate nodes: {}'.format(candidate_nodes))
-    for node_id in candidate_nodes: # random.shuffle(list(candidate_nodes):
-        # compute bias
-        bias, tri_node_ids = heuristic_fn(built_nodes, node_id, built_triangles)
-        priority = (num_remaining, bias, random.random())
-        heapq.heappush(queue, (priority, built_nodes, built_triangles, node_id, tri_node_ids))
+def retrace_sequence(visited, current_state, horizon=INF):
+    # command = ((triangle__node_ids), new_node_id)
+    command, prev_state = visited[current_state]
+    if (prev_state is None) or (horizon == 0):
+        # tracing reaches the end
+        return []
+    previous_tet_ids = retrace_sequence(visited, prev_state, horizon=horizon-1)
+    return previous_tet_ids + [command]
+
+#######################################
 
 PT2TRI_SEARCH_HEURISTIC = {
     'point2triangle_distance', 'tet_surface_area', 'tet_volume',
@@ -167,14 +166,19 @@ def get_pt2tri_search_heuristic_fn(points, penalty_cost=2.0, heuristic='tet_surf
         return sorted_built_triangles[0]
     return h_fn
 
-def retrace_tet_sequence(visited, current_state, horizon=INF):
-    # command = ((triangle__node_ids), new_node_id)
-    command, prev_state = visited[current_state]
-    if (prev_state is None) or (horizon == 0):
-        # tracing reaches the end
-        return []
-    previous_tet_ids = retrace_tet_sequence(visited, prev_state, horizon=horizon-1)
-    return previous_tet_ids + [command]
+def add_successors(queue, all_nodes, grounded_nodes, heuristic_fn, built_nodes, built_triangles, verbose=False):
+    remaining = all_nodes - built_nodes
+    num_remaining = len(remaining) - 1
+    assert 0 <= num_remaining
+    candidate_nodes = compute_candidate_nodes(all_nodes, grounded_nodes, built_nodes)
+    if verbose : print('add successors: candidate nodes: {}'.format(candidate_nodes))
+    for node_id in candidate_nodes: # random.shuffle(list(candidate_nodes):
+        # compute bias
+        bias, tri_node_ids = heuristic_fn(built_nodes, node_id, built_triangles)
+        priority = (num_remaining, bias, random.random())
+        heapq.heappush(queue, (priority, built_nodes, built_triangles, node_id, tri_node_ids))
+
+
 
 def point2triangle_tet_sequencing(points, base_triangle_node_ids, heuristic_fn=None, verbose=False):
     all_nodes = frozenset(range(len(points)))
@@ -215,7 +219,7 @@ def point2triangle_tet_sequencing(points, base_triangle_node_ids, heuristic_fn=N
         visited[next_built_nodes] = SearchState((tri_node_ids, node_id), built_nodes)
         if all_nodes <= next_built_nodes:
             min_remaining = 0
-            tet_ids = retrace_tet_sequence(visited, next_built_nodes)
+            tet_ids = retrace_sequence(visited, next_built_nodes)
             break
 
         # * continue to the next search level, add candidates to queue

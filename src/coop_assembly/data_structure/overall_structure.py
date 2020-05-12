@@ -15,10 +15,10 @@ edited on 17.12.2019 by Yijiang Huang, yijiangh@mit.edu
 import os
 from collections import defaultdict
 
-from compas.datastructures.network import Network
-from compas.geometry.basic import add_vectors, scale_vector, cross_vectors, subtract_vectors, vector_from_points
-from compas.geometry.distance import distance_point_point, closest_point_on_plane
-from compas.geometry.average import centroid_points
+from compas.datastructures import Network
+from compas.geometry import add_vectors, scale_vector, cross_vectors, subtract_vectors, vector_from_points
+from compas.geometry import distance_point_point, closest_point_on_plane
+from compas.geometry import centroid_points
 
 from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points
 
@@ -28,7 +28,9 @@ class OverallStructure(Network):
     Note: this data structure is only used to connect design intent (vertices to cover) with the the actual bar system.
     We only use the `BarStructure` in the assembly planning pipeline.
 
-    The Overall_Structure is the abstract Network structure in which bars are modelled as edges and nodes (points where multiple bars would ideally come together) as vertices. This does not include the geometric information about the bars' actual position or endpoints, but only an idealised point where tetrahedra edges would be located.
+    The Overall_Structure is the abstract Network structure in which bars are modelled as edges and nodes (points where multiple bars would
+    ideally come together) as vertices. This does not include the geometric information about the bars' actual position or endpoints,
+    but only an idealised point where tetrahedra edges would be located.
 
     Each bar has two representations:
         (1) bar connecting a pair of ideal vertices: ``bar = (ideal vertex 0, ideal vertex 1)``
@@ -75,29 +77,17 @@ class OverallStructure(Network):
         self.struct_bar = struct_bar
         self.name = "Network_o"
         # vertex attributes
-        self.update_default_vertex_attributes({"name" : "network_o"})
-        self.update_default_vertex_attributes({"velocity_vector": (0.0,0.0,0.0)})
-        self.update_default_vertex_attributes({"velocities_all": []})
-        self.update_default_vertex_attributes({"fixed": False})
+        self.update_default_node_attributes({"name" : "network_o"})
+        self.update_default_node_attributes({"velocity_vector": (0.0,0.0,0.0)})
+        self.update_default_node_attributes({"velocities_all": []})
+        self.update_default_node_attributes({"fixed": False})
         # edge attributes
         self.update_default_edge_attributes({"name" : "network_o"})
         self.tetrahedra = {}
         self.t_key_max = 0
 
-    def get_bar_vertex_key(self, bar):
-        """return vertex key of a given bar in the BarStructure
-
-        Parameters
-        ----------
-        bar : list of two int
-            the ideal vertex indices that the bar is connecting to
-
-        Returns
-        -------
-        int
-            vertex key representing the bar in BarStructure
-        """
-        return self.edge[bar[0]][bar[1]]["vertex_bar"]
+    #####################################
+    # adding data
 
     def add_node(self, xyz = (0.0, 0.0, 0.0), v_key=None, t_key=None):
         """add vertex point to a tetrahedra index
@@ -195,6 +185,21 @@ class OverallStructure(Network):
         contact_pt = centroid_points(pts)
         self.vertex[v_key].update({"x":contact_pt[0], "y":contact_pt[1], "z":contact_pt[2], "point_xyz":contact_pt})
         return contact_pt
+
+    def get_bar_vertex_key(self, bar):
+        """return vertex key of a given bar in the BarStructure
+
+        Parameters
+        ----------
+        bar : list of two int
+            the ideal vertex indices that the bar is connecting to
+
+        Returns
+        -------
+        int
+            vertex key representing the bar in BarStructure
+        """
+        return self.edge[bar[0]][bar[1]]["vertex_bar"]
 
     def connectors(self, v_key, verbose=False):
         """[summary]

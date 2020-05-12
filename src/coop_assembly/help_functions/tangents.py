@@ -14,12 +14,12 @@ author: stefanaparascho
 
 import math
 
-from compas.geometry.basic import add_vectors, subtract_vectors, cross_vectors, normalize_vector, scale_vector, vector_from_points, dot_vectors, length_vector
-from compas.geometry.distance import distance_point_point, distance_point_line, distance_line_line
-from compas.geometry.queries import is_point_on_segment
-from compas.geometry.angles import angle_vectors
-from compas.geometry.average import centroid_points
-from compas.geometry.transformations import project_points_plane
+from compas.geometry import add_vectors, subtract_vectors, cross_vectors, normalize_vector, scale_vector, vector_from_points, dot_vectors, length_vector
+from compas.geometry import distance_point_point, distance_point_line, distance_line_line
+from compas.geometry import is_point_on_segment
+from compas.geometry import angle_vectors
+from compas.geometry import centroid_points
+from compas.geometry import project_points_plane
 
 from coop_assembly.help_functions import dropped_perpendicular_points, find_points_extreme, check_dir, \
     calculate_coord_sys
@@ -215,7 +215,7 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     return [ppol, d_e_add, d_e_sub]
 
 
-def p_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist, ):
+def p_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     """find tangent planes of a cylinder passing through a given point ()
 
     .. image:: ../images/plane_tangent_to_one_cylinder.png
@@ -378,7 +378,7 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
         [description]
     """
     sol_indices = range(4) if check_colisions else [b_struct.vertex[b_v0_n]["index_sol"][0] if b_v0_n else 0]
-    # iterating through combinations of tangent plane configurations
+    # * iterating through combinations of tangent plane configurations
     for sol_id in sol_indices:
         new_bar_axis = tangent_from_point_one(b1_1["axis_endpoints"][0],
                                               subtract_vectors(b1_1["axis_endpoints"][1], b1_1["axis_endpoints"][0]),
@@ -393,10 +393,11 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
                 return None
             continue
 
+        # ?
         vec_sol_1, l1, pts_b1_1, pts_b1_2 = check_length_sol_one(new_bar_axis[0], pt_mean_1, pt1, b1_1, b1_2, b_v1_1, b_v1_2, b_struct)
 
         pt1_e = add_vectors(pt1, scale_vector(vec_sol_1, l1))
-        new_axis_end_pts   = (pt1, pt1_e)
+        new_axis_end_pts = (pt1, pt1_e)
 
         if not check_colisions:
             break
@@ -454,7 +455,7 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
     b_struct.edge[b_v0][b_v1_1]["endpoints"].update({k_1:(dpp_1[0], dpp_1[1])})
     b_struct.edge[b_v0][b_v1_2]["endpoints"].update({k_2:(dpp_2[0], dpp_2[1])})
 
-    return b_v0, new_axis_end_pts
+    return b_struct, b_v0, new_axis_end_pts
 
 
 def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1, radius, max_len, pt_mean, b_v0_n=None, check_collision=False):
