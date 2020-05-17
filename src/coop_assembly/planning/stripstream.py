@@ -147,11 +147,11 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
 ##################################################
 
-def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, elements_from_layer={},
+def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                      collisions=True, disable=False, max_time=60*4, bar_only=False, algorithm='incremental',
                      debug=False, costs=False, teleops=False, **kwargs):
 
-    pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, elements_from_layer=elements_from_layer,
+    pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
                                         collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
     if debug:
         print('Init:', pddlstream_problem.init)
@@ -176,7 +176,8 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     pr.enable()
     with LockRenderer(lock=True):
         if algorithm == 'incremental':
-            solution = solve_incremental(pddlstream_problem, planner=get_planner(costs), max_time=600,
+            discrete_planner = 'max-astar' # get_planner(costs)
+            solution = solve_incremental(pddlstream_problem, planner=discrete_planner, max_time=600,
                                         success_cost=success_cost, unit_costs=not costs,
                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm in SS_OPTIONS:
@@ -262,18 +263,23 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
             precompute_collisions=True, collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
         gen_fn_from_robot[robot] = pick_gen_fn
 
-    def wild_gen_fn(robot_name, element):
+    def wild_gen_fn(robot_name, element, fluents=[]):
         robot = index_from_name(robots, robot_name)
-        print('-'*3)
-        for command, in gen_fn_from_robot[robot](element):
+        printed = []
+        for fact in fluents:
+            if fact[0] == 'printed':
+                printed.append(fact[1])
+            else:
+                raise NotImplementedError(fact[0])
+        for command, in gen_fn_from_robot[robot](element, printed=printed):
             q1 = Conf(robot, np.array(command.start_conf), element)
             q2 = Conf(robot, np.array(command.end_conf), element)
             outputs = [(q1, q2, command)]
             facts = []
+            yield WildOutput(outputs, facts)
             # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
             # facts.append(('AtConf', robot_name, initial_confs[robot_name]))
             # cprint('print facts: {}'.format(command.colliding), 'yellow')
-            yield WildOutput(outputs, facts)
             # yield (q1, q2, command),
 
     return wild_gen_fn
@@ -283,7 +289,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
     # TODO initial confs
     # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
 
-    def wild_gen_fn(robot_name, q2, current_command):
+    def wild_gen_fn(robot_name, q2, current_command, fluents=[]):
         # transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
         # assert norm(q1.positions - transit_start_conf) < 1e-8
         init_q = initial_confs[robot_name]

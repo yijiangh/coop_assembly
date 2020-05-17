@@ -56,8 +56,8 @@
                        ;;; Collision constraint
                        (not (UnSafeTraj ?r ?t))
                        ;;; comment the following two if no transit
-                       (AtConf ?r ?q1) ; this will force a move action
-                       (not (CanMove ?r))
+                    ;    (AtConf ?r ?q1) ; this will force a move action
+                    ;    (not (CanMove ?r))
                        )
     :effect (and (Removed ?e)
                  (CanMove ?r)

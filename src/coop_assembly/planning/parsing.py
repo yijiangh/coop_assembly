@@ -34,6 +34,6 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
         b_struct = BarStructure.from_data(b_struct_data)
         b_struct.create_pb_bodies(color=color)
         o_struct.struct_bar = b_struct # TODO: better way to do this
-        set_camera([attr['point_xyz'] for v, attr in o_struct.vertices(True)])
+        set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
     return b_struct, o_struct
 

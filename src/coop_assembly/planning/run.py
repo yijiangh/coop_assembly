@@ -58,13 +58,13 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
 
     elements_from_layer = defaultdict(set)
     if args.partial_ordering:
-        for v in bar_struct.vertices():
-            elements_from_layer[bar_struct.vertex[v]['layer']].add(v)
+        for v in bar_struct.nodes():
+            elements_from_layer[bar_struct.node[v]['layer']].add(v)
         partial_orders = compute_orders(elements_from_layer)
     else:
         partial_orders = []
     print('Partial orders: ', partial_orders)
-    input("Enter to proceed.")
+    # input("Enter to proceed.")
 
     if args.algorithm in STRIPSTREAM_ALGORITHM:
         plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,

@@ -33,7 +33,7 @@ def draw_bar_structure_gh(bar_struct):
 
     end_pts_from_v = {}
     bar_axis_lines_from_v = {}
-    for key in bar_struct.vertices():
+    for key in bar_struct.nodes():
         end_pts_from_v[key] = draw_points([{"pos": bar_struct.vertex[key]["axis_endpoints"][0]},
                                            {"pos": bar_struct.vertex[key]["axis_endpoints"][1]}])
         bar_axis_lines_from_v[key] = draw_lines([{"start": bar_struct.vertex[key]["axis_endpoints"][0],

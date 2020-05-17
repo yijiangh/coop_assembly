@@ -9,6 +9,7 @@
                  (Traj ?r ?t1)
                  (AtStart ?q2 ?t1)
                  )
+    ; :fluents (Assembled)
     :outputs (?t2)
     :certified (and
                     ; (MoveAction ?r ?q1 ?q2 ?t2)
@@ -20,6 +21,7 @@
   (:stream sample-place
     :inputs (?r ?e)
     :domain (and (Robot ?r) (Element ?e) (Assigned ?r ?e))
+    :fluents (Assembled)
     :outputs (?q1 ?q2 ?t)
     :certified (and (PlaceAction ?r ?e ?q1 ?q2 ?t)
                     (Conf ?r ?q1)

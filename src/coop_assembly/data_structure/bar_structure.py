@@ -28,18 +28,18 @@ from .utils import Element, WorldPose
 
 class BarStructure(Network):
     """This class encloses all the data that an assembly planner needs to know about the assembly. Each element
-    is modeled as a graph vertex and edge models contact connection.
+    is modeled as a graph node and edge models contact connection.
 
     SP:
 
-        The Bar_Structure is some sort of an "inverted" network. It contains bars as vertices and the connections between bars as edges,
+        The Bar_Structure is some sort of an "inverted" network. It contains bars as nodes and the connections between bars as edges,
         these include the geometric information of each bar (endpoints) and their connecting points. However, this does not include information about which bars form a tetrahedron or which
         bars come together within a larger node, they only have information about where two bars are connected to one another.
 
     SP dissertation section 3.5.2:
 
         One bar may be connected to multiple other bars, whereas one welded joint can only bridge two bars.
-        The vertices describe the bars, each of which can have multiple joints.
+        The nodes describe the bars, each of which can have multiple joints.
         The edges describe the joints between pairs of bars.
         `BarStructure` includes geometric information about the bars endpoints and the joint positions in the
         space.
@@ -82,24 +82,38 @@ class BarStructure(Network):
     # def add_ground(self, built_plate_z=0.0, floor_body=None):
     #     # TODO: maybe can add in all static obstacles here?
     #     # the ground is modeled as an element
-    #     v_key = self.add_vertex()
+    #     v_key = self.add_node()
     #     if floor_body is None:
     #         floor_body = create_plane()
     #         set_point(floor_body, Point(z=built_plate_z))
-    #     self.vertex[v_key].update({"element_type":"static",
+    #     self.node[v_key].update({"element_type":"static",
     #                                "pb_body":floor_body,  # pybullet body
     #                               })
     #     return self.v_key
 
-    # @property
-    # def ground_key(self):
-    #     return self._ground_key
+    #####################################
+    # backward compatibility
+
+    @property
+    def vertex(self):
+        return self.node
+
+    def vertices(self, data=False):
+        return self.nodes(data)
+
+    def vertex_connected_edges(self, v):
+        return self.connected_edges(v)
+
+    def vertex_neighbors(self, v):
+        return self.neighbors(v)
+
+    #####################################
 
     def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False):
-        v_key = self.add_vertex()
+        v_key = self.add_node()
         bar_body = create_bar_body(_axis_endpoints, radius)
         goal_pose = get_pose(bar_body)
-        self.vertex[v_key].update({"bar_type":_bar_type,
+        self.node[v_key].update({"bar_type":_bar_type,
                                    "axis_endpoints":_axis_endpoints,
                                    "index_sol":None,    # tangent plane config
                                    "mean_point":None,   # mean point used for local axis construction
@@ -127,7 +141,7 @@ class BarStructure(Network):
         color : tuple, optional
             [description], by default (1,1,1,0)
         """
-        for v in self.vertices():
+        for v in self.nodes():
             self.get_bar_pb_body(v, color=color)
 
     def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[], grounded=None):
@@ -136,9 +150,9 @@ class BarStructure(Network):
         Parameters
         ----------
         v_key1 : int
-            bar vertex id 1
+            bar node id 1
         v_key2 : int
-            bar vertex id 2
+            bar node id 2
         _endpoints : list, optional
             [description], by default []
         _connection_type : int, optional
@@ -175,7 +189,7 @@ class BarStructure(Network):
     def update_bar_lengths(self):
         """update each bar's length so that it can cover all the contact points specified in edges (contact joints)
         """
-        for b in self.vertex:
+        for b in self.node:
             # edges are contact joints
             edges_con = self.vertex_connected_edges(b)
             list_pts = []
@@ -188,22 +202,22 @@ class BarStructure(Network):
                     pair_points = points[p]
                     if pair_points != []:
                         for pt in pair_points:
-                            if is_point_on_line(pt, self.vertex[b]["axis_endpoints"], TOL):
+                            if is_point_on_line(pt, self.node[b]["axis_endpoints"], TOL):
                                 list_pts.append(pt)
 
             if len(list_pts) > 0:
                 if len(list_pts) > 2:
-                    pts_extr = find_points_extreme(list_pts, self.vertex[b]["axis_endpoints"])
+                    pts_extr = find_points_extreme(list_pts, self.node[b]["axis_endpoints"])
                 else:
                     pts_extr = list_pts
                 # update axis end points
-                self.vertex[b].update({"axis_endpoints":pts_extr})
+                self.node[b].update({"axis_endpoints":pts_extr})
 
     ##################################
     # individual get fn
 
     def get_bar_axis_end_pts(self, bar_v_key, scale=1.0):
-        """return axis end points of a bar vertex
+        """return axis end points of a bar node
 
         Parameters
         ----------
@@ -215,7 +229,7 @@ class BarStructure(Network):
         list of two points
             [description]
         """
-        bar = self.vertex[bar_v_key]
+        bar = self.node[bar_v_key]
         return (scale_vector(bar["axis_endpoints"][0], scale), scale_vector(bar["axis_endpoints"][1], scale))
 
     def get_connector_end_pts(self, b1, b2, scale=1.0):
@@ -224,7 +238,7 @@ class BarStructure(Network):
         Parameters
         ----------
         b1 : int
-            bar vertex key
+            bar node key
         b2 : int
             [description]
 
@@ -249,23 +263,23 @@ class BarStructure(Network):
         int
             [description]
         """
-        if 'pb_body' not in self.vertex[bar_v_key] or \
-            self.vertex[bar_v_key]['pb_body'] is None or \
-            self.vertex[bar_v_key]['pb_body'] not in get_bodies():
+        if 'pb_body' not in self.node[bar_v_key] or \
+            self.node[bar_v_key]['pb_body'] is None or \
+            self.node[bar_v_key]['pb_body'] not in get_bodies():
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
-            radius = self.vertex[bar_v_key]['radius']
-            self.vertex[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius)
-        set_color(self.vertex[bar_v_key]['pb_body'], color)
-        return self.vertex[bar_v_key]['pb_body']
+            radius = self.node[bar_v_key]['radius']
+            self.node[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius)
+        set_color(self.node[bar_v_key]['pb_body'], color)
+        return self.node[bar_v_key]['pb_body']
 
     def get_bar_element_robot(self, bar_v_key, color=apply_alpha(RED, 0)):
-        if 'pb_element_robot' not in self.vertex[bar_v_key] or self.vertex[bar_v_key]['pb_element_robot'] is None or \
-            self.vertex[bar_v_key]['pb_element_robot'] not in get_bodies():
+        if 'pb_element_robot' not in self.node[bar_v_key] or self.node[bar_v_key]['pb_element_robot'] is None or \
+            self.node[bar_v_key]['pb_element_robot'] not in get_bodies():
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
-            radius = self.vertex[bar_v_key]['radius']
-            self.vertex[bar_v_key]['pb_element_robot'] = create_bar_flying_body(np.array(axis_pts)*METER_SCALE, radius*METER_SCALE)
-        set_color(self.vertex[bar_v_key]['pb_element_robot'], color)
-        return self.vertex[bar_v_key]['pb_element_robot']
+            radius = self.node[bar_v_key]['radius']
+            self.node[bar_v_key]['pb_element_robot'] = create_bar_flying_body(np.array(axis_pts)*METER_SCALE, radius*METER_SCALE)
+        set_color(self.node[bar_v_key]['pb_element_robot'], color)
+        return self.node[bar_v_key]['pb_element_robot']
 
     ##################################
     # export dict info for planning
@@ -278,17 +292,17 @@ class BarStructure(Network):
         dict
             bar vkey -> pb body
         """
-        return {v : self.get_bar_pb_body(v, color) for v in self.vertices()}
+        return {v : self.get_bar_pb_body(v, color) for v in self.nodes()}
 
     def get_element_from_index(self):
         element_from_index = {}
-        for index in self.vertices():
+        for index in self.nodes():
             axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=METER_SCALE)]
-            radius=self.vertex[index]['radius']*METER_SCALE
+            radius=self.node[index]['radius']*METER_SCALE
             body = self.get_bar_pb_body(index)
             element_robot = self.get_bar_element_robot(index)
-            goal_pose = self.vertex[index]['goal_pose']
-            layer = self.vertex[index]['layer']
+            goal_pose = self.node[index]['goal_pose']
+            layer = self.node[index]['layer']
             # all data in Element is in meter
             element_from_index[index] = Element(index=index, body=body, element_robot=element_robot,
                                                 axis_endpoints=axis_pts,
@@ -308,7 +322,7 @@ class BarStructure(Network):
         dict
             bar vkey -> ([x,y,z], [x,y,z])
         """
-        return {v : self.get_bar_axis_end_pts(v, scale=scale) for v in self.vertices()}
+        return {v : self.get_bar_axis_end_pts(v, scale=scale) for v in self.nodes()}
 
     def get_connectors(self, scale=METER_SCALE):
         connectors = {}
@@ -319,7 +333,7 @@ class BarStructure(Network):
 
     def get_grounded_bar_keys(self):
         # return frozenset(filter(lambda e: is_ground(e, ground_nodes), elements))
-        return frozenset([bv for bv, attr in self.vertices(True) if attr['grounded']])
+        return frozenset([bv for bv, attr in self.nodes(True) if attr['grounded']])
 
     ##################################
     # mutual collision check

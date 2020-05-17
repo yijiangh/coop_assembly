@@ -87,6 +87,19 @@ class OverallStructure(Network):
         self.t_key_max = 0
 
     #####################################
+    # backward compatibility
+
+    @property
+    def vertex(self):
+        return self.node
+
+    def vertices(self, data=False):
+        return self.nodes(data)
+
+    def vertex_connected_edges(self, v):
+        return self.connected_edges(v)
+
+    #####################################
     # adding data
 
     def add_node(self, xyz = (0.0, 0.0, 0.0), v_key=None, t_key=None):
@@ -108,7 +121,8 @@ class OverallStructure(Network):
             vertex index
         """
         # add the vertex point to the network vertices
-        v_key = self.add_vertex(v_key)
+        v_key = super(OverallStructure, self).add_node(v_key)
+
         # update the tetrahedra dict
         self.vertex[v_key].update({"x":xyz[0], "y":xyz[1], "z":xyz[2], "point_xyz":xyz})
         if t_key != None:
@@ -237,23 +251,28 @@ class OverallStructure(Network):
                                 common_e.append(e_1_1)
         return common_e
 
-    def nodes_vic(self, n_key, dist):
-        # find nodes in a certain distance to node n_key
+    @property
+    def vertex(self):
+        # backward compatibility
+        return self.node
 
-        point_base = self.vertex_coordinates(n_key)
-        points = [self.vertex_coordinates(v_key) for v_key, args in self.vertices_iter(True)]
-        n_key_new = n_key
-        nodes_used = []
-        nodes_vic = []
-        nodes_vic, nodes_used = self.check_distance(n_key_new, nodes_used, nodes_vic, dist, point_base, n_key)
+    # def nodes_vic(self, n_key, dist):
+    #     # find nodes in a certain distance to node n_key
 
-        return nodes_vic
+    #     point_base = self.vertex_coordinates(n_key)
+    #     points = [self.vertex_coordinates(v_key) for v_key, args in self.vertices_iter(True)]
+    #     n_key_new = n_key
+    #     nodes_used = []
+    #     nodes_vic = []
+    #     nodes_vic, nodes_used = self.check_distance(n_key_new, nodes_used, nodes_vic, dist, point_base, n_key)
+
+    #     return nodes_vic
 
     def check_distance(self, n_key, nodes_used, nodes_vic, dist, point_base, n_base):
         # checks distance for vertices while going through the network structure via neighbours (recursively)
 
         bool_check = True
-        for n in self.vertex_neighbours(n_key):
+        for n in self.neighbors(n_key):
             bool_check_l = True
             p = self.vertex_coordinates(n)
             if n not in nodes_used and n != n_base:

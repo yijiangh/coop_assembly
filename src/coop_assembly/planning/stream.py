@@ -381,11 +381,13 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
                     if verbose : print('pregrasp failure.')
                     continue
 
-                command = compute_place_path(pregrasp_poses, grasp, element, element_from_index, collision_fn=collision_fn if not bar_only else None, bar_only=bar_only,
+                command = compute_place_path(pregrasp_poses, grasp, element, element_from_index,
+                    collision_fn=collision_fn if not bar_only else None, bar_only=bar_only,
                     end_effector=end_effector,  verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector, teleops=teleops)
                 if command is None:
                     continue
 
+                # ? why update safe?
                 command.update_safe(printed)
                 if precompute_collisions:
                     bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
@@ -398,6 +400,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
 
                 # if not is_ground(element, ground_nodes) and (neighboring_elements <= command.colliding):
                 #     continue # TODO If all neighbors collide
+
                 trajectories.append(command)
                 if precompute_collisions:
                     prune_dominated(trajectories)

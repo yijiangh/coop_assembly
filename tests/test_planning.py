@@ -353,6 +353,7 @@ def test_connector(viewer, file_spec):
     grounded_elements = bar_struct.get_grounded_bar_keys()
     assert check_connected(connectors, grounded_elements, printed_elements)
 
+@pytest.mark.connector_db
 def test_connector_debug(viewer, file_spec):
     # visual test
     bar_struct, _ = load_structure(file_spec, viewer, color=(1,0,0,0.3))
@@ -377,6 +378,7 @@ def test_connector_debug(viewer, file_spec):
     printed_elements = set([0,3])
     assert check_connected(connectors, grounded_elements, printed_elements)
 
+@pytest.mark.contact_ground
 def test_contact_to_ground(viewer, file_spec):
     bar_struct, _ = load_structure(file_spec, viewer, color=(1,0,0,0.3))
     element_bodies = bar_struct.get_element_bodies()

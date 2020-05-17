@@ -63,7 +63,7 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
 
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     element_bodies = bar_struct.get_element_bodies(color=apply_alpha(RED, 0))
-    set_camera([attr['point_xyz'] for v, attr in o_struct.vertices(True)])
+    set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
 
     handles = []
     handles.extend(label_elements(element_bodies))
