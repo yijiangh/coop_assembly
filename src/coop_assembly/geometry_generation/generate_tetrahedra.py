@@ -249,9 +249,9 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
             b_struct.node[new_bars[0]].update({"layer":tet_id+1})
             b_struct.node[new_bars[1]].update({"layer":tet_id+1})
             b_struct.node[new_bars[2]].update({"layer":tet_id+1})
-
     reset_simulation()
     disconnect()
+    return b_struct, o_struct
 
 def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     new_vertex_pt, new_vertex_id, radius,

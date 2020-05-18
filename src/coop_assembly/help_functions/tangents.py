@@ -13,6 +13,7 @@ author: stefanaparascho
 '''
 
 import math
+import scipy.optimize
 
 from compas.geometry import add_vectors, subtract_vectors, cross_vectors, normalize_vector, scale_vector, vector_from_points, dot_vectors, length_vector
 from compas.geometry import distance_point_point, distance_point_line, distance_line_line
@@ -326,7 +327,7 @@ def check_length_sol_one(solution, pt_mean, pt, b1, b2, b1_key, b2_key, b_struct
 
 def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct, pt_mean, radius,
     b_v0_n=None, check_collision=False):
-    """[summary]
+    """0-2 case, zero existing bar at the new point, 2 bars existing at the other end
 
     SP disseration P129:
         two discrete parameters are used for adjusting the topology in case a collision is found:
@@ -459,6 +460,8 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
 
 
 def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1, radius, max_len, pt_mean, b_v0_n=None, check_collision=False):
+    """1-2 case, one existing bar at the new point, 2 bars existing at the other end
+    """
     line        = b_struct.vertex[b_v_old]["axis_endpoints"]
     vec_l_0     = vector_from_points(line[0], line[1])
     ex          = normalize_vector(cross_vectors(normalize_vector(vec_l_0), (1,0,0)))
@@ -591,6 +594,8 @@ def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1
 
 
 def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v0_n=None, check_collision=False):
+    """2-2 case, two existing bar at the new point, 2 bars existing at the other end
+    """
 
     line_1  =  b_struct.vertex[b_v_old]["axis_endpoints"]
     line_2  =  b_struct.vertex[b_v1]["axis_endpoints"]
@@ -771,7 +776,6 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
 
 def solve_second_tangent(*args):
     radius = args[3]
-    import scipy.optimize
     for i in range(2):
         res_opt = scipy.optimize.fminbound(f_tangent_point_2, -2*radius, 2*radius, args, full_output=True, disp=0)
         if res_opt[1] > 0.1: return None
@@ -785,7 +789,6 @@ def solve_second_tangent(*args):
 
 
 def solve_third_tangent(*args):
-    import scipy.optimize
     res_opt = scipy.optimize.fmin(f_tangent_point_3, [0.0, 0.0], args, full_output=True, disp=0)
     if res_opt[1] > 0.1: return None
     ret_fp3 = find_point_3(list(map(float, res_opt[0])), *args)
@@ -918,7 +921,7 @@ def check_colisions(b_struct, pts, radius, bar_nb=None, bar_checking=None):
     # print "bar_checking", bar_checking
     for b in b_struct.vertex:
         if not bar_nb:
-            bar_nb = 100000000000000
+            bar_nb = 1e14
         if bar_checking != None and b < 3:
             continue
         if b < bar_nb and b != bar_checking:

@@ -21,7 +21,7 @@
   (:stream sample-place
     :inputs (?r ?e)
     :domain (and (Robot ?r) (Element ?e) (Assigned ?r ?e))
-    :fluents (Assembled)
+    ; :fluents (Assembled)
     :outputs (?q1 ?q2 ?t)
     :certified (and (PlaceAction ?r ?e ?q1 ?q2 ?t)
                     (Conf ?r ?q1)

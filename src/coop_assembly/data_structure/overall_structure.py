@@ -99,6 +99,9 @@ class OverallStructure(Network):
     def vertex_connected_edges(self, v):
         return self.connected_edges(v)
 
+    def vertex_neighbors(self, v):
+        return self.neighbors(v)
+
     #####################################
     # adding data
 
@@ -251,11 +254,6 @@ class OverallStructure(Network):
                                 common_e.append(e_1_1)
         return common_e
 
-    @property
-    def vertex(self):
-        # backward compatibility
-        return self.node
-
     # def nodes_vic(self, n_key, dist):
     #     # find nodes in a certain distance to node n_key
 
@@ -287,29 +285,3 @@ class OverallStructure(Network):
             if not bool_check: return nodes_vic, nodes_used
 
         return nodes_vic, nodes_used
-
-##################################################
-
-def get_node_neighbors(elements):
-    node_neighbors = defaultdict(set)
-    for e in elements:
-        n1, n2 = e
-        node_neighbors[n1].add(e)
-        node_neighbors[n2].add(e)
-    return node_neighbors
-
-def nodes_from_elements(elements):
-    # TODO: always include ground nodes
-    return {n for e in elements for n in e}
-
-def get_element_neighbors(elements):
-    node_neighbors = get_node_neighbors(elements)
-    element_neighbors = defaultdict(set)
-    for e in elements:
-        n1, n2 = e
-        element_neighbors[e].update(node_neighbors[n1])
-        element_neighbors[e].update(node_neighbors[n2])
-        element_neighbors[e].remove(e)
-    return element_neighbors
-
-# TODO: elements_from_ideal_vertices

@@ -178,8 +178,6 @@ def add_successors(queue, all_nodes, grounded_nodes, heuristic_fn, built_nodes, 
         priority = (num_remaining, bias, random.random())
         heapq.heappush(queue, (priority, built_nodes, built_triangles, node_id, tri_node_ids))
 
-
-
 def point2triangle_tet_sequencing(points, base_triangle_node_ids, heuristic_fn=None, verbose=False):
     all_nodes = frozenset(range(len(points)))
     ground_nodes = frozenset(base_triangle_node_ids)
