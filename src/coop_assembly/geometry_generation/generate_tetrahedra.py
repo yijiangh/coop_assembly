@@ -29,8 +29,7 @@ from compas.geometry import centroid_points
 from coop_assembly.help_functions.helpers_geometry import calculate_coord_sys, calculate_bar_z, \
     dropped_perpendicular_points, update_bar_lengths, correct_point, find_bar_ends, compute_contact_line_between_bars, \
     contact_to_ground
-from coop_assembly.help_functions.tangents import tangent_from_point, check_length_sol_one, \
-    first_tangent, second_tangent, third_tangent
+from coop_assembly.help_functions.tangents import first_tangent, second_tangent, third_tangent
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning import BUILT_PLATE_Z
 
@@ -69,9 +68,9 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     c_2     = scale_vector(normalize_vector(cross_vectors(vec_2, vec_0)), 2*radius)
 
     # bar i: start point to raised end point
-    end_pts_0   = (pt_0, add_vectors(pt_1, c_0))
-    end_pts_1   = (pt_1, add_vectors(pt_2, c_1))
-    end_pts_2   = (pt_2, add_vectors(pt_0, c_2))
+    end_pts_0 = (pt_0, add_vectors(pt_1, c_0))
+    end_pts_1 = (pt_1, add_vectors(pt_2, c_1))
+    end_pts_2 = (pt_2, add_vectors(pt_0, c_2))
 
     # local coordinate system for each bar
     # pt_int = centroid_points((end_pts_0[0], end_pts_0[1], end_pts_1[0], end_pts_1[1], end_pts_2[0], end_pts_2[1]))
@@ -94,9 +93,9 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius, grounded=True)
     b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius, grounded=True)
 
-    pt_m = [0,0,-10000000000000]
+    pt_m = [0,0,-1e13]
 
-    # ? what does this mean_point mean?
+    # mean_pt used in SP' calculate_gripping_plane
     b_struct.node[b_v0_key].update({"mean_point":pt_m})
     b_struct.node[b_v1_key].update({"mean_point":pt_m})
     b_struct.node[b_v2_key].update({"mean_point":pt_m})
@@ -120,7 +119,6 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     b_struct.connect_bars(b_v2_key, b_v0_key, _endpoints=epts_2)
     assert b_struct.edge[b_v0_key][b_v1_key]["grounded"] == False, "sanity check"
 
-    # update_edges(b_struct)
     b_struct.update_bar_lengths()
 
     tet_id = 0
@@ -129,6 +127,7 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     b_struct.node[b_v1_key].update({"layer":tet_id})
     b_struct.node[b_v2_key].update({"layer":tet_id})
 
+    # * OverallStructure updates
     # these are vertex's index in the Overall_Structure network
     o_v0_key = o_struct.add_node(pt_0, v_key=base_tri_ids[0], t_key=tet_id)
     o_v1_key = o_struct.add_node(pt_1, v_key=base_tri_ids[1], t_key=tet_id)
@@ -316,43 +315,30 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     # TODO: write a function to find mean point given bar ids
     # two bars at vertex 0
     b_v1_1 = o_struct.get_bar_vertex_key(bars1[0])
-    # b1_1    = b_struct.vertex[b_v1_1]
     b_v1_2 = o_struct.get_bar_vertex_key(bars1[1])
-    # b1_2    = b_struct.vertex[b_v1_2]
 
     # two bars at vertex 1
     b_v2_1 = o_struct.get_bar_vertex_key(bars2[0])
-    # b2_1    = b_struct.vertex[b_v2_1]
     b_v2_2 = o_struct.get_bar_vertex_key(bars2[1])
-    # b2_2    = b_struct.vertex[b_v2_2]
 
     # two bars at vertex 2
     b_v3_1 = o_struct.get_bar_vertex_key(bars3[0])
-    # b3_1    = b_struct.vertex[b_v3_1]
     b_v3_2 = o_struct.get_bar_vertex_key(bars3[1])
-    # b3_2    = b_struct.vertex[b_v3_2]
 
     # center points of the bar axes to obtain the central point of the base triangle
     dpp1 = compute_contact_line_between_bars(b_struct, b_v1_1, b_v1_2)
-    pt_mean_1 = centroid_points(dpp1)
+    contact_pt1 = centroid_points(dpp1)
 
     dpp2 = compute_contact_line_between_bars(b_struct, b_v2_1, b_v2_2)
-    pt_mean_2 = centroid_points(dpp2)
+    contact_pt2 = centroid_points(dpp2)
 
     dpp3 = compute_contact_line_between_bars(b_struct, b_v3_1, b_v3_2)
-    pt_mean_3 = centroid_points(dpp3)
+    contact_pt3 = centroid_points(dpp3)
 
-    pt_mean = centroid_points([pt_mean_1, pt_mean_2, pt_mean_3])
+    pt_mean = centroid_points([contact_pt1, contact_pt2, contact_pt3])
 
     # if new_vertex_pt:
     pt_new = new_vertex_pt
-    # check if new point is inside of structure
-    # if not new_vertex_pt:
-    #     for t in o_struct.tetrahedra:
-    #         if len(o_struct.tetrahedra[t]) > 3:
-    #             if not o_struct.isOutside(pt_new, t):
-    #                 vec_n   = scale_vector(vec_n, -1)
-    #                 pt_new  = add_vectors(pt_mean, vec_n)
 
     if correct:
         # change new target vertex point position using the SP heuristic
@@ -364,17 +350,14 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     for j, bar_jnd_1 in enumerate(comb_bars_1):
         bars1 = bar_jnd_1
         b_v1_1 = o_struct.get_bar_vertex_key(bars1[0])
-        b1_1 = b_struct.node[b_v1_1]
-
         b_v1_2 = o_struct.get_bar_vertex_key(bars1[1])
-        b1_2 = b_struct.node[b_v1_2]
 
         if correct:
             # change new target vertex point position using the SP heuristic
             pt_new = correct_point(b_struct, o_struct, pt_new,
                                    [(b_v1_1, b_v1_2), (b_v2_1, b_v2_2), (b_v3_1, b_v3_2)], o_v_key=o_v_key)
 
-        ret_ft = first_tangent(pt_new, b1_1, b1_2, pt_mean_1, max_len,
+        ret_ft = first_tangent(pt_new, contact_pt1, max_len,
                                b_v1_1, b_v1_2, b_struct, pt_mean, radius,
                                b_v0_n=None if bool_add else b_v0, check_collision=check_collision)
 
@@ -393,22 +376,18 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     for j, bar_jnd_2 in enumerate(comb_bars_2):
         bars2 = bar_jnd_2
         b_v2_1 = o_struct.get_bar_vertex_key(bars2[0])
-        b2_1 = b_struct.node[b_v2_1]
-
         b_v2_2 = o_struct.get_bar_vertex_key(bars2[1])
-        b2_2 = b_struct.node[b_v2_2]
 
         if correct:
             pt_new = correct_point(b_struct, o_struct, pt_new,
-                               [(b_v1_1, b_v1_2), (b_v2_1, b_v2_2), (b_v3_1, b_v3_2)], o_v_key=o_v_key)
-        if bool_add:
-            ret_st = second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2,
-                                    b_struct, b_v0, pt_new, radius, max_len, pt_mean, check_collision=check_collision)
-        else:
-            ret_st = second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2,
-                                    b_struct, b_v0, pt_new, radius, max_len, pt_mean, b_v1, check_collision=check_collision)
+                                  [(b_v1_1, b_v1_2), (b_v2_1, b_v2_2), (b_v3_1, b_v3_2)], o_v_key=o_v_key)
+
+        # b_v0 is the last added, first bar in the tet
+        ret_st = second_tangent(contact_pt2, b_v2_1, b_v2_2,
+                                b_struct, b_v0, pt_new, radius, max_len, pt_mean, b_v0_n=None, check_collision=check_collision)
+
         if ret_st:
-            b_v1, _, _ = ret_st
+            b_struct, b_v1, _, _ = ret_st
             print('Bar chosen: #B{}-(oe{}) + #B{}-(oe{})'.format(b_v2_1, bars2[0], b_v2_2, bars2[1]))
             break
         else:
@@ -421,22 +400,18 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     for j, bar_jnd_3 in enumerate(comb_bars_3):
         bars3 = bar_jnd_3
         b_v3_1 = o_struct.get_bar_vertex_key(bars3[0])
-        b3_1 = b_struct.node[b_v3_1]
-
         b_v3_2 = o_struct.get_bar_vertex_key(bars3[1])
-        b3_2 = b_struct.node[b_v3_2]
 
         if correct:
             pt_new = correct_point(b_struct, o_struct, pt_new,
                                [(b_v1_1, b_v1_2), (b_v2_1, b_v2_2), (b_v3_1, b_v3_2)], o_v_key=o_v_key)
-        if bool_add:
-            ret_tt = third_tangent(b_struct, b_v0, b_v1, b3_1, b3_2, pt_mean_3,
-                                max_len, b_v3_1, b_v3_2, pt_mean, radius, check_collision=check_collision)
-        else:
-            ret_tt = third_tangent(b_struct, b_v0, b_v1, b3_1, b3_2, pt_mean_3,
-                                max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v2, check_collision=check_collision)
+
+        # b_v0, b_v1 are the two latest added vars in the tet
+        ret_tt = third_tangent(b_struct, b_v0, b_v1, contact_pt3,
+                               max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v0_n=b_v2 if not bool_add else None, check_collision=check_collision)
+
         if ret_tt:
-            b_v2, _, _ = ret_tt
+            b_struct, b_v2, _, _ = ret_tt
             print('Bar chosen: #B{}-(oe{}) + #B{}-(oe{})'.format(b_v3_1, bars3[0], b_v3_2, bars3[1]))
             break
         else:

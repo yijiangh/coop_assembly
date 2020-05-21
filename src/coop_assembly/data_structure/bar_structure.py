@@ -79,18 +79,6 @@ class BarStructure(Network):
         self.name = "Network_b"
         # self._ground_key = self.add_ground(built_plate_z=built_plate_z)
 
-    # def add_ground(self, built_plate_z=0.0, floor_body=None):
-    #     # TODO: maybe can add in all static obstacles here?
-    #     # the ground is modeled as an element
-    #     v_key = self.add_node()
-    #     if floor_body is None:
-    #         floor_body = create_plane()
-    #         set_point(floor_body, Point(z=built_plate_z))
-    #     self.node[v_key].update({"element_type":"static",
-    #                                "pb_body":floor_body,  # pybullet body
-    #                               })
-    #     return self.v_key
-
     #####################################
     # backward compatibility
 
@@ -115,14 +103,13 @@ class BarStructure(Network):
         goal_pose = get_pose(bar_body)
         self.node[v_key].update({"bar_type":_bar_type,
                                    "axis_endpoints":_axis_endpoints,
-                                   "index_sol":None,    # tangent plane config
-                                   "mean_point":None,   # mean point used for local axis construction
+                                   "index_sol":None,    # tangent plane config (one out of four config)
+                                   "mean_point":None,   # mean point used for local axis construction (SP uses this for gripping plane computation)
                                    "pb_body":bar_body,  # pybullet body
                                    "pb_element_robot":None,
                                    "goal_pose":goal_pose,
                                    'radius':radius,
                                    "grounded":grounded,
-                                   "element_type":"mobile",
                                    "crosec_type":_crosec_type,
                                    "crosec_values":_crosec_values,
                                    "zdir":_zdir,
@@ -165,6 +152,7 @@ class BarStructure(Network):
         [type]
             [description]
         """
+        # !note that compas network edge is directional, thus (v_key2, v_key1) is not detected
         if self.has_edge(v_key1, v_key2):
             # edge exists already, updating edge attributes
             id = self.edge[v_key1][v_key2]["connections_count"]
@@ -337,7 +325,6 @@ class BarStructure(Network):
 
     ##################################
     # mutual collision check
-    # def check
 
     ##################################
     # structural model extraction

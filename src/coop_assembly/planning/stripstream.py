@@ -100,14 +100,14 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     constant_map = {}
 
     stream_map = {
-        'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
-                                               initial_confs=initial_confs, teleops=teleops, **kwargs),
+        # 'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+        #                                        partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
+        #                                        initial_confs=initial_confs, teleops=teleops, **kwargs),
         'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
                                               initial_confs=initial_confs, teleops=teleops, **kwargs),
         # ? if tested in collision, certify CollisionFree
-        'test-cfree': from_test(get_test_cfree()),
+        # 'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
 
@@ -185,8 +185,8 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
             stream_info = {
                 'sample-place': StreamInfo(PartialInputs(unique=True)),
-                'sample-move': StreamInfo(PartialInputs(unique=True)),
-                'test-cfree': StreamInfo(negate=True),
+                # 'sample-move': StreamInfo(PartialInputs(unique=True)),
+                # 'test-cfree': StreamInfo(negate=True),
             }
             # TODO: effort_weight=0 will lead to noplan found
             effort_weight = 1e-3 if costs else None
@@ -272,9 +272,10 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
             else:
                 raise NotImplementedError(fact[0])
         for command, in gen_fn_from_robot[robot](element, printed=printed):
-            q1 = Conf(robot, np.array(command.start_conf), element)
-            q2 = Conf(robot, np.array(command.end_conf), element)
-            outputs = [(q1, q2, command)]
+            # q1 = Conf(robot, np.array(command.start_conf), element)
+            # q2 = Conf(robot, np.array(command.end_conf), element)
+            # outputs = [(q1, q2, command)]
+            outputs = [(command,)]
             facts = []
             yield WildOutput(outputs, facts)
             # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []

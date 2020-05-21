@@ -184,6 +184,7 @@ def calculate_bar_z(points):
 
 def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2):
     """compute the projected tangent point on axis defined by [L1_pt1, L1_pt2] and [L2_pt1, L2_pt2]
+    ! Note that the length of these two lines does not matter, we are considering infinite long lines here
 
     See Fig. 3.7 in SP's dissertaion (below). We are computing the point pair (P1, P_{C1}) here, given the axis endpoints of bar b_{e1} and b_{n1}
 
@@ -246,6 +247,7 @@ def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
 
 def find_points_extreme(pts_all, pts_init):
     """update a bar's axis end point based on all the contact projected points specified in `pts_all`
+    Finding the pair with longest distance and make them as the axis end ponits.
 
     Parameters
     ----------
@@ -262,26 +264,24 @@ def find_points_extreme(pts_all, pts_init):
     vec_init = normalize_vector(vector_from_points(*pts_init))
     # * find the pair of points with maximal distance
     sorted_pt_pairs = sorted(combinations(pts_all, 2), key=lambda pt_pair: distance_point_point(*pt_pair))
-    pts_draw = sorted_pt_pairs[-1]
-
-    vec_new = normalize_vector(vector_from_points(*pts_draw))
+    farthest_pts = sorted_pt_pairs[-1]
+    vec_new = normalize_vector(vector_from_points(*farthest_pts))
     if angle_vectors(vec_init, vec_new, deg=True) > 90:
         # angle can only be 0 or 180
-        pts_draw = pts_draw[::-1]
-
+        farthest_pts = farthest_pts[::-1]
     # ext_len = 30
     # pts_draw = (add_vectors(pts_draw[0], scale_vector(normalize_vector(vector_from_points(pts_draw[1], pts_draw[0])), ext_len)), add_vectors(pts_draw[1], scale_vector(normalize_vector(vector_from_points(pts_draw[0], pts_draw[1])), ext_len)))
-
-    return pts_draw
-
+    return farthest_pts
 
 def check_dir(vec1, vec2):
+    """check if two vector's angle is smaller than 90 degrees
+
+    """
     ang = angle_vectors(vec1, vec2, deg=True)
     if ang < 90:
         return True
     else:
         return False
-
 
 def update_bar_lengths(b_struct):
     raise ImportError('Moved to Bar_Structure class function.')

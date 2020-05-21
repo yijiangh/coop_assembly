@@ -29,21 +29,8 @@ from coop_assembly.help_functions.shared_const import TOL
 from coop_assembly.help_functions.helpers_geometry import compute_contact_line_between_bars
 
 
-def tangent_from_point(base_point1, line_vect1, base_point2, line_vect2, ref_point, dist1, dist2):
-    solutions = lines_tangent_to_two_cylinder(base_point1, line_vect1, base_point2, line_vect2, ref_point, dist1, dist2)
-    if solutions == None:
-        print("no solutions for tangent_from_point")
-        return None
-    sol_0   = solutions[0]
-    sol_1   = solutions[1]
-    sol_2   = solutions[2]
-    sol_3   = solutions[3]
-
-    return [sol_0, sol_1, sol_2, sol_3]
-
-
 def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref_point, dist1, dist2, nb):
-    """[summary]
+    """compute axis vector for connecting a new point to two existing bars
 
     .. image:: ../images/intersection_two_bar_tangent_planes.png
         :scale: 80 %
@@ -52,19 +39,19 @@ def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref
     Parameters
     ----------
     base_point1 : point
-        start point of cylinder 1's axis
+        start point of cylinder 1 (existing bar 1)'s axis
     line_vect1 : list of two points
         axis vector for cylinder 1, end pt 1 -> end pt 0
     base_point2 : [type]
         [description]
     line_vect2 : [type]
-        axis vector for cylinder 2
+        axis vector for cylinder 2 (existing bar 2)
     ref_point : point
         new vertex point Q
     dist1 : [type]
-        [description]
+        radius for bar 1
     dist2 : [type]
-        [description]
+        radius for bar 1
     nb : int
         tangent plane combination (two tangent planes per bar)
 
@@ -90,78 +77,6 @@ def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref
         # s = intersect_plane_plane_u(planes1[1][1], planes1[1][2], planes2[1][0])
     s = normalize_vector(s)
     return [s]
-
-
-def tangent_through_two_points(base_point1, line_vect1, ref_point1, base_point2, line_vect2, ref_point2, dist1, dist2):
-
-    ind = [0,1]
-
-    sols_vec = []
-    sols_pts = []
-
-    # print("tangent_through_two_points", base_point1, line_vect1, ref_point1, base_point2, line_vect2, ref_point2, dist1, dist2)
-
-    for i in ind:
-        ret_p1 = p_planes_tangent_to_cylinder(base_point1, line_vect1, ref_point2, dist1 + dist2 + dist1 + dist2)
-        ret1 = ret_p1[i]
-        z_vec = cross_vectors(line_vect1, ret1[2])
-        plane1 = (ret1[0], z_vec)
-        # print("plane1", plane1)
-        pp1 = project_points_plane([ref_point1], plane1)[0]
-        vec_move = scale_vector(subtract_vectors(ref_point1, pp1), 0.5)
-        pt1 = add_vectors(pp1, vec_move)
-
-        for j in ind:
-            ret_p2 = p_planes_tangent_to_cylinder(base_point2, line_vect2, ref_point1, dist1 + dist2 + dist1 + dist2)
-            ret2 = ret_p2[j]
-            z_vec = cross_vectors(line_vect2, ret2[2])
-            plane2 = (ret2[0], z_vec)
-            pp2 = project_points_plane([ref_point2], plane2)[0]
-            vec_move = scale_vector(subtract_vectors(ref_point2, pp2), 0.5)
-            pt2 = add_vectors(pp2, vec_move)
-
-            sols_pts.append([pt1, pt2])
-            sol_vec = subtract_vectors(pt1, pt2)
-            sols_vec.append(sol_vec)
-    return sols_pts
-
-    # ret_p1 = p_planes_tangent_to_cylinder(base_point1, line_vect1, ref_point2, dist1 + dist2)
-    # print("this is it", ret_p1)
-    # ret1 = ret_p1[ind1]
-    # z_vec = cross_vectors(line_vect1, ret1[2])
-    # plane1 = (ret1[0], z_vec)
-    # print("plane1", plane1)
-    # pp1 = project_points_plane([ref_point1], plane1)[0]
-    # vec_move = scale_vector(subtract_vectors(ref_point1, pp1), 0.5)
-    # pt1 = add_vectors(pp1, vec_move)
-
-    # ret_p2 = p_planes_tangent_to_cylinder(base_point2, line_vect2, ref_point1, dist1 + dist2)
-    # ret2 = ret_p2[ind2]
-    # z_vec = cross_vectors(line_vect2, ret2[2])
-    # plane2 = (ret2[0], z_vec)
-    # pp2 = project_points_plane([ref_point2], plane2)[0]
-    # vec_move = scale_vector(subtract_vectors(ref_point2, pp2), 0.5)
-    # pt2 = add_vectors(pp2, vec_move)
-
-    # return pt1, pt2
-
-
-def lines_tangent_to_two_cylinder(base_point1, line_vect1, base_point2, line_vect2, ref_point, dist1, dist2):
-
-    planes1     = p_planes_tangent_to_cylinder(base_point1, line_vect1, ref_point, dist1)
-    planes2     = c_planes_tangent_to_cylinder(base_point2, line_vect2, ref_point, dist2)
-    if planes1 == None or planes2 == None:
-        return None
-    s1  = intersect_plane_plane_u(planes1[0][1], planes1[0][2], planes2[0][0])
-    s1  = normalize_vector(s1)
-    s2  = intersect_plane_plane_u(planes1[0][1], planes1[0][2], planes2[1][0])
-    s2  = normalize_vector(s2)
-    s3  = intersect_plane_plane_u(planes1[1][1], planes1[1][2], planes2[0][0])
-    s3  = normalize_vector(s3)
-    s4  = intersect_plane_plane_u(planes1[1][1], planes1[1][2], planes2[1][0])
-    s4  = normalize_vector(s4)
-
-    return [s1, s2, s3, s4]
 
 def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     """Calculating of plane tangents to one cylinder
@@ -215,7 +130,6 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     d_e_sub     = subtract_vectors(d_e1, d_e2)
     return [ppol, d_e_add, d_e_sub]
 
-
 def p_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     """find tangent planes of a cylinder passing through a given point ()
 
@@ -226,17 +140,18 @@ def p_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     Parameters
     ----------
     base_point : point
-        point M
+        point M, projected contact point on the cylinder axis
     line_vect : vector
         direction of the existing bar's axis, direction [the other pt, base_pt], **direction very important!**
     ref_point : point
-        point Q
+        point Q, the new floating point
     dist : float
         cylinder radius
 
     Returns
     -------
     list of two [ref_point, local_y, local_x]
+        representing two tangent planes formed
         local x = QB
         local_y // line_vect
     """
@@ -251,7 +166,6 @@ def p_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     r2  = normalize_vector(r2)
     return [[ref_point, l_vect, r1], [ref_point, l_vect, r2]]
 
-
 def c_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     tangent_pts = lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist)
     if tangent_pts == None:
@@ -265,41 +179,82 @@ def c_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
 
 
 def intersect_plane_plane_u(u_vect, v_vect, abc_vect):
+    """compute the spanning vector (line direction) for two intersecting planes
+        plane 1:
+            x axis: u_vect
+            y axis: v_vect
+        plane 2:
+            z axis: abc_vect
 
-    A           = dot_vectors(abc_vect, u_vect) / dot_vectors(abc_vect, v_vect)
+    Parameters
+    ----------
+    u_vect : list of 3
+        local x axis for plane 1
+    v_vect : list of 3
+        local y axis for plane 1
+    abc_vect : list of 3
+        local z axis for plane 1
+
+    Returns
+    -------
+    vector
+        directional vector for the intersecting line
+    """
+    A = dot_vectors(abc_vect, u_vect) / dot_vectors(abc_vect, v_vect)
     u_vect_sub  = subtract_vectors(u_vect, scale_vector(v_vect, A))
-
     return u_vect_sub
 
 
-def check_length_sol_one(solution, pt_mean, pt, b1, b2, b1_key, b2_key, b_struct):
+def compute_new_bar_length(vec_sol, compare_contact_pt, new_pt, b1_key, b2_key, b_struct):
+    """compute proper axis end pts for a given new point and direction
 
-    vec_sol = solution
-    dpp = dropped_perpendicular_points(pt, add_vectors(
-        pt, vec_sol), b1["axis_endpoints"][0], b1["axis_endpoints"][1])
-    pt_x1 = dpp[0]
-    pt_1 = dpp[1]
-    dpp = dropped_perpendicular_points(pt, add_vectors(
-        pt, vec_sol), b2["axis_endpoints"][0], b2["axis_endpoints"][1])
-    pt_x2 = dpp[0]
-    pt_2 = dpp[1]
+    b_struct is not updated inside.
 
-    if pt_x1 == None:
+    Parameters
+    ----------
+    vec_sol : point
+        directional point for the new bar axis
+    compare_contact_pt : point
+        this compare contact pt is only used to make sure that the output axis vector
+        point FROM contact pt to the newly added point
+    new_pt : point
+        newly added point
+    b1 : BarStructure vertex
+    b2 : BarStructure vertex
+    b1_key : int
+    b2_key : int
+    b_struct : BarStructure
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
+    b1 = b_struct.node[b1_key]
+    b2 = b_struct.node[b2_key]
+    # compute contact pts with the two bars
+    dpp = dropped_perpendicular_points(new_pt, add_vectors(new_pt, vec_sol), b1["axis_endpoints"][0], b1["axis_endpoints"][1])
+    pt_x1, pt_1 = dpp
+    dpp = dropped_perpendicular_points(new_pt, add_vectors(new_pt, vec_sol), b2["axis_endpoints"][0], b2["axis_endpoints"][1])
+    pt_x2, pt_2 = dpp
+    if pt_x1 is None or pt_x2 is None:
         return None
-    if pt_x2 == None:
-        return None
 
+    # * compute all projected contact points on bar1
     pts_all_b1 = []
+    # connected bars for b1
     b_vert_n = b_struct.vertex_neighbors(b1_key)
     pts_all_b1.append(b_struct.vertex[b1_key]["axis_endpoints"][0])
     pts_all_b1.append(b_struct.vertex[b1_key]["axis_endpoints"][1])
     for n in b_vert_n:
         pts_all_b1.append(dropped_perpendicular_points(
-            b1["axis_endpoints"][0], b1["axis_endpoints"][1], b_struct.vertex[n]["axis_endpoints"][0], b_struct.vertex[n]["axis_endpoints"][1])[0])
-
+            b1["axis_endpoints"][0], b1["axis_endpoints"][1],
+            b_struct.vertex[n]["axis_endpoints"][0], b_struct.vertex[n]["axis_endpoints"][1])[0])
     pts_all_b1.append(pt_1)
+    # find the farthest pair of points among all contact projected pts
     pts_b1 = find_points_extreme(pts_all_b1, b1["axis_endpoints"])
 
+    # * compute all projected contact points on bar2
     pts_all_b2 = []
     b_vert_n = b_struct.vertex_neighbors(b2_key)
     pts_all_b2.append(b_struct.vertex[b2_key]["axis_endpoints"][0])
@@ -307,26 +262,29 @@ def check_length_sol_one(solution, pt_mean, pt, b1, b2, b1_key, b2_key, b_struct
     for n in b_vert_n:
         pts_all_b2.append(dropped_perpendicular_points(
             b2["axis_endpoints"][0], b2["axis_endpoints"][1], b_struct.vertex[n]["axis_endpoints"][0], b_struct.vertex[n]["axis_endpoints"][1])[0])
-
     pts_all_b2.append(pt_2)
     pts_b2 = find_points_extreme(pts_all_b2, b2["axis_endpoints"])
 
-    vec_test_dir_1 = subtract_vectors(pt_mean, pt)
+    vec_test_dir_1 = subtract_vectors(compare_contact_pt, new_pt)
     if not check_dir(vec_sol, vec_test_dir_1):
         vec_sol = scale_vector(vec_sol, -1)
 
-    lx1 = distance_point_point(pt, pt_x1)
-    lx2 = distance_point_point(pt, pt_x2)
+    # find which point is further
+    lx1 = distance_point_point(new_pt, pt_x1)
+    lx2 = distance_point_point(new_pt, pt_x2)
     l_max = lx1 if lx1 > lx2 else lx2
 
-    sol = [vec_sol, l_max, pts_b1, pts_b2]
-
-    return sol
+    return [vec_sol, l_max, pts_b1, pts_b2]
 
 ######################################################
 
-def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct, pt_mean, radius,
-    b_v0_n=None, check_collision=False):
+def floating_tangent():
+    """0-1 case, zero existing bar at the new point, 1 bars existing at the other end
+    """
+    pass
+
+def first_tangent(new_pt, contact_pt, max_len, b_v1_1, b_v1_2, b_struct, pt_mean, radius,
+        b_v0_n=None, check_collision=False):
     """0-2 case, zero existing bar at the new point, 2 bars existing at the other end
 
     SP disseration P129:
@@ -348,28 +306,24 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
 
     Parameters
     ----------
-    pt1 : point
+    new_pt : point
         OverallS new vertex point
-    b1_1 : dict
-        BarS vertex
-    b1_2 : dict
-        BarS vertex
-    pt_mean_1 : point
+    contact_pt : point
         contact pt
     max_len : float
-        max allowable length of bar
+        max allowable length of bar, in mm
     b_v1_1 : int
         BarS vertex key for bar b1_1
     b_v1_2 : int
         BarS vertex key for bar b1_2
     b_struct : BarStructure
-        [description]
     pt_mean : point
         base triangle central point
     radius : float
         bar radius (millimeter)
     b_v0_n : int, optional
         index_sol attribute to indicate which tangent plane solution (four solutions in total), by default None
+        If set to None, iterate all four solutions until found a feasible one.
     check_collision : bool, optional
         [description], by default False
 
@@ -378,35 +332,40 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
     [type]
         [description]
     """
+    b1_1 = b_struct.node[b_v1_1]
+    b1_2 = b_struct.node[b_v1_2]
+
     sol_indices = range(4) if check_colisions else [b_struct.vertex[b_v0_n]["index_sol"][0] if b_v0_n else 0]
     # * iterating through combinations of tangent plane configurations
-    for sol_id in sol_indices:
+    for sol_i, sol_id in enumerate(sol_indices):
         new_bar_axis = tangent_from_point_one(b1_1["axis_endpoints"][0],
                                               subtract_vectors(b1_1["axis_endpoints"][1], b1_1["axis_endpoints"][0]),
                                               b1_2["axis_endpoints"][0],
                                               subtract_vectors(b1_2["axis_endpoints"][1], b1_2["axis_endpoints"][0]),
-                                              pt1, 2 * radius, 2 * radius, sol_id)
+                                              new_pt, 2 * radius, 2 * radius, sol_id)
 
         if new_bar_axis is None:
             print("First tangent bar: bar #{} no solutions.".format(sol_id))
-            if sol_id == 3:
+            if sol_i == len(sol_indices)-1:
                 print("First tangent bar: all four tangent planes exhausted and no solution is found!")
                 return None
             continue
 
-        # ?
-        vec_sol_1, l1, pts_b1_1, pts_b1_2 = check_length_sol_one(new_bar_axis[0], pt_mean_1, pt1, b1_1, b1_2, b_v1_1, b_v1_2, b_struct)
+        # directional vector pointing from contact pt to the newly added point
+        # pts_b1_1, 2 are the updated axis pts for bar1 and bar2 to cover all related contact pts
+        vec_sol_1, l1, pts_b1_1, pts_b1_2 = compute_new_bar_length(new_bar_axis[0], contact_pt, new_pt, b_v1_1, b_v1_2, b_struct)
 
-        pt1_e = add_vectors(pt1, scale_vector(vec_sol_1, l1))
-        new_axis_end_pts = (pt1, pt1_e)
+        # new central axis end point (contact end)
+        new_pt_e = add_vectors(new_pt, scale_vector(vec_sol_1, l1))
+        new_axis_end_pts = (new_pt, new_pt_e)
 
         if not check_colisions:
             break
 
         # add extension for collision checking
         ext_len = 30
-        new_axis_end_pts = (add_vectors(pt1, scale_vector(normalize_vector(vector_from_points(pt1_e, pt1)), ext_len)), \
-                            add_vectors(pt1_e, scale_vector(normalize_vector(vector_from_points(pt1, pt1_e)), ext_len)))
+        new_axis_end_pts = (add_vectors(new_pt, scale_vector(normalize_vector(vector_from_points(new_pt_e, new_pt)), ext_len)), \
+                            add_vectors(new_pt_e, scale_vector(normalize_vector(vector_from_points(new_pt, new_pt_e)), ext_len)))
 
         is_collided = check_colisions(b_struct, new_axis_end_pts, radius, bar_nb=b_v0_n)
 
@@ -416,19 +375,16 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
             if is_collided:
                 end_pts_check = b_struct.get_bar_axis_end_pts(b_v1_2)
                 is_collided = check_colisions(b_struct, end_pts_check, radius, bar_nb=b_v0_n, bar_checking=b_v1_2)
-
         if not is_collided:
-            print("First tangent bar: COLLIDE: bar v#{}".format(len(b_struct.vertex)))
-            if sol_id == 3:
+            print("First tangent bar: Collide: bar v#{}".format(len(b_struct.vertex)))
+            if sol_i == len(sol_indices)-1:
                 print("First tangent bar: no tangent 1 found in one bar combination.")
                 return None
         else:
             break
 
     vec_x, vec_y, vec_z = calculate_coord_sys(new_axis_end_pts, pt_mean)
-    # pt_o        = centroid_points(end_pts_0)
     if not b_v0_n:
-        # pts_e = [map(float, p) for p in end_pts_0]
         b_v0 = b_struct.add_bar(0, new_axis_end_pts, "tube", (25.0, 2.0), vec_z, radius=radius)
     else:
         b_v0 = b_v0_n
@@ -436,13 +392,8 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
             {"axis_endpoints": new_axis_end_pts})
 
     b_struct.vertex[b_v0].update({"index_sol":[sol_id]})
-    # b_struct.vertex[b_v0].update({"gripping_plane_no_offset":(pt_o, vec_x, vec_y, vec_z)})
-
-    # calculate_gripping_plane(b_struct, b_v0, pt_mean)
     b_struct.vertex[b_v0].update({"mean_point":pt_mean})
 
-    # b1_1.update({"axis_endpoints" :  pts_b1_1})
-    # b1_2.update({"axis_endpoints" :  pts_b1_2})
     if not b_v0_n:
         b_struct.connect_bars(b_v0, b_v1_1)
         b_struct.connect_bars(b_v0, b_v1_2)
@@ -459,14 +410,18 @@ def first_tangent(pt1, b1_1, b1_2, pt_mean_1, max_len, b_v1_1, b_v1_2, b_struct,
     return b_struct, b_v0, new_axis_end_pts
 
 
-def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1, radius, max_len, pt_mean, b_v0_n=None, check_collision=False):
+def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radius, max_len, pt_mean, b_v0_n=None, check_collision=False):
     """1-2 case, one existing bar at the new point, 2 bars existing at the other end
     """
+    b2_1 = b_struct.node[b_v2_1]
+    b2_2 = b_struct.node[b_v2_2]
+
+    # floating newly added bar in the tet (added by `first_tangent`)
     line        = b_struct.vertex[b_v_old]["axis_endpoints"]
     vec_l_0     = vector_from_points(line[0], line[1])
     ex          = normalize_vector(cross_vectors(normalize_vector(vec_l_0), (1,0,0)))
     ey          = normalize_vector(cross_vectors(normalize_vector(vec_l_0), ex))
-    ptM         = pt1
+
     pt_b_1      = b2_1["axis_endpoints"][0]
     pt_b_1_2    = b2_1["axis_endpoints"][1]
     l_1         = vector_from_points(pt_b_1, pt_b_1_2)
@@ -474,23 +429,17 @@ def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1
     pt_b_2_2    = b2_2["axis_endpoints"][1]
     l_2         = vector_from_points(pt_b_2, pt_b_2_2)
 
-    # sols_test = tangent_from_point(pt_b_1, l_1, pt_b_2, l_2, ptM, 2*radius, 2*radius)
     if not check_collision:
         if b_v0_n:
             ind = b_struct.vertex[b_v0_n]["index_sol"][0]
         else:
             ind = 0
-        sols_test = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, ptM, 2 * radius, 2 * radius, ind)
+
+        sols_test = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, new_point, 2 * radius, 2 * radius, ind)
         if not sols_test:
             return None
 
-        # args    = ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind
-        # xfunc = XFunc('coop_assembly.help_functions.tangents.solve_second_tangent', radius'C:\Users\parascho\Documents\git_repos')
-        # xfunc(ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind)
-        # ret_sst = xfunc.data
-        ## ret_sst = solve_second_tangent(*args)
-
-        ret_sst = solve_second_tangent(ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind)
+        ret_sst = solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind)
         if ret_sst:
             pt2, vec_l = ret_sst
         else:
@@ -498,8 +447,8 @@ def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1
 
         solution = vec_l
 
-        ret_cls = check_length_sol_one(
-            solution, pt_mean_2, pt2, b2_1, b2_2, b_v2_1, b_v2_2, b_struct)
+        ret_cls = compute_new_bar_length(
+            solution, pt_mean_2, pt2, b_v2_1, b_v2_2, b_struct)
 
         if not ret_cls:
             return None
@@ -511,55 +460,52 @@ def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1
         # check collisions
         for ind in range(4):
             sols_test = tangent_from_point_one(
-                pt_b_1, l_1, pt_b_2, l_2, ptM, 2 * radius, 2 * radius, ind)
+                pt_b_1, l_1, pt_b_2, l_2, new_point, 2 * radius, 2 * radius, ind)
+
             if ind == 3 and sols_test == None:
                 return None
             if sols_test == None:
                 continue
 
-            args    = ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind
-            ret_sst = solve_second_tangent(*args)
+            ret_sst = solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind)
             if ret_sst:
                 pt2, vec_l = ret_sst
             else:
                 return None
             solution = vec_l
-            ret_cls = check_length_sol_one(
-            solution, pt_mean_2, pt2, b2_1, b2_2, b_v2_1, b_v2_2, b_struct)
+            ret_cls = compute_new_bar_length(solution, pt_mean_2, pt2, b_v2_1, b_v2_2, b_struct)
+
             if not ret_cls:
                 return None
+            # new bar's axis vector, length, and update contact bars axis pts to cover the contact
             vec_sol_2, l2, pts_b2_1, pts_b2_2 = ret_cls
 
-            pt2_e       = add_vectors(pt2, scale_vector(vec_sol_2, l2))
-            end_pts_0   = (pt2, pt2_e)
+            pt2_e = add_vectors(pt2, scale_vector(vec_sol_2, l2))
+            end_pts_0 = (pt2, pt2_e)
 
             ext_len = 30
-            end_pts_0 = (add_vectors(pt2, scale_vector(normalize_vector(vector_from_points(pt2_e, pt2)), ext_len)), add_vectors(
-                pt2_e, scale_vector(normalize_vector(vector_from_points(pt2, pt2_e)), ext_len)))
+            end_pts_0 = (add_vectors(pt2, scale_vector(normalize_vector(vector_from_points(pt2_e, pt2)), ext_len)),
+                         add_vectors(pt2_e, scale_vector(normalize_vector(vector_from_points(pt2, pt2_e)), ext_len)))
 
             bool_col = check_colisions(b_struct, end_pts_0, radius, bar_nb=b_v0_n)
 
-            if bool_col == True:
+            if bool_col:
                 end_pts_check = b_struct.vertex[b_v2_1]["axis_endpoints"]
                 bool_col = check_colisions(
                     b_struct, end_pts_check, radius, bar_nb=b_v0_n, bar_checking=b_v2_1)
-                if bool_col == True:
+                if bool_col:
                     end_pts_check = b_struct.vertex[b_v2_2]["axis_endpoints"]
                     bool_col = check_colisions(
                         b_struct, end_pts_check, radius, bar_nb=b_v0_n, bar_checking=b_v2_2)
-            # bool_col = True
-            if bool_col == False:
+            if not bool_col:
                 print("COLLIDE", len(b_struct.vertex))
-            if ind == 3 and bool_col == False:
+            if ind == 3 and not bool_col:
                 print("NO TANGENT 2 FOUND IN ONE BAR COMBINATION")
                 return None
-            if bool_col == True:
+            if bool_col:
                 break
 
-    # end_pts_0 = [map(float, p) for p in end_pts_0]
-
     vec_x, vec_y, vec_z = calculate_coord_sys(end_pts_0, pt_mean)
-    # pt_o        = centroid_points(end_pts_0)
     if not b_v0_n:
         # b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (2*radius, 2.0), vec_z)
         b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (25.0, 2.0), vec_z, radius=radius)
@@ -569,65 +515,64 @@ def second_tangent(b2_1, b2_2, pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, pt1
             {"axis_endpoints": end_pts_0})
 
     b_struct.vertex[b_v0].update({"index_sol": [ind]})
-    # b_struct.vertex[b_v0].update({"gripping_plane_no_offset":(pt_o, vec_x, vec_y, vec_z)})
-
-    # calculate_gripping_plane(b_struct, b_v0, pt_mean)
     b_struct.vertex[b_v0].update({"mean_point":pt_mean})
 
-    b2_1.update({"axis_endpoints" :  pts_b2_1})
-    b2_2.update({"axis_endpoints" :  pts_b2_2})
+    b2_1.update({"axis_endpoints" : pts_b2_1})
+    b2_2.update({"axis_endpoints" : pts_b2_2})
     if not b_v0_n:
         b_struct.connect_bars(b_v0, b_v2_1)
         b_struct.connect_bars(b_v0, b_v2_2)
 
-    dpp_1   = dropped_perpendicular_points(b_struct.vertex[b_v0]["axis_endpoints"][0], b_struct.vertex[b_v0]["axis_endpoints"][1], b_struct.vertex[b_v2_1]["axis_endpoints"][0], b_struct.vertex[b_v2_1]["axis_endpoints"][1])
-    dpp_2   = dropped_perpendicular_points(b_struct.vertex[b_v0]["axis_endpoints"][0], b_struct.vertex[b_v0]["axis_endpoints"][1], b_struct.vertex[b_v2_2]["axis_endpoints"][0], b_struct.vertex[b_v2_2]["axis_endpoints"][1])
+    dpp_1 = dropped_perpendicular_points(b_struct.vertex[b_v0]["axis_endpoints"][0], b_struct.vertex[b_v0]["axis_endpoints"][1], b_struct.vertex[b_v2_1]["axis_endpoints"][0], b_struct.vertex[b_v2_1]["axis_endpoints"][1])
+    dpp_2 = dropped_perpendicular_points(b_struct.vertex[b_v0]["axis_endpoints"][0], b_struct.vertex[b_v0]["axis_endpoints"][1], b_struct.vertex[b_v2_2]["axis_endpoints"][0], b_struct.vertex[b_v2_2]["axis_endpoints"][1])
 
 #     b_struct.edge[b_v0][b_v2_1].update({"endpoints":[dpp_1[0], dpp_1[1]]})
 #     b_struct.edge[b_v0][b_v2_2].update({"endpoints":[dpp_2[0], dpp_2[1]]})
-    k_1     = list(b_struct.edge[b_v0][b_v2_1]["endpoints"].keys())[0]
-    k_2     = list(b_struct.edge[b_v0][b_v2_2]["endpoints"].keys())[0]
+    k_1 = list(b_struct.edge[b_v0][b_v2_1]["endpoints"].keys())[0]
+    k_2 = list(b_struct.edge[b_v0][b_v2_2]["endpoints"].keys())[0]
     b_struct.edge[b_v0][b_v2_1]["endpoints"].update({k_1:(dpp_1[0], dpp_1[1])})
     b_struct.edge[b_v0][b_v2_2]["endpoints"].update({k_2:(dpp_2[0], dpp_2[1])})
 
-    return b_v0, pt2, end_pts_0
+    return b_struct, b_v0, pt2, end_pts_0
 
 
-def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v0_n=None, check_collision=False):
+def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v0_n=None, check_collision=False):
     """2-2 case, two existing bar at the new point, 2 bars existing at the other end
+
+       b_v0, b_v1 are the two latest added vars in the tet
     """
+    b3_1 = b_struct.node[b_v3_1]
+    b3_2 = b_struct.node[b_v3_2]
 
-    line_1  =  b_struct.vertex[b_v_old]["axis_endpoints"]
-    line_2  =  b_struct.vertex[b_v1]["axis_endpoints"]
+    line_1 = b_struct.vertex[b_v0]["axis_endpoints"]
+    line_2 = b_struct.vertex[b_v1]["axis_endpoints"]
 
-    b1      = b_struct.vertex[b_v_old]
-    b2      = b_struct.vertex[b_v1]
-
-    pt_b_1  = line_1[0]
-    pt_b_2  = line_2[0]
-    pt_b_3  = b3_1["axis_endpoints"][0]
-    pt_b_4  = b3_2["axis_endpoints"][0]
+    pt_b_1 = line_1[0]
+    pt_b_2 = line_2[0]
+    pt_b_3 = b3_1["axis_endpoints"][0]
+    pt_b_4 = b3_2["axis_endpoints"][0]
     l_1 = normalize_vector(vector_from_points(line_1[0], line_1[1]))
     l_2 = normalize_vector(vector_from_points(line_2[0], line_2[1]))
     l_3 = normalize_vector(vector_from_points(b3_1["axis_endpoints"][0], b3_1["axis_endpoints"][1]))
     l_4 = normalize_vector(vector_from_points(b3_2["axis_endpoints"][0], b3_2["axis_endpoints"][1]))
 
+    # contact point 1
     pts_axis_1  = dropped_perpendicular_points(line_1[0], line_1[1], line_2[0], line_2[1])
     pt_axis_1   = centroid_points(pts_axis_1)
+    # contact point 2
     pts_axis_2  = dropped_perpendicular_points(b3_1["axis_endpoints"][0], b3_1["axis_endpoints"][1], b3_2["axis_endpoints"][0], b3_2["axis_endpoints"][1])
     pt_axis_2   = centroid_points(pts_axis_2)
     pt_mid      = centroid_points((pt_axis_1, pt_axis_2))
     axis        = vector_from_points(pt_axis_1, pt_axis_2)
     ex          = normalize_vector(cross_vectors(normalize_vector(axis), (1,0,0)))
     ey          = normalize_vector(cross_vectors(normalize_vector(axis), ex))
-    bounds      = (-100.0, 100.0)
-    args        = pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, bounds
+    # bounds      = (-100.0, 100.0)
 
     # solutions_1     = []
     # solutions_2     = []
     # pts_3           = []
 
-    if check_collision == False:
+    if not check_collision:
         if b_v0_n:
             ind_1 = b_struct.vertex[b_v0_n]["index_sol"][0]
             ind_2 = b_struct.vertex[b_v0_n]["index_sol"][1]
@@ -635,15 +580,8 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
             ind_1 = 0
             ind_2 = 0
 
-        # args = pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, bounds, ind_1, ind_2
-        # xfunc = XFunc('coop_assembly.help_functions.tangents.solve_third_tangent', radius'C:\Users\parascho\Documents\git_repos')
-        # xfunc(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, bounds, ind_1, ind_2)
-        # ret_stt = xfunc.data
-        ## ret_stt = solve_third_tangent(*args)
-
-        ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, bounds, ind_1, ind_2)
-
-        # if max(b_struct.vertex.keys()) == 67: print("args", args)
+        # solve from mid point to both contact points
+        ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2)
 
         if ret_stt:
             pt3, vec_l1, vec_l2, ang_check = ret_stt
@@ -656,10 +594,10 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
         solution_1 = vec_l1
         solution_2 = vec_l2
 
-        test_1 = check_length_sol_one(
-            solution_2, pt_mean_3, pt3, b3_1, b3_2, b_v3_1, b_v3_2, b_struct)
-        test_2 = check_length_sol_one(
-            solution_1, pt_mean_3, pt3, b1, b2, b_v_old, b_v1, b_struct)
+        test_1 = compute_new_bar_length(
+            solution_2, pt_mean_3, pt3, b_v3_1, b_v3_2, b_struct)
+        test_2 = compute_new_bar_length(
+            solution_1, pt_mean_3, pt3, b_v0, b_v1, b_struct)
 
         if not test_1 or not test_2:
             return None
@@ -676,7 +614,6 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
         pt3_e2 = add_vectors(pt3, scale_vector(vec_sol_32, -1 * l32))
 
         end_pts_0 = (pt3_e2, pt3_e1)
-
     else:
         bool_test = False
         for i in range(4):
@@ -684,8 +621,7 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
                 ind_1 = i
                 ind_2 = j
 
-                args    = pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, bounds, ind_1, ind_2
-                ret_stt = solve_third_tangent(*args)
+                ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2)
                 if ret_stt:
                     pt3, vec_l1, vec_l2, ang_check  = ret_stt
                 else:
@@ -698,8 +634,8 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
                 solution_2 = vec_l2
 
                 #for j in range(4):
-                test_1 = check_length_sol_one(solution_2, pt_mean_3, pt3, b3_1, b3_2, b_v3_1, b_v3_2, b_struct)
-                test_2 = check_length_sol_one(solution_1, pt_mean_3, pt3, b1, b2, b_v_old, b_v1, b_struct)
+                test_1 = compute_new_bar_length(solution_2, pt_mean_3, pt3, b_v3_1, b_v3_2, b_struct)
+                test_2 = compute_new_bar_length(solution_1, pt_mean_3, pt3, b_v0, b_v1, b_struct)
 
                 if not test_1 or not test_2:
                     return None
@@ -713,30 +649,30 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
                 end_pts_0 = (pt3_e2, pt3_e1)
 
                 ext_len = 30
-                end_pts_0 = (add_vectors(pt3_e2, scale_vector(normalize_vector(vector_from_points(pt3_e1, pt3_e2)), ext_len)), add_vectors(
-                    pt3_e1, scale_vector(normalize_vector(vector_from_points(pt3_e2, pt3_e1)), ext_len)))
+                end_pts_0 = (add_vectors(pt3_e2, scale_vector(normalize_vector(vector_from_points(pt3_e1, pt3_e2)), ext_len)),
+                             add_vectors(pt3_e1, scale_vector(normalize_vector(vector_from_points(pt3_e2, pt3_e1)), ext_len)))
 
                 bool_col = check_colisions(b_struct, end_pts_0, radius, bar_nb=b_v0_n)
 
-                if bool_col == True:
+                if bool_col:
                     end_pts_check = b_struct.vertex[b_v3_1]["axis_endpoints"]
                     bool_col = check_colisions(
                         b_struct, end_pts_check, radius, bar_nb=b_v0_n, bar_checking=b_v3_1)
-                    if bool_col == True:
+                    if bool_col:
                         end_pts_check = b_struct.vertex[b_v3_2]["axis_endpoints"]
                         bool_col = check_colisions(
                             b_struct, end_pts_check, radius, bar_nb=b_v0_n, bar_checking=b_v3_2)
 
                 # bool_col = True
-                if bool_col == False:
+                if not bool_col:
                     print("COLLIDE", len(b_struct.vertex))
-                if i == 3 and j == 3 and bool_col == False:
+                if i == 3 and j == 3 and not bool_col:
                     print("NO TANGENT 3 FOUND IN ONE BAR COMBINATION")
                     return None
-                if bool_col == True:
+                if bool_col:
                     bool_test = True
                     break
-            if bool_test == True: break
+            if bool_test: break
 
     # end_pts_0 = [map(float, p) for p in end_pts_0]
     vec_x, vec_y, vec_z = calculate_coord_sys(end_pts_0, pt_mean)
@@ -761,51 +697,58 @@ def third_tangent(b_struct, b_v_old, b_v1, b3_1, b3_2, pt_mean_3, max_len, b_v3_
         b_struct.connect_bars(b_v0, b_v3_1)
         b_struct.connect_bars(b_v0, b_v3_2)
 
-    dpp_1   = dropped_perpendicular_points(b_struct.vertex[b_v0]["axis_endpoints"][0], b_struct.vertex[b_v0]["axis_endpoints"][1], b_struct.vertex[b_v3_1]["axis_endpoints"][0], b_struct.vertex[b_v3_1]["axis_endpoints"][1])
-    dpp_2   = dropped_perpendicular_points(b_struct.vertex[b_v0]["axis_endpoints"][0], b_struct.vertex[b_v0]["axis_endpoints"][1], b_struct.vertex[b_v3_2]["axis_endpoints"][0], b_struct.vertex[b_v3_2]["axis_endpoints"][1])
+    dpp_1 = dropped_perpendicular_points(b_struct.vertex[b_v0]["axis_endpoints"][0], b_struct.vertex[b_v0]["axis_endpoints"][1], b_struct.vertex[b_v3_1]["axis_endpoints"][0], b_struct.vertex[b_v3_1]["axis_endpoints"][1])
+    dpp_2 = dropped_perpendicular_points(b_struct.vertex[b_v0]["axis_endpoints"][0], b_struct.vertex[b_v0]["axis_endpoints"][1], b_struct.vertex[b_v3_2]["axis_endpoints"][0], b_struct.vertex[b_v3_2]["axis_endpoints"][1])
 
 #     b_struct.edge[b_v0][b_v3_1].update({"endpoints":[dpp_1[0], dpp_1[1]]})
 #     b_struct.edge[b_v0][b_v3_2].update({"endpoints":[dpp_2[0], dpp_2[1]]})
-    k_1     = list(b_struct.edge[b_v0][b_v3_1]["endpoints"].keys())[0]
-    k_2     = list(b_struct.edge[b_v0][b_v3_2]["endpoints"].keys())[0]
+    k_1 = list(b_struct.edge[b_v0][b_v3_1]["endpoints"].keys())[0]
+    k_2 = list(b_struct.edge[b_v0][b_v3_2]["endpoints"].keys())[0]
     b_struct.edge[b_v0][b_v3_1]["endpoints"].update({k_1:(dpp_1[0], dpp_1[1])})
     b_struct.edge[b_v0][b_v3_2]["endpoints"].update({k_2:(dpp_2[0], dpp_2[1])})
 
-    return b_v0, pt3, end_pts_0
+    return b_struct, b_v0, pt3, end_pts_0
 
+#################################################
 
-def solve_second_tangent(*args):
-    radius = args[3]
-    for i in range(2):
-        res_opt = scipy.optimize.fminbound(f_tangent_point_2, -2*radius, 2*radius, args, full_output=True, disp=0)
-        if res_opt[1] > 0.1: return None
-        x = float(res_opt[0])
-        ret_fp2 = find_point_2(x, *args)
-        if not ret_fp2:
-            return None
-        else:
-            pt_2, vec_l = ret_fp2
-            return pt_2, vec_l
+def solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, diameter_1, diameter_2, ind):
+    # try twice?
+    # for i in range(2):
+    args = new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, diameter_1, diameter_2, ind
 
+    res_opt = scipy.optimize.fminbound(f_tangent_point_2, -2*radius, 2*radius, args, full_output=True, disp=0)
+    if res_opt[1] > 0.1:
+        return None
 
-def solve_third_tangent(*args):
-    res_opt = scipy.optimize.fmin(f_tangent_point_3, [0.0, 0.0], args, full_output=True, disp=0)
-    if res_opt[1] > 0.1: return None
-    ret_fp3 = find_point_3(list(map(float, res_opt[0])), *args)
-    if not ret_fp3:
+    x = float(res_opt[0])
+    ret_fp2 = find_point_2(x, *args)
+    if not ret_fp2:
         return None
     else:
-        ang, ref_point, vec_l1, vec_l2 = ret_fp3
-        return ref_point, vec_l1, vec_l2, ang
+        pt_2, vec_l = ret_fp2
+        return pt_2, vec_l
 
+def f_tangent_point_2(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, ind):
+    """evaluation function to be passed into an optimizer
 
-def f_tangent_point_2(x, *args):
+    Parameters
+    ----------
+    x : float
+        [description]
+    ptM :
+        point
 
-    ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, ind = args
+    Returns
+    -------
+    [type]
+        [description]
+    """
 
-    r_c         = 2*radius
-    ref_point_tmp = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
-    ref_point = add_vectors(ref_point_tmp, ptM)
+    r_c = 2*radius
+    # sample (dx, dy) in the local coordinate system (ex, ey)
+    delta_x = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
+    # offsetted new bar's axis end pt
+    ref_point = add_vectors(ptM, delta_x)
 
     vecs_l_all = tangent_from_point_one(
         pt_b_1, l_1, pt_b_2, l_2, ref_point, d1, d2, ind)
@@ -817,23 +760,47 @@ def f_tangent_point_2(x, *args):
         f = 1
         return f
 
+    # we want to have the contact line orthogonal to the new axis
     f = abs(dot_vectors(normalize_vector(vec_l), normalize_vector(vector_from_points(ptM, ref_point))))
-
     return f
 
+def find_point_2(x, *args):
+    ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, ind = args
+    r_c = 2*radius
+    ref_point_tmp = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
+    ref_point = add_vectors(ref_point_tmp, ptM)
 
-def f_tangent_point_3(x, *args):
+    vec_l = tangent_from_point_one(
+        pt_b_1, l_1, pt_b_2, l_2, ref_point, d1, d2, ind)[0]
 
-    ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, b, ind_1, ind_2 = args
+    return ref_point, vec_l
+
+def solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2):
+
+    args = pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2
+    res_opt = scipy.optimize.fmin(f_tangent_point_3, [0.0, 0.0], args, full_output=True, disp=0)
+    if res_opt[1] > 0.1:
+        return None
+
+    ret_fp3 = find_point_3(list(map(float, res_opt[0])), *args)
+    if not ret_fp3:
+        return None
+    else:
+        ang, ref_point, vec_l1, vec_l2 = ret_fp3
+        return ref_point, vec_l1, vec_l2, ang
+
+def f_tangent_point_3(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2):
+    """ x is the local coordinate in (ex, ey) for the new axis point
+    """
 
     x1 = x[0]
     x2 = x[1]
 
-    ref_point_tmp = add_vectors(scale_vector(ex, x1), scale_vector(ey, x2))
-    ref_point = add_vectors(ref_point_tmp, ptM)
+    delta_x = add_vectors(scale_vector(ex, x1), scale_vector(ey, x2))
+    ref_point = add_vectors(ptM, delta_x)
 
-    tfp_1 = tangent_from_point_one(
-        pt_b_1, l_1, pt_b_2, l_2, ref_point, 2 * radius, 2 * radius, ind_1)
+    # ! this does not conform to bar3 and bar4's own radius
+    tfp_1 = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, ref_point, 2*radius, 2*radius, ind_1)
 
     if tfp_1:
         vec_l1 = tfp_1[0]
@@ -842,7 +809,8 @@ def f_tangent_point_3(x, *args):
         f = 180
         return f
 
-    tfp_2         = tangent_from_point_one(pt_b_3, l_3, pt_b_4, l_4, ref_point, 2*radius, 2*radius, ind_2)
+    # ! this does not conform to bar3 and bar4's own radius
+    tfp_2 = tangent_from_point_one(pt_b_3, l_3, pt_b_4, l_4, ref_point, 2*radius, 2*radius, ind_2)
 
     if tfp_2:
     #     vec_l2 = tfp_2[ind_2]
@@ -857,43 +825,27 @@ def f_tangent_point_3(x, *args):
         f = 180 - ang_v
     else:
         f = ang_v
-
-
     return f
-
-
-def find_point_2(x, *args):
-
-    ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, ind = args
-
-    r_c         = 2*radius
-    ref_point_tmp = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
-    ref_point = add_vectors(ref_point_tmp, ptM)
-
-    vec_l = tangent_from_point_one(
-        pt_b_1, l_1, pt_b_2, l_2, ref_point, d1, d2, ind)[0]
-
-    return ref_point, vec_l
-
 
 def find_point_3(x, *args):
 
-    ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, b, ind_1, ind_2 = args
+    ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2 = args
 
     x1  = x[0]
     x2  = x[1]
 
     pt_1_tmp = add_vectors(scale_vector(ex, x1), scale_vector(ey, x2))
     pt_1 = add_vectors(pt_1_tmp, ptM)
-    vec_l1      = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, pt_1, 2*radius, 2*radius, ind_1)[0]
-    vec_l2      = tangent_from_point_one(pt_b_3, l_3, pt_b_4, l_4, pt_1, 2*radius, 2*radius, ind_2)[0]
-    ref_point   = pt_1
+    vec_l1 = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, pt_1, 2*radius, 2*radius, ind_1)[0]
+    vec_l2 = tangent_from_point_one(pt_b_3, l_3, pt_b_4, l_4, pt_1, 2*radius, 2*radius, ind_2)[0]
+    ref_point = pt_1
     if not vec_l1 or not vec_l2:
         return None
-    ang         = angle_vectors(vec_l1, vec_l2)
+    ang = angle_vectors(vec_l1, vec_l2)
 
     return ang, ref_point, vec_l1, vec_l2
 
+##########################################
 
 def check_colisions(b_struct, pts, radius, bar_nb=None, bar_checking=None):
     """[summary]
@@ -906,8 +858,8 @@ def check_colisions(b_struct, pts, radius, bar_nb=None, bar_checking=None):
         [description]
     radius : [type]
         [description]
-    bar_nb : [type], optional
-        [description], by default None
+    bar_nb : int, optional
+        bar index to check against UNTIL, by default None
     bar_checking : [type], optional
         [description], by default None
 

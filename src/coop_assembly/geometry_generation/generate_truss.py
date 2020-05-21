@@ -4,7 +4,7 @@ import time
 import heapq
 import random
 import argparse
-from itertools import combinations
+from itertools import combinations, product
 from collections import namedtuple, defaultdict, deque
 import numpy as np
 from termcolor import cprint
@@ -133,34 +133,103 @@ def generate_truss_progression(node_points, edges, ground_nodes, radius, heurist
 ##########################################
 # forming bar structure
 def generate_truss_from_points(node_points, ground_nodes, edge_seq):
-    b_struct = BarStructure()
-    printed = {}
+    printed = set()
+    all_elements = set(edge_seq)
     node_neighbors = get_node_neighbors(edge_seq)
+    visited_nodes = set(ground_nodes)
+    print('>'*10)
+    bar_from_element = {}
 
-    for i, element in enumerate(edge_seq):
-        next_printed = printed | {element}
+    for _, element in enumerate(edge_seq):
+        # next_printed = printed | {element}
+        # unprinted = all_elements - next_printed
         n0, n1 = element
-        n_neighbors = (set(node_neighbors[n0]) & next_printed, \
-                       set(node_neighbors[n1]) & next_printed)
-        neighnor_len = [len(nn) for nn in n_neighbors]
+        n_neighbors = [list(set(node_neighbors[n0]) & printed), \
+                       list(set(node_neighbors[n1]) & printed)]
+        print('------')
+        print('visited node: ', visited_nodes)
+        print('printed: ', printed)
+        print('n0 neighbors: ', set(node_neighbors[n0]))
+        print('n1 neighbors: ', set(node_neighbors[n1]))
+        print('node_neighbors: ', n_neighbors)
 
-        if neighnor_len[0]==0 and n0 in ground_nodes:
-            # * grounded node & no existing element neighbor at that node
-            # simply add a new bar
-            pass
-        elif neighnor_len[1]==1 and n1 in ground_nodes:
-            pass
-        else:
-            assert len(n_neighbors[0]) > 0 or len(n_neighbors[1]) > 0
+        # if n0 in visited_nodes and n1 not in visited_nodes:
+        #     # * grounded node & no existing element neighbor at that node
+        #     # simply add a new bar
+        #     print('grounded! 0')
+        # elif n0 not in visited_nodes and n1 in visited_nodes:
+        #     print('grounded! 1')
+        # elif n0 in visited_nodes and n1 in visited_nodes:
 
-            # (1 or 2)-0 : only one node is printed, other floating
+        for i in range(2):
+            # fill in empty tuple for product
+            if len(n_neighbors[i]) == 0:
+                n_neighbors[i] = [()]
+            elif len(n_neighbors[i]) >= 2:
+                n_neighbors[i] = combinations(n_neighbors[i], 2)
 
-            # if both nodes have been printed already
-            # deg 1 - deg 1
-            # deg 1 - (> deg 2)
-            # (> deg 2) - (> deg 2)
+        # each of these should be segmented into 2 pairs
+        neighbor_pairs = list(product(n_neighbors[0], n_neighbors[1]))
+        cprint(neighbor_pairs, 'yellow')
+        # for contact_bars in randomize(neighbor_pairs):
+        #     new_axis_endpts = compute_tangent_bar(bar_from_element, node_points, contact_bars)
 
+        # else:
+        #     raise ValueError('Floating bar: {}'.format(element))
+
+        bar_from_element[element] = None # axis_endpts
+        visited_nodes |= set([n0, n1])
+        printed = printed | {element}
+
+    b_struct = BarStructure()
     return b_struct
+
+def compute_tangent_bar(bar_from_element, node_points, contact_bars):
+    contact_bars = list(contact_bars)
+    contact_bars.sort(key=lambda x: len(x))
+
+    if len(contact_bars[0]) == 0:
+        # one is floating or bare-grounded
+        assert len(contact_bars[1]) > 0
+        # 0-x : only one node is printed, other floating (2 configs)
+        new_bar_axis = tangent_from_point_one(b1_1["axis_endpoints"][0],
+                                              subtract_vectors(b1_1["axis_endpoints"][1], b1_1["axis_endpoints"][0]),
+                                              b1_2["axis_endpoints"][0],
+                                              subtract_vectors(b1_2["axis_endpoints"][1], b1_2["axis_endpoints"][0]),
+                                              new_pt, 2 * radius, 2 * radius, sol_id)
+    else:
+        # if both nodes have been printed already
+        # deg 1 - deg 1 (4 configs)
+
+        # iterate on the 2 pairs
+        # deg 1 - deg 2 (2x4 configs)
+
+        # iterate on the 2 pairs (both ends)
+        # deg 2 - deg 2
+        pass
+    return axis_endpts
+
+    # vec_x, vec_y, vec_z = calculate_coord_sys(new_axis_end_pts, pt_mean)
+
+    # b_v0 = b_struct.add_bar(0, new_axis_end_pts, "tube", (25.0, 2.0), vec_z, radius=radius)
+
+    # # b_struct.vertex[b_v0].update({"index_sol":[sol_id]})
+    # # b_struct.vertex[b_v0].update({"mean_point":pt_mean})
+
+    # # * update contact point into BarS's edges
+    # b_struct.connect_bars(b_v0, b_v1_1)
+    # b_struct.connect_bars(b_v0, b_v1_2)
+
+    # dpp_1 = compute_contact_line_between_bars(b_struct, b_v0, b_v1_1)
+    # dpp_2 = compute_contact_line_between_bars(b_struct, b_v0, b_v1_2)
+
+    # k_1 = list(b_struct.edge[b_v0][b_v1_1]["endpoints"].keys())[0]
+    # k_2 = list(b_struct.edge[b_v0][b_v1_2]["endpoints"].keys())[0]
+    # b_struct.edge[b_v0][b_v1_1]["endpoints"].update({k_1:(dpp_1[0], dpp_1[1])})
+    # b_struct.edge[b_v0][b_v1_2]["endpoints"].update({k_2:(dpp_2[0], dpp_2[1])})
+
+    # return b_struct, b_v0, new_axis_end_pts
+
 
 #######################################
 # heuristics

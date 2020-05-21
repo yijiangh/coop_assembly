@@ -95,8 +95,8 @@ def test_generate_from_points(save_dir, points_library, viewer, file_spec, radiu
     contact_from_connectors = b_struct.get_connectors(scale=1e-3)
     connectors = list(contact_from_connectors.keys())
     for bar1, bar2 in connectors:
-        b1_body = b_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.1))
-        b2_body = b_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.1))
+        b1_body = b_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
+        b2_body = b_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
         assert len(get_bodies()) == len(element_bodies)
         # dump_world()
 
