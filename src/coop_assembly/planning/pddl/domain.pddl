@@ -58,7 +58,7 @@
                        ; (Stiff)
                        (Connected ?e)
                        ; e2 must be remove before e
-                       (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
+                    ;    (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
                        ;;; Collision constraint
                     ;    (not (UnSafeTraj ?r ?t))
                        ;;; comment the following two if no transit
@@ -83,11 +83,11 @@
    )
   )
 
-;   (:derived (UnSafeTraj ?r ?t)
-;    (exists (?e2) (and   (Element ?e2) (Traj ?r ?t) (Robot ?r)
-;                         (Assembled ?e2)
-;                         (not (CollisionFree ?r ?t ?e2))
-;                   ))
-;   )
+  (:derived (UnSafeTraj ?r ?t)
+   (exists (?e2) (and   (Element ?e2) (Traj ?r ?t) (Robot ?r)
+                        (Assembled ?e2)
+                        (not (CollisionFree ?r ?t ?e2))
+                  ))
+  )
 
 )

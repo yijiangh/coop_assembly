@@ -1,3 +1,36 @@
+# This file contains some of the unused functions after Yijiang's code cleanup
+# We kept these here for archival purposes.
+
+def c_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
+    """find tangent planes of a cylinder passing through a given point,
+    returns (contact point, dot_product(contact pt, ref_point))
+
+    This is another convenient wrapper around `lines_tangent_to_cylinder`
+
+    Parameters
+    ----------
+    base_point : point
+        start point for the cylinder axis
+    line_vect : vector
+        direction of the existing bar's axis, direction : pointing towards base_pt, **direction very important!**
+    ref_point : point
+        point Q, the new floating point
+    dist : float
+        cylinder radius
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
+    tangent_pts = lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist)
+    if tangent_pts == None:
+        return None
+    _, upper_tang_pt, lower_tang_pt = tangent_pts
+    dot_1 = dot_vectors(ref_point, upper_tang_pt)
+    dot_2 = dot_vectors(ref_point, lower_tang_pt)
+    return [[upper_tang_pt, dot_1], [lower_tang_pt, dot_2]]
+
 def lines_tangent_to_two_cylinder(base_point1, line_vect1, base_point2, line_vect2, ref_point, dist1, dist2):
 
     planes1     = p_planes_tangent_to_cylinder(base_point1, line_vect1, ref_point, dist1)

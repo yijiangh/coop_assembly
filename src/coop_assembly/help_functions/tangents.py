@@ -42,15 +42,15 @@ def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref
         start point of cylinder 1 (existing bar 1)'s axis
     line_vect1 : list of two points
         axis vector for cylinder 1, end pt 1 -> end pt 0
-    base_point2 : [type]
-        [description]
-    line_vect2 : [type]
-        axis vector for cylinder 2 (existing bar 2)
+    base_point2 : point
+        start point of cylinder 1 (existing bar 1)'s axis
+    line_vect2 : list of two points
+        axis vector for cylinder 2, end pt 1 -> end pt 0
     ref_point : point
         new vertex point Q
-    dist1 : [type]
+    dist1 : float
         radius for bar 1
-    dist2 : [type]
+    dist2 : float
         radius for bar 1
     nb : int
         tangent plane combination (two tangent planes per bar)
@@ -60,10 +60,10 @@ def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref
     list of two points
         a vector representing the new bar's axis
     """
-    planes1 = p_planes_tangent_to_cylinder(
-        base_point1, line_vect1, ref_point, dist1)
-    planes2 = c_planes_tangent_to_cylinder(
-        base_point2, line_vect2, ref_point, dist2)
+    planes1 = planes_tangent_to_cylinder(
+        base_point1, line_vect1, ref_point, dist1, info='plane')
+    planes2 = planes_tangent_to_cylinder(
+        base_point2, line_vect2, ref_point, dist2, info='contact')
     if planes1 == None or planes2 == None:
         print("Tangent planes not found")
         return None
@@ -79,7 +79,7 @@ def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref
     return [s]
 
 def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
-    """Calculating of plane tangents to one cylinder
+    """Calculating of plane tangents to one cylinder passing through the `ref_point`
         See SP dissertation 3.1.3.b (p. 74)
 
     .. image:: ../images/plane_tangent_to_one_cylinder.png
@@ -88,9 +88,9 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
 
     Parameters
     ----------
-    base_point : [type]
-        [description]
-    line_vect : [type]
+    base_point : point
+        start point for the cylinder axis
+    line_vect : vector
         vector [other end of the axis, base_point], **the direction here is very important!**
     ref_point : point
         new point Q
@@ -100,38 +100,43 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     Returns
     -------
     list
-        [origin point M, vector MB, -1 * vector MB], the latter two entries represent
+        [contact point projected on the cylinder axis (point `M`), vector MB, -1 * vector MB], the latter two entries represent
         the tangent points' local coordinate in the plane [point M, e_x, e_y]
     """
     l_vect = normalize_vector(line_vect)
     line_QMprime = subtract_vectors(ref_point, base_point)
-    # ppol = point M, project out longitutude axis component of base_point
-    ppol = add_vectors(base_point, scale_vector(l_vect, dot_vectors(line_QMprime, l_vect)))
-    # ppolr_vect = line QB
-    line_QM = subtract_vectors(ref_point, ppol)
+    # * project out longitutude axis component of the base_point to obtain point M
+    point_M = add_vectors(base_point, scale_vector(l_vect, dot_vectors(line_QMprime, l_vect)))
+    line_QM = subtract_vectors(ref_point, point_M)
 
     e_x = normalize_vector(line_QM)
     e_y = cross_vectors(e_x, l_vect)
-    if length_vector(line_QM) == 0: return None
+    if length_vector(line_QM) == 0:
+        # this means the ref_point is on the cylinder's axis initially
+        return None
+    # sin(angle BQM)
     x = dist / length_vector(line_QM)
     # x coordinate in the local axis
     d_e1 = scale_vector(e_x, dist * x)
-    # d(radius of bar section) has to be larger than l(distance from point to bar axis), otherwise the sqrt turns negative
-    # if d < l: change ref_point
+    # the radius of bar section (`dist`) has to be larger than line_QM (distance from point to bar axis),
+    # otherwise the sqrt turns negative
     if x*x < 1.0:
         # y coordinate in the local axis
         d_e2 = scale_vector(e_y, dist*math.sqrt(1.0-x*x))
     else:
+        # dist < line_QM: change ref_point
         return None
 
     # upper tangent point
-    d_e_add     = add_vectors(d_e1, d_e2)
+    d_e_add = add_vectors(d_e1, d_e2)
     # lower tangent point
-    d_e_sub     = subtract_vectors(d_e1, d_e2)
-    return [ppol, d_e_add, d_e_sub]
+    d_e_sub = subtract_vectors(d_e1, d_e2)
+    return [point_M, d_e_add, d_e_sub]
 
-def p_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
-    """find tangent planes of a cylinder passing through a given point ()
+def planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist, info='plane'):
+    """find tangent planes of a cylinder passing through a given point, return tangent planes
+
+    This is a convenient wrapper around `lines_tangent_to_cylinder`
 
     .. image:: ../images/plane_tangent_to_one_cylinder.png
         :scale: 80 %
@@ -140,9 +145,9 @@ def p_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     Parameters
     ----------
     base_point : point
-        point M, projected contact point on the cylinder axis
+        start point for the cylinder axis
     line_vect : vector
-        direction of the existing bar's axis, direction [the other pt, base_pt], **direction very important!**
+        direction of the existing bar's axis, direction: point TOWARDS base_point], **direction very important!**
     ref_point : point
         point Q, the new floating point
     dist : float
@@ -150,33 +155,38 @@ def p_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
 
     Returns
     -------
-    list of two [ref_point, local_y, local_x]
-        representing two tangent planes formed
-        local x = QB
-        local_y // line_vect
+    None : if no solution found
+    if info == 'plane'
+        [[ref_point, l_vect, r1], [ref_point, l_vect, r2]] :
+            list of two [ref_point, local_y, local_x]
+            representing two tangent planes formed
+            local x = QB
+            local_y // line_vect
+    if info == 'contact'
+        [[upper_tang_pt, dot_1], [lower_tang_pt, dot_2]]
+            upper_tang_pt is the upper contact (tangent) point
+            dot1 = dot_vectors(ref_point, upper_tang_pt)
     """
-    l_vect  = normalize_vector(line_vect)
     tangent_pts = lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist)
     if tangent_pts is None:
         return None
-    base_pt, upper_tang_pt, lower_tang_pt = tangent_pts
-    r1  = subtract_vectors(add_vectors(base_pt, upper_tang_pt), ref_point)
-    r1  = normalize_vector(r1)
-    r2  = subtract_vectors(add_vectors(base_pt, lower_tang_pt), ref_point)
-    r2  = normalize_vector(r2)
-    return [[ref_point, l_vect, r1], [ref_point, l_vect, r2]]
-
-def c_planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
-    tangent_pts = lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist)
-    if tangent_pts == None:
-        return None
-    _, upper_tang_pt, lower_tang_pt = tangent_pts
-    pv      = ref_point
-    dot_1   = dot_vectors(pv, upper_tang_pt)
-    dot_2   = dot_vectors(pv, lower_tang_pt)
-
-    return [[upper_tang_pt, dot_1], [lower_tang_pt, dot_2]]
-
+    point_M, upper_tang_pt, lower_tang_pt = tangent_pts
+    if info == 'plane':
+        # r1 : B_up - ref_pt
+        r1  = subtract_vectors(add_vectors(point_M, upper_tang_pt), ref_point)
+        r1  = normalize_vector(r1)
+        # r1 : B_down - ref_pt
+        r1  = subtract_vectors(add_vectors(point_M, upper_tang_pt), ref_point)
+        r2  = subtract_vectors(add_vectors(point_M, lower_tang_pt), ref_point)
+        r2  = normalize_vector(r2)
+        l_vect  = normalize_vector(line_vect)
+        return [[ref_point, l_vect, r1], [ref_point, l_vect, r2]]
+    elif info == 'contact':
+        dot_1 = dot_vectors(ref_point, upper_tang_pt)
+        dot_2 = dot_vectors(ref_point, lower_tang_pt)
+        return [[upper_tang_pt, dot_1], [lower_tang_pt, dot_2]]
+    else:
+        raise NotImplementedError('not supported info type: {}'.format(info))
 
 def intersect_plane_plane_u(u_vect, v_vect, abc_vect):
     """compute the spanning vector (line direction) for two intersecting planes
@@ -185,6 +195,8 @@ def intersect_plane_plane_u(u_vect, v_vect, abc_vect):
             y axis: v_vect
         plane 2:
             z axis: abc_vect
+
+    One might also consider directly uses `intersection_plane_plane` from `compas.geometry`
 
     Parameters
     ----------
@@ -227,8 +239,12 @@ def compute_new_bar_length(vec_sol, compare_contact_pt, new_pt, b1_key, b2_key, 
 
     Returns
     -------
-    [type]
-        [description]
+    None : if no feasible solution found
+    [vec_sol, l_max, pts_b1, pts_b2]
+        vec_sol : directional vector for the new bar's axis
+        l_max : the new bar's length
+        pts_b1 : modified contact bar 1' end points, extended to cover the contact of the new bar
+        pts_b2 : modified contact bar 2' end points, ..
     """
     b1 = b_struct.node[b1_key]
     b2 = b_struct.node[b2_key]
@@ -277,11 +293,6 @@ def compute_new_bar_length(vec_sol, compare_contact_pt, new_pt, b1_key, b2_key, 
     return [vec_sol, l_max, pts_b1, pts_b2]
 
 ######################################################
-
-def floating_tangent():
-    """0-1 case, zero existing bar at the new point, 1 bars existing at the other end
-    """
-    pass
 
 def first_tangent(new_pt, contact_pt, max_len, b_v1_1, b_v1_2, b_struct, pt_mean, radius,
         b_v0_n=None, check_collision=False):
@@ -568,10 +579,6 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
     ey          = normalize_vector(cross_vectors(normalize_vector(axis), ex))
     # bounds      = (-100.0, 100.0)
 
-    # solutions_1     = []
-    # solutions_2     = []
-    # pts_3           = []
-
     if not check_collision:
         if b_v0_n:
             ind_1 = b_struct.vertex[b_v0_n]["index_sol"][0]
@@ -764,8 +771,7 @@ def f_tangent_point_2(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, 
     f = abs(dot_vectors(normalize_vector(vec_l), normalize_vector(vector_from_points(ptM, ref_point))))
     return f
 
-def find_point_2(x, *args):
-    ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, ind = args
+def find_point_2(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, ind):
     r_c = 2*radius
     ref_point_tmp = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
     ref_point = add_vectors(ref_point_tmp, ptM)
@@ -827,10 +833,7 @@ def f_tangent_point_3(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, 
         f = ang_v
     return f
 
-def find_point_3(x, *args):
-
-    ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2 = args
-
+def find_point_3(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2):
     x1  = x[0]
     x2  = x[1]
 

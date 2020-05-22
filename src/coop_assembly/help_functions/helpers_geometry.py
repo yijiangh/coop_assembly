@@ -36,7 +36,8 @@ from pybullet_planning import quat_from_euler, create_box, set_color, set_point,
     get_aabb, draw_aabb, apply_alpha, draw_pose, get_pose, add_line, wait_for_user, Euler, STATIC_MASS, RED, create_shape, \
     get_cylinder_geometry, create_flying_body, get_movable_joints, SE3
 
-###############################################
+###############################################################
+# utility functions used in Yijiang's tet sequence searching
 
 def find_point_id(query_pt, pts, tol=EPS):
     ids = []
@@ -83,6 +84,8 @@ def Frame_to_plane_data(frame):
     return (data['point'], data['xaxis'], data['yaxis'], cross_vectors(data['xaxis'], data['yaxis']))
 
 ###############################################
+# pybullet body creation functions used in planning
+
 SHRINK_RADIUS = 0.0001 # meter
 def create_bar_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0)):
     """inputs are in millimeter

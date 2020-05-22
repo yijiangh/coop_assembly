@@ -13,7 +13,7 @@ from compas.geometry import distance_point_point, distance_point_line, distance_
 from compas.geometry import is_coplanar
 from compas.datastructures import Network
 
-from pybullet_planning import connect, elapsed_time, randomize
+from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui
 
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle
@@ -22,6 +22,8 @@ from coop_assembly.data_structure import OverallStructure, BarStructure
 from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.geometry_generation.tet_sequencing import SearchState, compute_candidate_nodes
 from coop_assembly.geometry_generation.utils import *
+from coop_assembly.help_functions.tangents import tangent_from_point_one, planes_tangent_to_cylinder
+from coop_assembly.planning.visualize import draw_element
 
 sys.path.append(os.environ['PDDLSTREAM_PATH'])
 # here = os.path.abspath(os.path.dirname(__file__))
@@ -171,11 +173,14 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq):
         # each of these should be segmented into 2 pairs
         neighbor_pairs = list(product(n_neighbors[0], n_neighbors[1]))
         cprint(neighbor_pairs, 'yellow')
+
         # for contact_bars in randomize(neighbor_pairs):
         #     new_axis_endpts = compute_tangent_bar(bar_from_element, node_points, contact_bars)
-
-        # else:
-        #     raise ValueError('Floating bar: {}'.format(element))
+        #     if new_axis_endpts:
+        #         # convert mil to meter
+        #         h = draw_element([new_axis_endpts], 0)
+        #         wait_if_gui()
+        #         break
 
         bar_from_element[element] = None # axis_endpts
         visited_nodes |= set([n0, n1])
@@ -184,29 +189,46 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq):
     b_struct = BarStructure()
     return b_struct
 
-def compute_tangent_bar(bar_from_element, node_points, contact_bars):
+def compute_tangent_bar(bar_from_element, new_point, contact_bars, radius):
     contact_bars = list(contact_bars)
     contact_bars.sort(key=lambda x: len(x))
+    assert(len(contact_bars[1])<=2 and len(contact_bars[1])>0)
+    cprint('contact_bars: {}'.format(contact_bars), 'blue')
 
-    if len(contact_bars[0]) == 0:
-        # one is floating or bare-grounded
+    axis_endpts = None
+
+    if len(contact_bars[0]) == 0 and len(contact_bars[1]) == 1:
         assert len(contact_bars[1]) > 0
-        # 0-x : only one node is printed, other floating (2 configs)
-        new_bar_axis = tangent_from_point_one(b1_1["axis_endpoints"][0],
-                                              subtract_vectors(b1_1["axis_endpoints"][1], b1_1["axis_endpoints"][0]),
-                                              b1_2["axis_endpoints"][0],
-                                              subtract_vectors(b1_2["axis_endpoints"][1], b1_2["axis_endpoints"][0]),
-                                              new_pt, 2 * radius, 2 * radius, sol_id)
-    else:
-        # if both nodes have been printed already
+        # point tangent to a cylinder
+        element = contact_bars[1]
+        bar_base_point = bar_from_element[element][0]
+        bar_vector = bar_from_element[element][1] - bar_from_element[element][0]
+        axis_endpts = planes_tangent_to_cylinder(bar_base_point, bar_vector, new_point, 2*radius)
+
+    elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 2:
+        # one is floating or bare-grounded, use `first_tangent` strategy
+        # intersecting tangents planes from the point to the two cylinders
+        element = contact_bars[1]
+        for tangent_side in randomize(range(4)):
+            new_bar_axis = tangent_from_point_one(bar_from_element[element][0],
+                                                  bar_from_element[element][1] - bar_from_element[element][0],
+                                                  bar_from_element[element][0],
+                                                  bar_from_element[element][1] - bar_from_element[element][0],
+                                                  new_point, 2*radius, 2*radius, tangent_side)
+            if new_bar_axis:
+                break
+    elif len(contact_bars[0])==1 and len(contact_bars[1])==1:
         # deg 1 - deg 1 (4 configs)
-
-        # iterate on the 2 pairs
+        # ? uncovered
+        raise NotImplementedError
+    elif len(contact_bars[0])==1 and len(contact_bars[1])==2:
         # deg 1 - deg 2 (2x4 configs)
-
-        # iterate on the 2 pairs (both ends)
+        # use `second_tangent` strategy
+        raise NotImplementedError
+    elif len(contact_bars[0])==2 and len(contact_bars[1])==2:
         # deg 2 - deg 2
-        pass
+        raise NotImplementedError
+
     return axis_endpts
 
     # vec_x, vec_y, vec_z = calculate_coord_sys(new_axis_end_pts, pt_mean)

@@ -107,7 +107,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
                                               initial_confs=initial_confs, teleops=teleops, **kwargs),
         # ? if tested in collision, certify CollisionFree
-        # 'test-cfree': from_test(get_test_cfree()),
+        'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
 
@@ -186,7 +186,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             stream_info = {
                 'sample-place': StreamInfo(PartialInputs(unique=True)),
                 # 'sample-move': StreamInfo(PartialInputs(unique=True)),
-                # 'test-cfree': StreamInfo(negate=True),
+                'test-cfree': StreamInfo(negate=True),
             }
             # TODO: effort_weight=0 will lead to noplan found
             effort_weight = 1e-3 if costs else None
@@ -266,9 +266,11 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
     def wild_gen_fn(robot_name, element, fluents=[]):
         robot = index_from_name(robots, robot_name)
         printed = []
+        print('E{} - fluent {}'.format(element, fluents))
         for fact in fluents:
-            if fact[0] == 'printed':
-                printed.append(fact[1])
+            if fact[0] == 'assembled':
+                if fact[1] != element:
+                    printed.append(fact[1])
             else:
                 raise NotImplementedError(fact[0])
         for command, in gen_fn_from_robot[robot](element, printed=printed):
