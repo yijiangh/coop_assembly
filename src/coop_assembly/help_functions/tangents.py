@@ -93,7 +93,7 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     base_point : point
         start point for the cylinder axis
     line_vect : vector
-        vector [other end of the axis, base_point], **the direction here is very important!**
+        vector [other end of the axis - base_point], i.e. pointing outward from base_pt, **the direction here is very important!**
     ref_point : point
         new point Q
     dist : float
@@ -149,7 +149,7 @@ def planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist, info='pla
     base_point : point
         start point for the cylinder axis
     line_vect : vector
-        direction of the existing bar's axis, direction: point TOWARDS base_point], **direction very important!**
+        direction of the existing bar's axis, direction: point outwards from base_point], **direction very important!**
     ref_point : point
         point Q, the new floating point
     dist : float

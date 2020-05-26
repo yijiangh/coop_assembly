@@ -13,9 +13,9 @@ SHADOWS = True
 
 ###########################################
 
-def draw_element(axis_endpts, element, color=RED):
+def draw_element(axis_endpts, element, color=RED, width=BAR_LINE_WIDTH):
     p1, p2 = axis_endpts[element]
-    return add_line(p1, p2, color=color[:3], width=BAR_LINE_WIDTH)
+    return add_line(p1, p2, color=color[:3], width=width)
 
 
 def sample_colors(num, lower=0.0, upper=0.75): # for now wrap around
