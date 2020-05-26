@@ -7,23 +7,28 @@ import argparse
 from itertools import combinations, product
 from collections import namedtuple, defaultdict, deque
 import numpy as np
+from numpy.linalg import norm
 from termcolor import cprint
+from copy import copy
 
 from compas.geometry import distance_point_point, distance_point_line, distance_point_plane
-from compas.geometry import is_coplanar
+from compas.geometry import is_coplanar, subtract_vectors
 from compas.datastructures import Network
 
-from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui
+from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED, BLUE, apply_alpha, add_line, draw_circle
 
 from coop_assembly.help_functions.shared_const import INF, EPS
-from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle
+from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle, dropped_perpendicular_points
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
+from coop_assembly.help_functions.tangents import tangent_from_point_one, planes_tangent_to_cylinder
+
 from coop_assembly.data_structure import OverallStructure, BarStructure
-from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.geometry_generation.tet_sequencing import SearchState, compute_candidate_nodes
 from coop_assembly.geometry_generation.utils import *
-from coop_assembly.help_functions.tangents import tangent_from_point_one, planes_tangent_to_cylinder
-from coop_assembly.planning.visualize import draw_element
+
+from coop_assembly.planning.parsing import get_assembly_path
+from coop_assembly.planning.visualization import draw_element, GROUND_COLOR, BACKGROUND_COLOR, SHADOWS, set_camera
+from coop_assembly.planning.utils import load_world
 
 sys.path.append(os.environ['PDDLSTREAM_PATH'])
 # here = os.path.abspath(os.path.dirname(__file__))
@@ -64,10 +69,6 @@ def add_successors(queue, all_elements, node_points, ground_nodes, heuristic_fn,
 def generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None, partial_orders=[],
         check_collision=False, viewer=False, verbose=True):
     start_time = time.time()
-    # if not verbose:
-    #     # used when rpc call is made to get around stdout error
-    #     sys.stdout = open(os.devnull, 'w')
-    # connect(use_gui=viewer)
 
     # * need to generate a visiting sequence for all the edges
     # heuristic: z
@@ -130,17 +131,19 @@ def generate_truss_progression(node_points, edges, ground_nodes, radius, heurist
     # TODO serialize plan and reparse
 
     # * convert axis lines into a BarStructure
-    return generate_truss_from_points(node_points, ground_nodes, plan)
+    return generate_truss_from_points(node_points, ground_nodes, plan, radius)
 
 ##########################################
 # forming bar structure
-def generate_truss_from_points(node_points, ground_nodes, edge_seq):
+def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
     printed = set()
     all_elements = set(edge_seq)
     node_neighbors = get_node_neighbors(edge_seq)
     visited_nodes = set(ground_nodes)
     print('>'*10)
-    bar_from_element = {}
+    # the actual bar axis endpts are index by using the element's
+    # corresponding edge (n1, n2) mapped into the node_points
+    bar_from_elements = {}
 
     for _, element in enumerate(edge_seq):
         # next_printed = printed | {element}
@@ -167,56 +170,86 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq):
             # fill in empty tuple for product
             if len(n_neighbors[i]) == 0:
                 n_neighbors[i] = [()]
+            elif len(n_neighbors[i]) == 1:
+                n_neighbors[i] = [n_neighbors[i]]
             elif len(n_neighbors[i]) >= 2:
-                n_neighbors[i] = combinations(n_neighbors[i], 2)
+                n_neighbors[i] = list(combinations(n_neighbors[i], 2))
 
         # each of these should be segmented into 2 pairs
         neighbor_pairs = list(product(n_neighbors[0], n_neighbors[1]))
         cprint(neighbor_pairs, 'yellow')
 
-        # for contact_bars in randomize(neighbor_pairs):
-        #     new_axis_endpts = compute_tangent_bar(bar_from_element, node_points, contact_bars)
-        #     if new_axis_endpts:
-        #         # convert mil to meter
-        #         h = draw_element([new_axis_endpts], 0)
-        #         wait_if_gui()
-        #         break
+        for contact_bars in randomize(neighbor_pairs):
+            new_axis_endpts = compute_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius)
+            cprint('new axis pt: {}'.format(new_axis_endpts), 'cyan')
+            if new_axis_endpts:
+                # convert mil to meter
+                h = draw_element({0 : map(lambda x : 1e-3*x, new_axis_endpts)}, 0)
+                wait_if_gui()
+                break
 
-        bar_from_element[element] = None # axis_endpts
+        bar_from_elements[element] = new_axis_endpts
         visited_nodes |= set([n0, n1])
         printed = printed | {element}
 
     b_struct = BarStructure()
     return b_struct
 
-def compute_tangent_bar(bar_from_element, new_point, contact_bars, radius):
-    contact_bars = list(contact_bars)
-    contact_bars.sort(key=lambda x: len(x))
-    assert(len(contact_bars[1])<=2 and len(contact_bars[1])>0)
+def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius):
+    reverse = False
+    contact_bars = copy(in_contact_bars)
+    if len(in_contact_bars[1]) < len(in_contact_bars[0]):
+        reverse = True
+        contact_bars = copy(in_contact_bars[::-1])
+    assert(len(contact_bars[1])<=2)
     cprint('contact_bars: {}'.format(contact_bars), 'blue')
 
-    axis_endpts = None
+    new_point = None
+    if len(contact_bars[0]) == 0:
+        new_point = node_points[element[0]] if not reverse else node_points[element[1]]
 
-    if len(contact_bars[0]) == 0 and len(contact_bars[1]) == 1:
+    axis_vector = None
+    if len(contact_bars[0]) == 0 and len(contact_bars[1]) == 0:
+        axis_endpts = (node_points[element[0]], node_points[element[1]])
+        return axis_endpts
+
+    elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 1:
         assert len(contact_bars[1]) > 0
         # point tangent to a cylinder
-        element = contact_bars[1]
-        bar_base_point = bar_from_element[element][0]
-        bar_vector = bar_from_element[element][1] - bar_from_element[element][0]
-        axis_endpts = planes_tangent_to_cylinder(bar_base_point, bar_vector, new_point, 2*radius)
+        contact_e = contact_bars[1][0]
+        # print('contact_e', contact_e)
+        # print([bar_from_elements[contact_e][0][i] for i in range(3)])
+        # print([bar_from_elements[contact_e][1][i] for i in range(3)])
+
+        bar_base_point = bar_from_elements[contact_e][0]
+        bar_vector = bar_from_elements[contact_e][1] - bar_from_elements[contact_e][0]
+        candidate_tan_planes = planes_tangent_to_cylinder(bar_base_point, bar_vector, new_point, 2*radius)
+        if candidate_tan_planes is not None:
+            axis_vector = np.array(randomize(candidate_tan_planes)[0][0])
+            new_contact_pt, _ = dropped_perpendicular_points(new_point, new_point+axis_vector,
+                                                bar_from_elements[contact_e][0], bar_from_elements[contact_e][1])
+            return (new_point, np.array(new_contact_pt))
 
     elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 2:
         # one is floating or bare-grounded, use `first_tangent` strategy
         # intersecting tangents planes from the point to the two cylinders
-        element = contact_bars[1]
+        contact_e = contact_bars[1]
         for tangent_side in randomize(range(4)):
-            new_bar_axis = tangent_from_point_one(bar_from_element[element][0],
-                                                  bar_from_element[element][1] - bar_from_element[element][0],
-                                                  bar_from_element[element][0],
-                                                  bar_from_element[element][1] - bar_from_element[element][0],
-                                                  new_point, 2*radius, 2*radius, tangent_side)
-            if new_bar_axis:
+            axis_vector = np.array(tangent_from_point_one(bar_from_elements[contact_e[0]][0],
+                                                          bar_from_elements[contact_e[0]][1] - bar_from_elements[contact_e[0]][0],
+                                                          bar_from_elements[contact_e[1]][0],
+                                                          bar_from_elements[contact_e[1]][1] - bar_from_elements[contact_e[1]][0],
+                                                          new_point, 2*radius, 2*radius, tangent_side)[0])
+            if axis_vector is not None:
                 break
+        if axis_vector is not None:
+            # axis_vector, new_bar_len, pts_b1, pts_b2 = compute_new_bar_length(axis_vector, None, new_point, b_v1_1, b_v1_2, b_struct)
+            new_contact_pt1, _ = np.array(dropped_perpendicular_points(new_point, new_point+axis_vector,
+                                                bar_from_elements[contact_e[0]][0], bar_from_elements[contact_e[0]][1]))
+            new_contact_pt2, _ = np.array(dropped_perpendicular_points(new_point, new_point+axis_vector,
+                                                bar_from_elements[contact_e[1]][0], bar_from_elements[contact_e[1]][1]))
+            axis_endpts = (new_point, new_point + axis_vector * max([norm(new_contact_pt1-new_point), norm(new_contact_pt2-new_point)]))
+
     elif len(contact_bars[0])==1 and len(contact_bars[1])==1:
         # deg 1 - deg 1 (4 configs)
         # ? uncovered
@@ -227,6 +260,7 @@ def compute_tangent_bar(bar_from_element, new_point, contact_bars, radius):
         raise NotImplementedError
     elif len(contact_bars[0])==2 and len(contact_bars[1])==2:
         # deg 2 - deg 2
+        # use `third_tangent` strategy
         raise NotImplementedError
 
     return axis_endpts
@@ -297,16 +331,35 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
     problem_path = get_assembly_path(problem)
     with open(problem_path) as json_file:
         data = json.load(json_file)
+        cprint('Parsed from : {}'.format(problem_path), 'green')
 
     net = Network.from_data(data)
-    # TODO a bug in to_node_edges here, edges not correct
-    node_points, _ = net.to_nodes_and_edges()
-    edges = [e for e in net.edges()]
-    ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed']]
 
-    print(node_points)
-    print(edges)
-    print(ground_nodes)
+    # TODO waiting for compas update to use ordered dict for nodes
+    # node_points, edges = net.to_nodes_and_edges()
+    node_points = [np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
+    edges = [e for e in net.edges()]
+    ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
+
+    print('parsed edges from to_node_and_edges: {}'.format(edges))
+    # print('parsed edges from net.edges(): {}'.format(edges2))
+    print('parsed node_points in Py3: {}'.format(node_points))
+    print('parsed grounded_nodes in Py3: {}'.format(ground_nodes))
+    # print('parsed lines in Py3: {}'.format(net.to_lines()))
+
+    # if not verbose:
+    #     # used when rpc call is made to get around stdout error
+    #     sys.stdout = open(os.devnull, 'w')
+    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
+    fixed_obstacles, robot = load_world()
+    set_camera(node_points)
+
+    for e in edges:
+        p1 = node_points[e[0]] * 1e-3
+        p2 = node_points[e[1]] * 1e-3
+        add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
+    for v in ground_nodes:
+        draw_circle(node_points[v]*1e-3, 0.01)
 
     b_struct = generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None,
         check_collision=False, viewer=False, verbose=True)
@@ -322,7 +375,7 @@ FILE_DIR = os.path.join(HERE, '..', '..', '..', 'tests', 'test_data')
 def main():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--problem', default='one_tet_skeleton.json', help='The name of the problem to solve')
+    parser.add_argument('-p', '--problem', default='truss_one_tet_skeleton.json', help='The name of the problem to solve')
     parser.add_argument('-r', '--radius', default=3.17, help='Radius of bars in millimeter')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     parser.add_argument('-wr', '--write', action='store_true', help='Export results')
@@ -330,8 +383,7 @@ def main():
     args = parser.parse_args()
     print('Arguments:', args)
 
-    file_name = 'truss_' + args.problem + '.json'
-    gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=file_name)
+    gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=args.problem)
 
 if __name__ == '__main__':
     main()

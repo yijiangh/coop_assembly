@@ -32,7 +32,8 @@ from coop_assembly.help_functions.helpers_geometry import compute_contact_line_b
 def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref_point, dist1, dist2, nb):
     """compute axis vector for connecting a new point to two existing bars
 
-    .. image:: ../images/intersection_two_bar_tangent_planes.png
+    .. image:: ../images/first_tangent_plane_intersection.png
+
         :scale: 80 %
         :align: center
 
@@ -57,7 +58,8 @@ def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref
 
     Returns
     -------
-    list of two points
+    list of one vector
+        (not sure why SP needed a list around this single entry)
         a vector representing the new bar's axis
     """
     planes1 = planes_tangent_to_cylinder(
@@ -220,7 +222,7 @@ def intersect_plane_plane_u(u_vect, v_vect, abc_vect):
 def compute_new_bar_length(vec_sol, compare_contact_pt, new_pt, b1_key, b2_key, b_struct):
     """compute proper axis end pts for a given new point and direction
 
-    b_struct is not updated inside.
+    b_struct is not updated inside this function.
 
     Parameters
     ----------
@@ -281,9 +283,10 @@ def compute_new_bar_length(vec_sol, compare_contact_pt, new_pt, b1_key, b2_key, 
     pts_all_b2.append(pt_2)
     pts_b2 = find_points_extreme(pts_all_b2, b2["axis_endpoints"])
 
-    vec_test_dir_1 = subtract_vectors(compare_contact_pt, new_pt)
-    if not check_dir(vec_sol, vec_test_dir_1):
-        vec_sol = scale_vector(vec_sol, -1)
+    if compare_contact_pt is not None:
+        vec_test_dir_1 = subtract_vectors(compare_contact_pt, new_pt)
+        if not check_dir(vec_sol, vec_test_dir_1):
+            vec_sol = scale_vector(vec_sol, -1)
 
     # find which point is further
     lx1 = distance_point_point(new_pt, pt_x1)
@@ -320,7 +323,7 @@ def first_tangent(new_pt, contact_pt, max_len, b_v1_1, b_v1_2, b_struct, pt_mean
     new_pt : point
         OverallS new vertex point
     contact_pt : point
-        contact pt
+        contact pt used to make sure the direction is correct, see `contact_point` in `compute_new_bar_length`
     max_len : float
         max allowable length of bar, in mm
     b_v1_1 : int
