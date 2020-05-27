@@ -26,7 +26,7 @@ from coop_assembly.help_functions import dropped_perpendicular_points, find_poin
     calculate_coord_sys
 # from coop_assembly.assembly_info_generation.fabrication_planes import calculate_gripping_plane
 from coop_assembly.help_functions.shared_const import TOL
-from coop_assembly.help_functions.helpers_geometry import compute_contact_line_between_bars
+from coop_assembly.help_functions.helpers_geometry import compute_contact_line_between_bars, compute_local_coordinate_system
 
 
 def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref_point, dist1, dist2, nb):
@@ -431,10 +431,12 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
     b2_2 = b_struct.node[b_v2_2]
 
     # floating newly added bar in the tet (added by `first_tangent`)
-    line        = b_struct.vertex[b_v_old]["axis_endpoints"]
-    vec_l_0     = vector_from_points(line[0], line[1])
-    ex          = normalize_vector(cross_vectors(normalize_vector(vec_l_0), (1,0,0)))
-    ey          = normalize_vector(cross_vectors(normalize_vector(vec_l_0), ex))
+    line = b_struct.vertex[b_v_old]["axis_endpoints"]
+    vec_l_0 = vector_from_points(line[0], line[1])
+    # local coordinate system at the new point, used for parameterizing the contact pt
+    R = compute_local_coordinate_system(*line)
+    ex = R[:,1]
+    ey = R[:,2]
 
     pt_b_1      = b2_1["axis_endpoints"][0]
     pt_b_1_2    = b2_1["axis_endpoints"][1]
@@ -571,15 +573,17 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
     l_4 = normalize_vector(vector_from_points(b3_2["axis_endpoints"][0], b3_2["axis_endpoints"][1]))
 
     # contact point 1
-    pts_axis_1  = dropped_perpendicular_points(line_1[0], line_1[1], line_2[0], line_2[1])
-    pt_axis_1   = centroid_points(pts_axis_1)
+    pts_axis_1 = dropped_perpendicular_points(line_1[0], line_1[1], line_2[0], line_2[1])
+    pt_axis_1 = centroid_points(pts_axis_1)
     # contact point 2
-    pts_axis_2  = dropped_perpendicular_points(b3_1["axis_endpoints"][0], b3_1["axis_endpoints"][1], b3_2["axis_endpoints"][0], b3_2["axis_endpoints"][1])
-    pt_axis_2   = centroid_points(pts_axis_2)
-    pt_mid      = centroid_points((pt_axis_1, pt_axis_2))
-    axis        = vector_from_points(pt_axis_1, pt_axis_2)
-    ex          = normalize_vector(cross_vectors(normalize_vector(axis), (1,0,0)))
-    ey          = normalize_vector(cross_vectors(normalize_vector(axis), ex))
+    pts_axis_2 = dropped_perpendicular_points(b3_1["axis_endpoints"][0], b3_1["axis_endpoints"][1], b3_2["axis_endpoints"][0], b3_2["axis_endpoints"][1])
+    pt_axis_2 = centroid_points(pts_axis_2)
+    pt_mid = centroid_points((pt_axis_1, pt_axis_2))
+    # axis = vector_from_points(pt_axis_1, pt_axis_2)
+
+    R = compute_local_coordinate_system(pt_axis_1, pt_axis_2)
+    ex = R[:,1]
+    ey = R[:,2]
     # bounds      = (-100.0, 100.0)
 
     if not check_collision:
@@ -745,8 +749,8 @@ def f_tangent_point_2(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, 
     ----------
     x : float
         [description]
-    ptM :
-        point
+    ptM : point
+        the target ideal new point
 
     Returns
     -------

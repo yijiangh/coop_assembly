@@ -16,13 +16,14 @@ Modified by Yijiang Huang starting Jan. 2020
 
 import math
 import numpy as np
+from numpy.linalg import norm
 from itertools import combinations
 from copy import deepcopy
 
 from compas.geometry import Plane
 from compas.geometry import normalize_vector, subtract_vectors, cross_vectors, vector_from_points, \
     add_vectors, scale_vector, angle_vectors
-from compas.geometry import centroid_points
+from compas.geometry import centroid_points, length_vector
 from compas.geometry import intersection_line_plane
 from compas.geometry import is_point_on_line, is_point_infront_plane, is_coplanar
 from compas.geometry import project_point_plane, translate_points
@@ -142,6 +143,44 @@ def create_bar_flying_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=appl
 
 ###############################################
 
+def compute_local_coordinate_system(p1, p2):
+    """[summary]
+
+    https://github.com/yijiangh/conmech/blob/master/src/stiffness_checker/Util.cpp#L92
+
+    Parameters
+    ----------
+    p1 : point
+    p2 : point
+
+    Returns
+    -------
+    R :
+        3x3 np array : local to global transformation matrix
+        e_x pointing along p2 - p1
+        R[:, i] axis vector
+    """
+    assert len(p1) == 3 and len(p2) == 3
+    L = length_vector(subtract_vectors(p2, p1))
+    assert L > 1e-6, 'pts too close, might be duplicated pts!'
+    cz = (p2[2] - p1[2]) / L
+
+    R = np.zeros((3,3))
+    if abs(cz-1) < 1e-8:
+        # the element is parallel to global z axis
+        # cross product is not defined, in this case
+        # we can simply take the global x,y axes as the local axes
+        R[0,2] = -cz
+        R[1,1] = 0
+        R[2,0] = cz
+    else:
+        new_x = (np.array(p2) - np.array(p1)) / L
+        new_y = - np.cross(new_x, np.array([0.,0.,1.]))
+        new_y /= norm(new_y)
+        new_z = np.cross(new_x, new_y)
+        R = np.vstack([new_x, new_y, new_z]).T
+    return R
+
 def calculate_coord_sys(end_pts, pt_mean):
     """construct local coordinate system for a line connecting two end_pts.
     Local x axis: along the element from st to end
@@ -164,7 +203,6 @@ def calculate_coord_sys(end_pts, pt_mean):
     vec_y = normalize_vector(cross_vectors(vec_n, vec_x))
     vec_z = normalize_vector(cross_vectors(vec_x, vec_y))
     return tuple(vec_x), tuple(vec_y), tuple(vec_z)
-
 
 def calculate_bar_z(points):
     """compute cross product between the vector formed by points and the global z axis.

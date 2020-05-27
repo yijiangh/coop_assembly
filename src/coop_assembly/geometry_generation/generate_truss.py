@@ -293,12 +293,12 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
 
     axis_vector = None
     if len(contact_bars[0]) == 0 and len(contact_bars[1]) == 0:
-        print('0 - 0')
+        cprint('0 - 0', 'yellow')
         new_point = node_points[new_node_id]
         contact_pt = node_points[contact_v_id]
         contact_e = []
     elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 1:
-        print('0 - 1')
+        cprint('0 - 1', 'yellow')
         assert len(contact_bars[1]) > 0
         # point tangent to a cylinder
         contact_e = contact_bars[1][0]
@@ -319,7 +319,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
     elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 2:
         # one is floating or bare-grounded, use `first_tangent` strategy
         # intersecting tangents planes from the point to the two cylinders
-        print('0 - 2')
+        cprint('0 - 2', 'yellow')
         contact_e = contact_bars[1]
         supp_v_id_1 = list(set(contact_e[0]) - set(element))[0]
         supp_v_id_2 = list(set(contact_e[1]) - set(element))[0]
@@ -341,18 +341,18 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
             contact_pt = new_point + axis_vector * max([norm(new_contact_pt1-new_point), norm(new_contact_pt2-new_point)])
     elif len(contact_bars[0])==1 and len(contact_bars[1])==1:
         # deg 1 - deg 1 (4 configs)
-        print('1 - 1')
+        cprint('1 - 1', 'yellow')
         # ? uncovered
         raise NotImplementedError
     elif len(contact_bars[0])==1 and len(contact_bars[1])==2:
         # deg 1 - deg 2 (2x4 configs)
         # use `second_tangent` strategy
-        print('1 - 2')
+        cprint('1 - 2', 'yellow')
         raise NotImplementedError
     elif len(contact_bars[0])==2 and len(contact_bars[1])==2:
         # deg 2 - deg 2
         # use `third_tangent` strategy
-        print('2 - 2')
+        cprint('2 - 2', 'yellow')
         raise NotImplementedError
 
     # return axis_endpts
