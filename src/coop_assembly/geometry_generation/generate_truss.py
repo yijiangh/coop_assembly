@@ -15,12 +15,14 @@ from compas.geometry import distance_point_point, distance_point_line, distance_
 from compas.geometry import is_coplanar, subtract_vectors
 from compas.datastructures import Network
 
-from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED, BLUE, apply_alpha, add_line, draw_circle, remove_handles
+from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED, BLUE, GREEN, BLACK, apply_alpha, \
+    add_line, draw_circle, remove_handles
 
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle, dropped_perpendicular_points
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions.tangents import tangent_from_point_one, lines_tangent_to_cylinder
+from coop_assembly.help_functions.helpers_geometry import find_points_extreme, calculate_coord_sys
 
 from coop_assembly.data_structure import OverallStructure, BarStructure
 from coop_assembly.geometry_generation.tet_sequencing import SearchState, compute_candidate_nodes
@@ -140,8 +142,9 @@ def generate_truss_progression(node_points, edges, ground_nodes, radius, heurist
 # forming bar structure
 def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
     printed = set()
-    all_elements = set(edge_seq)
+    # all_elements = set(edge_seq)
     node_neighbors = get_node_neighbors(edge_seq)
+    element_neighbors = get_element_neighbors(edge_seq)
     visited_nodes = set(ground_nodes)
     print('>'*10)
     # the actual bar axis endpts are index by using the element's
@@ -154,24 +157,16 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
         # next_printed = printed | {element}
         # unprinted = all_elements - next_printed
         n0, n1 = element
-        n_neighbors = [list(set(node_neighbors[n0]) & printed), \
-                       list(set(node_neighbors[n1]) & printed)]
+        n_neighbors = {n0 : list(set(node_neighbors[n0]) & printed), \
+                       n1 : list(set(node_neighbors[n1]) & printed)}
         print('------')
         print('visited node: ', visited_nodes)
         print('printed bars: ', printed)
-        print('existing node_neighbors ({} | {}): {}'.format(n0, n1, n_neighbors))
+        print('existing node_neighbors: {}'.format(n_neighbors))
         # print('n#{} neighbors: {}'.format(n0, set(node_neighbors[n0])))
         # print('n#{} neighbors: {}'.format(n1, set(node_neighbors[n1])))
 
-        # if n0 in visited_nodes and n1 not in visited_nodes:
-        #     # * grounded node & no existing element neighbor at that node
-        #     # simply add a new bar
-        #     print('grounded! 0')
-        # elif n0 not in visited_nodes and n1 in visited_nodes:
-        #     print('grounded! 1')
-        # elif n0 in visited_nodes and n1 in visited_nodes:
-
-        for i in range(2):
+        for i in [n0, n1]:
             # fill in empty tuple for product
             if len(n_neighbors[i]) == 0:
                 n_neighbors[i] = [()]
@@ -181,40 +176,87 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
                 n_neighbors[i] = list(combinations(n_neighbors[i], 2))
 
         # each of these should be segmented into 2 pairs
-        neighbor_pairs = list(product(n_neighbors[0], n_neighbors[1]))
+        neighbor_pairs = list(product(n_neighbors[n0], n_neighbors[n1]))
         cprint('produce neighnor pairs: {}'.format(neighbor_pairs), 'yellow')
 
+        new_axis_endpts = None
+        contact_elements = None
         for contact_bars in randomize(neighbor_pairs):
-            new_axis_endpts = compute_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius)
+            new_axis_endpts, contact_elements = compute_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius)
             if new_axis_endpts:
-                cprint('new axis pt: {}'.format(new_axis_endpts), 'cyan')
+                cprint('new axis pt: {} | contact elements : {}'.format(new_axis_endpts, contact_elements), 'cyan')
                 break
+        assert set(new_axis_endpts.keys()) == set(n_neighbors.keys())
+
+        # TODO: update all neighbor bars to element, find the furthest pair of contact pts
+        for contact_e in contact_elements:
+            neighbor_elements = list(set(element_neighbors[contact_e]) & set(printed))
+            candidate_end_pts = []
+            candidate_end_pts.extend(list(bar_from_elements[contact_e].values()))
+            for e in neighbor_elements:
+                ne_contact_pts = dropped_perpendicular_points(*list(bar_from_elements[contact_e].values()),
+                                                                      *list(bar_from_elements[e].values()))
+                candidate_end_pts.append(ne_contact_pts[0])
+                add_line(np.array(ne_contact_pts[0])*1e-3, np.array(ne_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
+
+            new_contact_pts = dropped_perpendicular_points(*list(new_axis_endpts.values()),
+                                                           *list(bar_from_elements[contact_e].values()))
+            add_line(np.array(new_contact_pts[0])*1e-3, np.array(new_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
+
+            candidate_end_pts.append(new_contact_pts[1])
+            extended_end_pts = find_points_extreme(candidate_end_pts, list(bar_from_elements[contact_e].values()))
+
+            if norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][contact_e[0]])) > \
+               norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][contact_e[1]])):
+                bar_from_elements[contact_e][contact_e[1]] = np.array(extended_end_pts[0])
+                bar_from_elements[contact_e][contact_e[0]] = np.array(extended_end_pts[1])
+            else:
+                bar_from_elements[contact_e][contact_e[0]] = np.array(extended_end_pts[0])
+                bar_from_elements[contact_e][contact_e[1]] = np.array(extended_end_pts[1])
+
+            # print('original: {}'.format(bar_from_elements[contact_e]))
+            # print('extended: {}'.format(extended_end_pts))
+
+            add_line(np.array(extended_end_pts[0])*1e-3, np.array(extended_end_pts[1])*1e-3, color=apply_alpha(GREEN, 1))
 
         bar_from_elements[element] = new_axis_endpts
         visited_nodes |= set([n0, n1])
         printed = printed | {element}
 
-        # TODO: update all neighbor bars to element, find the furthest pair of contact pts
-        # * compute all projected contact points on bar2
-        # pts_all_b2 = []
-        # b_vert_n = b_struct.vertex_neighbors(b2_key)
-        # pts_all_b2.append(b_struct.vertex[b2_key]["axis_endpoints"][0])
-        # pts_all_b2.append(b_struct.vertex[b2_key]["axis_endpoints"][1])
-        # for n in b_vert_n:
-        #     pts_all_b2.append(dropped_perpendicular_points(
-        #         b2["axis_endpoints"][0], b2["axis_endpoints"][1], b_struct.vertex[n]["axis_endpoints"][0], b_struct.vertex[n]["axis_endpoints"][1])[0])
-        # pts_all_b2.append(pt_2)
-        # pts_b2 = find_points_extreme(pts_all_b2, b2["axis_endpoints"])
-
-        # convert mil to meter
         handles = []
         for e in bar_from_elements.values():
+            # convert mil to meter
             h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
             handles.append(h)
         wait_if_gui()
         remove_handles(handles)
 
     b_struct = BarStructure()
+    centroid_pt = np.average(node_points, axis=0)
+
+    for e, pts in bar_from_elements.items():
+        axis_endpts = list(pts.values())
+        _ , _, vec_z = calculate_coord_sys(axis_endpts, centroid_pt)
+
+        bar_key = b_struct.add_bar(None, axis_endpts, "tube", None, vec_z, radius=radius)
+        # b_struct.vertex[b_v0].update({"index_sol":[sol_id]})
+        # b_struct.vertex[b_v0].update({"mean_point":pt_mean})
+
+        # TODO update contact point into BarS's edges
+        # b_struct.connect_bars(b_v0, b_v1_1)
+        # b_struct.connect_bars(b_v0, b_v1_2)
+
+        # dpp_1 = compute_contact_line_between_bars(b_struct, b_v0, b_v1_1)
+        # dpp_2 = compute_contact_line_between_bars(b_struct, b_v0, b_v1_2)
+
+        # k_1 = list(b_struct.edge[b_v0][b_v1_1]["endpoints"].keys())[0]
+        # k_2 = list(b_struct.edge[b_v0][b_v1_2]["endpoints"].keys())[0]
+        # b_struct.edge[b_v0][b_v1_1]["endpoints"].update({k_1:(dpp_1[0], dpp_1[1])})
+        # b_struct.edge[b_v0][b_v1_2]["endpoints"].update({k_2:(dpp_2[0], dpp_2[1])})
+
+    element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 0.5))
+    wait_if_gui()
+
     return b_struct
 
 
@@ -252,31 +294,28 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
     axis_vector = None
     if len(contact_bars[0]) == 0 and len(contact_bars[1]) == 0:
         print('0 - 0')
-        axis_endpts = {element[0] : node_points[element[0]], element[1] : node_points[element[1]]}
-        return axis_endpts
+        new_point = node_points[new_node_id]
+        contact_pt = node_points[contact_v_id]
+        contact_e = []
     elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 1:
+        print('0 - 1')
         assert len(contact_bars[1]) > 0
         # point tangent to a cylinder
         contact_e = contact_bars[1][0]
         supp_v_id = list(set(contact_e) - set(element))[0]
-
-        print('0 - 1')
-
         contact_node_pt = bar_from_elements[contact_e][contact_v_id]
         supp_node_pt = bar_from_elements[contact_e][supp_v_id]
-        # bar_vector = node_points[supp_v_id] - node_points[contact_v_id]
-        # print('contact_node_pt {}'.format(contact_node_pt))
 
         t_pts = lines_tangent_to_cylinder(contact_node_pt, supp_node_pt - contact_node_pt, new_point, 2*radius)
         if t_pts is not None:
             normals = [np.array(t_pts[j]) for j in [1,2]]
             contact_pt = randomize(normals)[0] + contact_node_pt
-
-            # new_contact_pt, bar_contact_pt = dropped_perpendicular_points(new_point, contact_pt,
-            #                                 bar_from_elements[contact_e][0], bar_from_elements[contact_e][1])
-            # print('{} | {}'.format(contact_pt, bar_contact_pt))
-            return { new_node_id : new_point, contact_v_id : np.array(contact_pt) }
-
+            print('contact pt: {}'.format(contact_pt))
+            contact_pt, bar_contact_pt = dropped_perpendicular_points(new_point, contact_pt,
+                                            bar_from_elements[contact_e][contact_v_id], bar_from_elements[contact_e][supp_v_id])
+            print('contact pt: {}'.format(contact_pt))
+        # conform format
+        contact_e = [contact_e]
     elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 2:
         # one is floating or bare-grounded, use `first_tangent` strategy
         # intersecting tangents planes from the point to the two cylinders
@@ -293,7 +332,6 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
             if axis_vector is not None:
                 break
         if axis_vector is not None:
-            # axis_vector, new_bar_len, pts_b1, pts_b2 = compute_new_bar_length(axis_vector, None, new_point, b_v1_1, b_v1_2, b_struct)
             new_contact_pt1, _ = dropped_perpendicular_points(new_point, new_point+axis_vector,
                                                 bar_from_elements[contact_e[0]][contact_v_id], bar_from_elements[contact_e[0]][supp_v_id_1])
             new_contact_pt2, _ = dropped_perpendicular_points(new_point, new_point+axis_vector,
@@ -301,8 +339,6 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
             new_contact_pt1 = np.array(new_contact_pt1)
             new_contact_pt2 = np.array(new_contact_pt2)
             contact_pt = new_point + axis_vector * max([norm(new_contact_pt1-new_point), norm(new_contact_pt2-new_point)])
-            return { new_node_id : new_point, contact_v_id : np.array(contact_pt) }
-
     elif len(contact_bars[0])==1 and len(contact_bars[1])==1:
         # deg 1 - deg 1 (4 configs)
         print('1 - 1')
@@ -319,28 +355,9 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         print('2 - 2')
         raise NotImplementedError
 
-    return axis_endpts
-
-    # vec_x, vec_y, vec_z = calculate_coord_sys(new_axis_end_pts, pt_mean)
-
-    # b_v0 = b_struct.add_bar(0, new_axis_end_pts, "tube", (25.0, 2.0), vec_z, radius=radius)
-
-    # # b_struct.vertex[b_v0].update({"index_sol":[sol_id]})
-    # # b_struct.vertex[b_v0].update({"mean_point":pt_mean})
-
-    # # * update contact point into BarS's edges
-    # b_struct.connect_bars(b_v0, b_v1_1)
-    # b_struct.connect_bars(b_v0, b_v1_2)
-
-    # dpp_1 = compute_contact_line_between_bars(b_struct, b_v0, b_v1_1)
-    # dpp_2 = compute_contact_line_between_bars(b_struct, b_v0, b_v1_2)
-
-    # k_1 = list(b_struct.edge[b_v0][b_v1_1]["endpoints"].keys())[0]
-    # k_2 = list(b_struct.edge[b_v0][b_v1_2]["endpoints"].keys())[0]
-    # b_struct.edge[b_v0][b_v1_1]["endpoints"].update({k_1:(dpp_1[0], dpp_1[1])})
-    # b_struct.edge[b_v0][b_v1_2]["endpoints"].update({k_2:(dpp_2[0], dpp_2[1])})
-
-    # return b_struct, b_v0, new_axis_end_pts
+    # return axis_endpts
+    return {new_node_id : new_point, contact_v_id : np.array(contact_pt)}, \
+        contact_e
 
 
 #######################################

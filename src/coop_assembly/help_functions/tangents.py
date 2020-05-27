@@ -42,11 +42,11 @@ def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref
     base_point1 : point
         start point of cylinder 1 (existing bar 1)'s axis
     line_vect1 : list of two points
-        axis vector for cylinder 1, end pt 1 -> end pt 0
+        axis vector for cylinder 1, base pt - (the other pt)
     base_point2 : point
         start point of cylinder 1 (existing bar 1)'s axis
     line_vect2 : list of two points
-        axis vector for cylinder 2, end pt 1 -> end pt 0
+        axis vector for cylinder 2, base pt - (the other pt)
     ref_point : point
         new vertex point Q
     dist1 : float
