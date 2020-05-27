@@ -527,8 +527,7 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
         b_v0    = b_struct.add_bar(0, end_pts_0, "tube", (25.0, 2.0), vec_z, radius=radius)
     else:
         b_v0    = b_v0_n
-        b_struct.vertex[b_v0].update(
-            {"axis_endpoints": end_pts_0})
+        b_struct.vertex[b_v0].update({"axis_endpoints": end_pts_0})
 
     b_struct.vertex[b_v0].update({"index_sol": [ind]})
     b_struct.vertex[b_v0].update({"mean_point":pt_mean})
@@ -584,7 +583,6 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
     R = compute_local_coordinate_system(pt_axis_1, pt_axis_2)
     ex = R[:,1]
     ey = R[:,2]
-    # bounds      = (-100.0, 100.0)
 
     if not check_collision:
         if b_v0_n:
@@ -725,135 +723,101 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
 
 #################################################
 
+# def solve_one_one_tangent(pt1, pt2, R1, diameter_1, diameter_2, ind):
+#     def fn():
+#         t_pts = lines_tangent_to_cylinder(contact_node_pt, supp_node_pt - contact_node_pt, new_point, 2*radius)
+
+
 def solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, diameter_1, diameter_2, ind):
     # try twice?
     # for i in range(2):
-    args = new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, diameter_1, diameter_2, ind
+    r_c = 2*radius
+    def compute_tan_pt(x):
+        # sample (dx, dy) in the local coordinate system (ex, ey)
+        delta_x = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
+        ref_point = add_vectors(new_point, delta_x)
 
-    res_opt = scipy.optimize.fminbound(f_tangent_point_2, -2*radius, 2*radius, args, full_output=True, disp=0)
+        vec = tangent_from_point_one(
+            pt_b_1, l_1, pt_b_2, l_2, ref_point, diameter_1, diameter_2, ind)
+
+        return ref_point, vec
+
+    def fn(x):
+        ref_point, vecs_l_all = compute_tan_pt(x)
+        if vecs_l_all:
+            vec_l = vecs_l_all[0]
+        else:
+            print("error in f")
+            val = 1
+            return val
+        # we want to have the contact line orthogonal to the new axis
+        val = abs(dot_vectors(normalize_vector(vec_l), normalize_vector(vector_from_points(new_point, ref_point))))
+        return val
+
+    res_opt = scipy.optimize.fminbound(fn, -2*radius, 2*radius, full_output=True, disp=0)
     if res_opt[1] > 0.1:
         return None
 
     x = float(res_opt[0])
-    ret_fp2 = find_point_2(x, *args)
-    if not ret_fp2:
+    ret_fp2 = compute_tan_pt(x)
+    if ret_fp2[1] is None:
         return None
     else:
         pt_2, vec_l = ret_fp2
-        return pt_2, vec_l
-
-def f_tangent_point_2(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, ind):
-    """evaluation function to be passed into an optimizer
-
-    Parameters
-    ----------
-    x : float
-        [description]
-    ptM : point
-        the target ideal new point
-
-    Returns
-    -------
-    [type]
-        [description]
-    """
-
-    r_c = 2*radius
-    # sample (dx, dy) in the local coordinate system (ex, ey)
-    delta_x = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
-    # offsetted new bar's axis end pt
-    ref_point = add_vectors(ptM, delta_x)
-
-    vecs_l_all = tangent_from_point_one(
-        pt_b_1, l_1, pt_b_2, l_2, ref_point, d1, d2, ind)
-
-    if vecs_l_all:
-        vec_l = vecs_l_all[0]
-    else:
-        print("error in f")
-        f = 1
-        return f
-
-    # we want to have the contact line orthogonal to the new axis
-    f = abs(dot_vectors(normalize_vector(vec_l), normalize_vector(vector_from_points(ptM, ref_point))))
-    return f
-
-def find_point_2(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, d1, d2, ind):
-    r_c = 2*radius
-    ref_point_tmp = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
-    ref_point = add_vectors(ref_point_tmp, ptM)
-
-    vec_l = tangent_from_point_one(
-        pt_b_1, l_1, pt_b_2, l_2, ref_point, d1, d2, ind)[0]
-
-    return ref_point, vec_l
+        return pt_2, vec_l[0]
 
 def solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2):
+    def compute_third_tan_pts(x):
+        """ x is the local coordinate in (ex, ey) for the new axis point
+        """
+        x1  = x[0]
+        x2  = x[1]
+        delta_x1 = add_vectors(scale_vector(ex, x1), scale_vector(ey, x2))
+        ref_point = add_vectors(pt_mid, delta_x1)
+        # ! this does not conform to bar3 and bar4's own radius
+        vec_l1 = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, ref_point, 2*radius, 2*radius, ind_1)
+        # ! this does not conform to bar3 and bar4's own radius
+        vec_l2 = tangent_from_point_one(pt_b_3, l_3, pt_b_4, l_4, ref_point, 2*radius, 2*radius, ind_2)
+        if not vec_l1[0] or not vec_l2[0]:
+            return None
+        ang = angle_vectors(vec_l1[0], vec_l2[0])
+        return ang, ref_point, vec_l1, vec_l2
 
-    args = pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2
-    res_opt = scipy.optimize.fmin(f_tangent_point_3, [0.0, 0.0], args, full_output=True, disp=0)
+    def fn(x):
+        _, _, tfp_1, tfp_2 = compute_third_tan_pts(x)
+
+        if tfp_1:
+            vec_l1 = tfp_1[0]
+        else:
+            print("problem in opt 3 - 1")
+            f = 180
+            return f
+        if tfp_2:
+        #     vec_l2 = tfp_2[ind_2]
+            vec_l2 = tfp_2[0]
+        else:
+            print("problem in opt 3 - 1")
+            f = 180
+            return f
+
+        ang_v = angle_vectors(vec_l1, vec_l2, deg=True)
+        if 180 - ang_v < 90:
+            f = 180 - ang_v
+        else:
+            f = ang_v
+        return f
+
+    res_opt = scipy.optimize.fmin(fn, [0.0, 0.0], full_output=True, disp=0)
     if res_opt[1] > 0.1:
         return None
 
-    ret_fp3 = find_point_3(list(map(float, res_opt[0])), *args)
+    # ret_fp3 = find_point_3(list(map(float, res_opt[0])), *args)
+    ret_fp3 = compute_third_tan_pts(list(map(float, res_opt[0])))
     if not ret_fp3:
         return None
     else:
         ang, ref_point, vec_l1, vec_l2 = ret_fp3
-        return ref_point, vec_l1, vec_l2, ang
-
-def f_tangent_point_3(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2):
-    """ x is the local coordinate in (ex, ey) for the new axis point
-    """
-
-    x1 = x[0]
-    x2 = x[1]
-
-    delta_x = add_vectors(scale_vector(ex, x1), scale_vector(ey, x2))
-    ref_point = add_vectors(ptM, delta_x)
-
-    # ! this does not conform to bar3 and bar4's own radius
-    tfp_1 = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, ref_point, 2*radius, 2*radius, ind_1)
-
-    if tfp_1:
-        vec_l1 = tfp_1[0]
-    else:
-        print("problem in opt 3 - 1")
-        f = 180
-        return f
-
-    # ! this does not conform to bar3 and bar4's own radius
-    tfp_2 = tangent_from_point_one(pt_b_3, l_3, pt_b_4, l_4, ref_point, 2*radius, 2*radius, ind_2)
-
-    if tfp_2:
-    #     vec_l2 = tfp_2[ind_2]
-        vec_l2 = tfp_2[0]
-    else:
-        print("problem in opt 3 - 1")
-        f = 180
-        return f
-        #return None
-    ang_v = angle_vectors(vec_l1, vec_l2, deg=True)
-    if 180 - ang_v < 90:
-        f = 180 - ang_v
-    else:
-        f = ang_v
-    return f
-
-def find_point_3(x, ptM, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2):
-    x1  = x[0]
-    x2  = x[1]
-
-    pt_1_tmp = add_vectors(scale_vector(ex, x1), scale_vector(ey, x2))
-    pt_1 = add_vectors(pt_1_tmp, ptM)
-    vec_l1 = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, pt_1, 2*radius, 2*radius, ind_1)[0]
-    vec_l2 = tangent_from_point_one(pt_b_3, l_3, pt_b_4, l_4, pt_1, 2*radius, 2*radius, ind_2)[0]
-    ref_point = pt_1
-    if not vec_l1 or not vec_l2:
-        return None
-    ang = angle_vectors(vec_l1, vec_l2)
-
-    return ang, ref_point, vec_l1, vec_l2
+        return ref_point, vec_l1[0], vec_l2[0], ang
 
 ##########################################
 
