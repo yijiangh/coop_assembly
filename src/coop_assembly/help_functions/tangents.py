@@ -14,6 +14,8 @@ author: stefanaparascho
 
 import math
 import scipy.optimize
+import numpy as np
+from numpy.linalg import norm
 
 from compas.geometry import add_vectors, subtract_vectors, cross_vectors, normalize_vector, scale_vector, vector_from_points, dot_vectors, length_vector
 from compas.geometry import distance_point_point, distance_point_line, distance_line_line
@@ -58,27 +60,32 @@ def tangent_from_point_one(base_point1, line_vect1, base_point2, line_vect2, ref
 
     Returns
     -------
+    if
     list of one vector
         (not sure why SP needed a list around this single entry)
         a vector representing the new bar's axis
     """
+    # planes1 in format [origin, axis vec, y axis], [origin, axis vec, y axis]
     planes1 = planes_tangent_to_cylinder(
         base_point1, line_vect1, ref_point, dist1, info='plane')
+    # planes2 in format [normal, dot], [normal, dot]
     planes2 = planes_tangent_to_cylinder(
         base_point2, line_vect2, ref_point, dist2, info='contact')
     if planes1 == None or planes2 == None:
         print("Tangent planes not found")
         return None
-    if nb == 0 or nb == 1:
-        _, plane_x_axis, plane_y_axis = planes1[0]
-        s = intersect_plane_plane_u(plane_x_axis, plane_y_axis, planes2[nb%2][0])
-        # s = intersect_plane_plane_u(planes1[0][1], planes1[0][2], planes2[1][0])
-    elif nb == 2 or nb == 3:
-        _, plane_x_axis, plane_y_axis = planes1[1]
-        s = intersect_plane_plane_u(plane_x_axis, plane_y_axis, planes2[nb%2][0])
-        # s = intersect_plane_plane_u(planes1[1][1], planes1[1][2], planes2[1][0])
-    s = normalize_vector(s)
-    return [s]
+
+    _, plane_x_axis, plane_y_axis = planes1[0] if nb == 0 or nb == 1 else planes1[1]
+    plane_x_axis = normalize_vector(plane_x_axis)
+    plane_y_axis = normalize_vector(plane_y_axis)
+    normal = normalize_vector(planes2[nb%2][0])
+    if not (abs(dot_vectors(plane_x_axis, normal)) < 1e-8 and abs(dot_vectors(plane_y_axis, normal)) < 1e-8):
+        s = intersect_plane_plane_u(plane_x_axis, plane_y_axis, normal)
+        s = normalize_vector(s)
+        return [s]
+    else:
+        # two tangent planes are parallel
+        raise NotImplementedError()
 
 def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     """Calculating of plane tangents to one cylinder passing through the `ref_point`
@@ -129,9 +136,9 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
         # dist < line_QM: change ref_point
         return None
 
-    # upper tangent point
+    # upper tangent point's delta x
     d_e_add = add_vectors(d_e1, d_e2)
-    # lower tangent point
+    # lower tangent point's delta x
     d_e_sub = subtract_vectors(d_e1, d_e2)
     return [point_M, d_e_add, d_e_sub]
 
@@ -172,31 +179,38 @@ def planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist, info='pla
     tangent_pts = lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist)
     if tangent_pts is None:
         return None
-    point_M, upper_tang_pt, lower_tang_pt = tangent_pts
+    point_M, upper_delta_x, lower_delta_x = tangent_pts
     if info == 'plane':
         # r1 : B_up - ref_pt
-        r1  = subtract_vectors(add_vectors(point_M, upper_tang_pt), ref_point)
+        r1  = subtract_vectors(add_vectors(point_M, upper_delta_x), ref_point)
         r1  = normalize_vector(r1)
         # r1 : B_down - ref_pt
-        r1  = subtract_vectors(add_vectors(point_M, upper_tang_pt), ref_point)
-        r2  = subtract_vectors(add_vectors(point_M, lower_tang_pt), ref_point)
+        r1  = subtract_vectors(add_vectors(point_M, upper_delta_x), ref_point)
+        r2  = subtract_vectors(add_vectors(point_M, lower_delta_x), ref_point)
         r2  = normalize_vector(r2)
         l_vect  = normalize_vector(line_vect)
         return [[ref_point, l_vect, r1], [ref_point, l_vect, r2]]
     elif info == 'contact':
-        dot_1 = dot_vectors(ref_point, upper_tang_pt)
-        dot_2 = dot_vectors(ref_point, lower_tang_pt)
-        return [[upper_tang_pt, dot_1], [lower_tang_pt, dot_2]]
+        dot_1 = dot_vectors(ref_point, upper_delta_x)
+        dot_2 = dot_vectors(ref_point, lower_delta_x)
+        return [[upper_delta_x, dot_1], [lower_delta_x, dot_2]]
     else:
         raise NotImplementedError('not supported info type: {}'.format(info))
 
-def intersect_plane_plane_u(u_vect, v_vect, abc_vect):
+def intersect_plane_plane_u(u_vect, v_vect, n_vect):
     """compute the spanning vector (line direction) for two intersecting planes
         plane 1:
             x axis: u_vect
             y axis: v_vect
         plane 2:
             z axis: abc_vect
+
+    Essentially we are solving:
+        <cross(u, v), x> = 0
+        <n, x> = 0
+
+    We use analytical solution: x = u - (<n,u>/<n,v>) v
+    Notice that when <n, u> = 0 or <n, v> = 0, the solution space is essentially the span(u,v) itself.
 
     One might also consider directly uses `intersection_plane_plane` from `compas.geometry`
 
@@ -214,7 +228,11 @@ def intersect_plane_plane_u(u_vect, v_vect, abc_vect):
     vector
         directional vector for the intersecting line
     """
-    A = dot_vectors(abc_vect, u_vect) / dot_vectors(abc_vect, v_vect)
+    n_vect = normalize_vector(n_vect)
+    u_vect = normalize_vector(u_vect)
+    v_vect = normalize_vector(v_vect)
+    assert not (abs(dot_vectors(n_vect, u_vect)) < 1e-8 and abs(dot_vectors(n_vect, v_vect)) < 1e-8)
+    A = dot_vectors(n_vect, u_vect) / dot_vectors(n_vect, v_vect)
     u_vect_sub  = subtract_vectors(u_vect, scale_vector(v_vect, A))
     return u_vect_sub
 
@@ -637,6 +655,7 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
                 if ret_stt:
                     pt3, vec_l1, vec_l2, ang_check  = ret_stt
                 else:
+                    # ? premature return?
                     return None
 
                 # pts_3.append(pt3)
@@ -724,8 +743,74 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
 #################################################
 
 # def solve_one_one_tangent(pt1, pt2, R1, diameter_1, diameter_2, ind):
-#     def fn():
-#         t_pts = lines_tangent_to_cylinder(contact_node_pt, supp_node_pt - contact_node_pt, new_point, 2*radius)
+def solve_one_one_tangent(line1, line2, radius, ind_1):
+    """[summary]
+
+    Parameters
+    ----------
+    line1 : list of pts
+        [contact pt, other pt]
+    line2 : list of pts
+        [contact pt, other pt]
+    radius : float
+        [description]
+    ind_1 : int
+        tangent plane index \in [0, 3]
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
+    line1 = list(map(np.array, line1))
+    line2 = list(map(np.array, line2))
+    def compute_tan_pts(theta):
+        R = compute_local_coordinate_system(*line1)
+        v = np.array([0, np.cos(theta), np.sin(theta)])
+        contact_pt1 = radius*R.T.dot(v)
+
+        # x1  = x[0]
+        # x2  = x[1]
+        # delta_x1 = add_vectors(scale_vector(ex, x1), scale_vector(ey, x2))
+        # ref_point = add_vectors(pt_mid, delta_x1)
+
+        # # ! this does not conform to bar3 and bar4's own radius
+        t_pts1 = lines_tangent_to_cylinder(line2[0], line2[1]-line2[0], contact_pt1, 2*radius)
+
+        if t_pts1 is not None:
+            # vec_l1 = np.array(contact_pt1) + np.array(t_pts1[ind_1+1]) - np.array(pt_mid)
+            vec_l1 = np.array(t_pts1[ind_1+1])
+            vec_l1 /= norm(vec_l1)
+            return np.array(contact_pt1), vec_l1
+        else:
+            return None, None
+
+    def fn(theta):
+        contact_pt1, vec_l1 = compute_tan_pts(theta)
+        if contact_pt1 is None and vec_l1 is None:
+            val = 1e5
+            return val
+
+        # contact_pt, _ = dropped_perpendicular_points(new_point, contact_pt,
+        #                                              bar_from_elements[contact_e][contact_v_id], bar_from_elements[contact_e][supp_v_id])
+        delta_x1 = contact_pt1 - line1[0]
+        delta_x1 /= norm(delta_x1)
+        val = abs(delta_x1.dot(vec_l1))
+
+        # ang_v = angle_vectors(vec_l1, vec_l2, deg=True)
+        # if 180 - ang_v < 90:
+        #     val = 180 - ang_v
+        #     # assert False, 'directional vector should not be flipped!'
+        # else:
+            # val = ang_v
+        return val
+
+    res_opt = scipy.optimize.fminbound(fn, 0, 2*np.pi, full_output=True, disp=3)
+    # if abs(res_opt[1]) > 1e-3:
+    #     return None, None
+
+    contact_pt1, vec_l1 = compute_tan_pts(res_opt[0])
+    return contact_pt1, vec_l1
 
 
 def solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, diameter_1, diameter_2, ind):

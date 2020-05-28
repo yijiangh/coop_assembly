@@ -144,7 +144,7 @@ def create_bar_flying_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=appl
 ###############################################
 
 def compute_local_coordinate_system(p1, p2):
-    """[summary]
+    """local to global rotation matrix
 
     https://github.com/yijiangh/conmech/blob/master/src/stiffness_checker/Util.cpp#L92
 
@@ -161,17 +161,17 @@ def compute_local_coordinate_system(p1, p2):
         R[:, i] axis vector
     """
     assert len(p1) == 3 and len(p2) == 3
-    L = length_vector(subtract_vectors(p2, p1))
+    L = norm(p2-p1)
     assert L > 1e-6, 'pts too close, might be duplicated pts!'
     cz = (p2[2] - p1[2]) / L
 
     R = np.zeros((3,3))
-    if abs(cz-1) < 1e-8:
+    if abs(abs(cz)-1.) < 1e-8:
         # the element is parallel to global z axis
         # cross product is not defined, in this case
         # we can simply take the global x,y axes as the local axes
         R[0,2] = -cz
-        R[1,1] = 0
+        R[1,1] = 1
         R[2,0] = cz
     else:
         new_x = (np.array(p2) - np.array(p1)) / L
@@ -180,6 +180,16 @@ def compute_local_coordinate_system(p1, p2):
         new_z = np.cross(new_x, new_y)
         R = np.vstack([new_x, new_y, new_z]).T
     return R
+
+def bar_sec_verts(p1, p2, radius, n=20):
+    # compute circle vertices around axis (p2-p1)
+    R = compute_local_coordinate_system(p1, p2)
+    vertices = []
+    for i in range(n):
+        theta = i*2*math.pi/n
+        v = np.array([0, np.cos(theta), np.sin(theta)])
+        vertices.append(radius*R.T.dot(v))
+    return vertices
 
 def calculate_coord_sys(end_pts, pt_mean):
     """construct local coordinate system for a line connecting two end_pts.

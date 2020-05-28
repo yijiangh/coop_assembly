@@ -12,17 +12,18 @@ from termcolor import cprint
 from copy import copy
 
 from compas.geometry import distance_point_point, distance_point_line, distance_point_plane
-from compas.geometry import is_coplanar, subtract_vectors
+from compas.geometry import is_coplanar, subtract_vectors, angle_vectors
 from compas.datastructures import Network
 
 from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED, BLUE, GREEN, BLACK, apply_alpha, \
-    add_line, draw_circle, remove_handles
+    add_line, draw_circle, remove_handles, add_segments
 
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle, dropped_perpendicular_points
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
-from coop_assembly.help_functions.tangents import tangent_from_point_one, lines_tangent_to_cylinder
-from coop_assembly.help_functions.helpers_geometry import find_points_extreme, calculate_coord_sys
+from coop_assembly.help_functions.tangents import tangent_from_point_one, lines_tangent_to_cylinder, solve_one_one_tangent
+from coop_assembly.help_functions.helpers_geometry import find_points_extreme, calculate_coord_sys, compute_local_coordinate_system, \
+    bar_sec_verts
 
 from coop_assembly.data_structure import OverallStructure, BarStructure
 from coop_assembly.geometry_generation.tet_sequencing import SearchState, compute_candidate_nodes
@@ -227,7 +228,12 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
         for e in bar_from_elements.values():
             # convert mil to meter
             h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
-            handles.append(h)
+            circ_verts = bar_sec_verts(*list(e.values()), radius=radius)
+            ch1 = add_segments([(list(e.values())[0] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
+            ch2 = add_segments([(list(e.values())[1] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
+            # handles.extend([h] + ch1 + ch2)
+            # handles.extend([h] + ch1 + ch2)
+
         wait_if_gui()
         remove_handles(handles)
 
@@ -289,7 +295,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         assert not colinear or len(contact_bars[1]) == 0
         new_point = node_points[new_node_id]
 
-    cprint('new pt {}'.format(new_point))
+    cprint('new pt: {}'.format(new_point))
 
     axis_vector = None
     if len(contact_bars[0]) == 0 and len(contact_bars[1]) == 0:
@@ -311,8 +317,8 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
             normals = [np.array(t_pts[j]) for j in [1,2]]
             contact_pt = randomize(normals)[0] + contact_node_pt
             print('contact pt: {}'.format(contact_pt))
-            contact_pt, bar_contact_pt = dropped_perpendicular_points(new_point, contact_pt,
-                                            bar_from_elements[contact_e][contact_v_id], bar_from_elements[contact_e][supp_v_id])
+            contact_pt, _ = dropped_perpendicular_points(new_point, contact_pt,
+                                                         bar_from_elements[contact_e][contact_v_id], bar_from_elements[contact_e][supp_v_id])
             print('contact pt: {}'.format(contact_pt))
         # conform format
         contact_e = [contact_e]
@@ -342,8 +348,43 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
     elif len(contact_bars[0])==1 and len(contact_bars[1])==1:
         # deg 1 - deg 1 (4 configs)
         cprint('1 - 1', 'yellow')
-        # ? uncovered
-        raise NotImplementedError
+        contact_e1 = contact_bars[0][0]
+        contact_e2 = contact_bars[1][0]
+        contact_e = [contact_e1, contact_e2]
+        contact_v_id_1 = list(set(contact_e1) & set(element))[0]
+        supp_v_id_1 = list(set(contact_e1) - set(element))[0]
+        contact_v_id_2 = list(set(contact_e2) & set(element))[0]
+        supp_v_id_2 = list(set(contact_e2) - set(element))[0]
+
+        # pt_mid = (node_points[element[0]] + node_points[element[1]]) / 2
+        # R = compute_local_coordinate_system(node_points[element[0]], node_points[element[1]])
+        # ex = R[:,1]
+        # ey = R[:,2]
+        # pt_b_1 = bar_from_elements[contact_e1][contact_v_id_1]
+        # l_1 = bar_from_elements[contact_e1][contact_v_id_1] - bar_from_elements[contact_e1][supp_v_id_1]
+        # pt_b_2 = bar_from_elements[contact_e2][contact_v_id_2]
+        # l_2 = bar_from_elements[contact_e2][contact_v_id_2] - bar_from_elements[contact_e2][supp_v_id_2]
+        line1 = [bar_from_elements[contact_e1][contact_v_id_1], bar_from_elements[contact_e1][supp_v_id_1]]
+        line2 = [bar_from_elements[contact_e2][contact_v_id_2], bar_from_elements[contact_e2][supp_v_id_2]]
+        for ind_1 in range(2):
+            contact_pt1, vec_l1 = solve_one_one_tangent(line1, line2, radius, ind_1)
+            if contact_pt1 is not None and vec_l1 is not None:
+                break
+
+        if vec_l1 is not None:
+            # new_contact_pt1, _ = dropped_perpendicular_points(pt_mid, pt_mid+vec_l1,
+            #                                     bar_from_elements[contact_e1][contact_v_id_1], bar_from_elements[contact_e1][supp_v_id_1])
+            contact_pt2, _ = dropped_perpendicular_points(contact_pt1, contact_pt1+vec_l1,
+                                bar_from_elements[contact_e2][contact_v_id_2], bar_from_elements[contact_e2][supp_v_id_2])
+            # contact_pt = new_point + axis_vector * max([norm(new_contact_pt1-new_point), norm(new_contact_pt2-new_point)])
+
+            new_node_id = contact_v_id_1
+            new_point = contact_pt1
+            contact_v_id = contact_v_id_2
+            contact_pt = np.array(contact_pt2)
+        else:
+            assert False, 'no solution found!'
+
     elif len(contact_bars[0])==1 and len(contact_bars[1])==2:
         # deg 1 - deg 2 (2x4 configs)
         # use `second_tangent` strategy
@@ -356,8 +397,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         raise NotImplementedError
 
     # return axis_endpts
-    return {new_node_id : new_point, contact_v_id : np.array(contact_pt)}, \
-        contact_e
+    return {new_node_id : new_point, contact_v_id : np.array(contact_pt)}, contact_e
 
 
 #######################################
@@ -424,7 +464,7 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
     #     # used when rpc call is made to get around stdout error
     #     sys.stdout = open(os.devnull, 'w')
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
-    fixed_obstacles, robot = load_world()
+    # fixed_obstacles, robot = load_world()
     set_camera(node_points)
 
     label_points([pt*1e-3 for pt in node_points])
