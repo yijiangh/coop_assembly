@@ -13,7 +13,7 @@ def pytest_addoption(parser):
     parser.addoption('--problem', default='single_tet')
     parser.addoption('--rfn', help='result file name')
     parser.addoption('--n_trails', default=1)
-    parser.addoption('--algorithm', default='incremental')
+    parser.addoption('--algorithm', default='focused')
     parser.addoption('--debug_mode', action='store_true', help='debug verbose mode')
 
 @pytest.fixture
