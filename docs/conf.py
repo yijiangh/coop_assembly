@@ -27,7 +27,7 @@ project = 'coop_assembly'
 year = '2020'
 author = 'Stefana Parascho & Yijiang Huang'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '0.0.1'
+version = release = '0.1.0'
 
 pygments_style = 'sphinx'
 show_authors = True
