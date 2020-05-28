@@ -85,9 +85,12 @@ def color_structure(element_bodies, printed, next_element=None, built_alpha=1.0,
         element_colors[element] = apply_alpha(BLACK, alpha=remaining_alpha)
     for element, color in element_colors.items():
         body = element_bodies[element]
-        [shape] = get_visual_data(body)
-        if color != shape.rgbaColor:
-            set_color(body, color=color)
+        try:
+            [shape] = get_visual_data(body)
+            if color != shape.rgbaColor:
+                set_color(body, color=color)
+        except:
+            pass
 
 ###########################################
 
