@@ -5,10 +5,16 @@ import pstats
 from termcolor import cprint
 
 import os, sys
-here = os.path.abspath(os.path.dirname(__file__))
-sys.path.extend([
-    os.path.join(here, 'pddlstream/'),
-])
+
+try:
+    # prioritize local pddlstream first
+    sys.path.append(os.environ['PDDLSTREAM_PATH'])
+except KeyError:
+    cprint('No `PDDLSTREAM_PATH` found in the env variables, using pddlstream submodule', 'yellow')
+    here = os.path.abspath(os.path.dirname(__file__))
+    sys.path.extend([
+        os.path.join(here, 'pddlstream/'),
+    ])
 
 from pddlstream.algorithms.downward import set_cost_scale
 from pddlstream.algorithms.incremental import solve_incremental

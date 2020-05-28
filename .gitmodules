@@ -4,3 +4,9 @@
 [submodule "src/coop_assembly/planning/pyplanners"]
 	path = src/coop_assembly/planning/pyplanners
 	url = https://github.com/caelan/pyplanners.git
+[submodule "external/compas_fab"]
+	path = external/compas_fab
+	url = https://github.com/yijiangh/compas_fab
+[submodule "external/pybullet_planning"]
+	path = external/pybullet_planning
+	url = https://github.com/yijiangh/pybullet_planning.git

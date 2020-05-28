@@ -21,13 +21,14 @@ def read(*names, **kwargs):
 requirements = [
     # 'compas=0.10',
     'compas>0.15.0',
-    # 'compas_fab',
+    'compas_fab',
+    'numpy',
     'scipy>=1.2.0',
-    'pybullet_planning', # TODO: pin version
+    'pybullet_planning>=0.5.0',
+    'ikfast_pybind',
     'termcolor',
     'matplotlib',
     'networkx',
-    # 'pycddlib',
 ]
 keywords_list = ['robotic assembly', 'double-tangent frame structure', 'digital fabrication', 'architecture']
 
