@@ -4,3 +4,9 @@
 [submodule "external/pybullet_planning"]
 	path = external/pybullet_planning
 	url = https://github.com/yijiangh/pybullet_planning.git
+[submodule "external/pddlstream"]
+	path = external/pddlstream
+	url = https://github.com/yijiangh/pddlstream.git
+[submodule "external/pyplanners"]
+	path = external/pyplanners
+	url = https://github.com/caelan/pyplanners.git

@@ -161,6 +161,8 @@ def compute_local_coordinate_system(p1, p2):
         R[:, i] axis vector
     """
     assert len(p1) == 3 and len(p2) == 3
+    p1 = np.array(p1)
+    p2 = np.array(p2)
     L = norm(p2-p1)
     assert L > 1e-6, 'pts too close, might be duplicated pts!'
     cz = (p2[2] - p1[2]) / L

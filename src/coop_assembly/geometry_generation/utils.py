@@ -85,3 +85,11 @@ def check_connected(ground_nodes, printed_elements):
                 visited_nodes.add(node2)
     return printed_elements <= visited_elements
 
+#####################################################
+# copy from pddlstream.utils
+
+def incoming_from_edges(edges):
+    incoming_vertices = defaultdict(set)
+    for v1, v2 in edges:
+        incoming_vertices[v2].add(v1)
+    return incoming_vertices

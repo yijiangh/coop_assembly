@@ -49,10 +49,6 @@ def test_generate_from_points(save_dir, points_library, viewer, file_spec, radiu
     for i, pt in enumerate(base_tri_pts):
         base_tri_pts[i] = tform_point(tform, pt)
 
-    # create pybullet env
-    # set_camera(points)
-    # create_plane()
-
     start_tri_ids = [find_point_id(base_pt, points) for base_pt in base_tri_pts]
     assert len(start_tri_ids) == 3, 'start triangle should only have three points!'
     print('base triangle ids: {}'.format(start_tri_ids))

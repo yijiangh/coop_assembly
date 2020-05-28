@@ -6,6 +6,7 @@ from numpy.linalg import norm
 import json
 from termcolor import cprint
 from itertools import islice
+from collections import namedtuple
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
@@ -34,18 +35,20 @@ from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream
 from coop_assembly.planning.run import run_pddlstream
 
 @pytest.fixture
-def test_file_name():
-    return '12_bars_point2triangle.json'
-    # return 'single_tet_point2triangle.json'
-
-@pytest.fixture
 def results_dir():
     here = os.path.dirname(__file__)
     return os.path.join(here, 'results')
 
 @pytest.mark.wip_pddl
 def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug_mode):
-    run_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug=debug_mode)
+    Arguments = namedtuple('Arguments', ['problem', 'algorithm', 'collisions', 'bar_only', 'partial_ordering', 'costs', 'teleops'])
+    partial_ordering = True
+    costs = False
+    teleops = True
+    step_sim = False
+
+    args = Arguments(file_spec, algorithm, collision, bar_only, partial_ordering, costs, teleops)
+    run_pddlstream(args, viewer=viewer, watch=watch, debug=debug_mode, step_sim=step_sim, write=write)
 
 @pytest.mark.wip_pddlstream_parse
 def test_parse_pddlstream(viewer, file_spec, collision, bar_only):
@@ -59,87 +62,19 @@ def test_parse_pddlstream(viewer, file_spec, collision, bar_only):
     connectors = list(contact_from_connectors.keys())
 
     pddlstream_problem = get_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors,
-                                        collisions=collision, # disable=disable,
-                                        precompute_collisions=True)
+                                        collisions=collision)
     print('Init:', pddlstream_problem.init)
     # if not bar_only:
     #     assert ('Robot', 'r0') in pddlstream_problem.init
     assert all([('Grounded', i) in pddlstream_problem.init for i in grounded_elements])
     assert all([('Element', i) in pddlstream_problem.init for i in element_from_index])
-    assert all([('Printed', i) in pddlstream_problem.init for i in element_from_index])
+    assert all([('Assembled', i) in pddlstream_problem.init for i in element_from_index])
     assert all([('Joined', e1, e2) in pddlstream_problem.init for e1, e2 in connectors])
     assert all([('Joined', e2, e1) in pddlstream_problem.init for e1, e2 in connectors])
 
     print('Goal:', pddlstream_problem.goal)
     assert 'and' == pddlstream_problem.goal[0]
     assert set([('Removed', i) for i in element_from_index]) <= set(pddlstream_problem.goal)
-
-@pytest.mark.check_sweep
-def test_capture_pregrasp_sweep_collision(viewer, results_dir, result_file_spec, watch, bar_only):
-    if not result_file_spec:
-        return
-    # file_name = '12_bars_solution_20-03-16_17-27-03.json'
-    # file_name = '12_bars_solution_20-03-17_11-58-04.json'
-    file_name = result_file_spec
-    with open(os.path.join(results_dir, file_name), 'r') as f:
-        json_data = json.loads(f.read())
-    file_spec = json_data['problem']
-    bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0.3))
-    fixed_obstacles, robot = load_world()
-    joints = joints_from_names(robot, IK_JOINT_NAMES)
-
-    element_from_index = bar_struct.get_element_from_index()
-    handles = []
-    handles.extend(label_elements({e:element_from_index[e].body for e in element_from_index}, body_index=False))
-
-    plan = []
-    # dump_world()
-    print('*'*10)
-    for traj_data in json_data['plan']:
-        path = traj_data['path']
-        element = traj_data['element']
-        tag = traj_data['tag']
-        attachments = []
-        if element is not None and tag=='place_approach':
-            tool_link = link_from_name(robot, TOOL_LINK_NAME)
-            # create attachment
-            body = element_from_index[element].body
-            set_pose(body, element_from_index[element].goal_pose.value)
-            set_joint_positions(robot, joints, path[-1])
-            attachments = [create_attachment(robot, tool_link, body)]
-            if len(plan) > 0 and plan[-1].tag == 'transition2place':
-                plan[-1].attachments = attachments
-            # set_color(body, RED)
-            # wait_if_gui()
-        traj = MotionTrajectory.from_data(traj_data, robot, joints, attachments)
-        plan.append(traj)
-
-    element_seq = recover_sequence(plan, element_from_index)
-    for traj in plan:
-        if traj.element is not None and traj.tag=='place_approach':
-            print('E{} : future E{}'.format(traj.element, element_seq[element_seq.index(traj.element):]))
-            command = Command([traj])
-            elements_order = [e for e in element_from_index if (e != traj.element)]
-            bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-            colliding = command_collision(command, bodies_order)
-            for element2, unsafe in zip(elements_order, colliding):
-                if unsafe:
-                    command.set_unsafe(element2)
-                else:
-                    command.set_safe(element2)
-            facts = [('Collision', command, e2) for e2 in command.colliding]
-            print('Collision facts: ', facts)
-            # * checking (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
-            assert set(command.colliding) <= set(element_seq[element_seq.index(traj.element):])
-
-        print('------------')
-
-    valid = validate_trajectories(element_from_index, fixed_obstacles, plan, allow_failure=has_gui(), watch=watch)
-    cprint('valid: {}'.format(valid), 'green' if valid else 'red')
-    # assert not valid
-
-    reset_simulation()
-    disconnect()
 
 @pytest.mark.regression
 def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revisit, n_trails, write, bar_only):
@@ -192,8 +127,9 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
     reset_simulation()
     disconnect()
 
-def test_rotate_goal_pose_gen(viewer, test_file_name):
-    bar_struct, _ = load_structure(test_file_name, viewer)
+@pytest.mark.rotate_goal_pose
+def test_rotate_goal_pose_gen(viewer, file_spec):
+    bar_struct, _ = load_structure(file_spec, viewer)
     element_bodies = bar_struct.get_element_bodies()
     element_from_index = bar_struct.get_element_from_index()
 
@@ -226,7 +162,7 @@ def test_stream(viewer, file_spec, collision):
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
     # wait_if_gui()
 
-    n_attempts = 10
+    n_attempts = 5
     # tool_pose = Pose(euler=Euler(yaw=np.pi/2))
     tool_pose = unit_pose()
     end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
@@ -282,6 +218,7 @@ def test_stream(viewer, file_spec, collision):
         remove_handles(handles)
 
 
+@pytest.mark.color_structure
 def test_color_structure(viewer, file_spec):
     bar_struct, _ = load_structure(file_spec, viewer)
     element_bodies = bar_struct.get_element_bodies()
@@ -306,8 +243,9 @@ def test_draw_ordered(viewer, file_spec):
 
 
 @pytest.mark.connector
-def test_connector(viewer, file_spec):
+def test_connector(viewer):
     # visual test
+    file_spec = '12_bars'
     bar_struct, _ = load_structure(file_spec, viewer)
     element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
     handles = []
@@ -356,14 +294,14 @@ def test_connector(viewer, file_spec):
 @pytest.mark.connector_db
 def test_connector_debug(viewer, file_spec):
     # visual test
-    bar_struct, _ = load_structure(file_spec, viewer, color=(1,0,0,0.3))
-    element_bodies = bar_struct.get_element_bodies()
+    bar_struct, _ = load_structure(file_spec, viewer)
+    element_bodies = bar_struct.get_element_bodies(color=(1,0,0,0.3))
     handles = []
     handles.extend(label_elements(element_bodies))
     wait_if_gui()
     remove_handles(handles)
 
-    elements = list(element_bodies.keys())
+    # elements = list(element_bodies.keys())
     contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
     connectors = list(contact_from_connectors.keys())
 
@@ -391,11 +329,11 @@ def test_contact_to_ground(viewer, file_spec):
     wait_if_gui()
     # and check connected test
 
-def test_load_robot(viewer):
-    robot_data, ws_data = get_picknplace_robot_data()
-    robot_urdf, _, tool_link_name, ee_link_name, joint_names, _ = robot_data
-    assert ee_link_name == 'eef_base_link'
-    assert tool_link_name == 'eef_tcp_frame'
-    connect(use_gui=viewer)
-    load_world()
-    wait_if_gui()
+# def test_load_robot(viewer):
+#     robot_data, ws_data = get_picknplace_robot_data()
+#     robot_urdf, _, tool_link_name, ee_link_name, joint_names, _ = robot_data
+#     assert ee_link_name == 'eef_base_link'
+#     assert tool_link_name == 'eef_tcp_frame'
+#     connect(use_gui=viewer)
+#     load_world()
+#     wait_if_gui()

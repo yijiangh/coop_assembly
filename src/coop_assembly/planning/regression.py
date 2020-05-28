@@ -6,10 +6,15 @@ from termcolor import cprint
 import numpy as np
 
 import os, sys
-here = os.path.abspath(os.path.dirname(__file__))
-sys.path.extend([
-    os.path.join(here, 'pddlstream/'),
-])
+try:
+    # prioritize local pddlstream first
+    sys.path.append(os.environ['PDDLSTREAM_PATH'])
+except KeyError:
+    cprint('No `PDDLSTREAM_PATH` found in the env variables, using pddlstream submodule', 'yellow')
+    here = os.path.abspath(os.path.dirname(__file__))
+    sys.path.extend([
+        os.path.join(here, '..', '..', '..', 'external', 'pddlstream/'),
+    ])
 from pddlstream.utils import outgoing_from_edges
 
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \

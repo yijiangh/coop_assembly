@@ -139,6 +139,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
 def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--problem', default='single_tet', help='The name of the problem to solve')
     parser.add_argument('-a', '--algorithm', default='focused', choices=ALGORITHMS, help='Stripstream algorithms')
     parser.add_argument('-c', '--collisions', action='store_false', help='disable collision checking')
     parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for floating bars')
@@ -155,7 +156,6 @@ def create_parser():
 
 def main():
     parser = create_parser()
-    parser.add_argument('-p', '--problem', default='single_tet', help='The name of the problem to solve')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
     parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')

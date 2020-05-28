@@ -34,12 +34,7 @@ from coop_assembly.planning.visualization import draw_element, GROUND_COLOR, BAC
     label_points
 from coop_assembly.planning.utils import load_world
 
-sys.path.append(os.environ['PDDLSTREAM_PATH'])
-# here = os.path.abspath(os.path.dirname(__file__))
-# sys.path.extend([
-#     os.path.join(here, 'pddlstream/'),
-# ])
-from pddlstream.utils import incoming_from_edges
+from .utils import incoming_from_edges
 
 #######################################
 
