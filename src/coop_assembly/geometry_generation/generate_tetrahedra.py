@@ -31,7 +31,6 @@ from coop_assembly.help_functions.helpers_geometry import calculate_coord_sys, c
     contact_to_ground
 from coop_assembly.help_functions.tangents import first_tangent, second_tangent, third_tangent
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
-from coop_assembly.planning import BUILT_PLATE_Z
 
 from pybullet_planning import connect, reset_simulation, disconnect
 

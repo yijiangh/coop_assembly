@@ -21,6 +21,7 @@ from coop_assembly.help_functions.helpers_geometry import update_bar_lengths
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset, contact_info_from_seq
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
+
 from coop_assembly.planning.visualization import set_camera, SHADOWS, BACKGROUND_COLOR, label_elements
 
 from pybullet_planning import connect, wait_if_gui, dump_world, apply_alpha, draw_collision_diagnosis, pairwise_collision, \
@@ -103,9 +104,8 @@ def test_connect(viewer=False):
     viewer : bool, optional
         [description], by default False
     """
-    # connect(use_gui=viewer)
-    # dump_world()
-    # wait_if_gui()
-    print("hahaha")
+    connect(use_gui=viewer)
+    dump_world()
+    wait_if_gui()
     a = 10
     return a

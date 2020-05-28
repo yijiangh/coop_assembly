@@ -40,6 +40,7 @@ from coop_assembly.help_functions import METER_SCALE
 
 STRIPSTREAM_ALGORITHM = [
     'incremental',
+    'incremental_sa', # semantic attachment
     'focused',
     'binding',
     'adaptive',
@@ -88,7 +89,9 @@ def compute_orders(elements_from_layer):
 
 def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                    printed=set(), removed=set(), collisions=True,
-                   transit=False, return_home=True, checker=None, bar_only=False, teleops=False, **kwargs):
+                   transit=False, return_home=True, checker=None, bar_only=False, teleops=False, fluent_special=False, **kwargs):
+    """ special_fluent: True if using incremental + semantic attachment (fluents)
+    """
     # TODO update removed & printed
     assert not removed & printed
     remaining = set(element_from_index) - removed - printed
@@ -101,21 +104,27 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
         robots = [element_from_index[e].element_robot for e in element_from_index]
         initial_confs = {ELEMENT_ROBOT_TEMPLATE.format(i): Conf(robot, BAR_INITIAL_CONF) for i, robot in enumerate(robots)}
 
-    domain_pddl = read(get_file_path(__file__, 'pddl/domain.pddl'))
-    stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
+    if not fluent_special:
+        domain_pddl = read(get_file_path(__file__, 'pddl/domain.pddl'))
+        stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
+    else:
+        domain_pddl = read(get_file_path(__file__, 'pddl/domain_fluent.pddl'))
+        stream_pddl = read(get_file_path(__file__, 'pddl/stream_fluent.pddl'))
     constant_map = {}
 
     stream_map = {
-        # 'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-        #                                        partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
-        #                                        initial_confs=initial_confs, teleops=teleops, **kwargs),
         'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
-                                              initial_confs=initial_confs, teleops=teleops, **kwargs),
-        # ? if tested in collision, certify CollisionFree
+                                              initial_confs=initial_confs, teleops=teleops, fluent_special=fluent_special, **kwargs),
         'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
+    if not fluent_special:
+        stream_map.update({
+            'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+                                                   partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
+                                                   initial_confs=initial_confs, teleops=teleops, **kwargs),
+        })
 
     init = []
     # if transit:
@@ -154,11 +163,15 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 ##################################################
 
 def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
-                     collisions=True, disable=False, max_time=60*4, bar_only=False, algorithm='incremental',
+                     collisions=True, disable=False, max_time=60*4, bar_only=False, algorithm='focused',
                      debug=False, costs=False, teleops=False, **kwargs):
+    fluent_special = algorithm == 'incremental_sa'
+    if fluent_special:
+        cprint('Using incremental + semantic attachment.', 'yellow')
 
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
-                                        collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
+                                        collisions=collisions, bar_only=bar_only, teleops=teleops, fluent_special=fluent_special, **kwargs)
+
     if debug:
         print('Init:', pddlstream_problem.init)
         print('Goal:', pddlstream_problem.goal)
@@ -181,9 +194,9 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     pr = cProfile.Profile()
     pr.enable()
     with LockRenderer(lock=True):
-        if algorithm == 'incremental':
+        if algorithm in ['incremental', 'incremental_sa']:
             discrete_planner = 'max-astar' # get_planner(costs)
-            solution = solve_incremental(pddlstream_problem, planner=discrete_planner, max_time=600,
+            solution = solve_incremental(pddlstream_problem, max_time=600, #planner=discrete_planner,
                                         success_cost=success_cost, unit_costs=not costs,
                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm in SS_OPTIONS:
@@ -191,7 +204,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
             stream_info = {
                 'sample-place': StreamInfo(PartialInputs(unique=True)),
-                # 'sample-move': StreamInfo(PartialInputs(unique=True)),
+                'sample-move': StreamInfo(PartialInputs(unique=True)),
                 'test-cfree': StreamInfo(negate=True),
             }
             # TODO: effort_weight=0 will lead to noplan found
@@ -256,7 +269,9 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 ###############################################################
 
 def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
-    bar_only=False, initial_confs={}, teleops=False, **kwargs):
+    bar_only=False, initial_confs={}, teleops=False, fluent_special=False, **kwargs):
+    """ fluent_special : True if we are running incremental + semantic attachment
+    """
     gen_fn_from_robot = {}
     for robot in robots:
         ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
@@ -265,6 +280,9 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
         end_effector = EndEffector(robot, ee_link=ee_link,
                                    tool_link=tool_link,
                                    visual=False, collision=True)
+
+        # TODO: not need precompute_collisions when running incremental + semantic attachment
+        # but just do it for now
         pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, \
             precompute_collisions=True, collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
         gen_fn_from_robot[robot] = pick_gen_fn
@@ -272,7 +290,7 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
     def wild_gen_fn(robot_name, element, fluents=[]):
         robot = index_from_name(robots, robot_name)
         printed = []
-        print('E{} - fluent {}'.format(element, fluents))
+        # print('E{} - fluent {}'.format(element, fluents))
         for fact in fluents:
             if fact[0] == 'assembled':
                 if fact[1] != element:
@@ -280,10 +298,12 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
             else:
                 raise NotImplementedError(fact[0])
         for command, in gen_fn_from_robot[robot](element, printed=printed):
-            # q1 = Conf(robot, np.array(command.start_conf), element)
-            # q2 = Conf(robot, np.array(command.end_conf), element)
-            # outputs = [(q1, q2, command)]
-            outputs = [(command,)]
+            if not fluent_special:
+                q1 = Conf(robot, np.array(command.start_conf), element)
+                q2 = Conf(robot, np.array(command.end_conf), element)
+                outputs = [(q1, q2, command)]
+            else:
+                outputs = [(command,)]
             facts = []
             yield WildOutput(outputs, facts)
             # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
@@ -298,7 +318,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
     # TODO initial confs
     # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
 
-    def wild_gen_fn(robot_name, q2, current_command, fluents=[]):
+    def wild_gen_fn(robot_name, q1, q2, current_command, fluents=[]):
         # transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
         # assert norm(q1.positions - transit_start_conf) < 1e-8
         init_q = initial_confs[robot_name]

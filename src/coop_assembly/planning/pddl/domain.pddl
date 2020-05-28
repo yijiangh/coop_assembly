@@ -7,9 +7,8 @@
     (Assembled ?e)
     (Removed ?e)
 
-    ; (PlaceAction ?r ?e ?q1 ?q2 ?t)
-    (PlaceAction ?r ?e ?t)
-    (MoveAction ?r ?q2 ?t)
+    (PlaceAction ?r ?e ?q1 ?q2 ?t)
+    (MoveAction ?r ?q1 ?q2 ?t2)
     (Grounded ?e)
     (Connected ?e)
     (Joined ?e1 ?e2)
@@ -28,15 +27,14 @@
   )
 
   (:action move
-    ; :parameters (?r ?q1 ?q2 ?t2)
-    :parameters (?r ?q2 ?t2)
+    :parameters (?r ?q1 ?q2 ?t2)
     :precondition (and
-                        ; (Conf ?r ?q1)
+                        (Conf ?r ?q1)
                         ; (AtConf ?r ?q1)
                         (Conf ?r ?q2)
                         (Traj ?r ?t2)
                         (CanMove ?r)
-                        (MoveAction ?r ?q2 ?t2)
+                        (MoveAction ?r ?q1 ?q2 ?t2)
                         ;;; collision constraint
                         (not (UnSafeTraj ?r ?t2))
                        )
@@ -49,11 +47,9 @@
 
   ; place = remove the element
   (:action place
-    ; :parameters (?r ?e ?q1 ?q2 ?t)
-    :parameters (?r ?e ?t)
+    :parameters (?r ?e ?q1 ?q2 ?t)
     :precondition (and
-                    ;    (PlaceAction ?r ?e ?q1 ?q2 ?t)
-                       (PlaceAction ?r ?e ?t)
+                       (PlaceAction ?r ?e ?q1 ?q2 ?t)
                        (Assembled ?e)
                        ; (Stiff)
                        (Connected ?e)
@@ -68,8 +64,6 @@
     :effect (and (Removed ?e)
                  (CanMove ?r)
                  (not (Assembled ?e))
-                 (not (AtConf ?r ?q1))
-                 (AtConf ?r ?q2)
                  )
   )
 

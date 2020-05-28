@@ -34,8 +34,6 @@ from coop_assembly.planning.visualization import draw_element, GROUND_COLOR, BAC
     label_points
 from coop_assembly.planning.utils import load_world
 
-from .utils import incoming_from_edges
-
 #######################################
 
 def add_successors(queue, all_elements, node_points, ground_nodes, heuristic_fn,

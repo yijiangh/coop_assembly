@@ -162,17 +162,27 @@ def visualize_collision_digraph(collision_facts):
         G.add_edge(*edge, weight=weight)
 
     # plotting
+    print('Collision constraint graph: (i -> j) means assembling j collides with i.')
+    print('A feasible solution should not have any cycle.')
     plt.subplots()
     # nodal positions
     pos = nx.shell_layout(G)
     # nodes
     nx.draw_networkx_nodes(G, pos, node_size=700)
     # edges
-    nx.draw_networkx_edges(G, pos, edgelist=list(t_edges.keys()), width=3, edge_color='r')
+    nx.draw_networkx_edges(G, pos, edgelist=list(t_edges.keys()), width=3, edge_color='y')
     nx.draw_networkx_edges(
         G, pos, edgelist=list(p_edges.keys()), width=3, alpha=0.5, edge_color="b" #, style="dashed"
     )
     # labels
     nx.draw_networkx_labels(G, pos, font_size=20)
+    # identify cycles
+    try:
+        cycles = nx.find_cycle(G, orientation='original')
+        print('cycle: {}'.format(cycles))
+        nx.draw_networkx_edges(G, pos, edgelist=[c[0:2] for c in cycles], width=3, edge_color='r')
+    except:
+        pass
 
+    plt.title('Collision constraint graph')
     plt.show()

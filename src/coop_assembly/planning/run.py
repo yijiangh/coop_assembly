@@ -85,13 +85,13 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
         if args.algorithm in STRIPSTREAM_ALGORITHM:
             commands = []
             place_actions = [action for action in reversed(plan) if action.name == 'place']
+            start_conf_id = 1 if args.algorithm == 'incremental_sa' else 2
             for pc in place_actions:
                 print_command = pc.args[-1]
                 robot_name = pc.args[0]
                 for action in plan:
                     if action.name == 'move' and action.args[0] == robot_name and \
-                        norm(action.args[1].positions-print_command.start_conf)<1e-8:
-                        # norm(action.args[2].positions-print_command.start_conf)<1e-8:
+                        norm(action.args[start_conf_id].positions-print_command.start_conf)<1e-8:
                         commands.append(action.args[-1])
                         break
                 commands.append(print_command)

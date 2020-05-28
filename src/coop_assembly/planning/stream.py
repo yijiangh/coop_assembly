@@ -354,6 +354,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
     def gen_fn(element, printed=[], diagnosis=False):
         assert implies(bar_only, element_from_index[element].element_robot is not None)
 
+        print('new stream fn - printed: {}'.format(printed))
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
         if not collisions:
@@ -383,12 +384,13 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
 
                 command = compute_place_path(pregrasp_poses, grasp, element, element_from_index,
                     collision_fn=collision_fn if not bar_only else None, bar_only=bar_only,
-                    end_effector=end_effector,  verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector, teleops=teleops)
+                    end_effector=end_effector, verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector, teleops=teleops)
                 if command is None:
                     continue
 
                 # ? why update safe?
-                command.update_safe(printed)
+                # command.update_safe(printed)
+                # TODO: not need this when running incremental + semantic attachment
                 if precompute_collisions:
                     bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
                     colliding = command_collision(command, bodies_order)
@@ -409,7 +411,7 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
 
                 # if verbose:
                 cprint('Place E#{} | Attempts: {} | Trajectories: {} | Colliding: {}'.format(element, attempt, len(trajectories), \
-                        sorted(len(t.colliding) for t in trajectories)), 'green')
+                        sorted([len(t.colliding) for t in trajectories])[0:3]), 'green')
 
                 yield command,
                 break
