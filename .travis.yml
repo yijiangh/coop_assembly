@@ -18,7 +18,7 @@ install:
   - pip install ./external/compas_fab
   - pip install ./external/pybullet_planning
   # TODO: building FD can be tricky on Windows, need to do it from VS2017 Developer command prompt
-  - python ./external/pddlstream/FastDownward/build.py
+#   - python ./external/pddlstream/FastDownward/build.py
   # TODO: if testing pyplanner, need to export its path to env: `PYPLANNER_PATH`
   - pip install --no-cache-dir -r requirements-dev.txt
 

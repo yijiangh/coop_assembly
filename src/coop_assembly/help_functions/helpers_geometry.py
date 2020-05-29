@@ -176,8 +176,8 @@ def compute_local_coordinate_system(p1, p2):
         R[1,1] = 1
         R[2,0] = cz
     else:
-        new_x = (np.array(p2) - np.array(p1)) / L
-        new_y = - np.cross(new_x, np.array([0.,0.,1.]))
+        new_x = (p2 - p1) / L
+        new_y = -np.cross(new_x, np.array([0.,0.,1.]))
         new_y /= norm(new_y)
         new_z = np.cross(new_x, new_y)
         R = np.vstack([new_x, new_y, new_z]).T
@@ -190,7 +190,7 @@ def bar_sec_verts(p1, p2, radius, n=20):
     for i in range(n):
         theta = i*2*math.pi/n
         v = np.array([0, np.cos(theta), np.sin(theta)])
-        vertices.append(radius*R.T.dot(v))
+        vertices.append(radius*R.dot(v))
     return vertices
 
 def calculate_coord_sys(end_pts, pt_mean):

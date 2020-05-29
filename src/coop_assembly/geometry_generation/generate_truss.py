@@ -16,7 +16,7 @@ from compas.geometry import is_coplanar, subtract_vectors, angle_vectors
 from compas.datastructures import Network
 
 from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED, BLUE, GREEN, BLACK, apply_alpha, \
-    add_line, draw_circle, remove_handles, add_segments
+    add_line, draw_circle, remove_handles, add_segments, BROWN, YELLOW
 
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle, dropped_perpendicular_points
@@ -222,6 +222,9 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
             # convert mil to meter
             h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
             circ_verts = bar_sec_verts(*list(e.values()), radius=radius)
+            for v in circ_verts:
+                assert(abs(v.dot(list(e.values())[0] - list(e.values())[1])) < 1e-8)
+
             ch1 = add_segments([(list(e.values())[0] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
             ch2 = add_segments([(list(e.values())[1] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
             # handles.extend([h] + ch1 + ch2)
@@ -344,33 +347,23 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         contact_e1 = contact_bars[0][0]
         contact_e2 = contact_bars[1][0]
         contact_e = [contact_e1, contact_e2]
+
         contact_v_id_1 = list(set(contact_e1) & set(element))[0]
         supp_v_id_1 = list(set(contact_e1) - set(element))[0]
         contact_v_id_2 = list(set(contact_e2) & set(element))[0]
         supp_v_id_2 = list(set(contact_e2) - set(element))[0]
+        # print('contact v 1 {} | {} ||| contact v2 {} | {}'.format(contact_v_id_1, supp_v_id_1, contact_v_id_2, supp_v_id_2))
 
-        # pt_mid = (node_points[element[0]] + node_points[element[1]]) / 2
-        # R = compute_local_coordinate_system(node_points[element[0]], node_points[element[1]])
-        # ex = R[:,1]
-        # ey = R[:,2]
-        # pt_b_1 = bar_from_elements[contact_e1][contact_v_id_1]
-        # l_1 = bar_from_elements[contact_e1][contact_v_id_1] - bar_from_elements[contact_e1][supp_v_id_1]
-        # pt_b_2 = bar_from_elements[contact_e2][contact_v_id_2]
-        # l_2 = bar_from_elements[contact_e2][contact_v_id_2] - bar_from_elements[contact_e2][supp_v_id_2]
         line1 = [bar_from_elements[contact_e1][contact_v_id_1], bar_from_elements[contact_e1][supp_v_id_1]]
         line2 = [bar_from_elements[contact_e2][contact_v_id_2], bar_from_elements[contact_e2][supp_v_id_2]]
         for ind_1 in range(2):
             contact_pt1, vec_l1 = solve_one_one_tangent(line1, line2, radius, ind_1)
             if contact_pt1 is not None and vec_l1 is not None:
                 break
+        # add_line(contact_pt1*1e-3, vec_l1 + contact_pt1*1e-3, color=YELLOW, width=0.5)
 
         if vec_l1 is not None:
-            # new_contact_pt1, _ = dropped_perpendicular_points(pt_mid, pt_mid+vec_l1,
-            #                                     bar_from_elements[contact_e1][contact_v_id_1], bar_from_elements[contact_e1][supp_v_id_1])
-            contact_pt2, _ = dropped_perpendicular_points(contact_pt1, contact_pt1+vec_l1,
-                                bar_from_elements[contact_e2][contact_v_id_2], bar_from_elements[contact_e2][supp_v_id_2])
-            # contact_pt = new_point + axis_vector * max([norm(new_contact_pt1-new_point), norm(new_contact_pt2-new_point)])
-
+            contact_pt2, _ = dropped_perpendicular_points(contact_pt1, contact_pt1+vec_l1, *line2)
             new_node_id = contact_v_id_1
             new_point = contact_pt1
             contact_v_id = contact_v_id_2

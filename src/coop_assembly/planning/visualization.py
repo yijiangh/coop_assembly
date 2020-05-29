@@ -86,6 +86,7 @@ def color_structure(element_bodies, printed, next_element=None, built_alpha=1.0,
     for element, color in element_colors.items():
         body = element_bodies[element]
         try:
+            # TODO: might return nothing is pytest without -s ?
             [shape] = get_visual_data(body)
             if color != shape.rgbaColor:
                 set_color(body, color=color)

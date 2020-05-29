@@ -742,9 +742,10 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
 
 #################################################
 
-# def solve_one_one_tangent(pt1, pt2, R1, diameter_1, diameter_2, ind):
-def solve_one_one_tangent(line1, line2, radius, ind_1):
-    """[summary]
+def solve_one_one_tangent(line1, line2, radius, ind_1, debug=False):
+    """compute tanget bar to two bars, the "new point" is line1[0], different to `solve_tangent_one`
+
+    Assuming two bars have the same radius for now.
 
     Parameters
     ----------
@@ -767,19 +768,13 @@ def solve_one_one_tangent(line1, line2, radius, ind_1):
     def compute_tan_pts(theta):
         R = compute_local_coordinate_system(*line1)
         v = np.array([0, np.cos(theta), np.sin(theta)])
-        contact_pt1 = radius*R.T.dot(v)
+        contact_pt1 = line1[0] + 2*radius*R.dot(v)
 
-        # x1  = x[0]
-        # x2  = x[1]
-        # delta_x1 = add_vectors(scale_vector(ex, x1), scale_vector(ey, x2))
-        # ref_point = add_vectors(pt_mid, delta_x1)
-
-        # # ! this does not conform to bar3 and bar4's own radius
+        # ! this does not conform to bar3 and bar4's own radius
         t_pts1 = lines_tangent_to_cylinder(line2[0], line2[1]-line2[0], contact_pt1, 2*radius)
 
         if t_pts1 is not None:
-            # vec_l1 = np.array(contact_pt1) + np.array(t_pts1[ind_1+1]) - np.array(pt_mid)
-            vec_l1 = np.array(t_pts1[ind_1+1])
+            vec_l1 = np.array(line2[0]) + np.array(t_pts1[ind_1+1]) - contact_pt1
             vec_l1 /= norm(vec_l1)
             return np.array(contact_pt1), vec_l1
         else:
@@ -788,30 +783,17 @@ def solve_one_one_tangent(line1, line2, radius, ind_1):
     def fn(theta):
         contact_pt1, vec_l1 = compute_tan_pts(theta)
         if contact_pt1 is None and vec_l1 is None:
-            val = 1e5
-            return val
-
-        # contact_pt, _ = dropped_perpendicular_points(new_point, contact_pt,
-        #                                              bar_from_elements[contact_e][contact_v_id], bar_from_elements[contact_e][supp_v_id])
+            return 1e5
         delta_x1 = contact_pt1 - line1[0]
         delta_x1 /= norm(delta_x1)
-        val = abs(delta_x1.dot(vec_l1))
+        return abs(delta_x1.dot(vec_l1))
 
-        # ang_v = angle_vectors(vec_l1, vec_l2, deg=True)
-        # if 180 - ang_v < 90:
-        #     val = 180 - ang_v
-        #     # assert False, 'directional vector should not be flipped!'
-        # else:
-            # val = ang_v
-        return val
-
-    res_opt = scipy.optimize.fminbound(fn, 0, 2*np.pi, full_output=True, disp=3)
-    # if abs(res_opt[1]) > 1e-3:
-    #     return None, None
+    res_opt = scipy.optimize.fminbound(fn, 0, 2*np.pi, full_output=True, disp=0 if not debug else 3)
+    if abs(res_opt[1]) > 1e-3:
+        return None, None
 
     contact_pt1, vec_l1 = compute_tan_pts(res_opt[0])
     return contact_pt1, vec_l1
-
 
 def solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, diameter_1, diameter_2, ind):
     # try twice?
