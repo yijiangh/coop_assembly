@@ -7,5 +7,7 @@ dependencies:
    - python=3.7
    - pip>=19.0.1
    - cmake
+#   - git submodule update --init --recursive
    - pip:
+     - install Cython --install-option="--no-cython-compile"
      - -r requirements-dev.txt

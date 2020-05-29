@@ -444,6 +444,15 @@ def first_tangent(new_pt, contact_pt, max_len, b_v1_1, b_v1_2, b_struct, pt_mean
 
 def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radius, max_len, pt_mean, b_v0_n=None, check_collision=False):
     """1-2 case, one existing bar at the new point, 2 bars existing at the other end
+
+    Arguments
+    ---------
+    b_v2_1 : BarS vertex
+    b_v2_2 :
+        lower two existing bars
+    b_v_old : BarS vertex
+        the first bar in the new tet group
+
     """
     b2_1 = b_struct.node[b_v2_1]
     b2_2 = b_struct.node[b_v2_2]
