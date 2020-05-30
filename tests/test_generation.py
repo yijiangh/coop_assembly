@@ -2,6 +2,7 @@ import os
 import pytest
 from itertools import combinations
 import numpy as np
+from numpy.linalg import norm
 
 from compas.datastructures import Network
 from compas.geometry import scale_vector
@@ -17,12 +18,14 @@ from coop_assembly.geometry_generation.tet_sequencing import \
     point2point_shortest_distance_tet_sequencing, \
     point2triangle_tet_sequencing
 from coop_assembly.geometry_generation.execute import execute_from_points
-from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset, contact_info_from_seq
+
+from coop_assembly.help_functions.tangents import lines_tangent_to_cylinder
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning.visualization import set_camera, SHADOWS, BACKGROUND_COLOR, label_elements
 from coop_assembly.planning.utils import load_world
 
+# from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset, contact_info_from_seq
 from coop_assembly.geometry_generation.generate_tetrahedra import generate_structure_from_points
 
 from pybullet_planning import connect, wait_for_user, set_camera_pose, create_plane, get_pose, set_pose, multiply, \
@@ -33,6 +36,43 @@ from pybullet_planning import connect, wait_for_user, set_camera_pose, create_pl
 def save_dir():
     here = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(here, 'test_data')
+
+def np_norm(p):
+    return norm(np.array(p))
+
+def np_dot(p1, p2):
+    return np.array(p1).dot(np.array(p2))
+
+def diff_norm(p1, p2):
+    return norm(np.array(p1) - np.array(p2))
+
+@pytest.mark.tan
+def test_lines_tangent_to_cylinder():
+    base_point = np.array([0,1,0])
+    line_vect = np.array([0,1,0])
+    ref_point = np.array([1,0,0])
+    dist = 0.5
+    ptM, delta_up, delta_down = list(map(np.array, lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist)))
+    assert norm(ptM-np.zeros(3)) < 1e-12
+    assert abs(norm(delta_up) - dist) < 1e-12
+    assert abs(norm(delta_down) - dist) < 1e-12
+    assert abs((ptM+delta_up-ref_point).dot(delta_up)) < 1e-12
+    assert abs((ptM+delta_down-ref_point).dot(delta_down)) < 1e-12
+
+    # flipping the line vector direction would only swap the up/down delta vectors
+    ptM2, delta_up2, delta_down2 = list(map(np.array, lines_tangent_to_cylinder(base_point, -line_vect, ref_point, dist)))
+    assert norm(ptM - ptM2) < 1e-12
+    assert norm(delta_up - delta_down2) < 1e-12
+    assert norm(delta_down - delta_up2) < 1e-12
+
+    for _ in range(10):
+        theta = np.random.random()*2*np.pi
+        # random_y = np.random.random()*1e5
+        random_y = 0
+        r = dist
+        assert(lines_tangent_to_cylinder(base_point, line_vect, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist) is None)
+        r = dist+1e-8
+        assert(lines_tangent_to_cylinder(base_point, line_vect, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist))
 
 @pytest.mark.gen_from_pts
 @pytest.mark.parametrize('radius', [(3.17), ])

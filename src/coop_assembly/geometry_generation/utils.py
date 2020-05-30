@@ -93,3 +93,9 @@ def incoming_from_edges(edges):
     for v1, v2 in edges:
         incoming_vertices[v2].add(v1)
     return incoming_vertices
+
+def outgoing_from_edges(edges):
+    outgoing_vertices = defaultdict(set)
+    for v1, v2 in edges:
+        outgoing_vertices[v1].add(v2)
+    return outgoing_vertices

@@ -100,7 +100,8 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
     base_point : point
         start point for the cylinder axis
     line_vect : vector
-        vector [other end of the axis - base_point], i.e. pointing outward from base_pt, **the direction here is very important!**
+        vector [other end of the axis - base_point]
+        negating this direction would only swap the up/down up and down vectors.
     ref_point : point
         new point Q
     dist : float
@@ -120,8 +121,8 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
 
     e_x = normalize_vector(line_QM)
     e_y = cross_vectors(e_x, l_vect)
-    if length_vector(line_QM) == 0:
-        # this means the ref_point is on the cylinder's axis initially
+    if length_vector(line_QM) < 1e-6:
+        # this means the ref_point is within the cylinder's body initially
         return None
     # sin(angle BQM)
     x = dist / length_vector(line_QM)
@@ -145,7 +146,7 @@ def lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist):
 def planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist, info='plane'):
     """find tangent planes of a cylinder passing through a given point, return tangent planes
 
-    This is a convenient wrapper around `lines_tangent_to_cylinder`
+    This is a convenient wrapper around `lines_tangent_to_cylinder` to get tangent planes.
 
     .. image:: ../images/plane_tangent_to_one_cylinder.png
         :scale: 80 %
@@ -156,7 +157,8 @@ def planes_tangent_to_cylinder(base_point, line_vect, ref_point, dist, info='pla
     base_point : point
         start point for the cylinder axis
     line_vect : vector
-        direction of the existing bar's axis, direction: point outwards from base_point], **direction very important!**
+        direction of the existing bar's axis vector [other end of the axis - base_point]
+        negating this direction would only swap the up/down up and down vectors.
     ref_point : point
         point Q, the new floating point
     dist : float
@@ -459,7 +461,7 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
 
     # floating newly added bar in the tet (added by `first_tangent`)
     line = b_struct.vertex[b_v_old]["axis_endpoints"]
-    vec_l_0 = vector_from_points(line[0], line[1])
+    # vec_l_0 = vector_from_points(line[0], line[1])
     # local coordinate system at the new point, used for parameterizing the contact pt
     R = compute_local_coordinate_system(*line)
     ex = R[:,1]
@@ -502,6 +504,7 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
     else:
         # check collisions
         for ind in range(4):
+            # safeguarding, assuming no first bar exists
             sols_test = tangent_from_point_one(
                 pt_b_1, l_1, pt_b_2, l_2, new_point, 2 * radius, 2 * radius, ind)
 
@@ -581,28 +584,32 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
 def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v0_n=None, check_collision=False):
     """2-2 case, two existing bar at the new point, 2 bars existing at the other end
 
-       b_v0, b_v1 are the two latest added vars in the tet
+       b_v0, b_v1 are the two latest added bars in the tet
     """
+    # "base" two bars
     b3_1 = b_struct.node[b_v3_1]
     b3_2 = b_struct.node[b_v3_2]
-
-    line_1 = b_struct.vertex[b_v0]["axis_endpoints"]
-    line_2 = b_struct.vertex[b_v1]["axis_endpoints"]
-
-    pt_b_1 = line_1[0]
-    pt_b_2 = line_2[0]
     pt_b_3 = b3_1["axis_endpoints"][0]
     pt_b_4 = b3_2["axis_endpoints"][0]
+    line_3 = b3_1["axis_endpoints"]
+    line_4 = b3_2["axis_endpoints"]
+
+    # lastest two bars
+    line_1 = b_struct.node[b_v0]["axis_endpoints"]
+    line_2 = b_struct.node[b_v1]["axis_endpoints"]
+    pt_b_1 = line_1[0]
+    pt_b_2 = line_2[0]
+
     l_1 = normalize_vector(vector_from_points(line_1[0], line_1[1]))
     l_2 = normalize_vector(vector_from_points(line_2[0], line_2[1]))
-    l_3 = normalize_vector(vector_from_points(b3_1["axis_endpoints"][0], b3_1["axis_endpoints"][1]))
-    l_4 = normalize_vector(vector_from_points(b3_2["axis_endpoints"][0], b3_2["axis_endpoints"][1]))
+    l_3 = normalize_vector(vector_from_points(line_3[0], line_3[1]))
+    l_4 = normalize_vector(vector_from_points(line_4[0], line_4[1]))
 
     # contact point 1
     pts_axis_1 = dropped_perpendicular_points(line_1[0], line_1[1], line_2[0], line_2[1])
     pt_axis_1 = centroid_points(pts_axis_1)
     # contact point 2
-    pts_axis_2 = dropped_perpendicular_points(b3_1["axis_endpoints"][0], b3_1["axis_endpoints"][1], b3_2["axis_endpoints"][0], b3_2["axis_endpoints"][1])
+    pts_axis_2 = dropped_perpendicular_points(line_3[0], line_3[1], line_4[0], line_4[1])
     pt_axis_2 = centroid_points(pts_axis_2)
     pt_mid = centroid_points((pt_axis_1, pt_axis_2))
     # axis = vector_from_points(pt_axis_1, pt_axis_2)
@@ -759,9 +766,9 @@ def solve_one_one_tangent(line1, line2, radius, ind_1, debug=False):
     Parameters
     ----------
     line1 : list of pts
-        [contact pt, other pt]
+        [contact pt, other pt], direction not important
     line2 : list of pts
-        [contact pt, other pt]
+        [contact pt, other pt], direction not important
     radius : float
         [description]
     ind_1 : int
@@ -804,18 +811,16 @@ def solve_one_one_tangent(line1, line2, radius, ind_1, debug=False):
     contact_pt1, vec_l1 = compute_tan_pts(res_opt[0])
     return contact_pt1, vec_l1
 
-def solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, diameter_1, diameter_2, ind):
+def solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, diameter_1, diameter_2, ind, debug=False):
     # try twice?
     # for i in range(2):
     r_c = 2*radius
     def compute_tan_pt(x):
         # sample (dx, dy) in the local coordinate system (ex, ey)
         delta_x = add_vectors(scale_vector(ex, x), scale_vector(ey, math.sqrt(r_c*r_c - x*x)))
+        # point on the new bar
         ref_point = add_vectors(new_point, delta_x)
-
-        vec = tangent_from_point_one(
-            pt_b_1, l_1, pt_b_2, l_2, ref_point, diameter_1, diameter_2, ind)
-
+        vec = tangent_from_point_one(pt_b_1, l_1, pt_b_2, l_2, ref_point, diameter_1, diameter_2, ind)
         return ref_point, vec
 
     def fn(x):
@@ -830,7 +835,7 @@ def solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, di
         val = abs(dot_vectors(normalize_vector(vec_l), normalize_vector(vector_from_points(new_point, ref_point))))
         return val
 
-    res_opt = scipy.optimize.fminbound(fn, -2*radius, 2*radius, full_output=True, disp=0)
+    res_opt = scipy.optimize.fminbound(fn, -2*radius, 2*radius, full_output=True, disp=0 if not debug else 3)
     if res_opt[1] > 0.1:
         return None
 
@@ -842,7 +847,7 @@ def solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, di
         pt_2, vec_l = ret_fp2
         return pt_2, vec_l[0]
 
-def solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2):
+def solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2, debug=False):
     def compute_third_tan_pts(x):
         """ x is the local coordinate in (ex, ey) for the new axis point
         """
@@ -861,7 +866,6 @@ def solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3
 
     def fn(x):
         _, _, tfp_1, tfp_2 = compute_third_tan_pts(x)
-
         if tfp_1:
             vec_l1 = tfp_1[0]
         else:
@@ -875,7 +879,6 @@ def solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3
             print("problem in opt 3 - 1")
             f = 180
             return f
-
         ang_v = angle_vectors(vec_l1, vec_l2, deg=True)
         if 180 - ang_v < 90:
             f = 180 - ang_v
@@ -883,7 +886,7 @@ def solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3
             f = ang_v
         return f
 
-    res_opt = scipy.optimize.fmin(fn, [0.0, 0.0], full_output=True, disp=0)
+    res_opt = scipy.optimize.fmin(fn, [0.0, 0.0], full_output=True, disp=0 if not debug else 3)
     if res_opt[1] > 0.1:
         return None
 

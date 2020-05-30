@@ -8,7 +8,7 @@ from termcolor import cprint
 from itertools import islice
 from collections import namedtuple
 
-from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
+from pybullet_planning import connect, has_gui, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
     set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color
@@ -31,8 +31,6 @@ from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
-from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream
-from coop_assembly.planning.run import run_pddlstream
 
 @pytest.fixture
 def results_dir():
@@ -42,6 +40,7 @@ def results_dir():
 @pytest.mark.skip(reason='not ready to be auto tested...')
 @pytest.mark.wip_pddl
 def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug_mode):
+    from coop_assembly.planning.stripstream import run_pddlstream
     Arguments = namedtuple('Arguments', ['problem', 'algorithm', 'collisions', 'bar_only', 'partial_ordering', 'costs', 'teleops'])
     partial_ordering = True
     costs = False
@@ -51,8 +50,11 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
     args = Arguments(file_spec, algorithm, collision, bar_only, partial_ordering, costs, teleops)
     run_pddlstream(args, viewer=viewer, watch=watch, debug=debug_mode, step_sim=step_sim, write=write)
 
+@pytest.mark.skip(reason='not ready to be auto tested...')
 @pytest.mark.wip_pddlstream_parse
 def test_parse_pddlstream(viewer, file_spec, collision, bar_only):
+    from coop_assembly.planning.stripstream import get_pddlstream
+
     bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
