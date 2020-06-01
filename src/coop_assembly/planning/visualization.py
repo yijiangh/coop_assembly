@@ -97,6 +97,7 @@ def color_structure(element_bodies, printed, next_element=None, built_alpha=1.0,
 
 def set_camera(node_points, camera_dir=[1, 1, 1], camera_dist=0.25):
     """pointing camera towards the centroid of a list of pts
+    Note that the node points are all assumed to be in millimeter scale, we do scaling inside this fn.
 
     Parameters
     ----------

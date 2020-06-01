@@ -37,7 +37,7 @@ def results_dir():
     here = os.path.dirname(__file__)
     return os.path.join(here, 'results')
 
-@pytest.mark.skip(reason='not ready to be auto tested...')
+# @pytest.mark.skip(reason='not ready to be auto tested...')
 @pytest.mark.wip_pddl
 def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug_mode):
     from coop_assembly.planning.stripstream import run_pddlstream
@@ -326,12 +326,13 @@ def test_contact_to_ground(viewer, file_spec):
     handles = []
     handles.extend(label_elements(element_bodies))
     for bar_key in bar_struct.vertices():
-        if bar_struct.vertex[bar_key]['grounded']:
+        if bar_struct.node[bar_key]['grounded']:
             contact_pts = contact_to_ground(bar_struct.vertex[bar_key], built_plate_z=BUILT_PLATE_Z, scale=1)
             handles.append(add_line(*contact_pts, color=(1,0,0,0), width=2))
     wait_if_gui()
     # and check connected test
 
+# https://github.com/yijiangh/assembly_instances/blob/master/tests/conftest.py#L25
 # def test_load_robot(viewer):
 #     robot_data, ws_data = get_picknplace_robot_data()
 #     robot_urdf, _, tool_link_name, ee_link_name, joint_names, _ = robot_data

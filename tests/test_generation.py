@@ -18,19 +18,23 @@ from coop_assembly.geometry_generation.tet_sequencing import \
     point2point_shortest_distance_tet_sequencing, \
     point2triangle_tet_sequencing
 from coop_assembly.geometry_generation.execute import execute_from_points
+from coop_assembly.geometry_generation.generate_truss import gen_truss
 
 from coop_assembly.help_functions.tangents import lines_tangent_to_cylinder
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning.visualization import set_camera, SHADOWS, BACKGROUND_COLOR, label_elements
-from coop_assembly.planning.utils import load_world
+from coop_assembly.planning.utils import load_world, get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
+    flatten_commands
+from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera, draw_partial_ordered
 
 # from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset, contact_info_from_seq
 from coop_assembly.geometry_generation.generate_tetrahedra import generate_structure_from_points
 
 from pybullet_planning import connect, wait_for_user, set_camera_pose, create_plane, get_pose, set_pose, multiply, \
     set_color, RED, BLUE, GREEN, TAN, GREY, apply_alpha, set_point, Point, unit_pose, draw_pose, tform_from_pose, Pose, Point, Euler, tform_point, \
-    pairwise_collision_info, draw_collision_diagnosis, pairwise_collision, dump_world, get_bodies
+    pairwise_collision_info, draw_collision_diagnosis, pairwise_collision, dump_world, get_bodies, wait_if_gui, reset_simulation, remove_handles, \
+    disconnect, add_line
 
 @pytest.fixture
 def save_dir():
@@ -48,6 +52,7 @@ def diff_norm(p1, p2):
 
 @pytest.mark.tan
 def test_lines_tangent_to_cylinder():
+    # testing computing tangent planes passing a given point and a cylinder
     base_point = np.array([0,1,0])
     line_vect = np.array([0,1,0])
     ref_point = np.array([1,0,0])
@@ -73,6 +78,67 @@ def test_lines_tangent_to_cylinder():
         assert(lines_tangent_to_cylinder(base_point, line_vect, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist) is None)
         r = dist+1e-8
         assert(lines_tangent_to_cylinder(base_point, line_vect, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist))
+
+@pytest.mark.gen_truss
+@pytest.mark.parametrize('radius', [(3.17), ])
+# @pytest.mark.parametrize('truss_problem', [(''), ])
+def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
+
+    export_file_name = truss_problem
+    if 'skeleton' in export_file_name:
+        export_file_name = export_file_name.split('_skeleton')[0] + '.json'
+
+    bar_struct = gen_truss(truss_problem, viewer=viewer, radius=radius, write=write, save_dir=save_dir, file_name=export_file_name)
+    reset_simulation()
+    disconnect()
+
+    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
+    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1)
+    set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
+
+    element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
+    handles = []
+    handles.extend(label_elements(element_bodies))
+    wait_if_gui('reconstructed truss axes labeled.')
+    remove_handles(handles)
+
+    elements = list(element_bodies.keys())
+    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
+    connectors = list(contact_from_connectors.keys())
+
+    # * connectors from bar
+    connector_from_elements = get_connector_from_elements(connectors, elements)
+    for bar in bar_struct.vertices():
+        handles = []
+        bar_connectors = connector_from_elements[bar]
+        for c in list(bar_connectors):
+            handles.append(add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2))
+        color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
+        wait_if_gui('connector: {}'.format(bar_connectors))
+        remove_handles(handles)
+
+    # * neighbor elements from elements
+    element_neighbors = get_element_neighbors(connectors, elements)
+    for element, connected_bars in element_neighbors.items():
+        color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
+        wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
+
+    # TODO: some sanity check here
+    # mutual collision checks
+    for bar1, bar2 in connectors:
+        b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
+        b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
+        assert len(get_bodies()) == len(element_bodies)
+        # dump_world()
+
+        if pairwise_collision(b1_body, b2_body):
+            cr = pairwise_collision_info(b1_body, b2_body)
+            draw_collision_diagnosis(cr, focus_camera=True)
+            if not viewer:
+                assert False, '{}-{} collision!'.format(b1_body, b2_body)
+        print('-'*10)
+    if viewer:
+        wait_for_user('Done.')
 
 @pytest.mark.gen_from_pts
 @pytest.mark.parametrize('radius', [(3.17), ])

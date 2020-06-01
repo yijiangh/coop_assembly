@@ -901,7 +901,7 @@ def solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3
 ##########################################
 
 def check_colisions(b_struct, pts, radius, bar_nb=None, bar_checking=None):
-    """[summary]
+    """SP's geometric collision checking function
 
     Parameters
     ----------

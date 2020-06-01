@@ -4,7 +4,7 @@ import datetime
 from collections import OrderedDict
 from termcolor import cprint
 
-def export_structure_data(bar_struct_data, overall_struct_data, radius=-1, save_dir='', file_name=None, indent=None):
+def export_structure_data(bar_struct_data, overall_struct_data=None, radius=-1, save_dir='', file_name=None, indent=None):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     # else:

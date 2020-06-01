@@ -24,7 +24,7 @@ from coop_assembly.help_functions.parsing import export_structure_data, parse_sa
 from coop_assembly.help_functions.tangents import tangent_from_point_one, lines_tangent_to_cylinder, solve_one_one_tangent, \
     solve_second_tangent, solve_third_tangent
 from coop_assembly.help_functions.helpers_geometry import find_points_extreme, calculate_coord_sys, compute_local_coordinate_system, \
-    bar_sec_verts
+    bar_sec_verts, compute_contact_line_between_bars
 
 from coop_assembly.data_structure import OverallStructure, BarStructure
 from coop_assembly.geometry_generation.tet_sequencing import SearchState, compute_candidate_nodes
@@ -183,7 +183,7 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
                 break
         assert set(new_axis_endpts.keys()) == set(n_neighbors.keys())
 
-        # TODO: update all neighbor bars to element, find the furthest pair of contact pts
+        # update all neighbor bars to element, find the furthest pair of contact pts
         for contact_e in contact_elements:
             neighbor_elements = list(set(element_neighbors[contact_e]) & set(printed))
             candidate_end_pts = []
@@ -211,7 +211,6 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
 
             # print('original: {}'.format(bar_from_elements[contact_e]))
             # print('extended: {}'.format(extended_end_pts))
-
             add_line(np.array(extended_end_pts[0])*1e-3, np.array(extended_end_pts[1])*1e-3, color=apply_alpha(GREEN, 1))
 
         bar_from_elements[element] = new_axis_endpts
@@ -237,25 +236,20 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
     b_struct = BarStructure()
     centroid_pt = np.average(node_points, axis=0)
 
+    index_from_element = {}
     for e, pts in bar_from_elements.items():
         axis_endpts = list(pts.values())
         _ , _, vec_z = calculate_coord_sys(axis_endpts, centroid_pt)
+        is_grounded = e[0] in ground_nodes or e[1] in ground_nodes
+        bar_key = b_struct.add_bar(None, [p.tolist() for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
+        index_from_element[e] = bar_key
 
-        bar_key = b_struct.add_bar(None, axis_endpts, "tube", None, vec_z, radius=radius)
-        # b_struct.vertex[b_v0].update({"index_sol":[sol_id]})
-        # b_struct.vertex[b_v0].update({"mean_point":pt_mean})
-
-        # TODO update contact point into BarS's edges
-        # b_struct.connect_bars(b_v0, b_v1_1)
-        # b_struct.connect_bars(b_v0, b_v1_2)
-
-        # dpp_1 = compute_contact_line_between_bars(b_struct, b_v0, b_v1_1)
-        # dpp_2 = compute_contact_line_between_bars(b_struct, b_v0, b_v1_2)
-
-        # k_1 = list(b_struct.edge[b_v0][b_v1_1]["endpoints"].keys())[0]
-        # k_2 = list(b_struct.edge[b_v0][b_v1_2]["endpoints"].keys())[0]
-        # b_struct.edge[b_v0][b_v1_1]["endpoints"].update({k_1:(dpp_1[0], dpp_1[1])})
-        # b_struct.edge[b_v0][b_v1_2]["endpoints"].update({k_2:(dpp_2[0], dpp_2[1])})
+    for e, pts in bar_from_elements.items():
+        # update contact point into BarS's edges
+        for ne in element_neighbors[e]:
+            b_struct.connect_bars(index_from_element[e], index_from_element[ne])
+            contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e], index_from_element[ne])
+            b_struct.edge[index_from_element[e]][index_from_element[ne]]["endpoints"].update({0:(contact_pts[0], contact_pts[1])})
 
     element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 0.5))
     wait_if_gui()
@@ -263,10 +257,34 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
     return b_struct
 
 def convert_pt_vec(pt_dict):
+    # a convenient function to convert a dict { key1 : pt1, key2 : pt2}
+    # into [pt1, pt2-pt1]
     pts = list(map(np.array, pt_dict.values()))
     return pts[0], pts[1]-pts[0]
 
 def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius):
+    """[summary]
+
+    Parameters
+    ----------
+    bar_from_elements : dict
+        {element : [axis pt1, axis pt2]}
+        element = (n1, n2), n1/2 indexs into `node_points`
+    node_points : list of points
+        the original list of points we want the bar system to achieve. We are pertubing the bar axis to approximately spanning these points.
+    element : tuple of int
+        (n1, n2) index into `node_points`
+    in_contact_bars : [type]
+        [description]
+    radius : float
+        bar radius in millimeter
+
+    Returns
+    -------
+    dict
+        Computed axis end pts for element :
+        {n1 : axis pt 1, n2 : axis pt 2}, where element = (n1, n2)
+    """
     reverse = False
     contact_bars = copy(in_contact_bars)
     if len(in_contact_bars[1]) < len(in_contact_bars[0]):
@@ -504,7 +522,24 @@ def retrace_sequence(visited, current_state, horizon=INF):
 
 #############################################################
 def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
-    # radius in mm
+    """[summary]
+
+    Parameters
+    ----------
+    problem : [type]
+        problem name, see `planning.parsing.get_assembly_path`
+    viewer : bool, optional
+        enable pybullet viewer, by default False
+    radius : float, optional
+        bar radius in millimeter, by default 3.17
+    write : bool, optional
+        [description], by default False
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
     problem_path = get_assembly_path(problem)
     with open(problem_path) as json_file:
         data = json.load(json_file)
@@ -531,6 +566,7 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
     # fixed_obstacles, robot = load_world()
     set_camera(node_points)
 
+    # draw the ideal truss that we want to achieve
     label_points([pt*1e-3 for pt in node_points])
     for e in edges:
         p1 = node_points[e[0]] * 1e-3
@@ -539,11 +575,16 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
     for v in ground_nodes:
         draw_circle(node_points[v]*1e-3, 0.01)
 
+    wait_if_gui('Ideal truss...')
+
     b_struct = generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None,
         check_collision=False, viewer=False, verbose=True)
 
     if write:
         export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)
+        # export_structure_data(b_struct.to_data(), radius=radius, **kwargs)
+
+    return b_struct
 
 #############################################################
 
@@ -560,6 +601,10 @@ def main():
     # parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
     args = parser.parse_args()
     print('Arguments:', args)
+
+    # export_file_name = args.problem.split('.json')[0]
+    if 'skeleton' in export_file_name:
+        export_file_name = export_file_name.split('_skeleton')[0] + '.json'
 
     gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=args.problem)
 

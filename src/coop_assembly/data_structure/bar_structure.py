@@ -254,6 +254,7 @@ class BarStructure(Network):
         if 'pb_body' not in self.node[bar_v_key] or \
             self.node[bar_v_key]['pb_body'] is None or \
             self.node[bar_v_key]['pb_body'] not in get_bodies():
+            # if cannot find the body in the environment, useful when the env is recreated
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
             radius = self.node[bar_v_key]['radius']
             self.node[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius)

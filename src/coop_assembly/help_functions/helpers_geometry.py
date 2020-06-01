@@ -567,7 +567,7 @@ def find_bar_ends(b_struct, b_key):
     b_struct.vertex[b_key].update({"axis_endpoints" : bar_end_pts_new})
 
 def contact_to_ground(bar_vertex, built_plate_z=0.0, scale=1.0):
-    """[summary]
+    """compute contact pts to the ground
 
     Parameters
     ----------

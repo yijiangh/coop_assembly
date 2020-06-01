@@ -109,6 +109,8 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
             #if not bar_only \
             # else Command([MotionTrajectory(None, None, [final_conf])])
         add_successors(final_printed, final_command)
+    else:
+        cprint('The initial state not connected to the ground!', 'yellow')
 
     # if has_gui():
     #     sequence = sorted(final_printed, key=lambda e: heuristic_fn(final_printed, e, conf=None), reverse=True)
