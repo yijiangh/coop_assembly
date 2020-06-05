@@ -9,7 +9,7 @@ Getting Started
 **Prerequisites**
 
 0. Operating System:
-    **Windows 10** and **Mac(!)**
+    **Windows 10** and **Mac(!)** both works!
 1. `Rhinoceros 3D 6.0 <https://www.rhino3d.com/>`_
     We will use Rhino / Grasshopper as a frontend for inputting
     geometric and numeric paramters, and use various python packages as the
@@ -30,30 +30,37 @@ Getting Started
 **Working in a conda environment**
 
 It is recommended to set up a conda environment to create a clean, isolated space for
-installing all the required python packages. We've provided a conda environment file
-to make this process easy - please do the following steps:
+installing all the required python packages.
 
-Type in the following commands in your Anaconda terminal
+Type in the following commands in your Anaconda terminal to create a conda environment
 (search for ``Anaconda Prompt`` in the Windows search bar):
 
 ::
 
-    git clone https://github.com/createchaos/coop_assembly.git
+    git clone --recursive https://github.com/createchaos/coop_assembly.git
     cd coop_assembly
-    conda env create -f coop_assembly_ws.yml
+    conda create -n cp_ws python=3.7
+    conda activate cp_ws
 
-Wait for the building process to finish, the command above will
-fetch and build all the required packages, which will take some time
-(5~10 mins).
-
-If you see an error message like ``Error: Microsoft Visual C++ 14.0 is required``,
-please see `troubleshooting <./docs/troubleshooting.rst>`_ for instructions to install the Microsoft Visual Studio Build tools.
-
-Then, activate the newly created conda environment (with all the needed packages installed):
+This will create a conda environment called `cp_ws`. Now, we install all the depedency
+packages:
 
 ::
 
-    conda activate coop_assembly_ws
+    pip install ./external/compas_fab
+    pip install ./external/pybullet_planning
+    pip install -e .
+
+This will install the two main depedencies `compas_fab` and `pybullet_planning`. Notice
+that we are using a customized version of `compas_fab` here, which might be in conflict
+with the `compas_fab` version used in your other projects. So the conda environment helps
+you isolate them here ✨ The last line install `coop_assembly` in a `debug` mode,
+which means your changes will be directly reflected in your execution (from python
+or from GHPython invokes).
+
+If you see an error message like ``Error: Microsoft Visual C++ 14.0 is required``,
+please see `troubleshooting <./docs/troubleshooting.rst>`_ for instructions to install
+the Microsoft Visual Studio Build tools.
 
 Great - we are almost there! Now type `python` in your Anaconda Prompt, and test if the installation went well:
 
@@ -63,7 +70,6 @@ Great - we are almost there! Now type `python` in your Anaconda Prompt, and test
     >>> import compas_fab
     >>> import pybullet
     >>> import coop_assembly
-    >>> import ikfast_ur5
 
 If that doesn't fail, you're good to go! Exit the python interpreter (either typing `exit()` or pressing `CTRL+Z` followed by `Enter`).
 
@@ -76,7 +82,7 @@ and then **restart Rhino**:
 ::
 
     python -m compas_rhino.install
-    python -m compas_rhino.install -p coop_assembly ur_online_control compas_fab roslibpy
+    python -m compas_rhino.install -p coop_assembly
 
 And you should be able to see outputs like:
 
@@ -88,11 +94,11 @@ And you should be able to see outputs like:
    compas               OK
    compas_rhino         OK
    compas_ghpython      OK
-   compas_bootstrapper  OK
    coop_assembly        OK
 
    Completed.
 
 Congrats! 🎉 You are all set!
 
-Grasshopper examples can be found in ``examples\workshop_dms``.
+Grasshopper examples can be found in the `examples` folder. For Stefana and her students,
+please see `examples/shape_gen_GH` for the latest examples on design generation.

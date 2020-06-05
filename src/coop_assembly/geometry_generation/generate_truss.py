@@ -603,10 +603,11 @@ def main():
     print('Arguments:', args)
 
     # export_file_name = args.problem.split('.json')[0]
+    export_file_name = args.problem
     if 'skeleton' in export_file_name:
         export_file_name = export_file_name.split('_skeleton')[0] + '.json'
 
-    gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=args.problem)
+    gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=export_file_name)
 
 if __name__ == '__main__':
     main()
