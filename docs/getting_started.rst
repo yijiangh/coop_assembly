@@ -37,13 +37,17 @@ Type in the following commands in your Anaconda terminal to create a conda envir
 
 ::
 
-    git clone --recursive https://github.com/createchaos/coop_assembly.git
+    git clone --recursive https://github.com/yijiangh/coop_assembly.git
     cd coop_assembly
     conda create -n cp_ws python=3.7
     conda activate cp_ws
 
-This will create a conda environment called `cp_ws`. Now, we install all the depedency
-packages:
+Notice that we have cloned this repository using the `--recursive` flag
+(if not then type `git submodule update --init --recursive`) to make sure we have
+all the git submodules in place.
+
+The last two lines above will create a conda environment called `cp_ws`.
+Now, we install all the depedency packages:
 
 ::
 
@@ -101,4 +105,4 @@ And you should be able to see outputs like:
 Congrats! 🎉 You are all set!
 
 Grasshopper examples can be found in the `examples` folder. For Stefana and her students,
-please see `examples/shape_gen_GH` for the latest examples on design generation.
+please see `examples/shape_gen_GH <../examples/shape_gen_GH>`_ for the latest examples on design generation.
