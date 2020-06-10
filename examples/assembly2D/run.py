@@ -24,14 +24,20 @@ from pddlstream.language.function import FunctionInfo
 from pddlstream.utils import read, get_file_path, inclusive_range, INF
 from pddlstream.language.temporal import compute_duration, get_end
 
+from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
+
 from pybullet_planning import set_camera_pose, connect, pose_from_base_values, create_box, wait_if_gui, set_pose, create_plane, \
-    draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT
+    draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
+    create_flying_body, create_shape, get_mesh_geometry, SE2
 
 GROUND_COLOR = 0.8*np.ones(3)
 BACKGROUND_COLOR = [0.9, 0.9, 1.0] # 229, 229, 255
 SHADOWS = False
 
-GRASP = np.array([0, 0])
+HERE = os.path.dirname(__file__)
+DUCK_OBJ_PATH = os.path.join(HERE, 'data', 'duck.obj')
+
+# GRASP = np.array([0, 0])
 # ELEMENT_TEMPLATE = 'E{}'
 # CLAMP_TEMPLATE = 'C{}'
 # GRIPPER_TEMPLATE = 'G{}'
@@ -40,12 +46,12 @@ ELEMENT_TEMPLATE = 'Element{}'
 CLAMP_TEMPLATE = 'Clamp{}'
 GRIPPER_TEMPLATE = 'Gripper{}'
 
-Element = namedtuple('Element', ['index',
-                                #  'axis_endpoints', 'radius',
-                                 'body', # 'element_robot',
-                                 'initial_pose', 'goal_pose',
-                                #  'grasps', 'layer'
-                                 ])
+Element2D = namedtuple('Element2D', ['index',
+                                     'wlh',
+                                     'body', # 'element_robot',
+                                     'initial_pose', 'goal_pose',
+                                    #  'grasps', 'layer'
+                                     ])
 
 Gripper = namedtuple('Gripper', ['index',
                             'rest_pose',
@@ -173,25 +179,45 @@ def get_pddlstream_problem(element_from_index, grounded_elements, connectors, gr
 
 def load_2d_world(viewer=False):
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
-    floor = create_plane(color=GROUND_COLOR)
+    with HideOutput():
+       floor = create_plane(color=GROUND_COLOR)
+    #    duck_body = create_obj(DUCK_OBJ_PATH, scale=0.2 * 1e-3, color=apply_alpha(GREEN, 0.5))
+       collision_id, visual_id = create_shape(get_mesh_geometry(DUCK_OBJ_PATH, scale=0.2 * 1e-3), collision=True, color=apply_alpha(GREEN, 0.5))
+       end_effector = create_flying_body(SE2, collision_id, visual_id)
+
     # looking down from the top since it's 2D
-    camera_target_point = [1,1,0]
-    set_camera_pose(camera_target_point + np.array([1e-3,1e-3,1.5]), camera_target_point)
+    camera_target_point = [0,0,0]
+    set_camera_pose(camera_target_point + np.array([1e-3,1e-3,.5]), camera_target_point)
     draw_pose(unit_pose())
+    return end_effector
 
 def get_assembly_problem():
     # creating beams
-    width = 0.1
+    width = 0.01
     h = 0.01 # this dimension doesn't matter
-    shrink=0.15
-    initial_pose = pose_from_base_values([3,-2,0])
-    element_from_index = {0 : Element(0, create_box(width, 2*np.sqrt(2)-2*shrink, h), initial_pose, pose_from_base_values([0,1,np.pi/4])),
-                          1 : Element(1, create_box(width, 2-2*shrink, h),          initial_pose, pose_from_base_values([1,1,0])),
-                          2 : Element(2, create_box(width, 2*np.sqrt(2)-2*shrink, h), initial_pose, pose_from_base_values([2,1,-np.pi/4])),
-                          3 : Element(3, create_box(width, 4, h, color=BLUE), initial_pose, pose_from_base_values([1,2,np.pi/2])),
+    length = 0.2
+    shrink = 0.015
+    initial_pose = WorldPose('init', pose_from_base_values([0.3,-0.2,0]))
+    element_dims = {0 : [width, length*np.sqrt(2)-2*shrink, h],
+                    1 : [width, length-2*shrink, h],
+                    2 : [width, length*np.sqrt(2)-2*shrink, h],
+                    3 : [width, 2*length, h],
+                    }
+    element_from_index = {0 : Element2D(0, element_dims[0],
+                                        create_box(*element_dims[0]),
+                                        initial_pose, WorldPose(0, pose_from_base_values([0,length/2,np.pi/4]))),
+                          1 : Element2D(1, element_dims[1],
+                                        create_box(*element_dims[1]),
+                                        initial_pose, WorldPose(1, pose_from_base_values([length/2,length/2,0]))),
+                          2 : Element2D(2, element_dims[2],
+                                        create_box(*element_dims[2]),
+                                        initial_pose, WorldPose(2, pose_from_base_values([length,length/2,-np.pi/4]))),
+                          3 : Element2D(3, element_dims[3],
+                                        create_box(*element_dims[3], color=BLUE),
+                                        initial_pose, WorldPose(3, pose_from_base_values([length/2,length,np.pi/2]))),
                           }
     for ei, e in element_from_index.items():
-        set_pose(e.body, e.goal_pose)
+        set_pose(e.body, e.goal_pose.value)
 
     connectors = {(0,3) : np.array([0,0]),
                   (1,3) : np.array([0,0]),
@@ -210,49 +236,49 @@ def main():
     args = parser.parse_args()
     print('Arguments:', args)
 
-    load_2d_world(viewer=args.viewer)
+    end_effector = load_2d_world(viewer=args.viewer)
 
     element_from_index, connectors, grounded_elements = get_assembly_problem()
-    # wait_if_gui()
+    wait_if_gui()
 
     gp_initial_conf = np.array([1,-2])
     gripper_from_index = {0 : Gripper(0, gp_initial_conf)}
 
-    pddlstream_problem = get_pddlstream_problem(element_from_index, grounded_elements, connectors, gripper_from_index)
+    # pddlstream_problem = get_pddlstream_problem(element_from_index, grounded_elements, connectors, gripper_from_index)
 
-    success_cost = 0 if args.unit_cost else INF
+    # success_cost = 0 if args.unit_cost else INF
 
-    # discrete_planner = 'ff-ehc'
-    # discrete_planner = 'ff-lazy-tiebreak' # Branching factor becomes large. Rely on preferred. Preferred should also be cheaper
-    # discrete_planner = 'max-astar'
-    #
-    # discrete_planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
-    # discrete_planner = 'ff-lazy'
-    discrete_planner = 'ff-wastar3'
+    # # discrete_planner = 'ff-ehc'
+    # # discrete_planner = 'ff-lazy-tiebreak' # Branching factor becomes large. Rely on preferred. Preferred should also be cheaper
+    # # discrete_planner = 'max-astar'
+    # #
+    # # discrete_planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
+    # # discrete_planner = 'ff-lazy'
+    # discrete_planner = 'ff-wastar3'
 
-    if args.algorithm == 'focused':
-        # ? Must-have: apply test-cfree implicitly, only needed in the optimistic algorithms
-        stream_info = {
-            # 'test-cfree': StreamInfo(negate=True),
-        }
+    # if args.algorithm == 'focused':
+    #     # ? Must-have: apply test-cfree implicitly, only needed in the optimistic algorithms
+    #     stream_info = {
+    #         # 'test-cfree': StreamInfo(negate=True),
+    #     }
 
-        #solution = solve_serialized(pddlstream_problem, planner='max-astar', unit_costs=args.unit, stream_info=stream_info)
-        solution = solve_focused(pddlstream_problem, unit_costs=args.unit_cost, stream_info=stream_info, debug=False)
-    elif args.algorithm == 'incremental':
-        solution = solve_incremental(pddlstream_problem, planner=discrete_planner, max_time=600,
-                                     success_cost=success_cost, unit_costs=not args.unit_cost,
-                                     max_planner_time=300, debug=args.debug, verbose=True)
-    else:
-        raise ValueError(args.algorithm)
+    #     #solution = solve_serialized(pddlstream_problem, planner='max-astar', unit_costs=args.unit, stream_info=stream_info)
+    #     solution = solve_focused(pddlstream_problem, unit_costs=args.unit_cost, stream_info=stream_info, debug=False)
+    # elif args.algorithm == 'incremental':
+    #     solution = solve_incremental(pddlstream_problem, planner=discrete_planner, max_time=600,
+    #                                  success_cost=success_cost, unit_costs=not args.unit_cost,
+    #                                  max_planner_time=300, debug=args.debug, verbose=True)
+    # else:
+    #     raise ValueError(args.algorithm)
 
-    print("="*20)
-    if solution[0] is None:
-        cprint('No solution found!', 'red')
-        return
-    else:
-        cprint('Solution found!', 'green')
-    print_solution(solution)
-    plan, cost, facts = solution
+    # print("="*20)
+    # if solution[0] is None:
+    #     cprint('No solution found!', 'red')
+    #     return
+    # else:
+    #     cprint('Solution found!', 'green')
+    # print_solution(solution)
+    # plan, cost, facts = solution
 
     # if args.debug:
     #     cprint('certified facts: ', 'yellow')

@@ -37,7 +37,7 @@ def results_dir():
     here = os.path.dirname(__file__)
     return os.path.join(here, 'results')
 
-# @pytest.mark.skip(reason='not ready to be auto tested...')
+@pytest.mark.skip(reason='not ready to be auto tested...')
 @pytest.mark.wip_pddl
 def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug_mode):
     from coop_assembly.planning.stripstream import run_pddlstream
