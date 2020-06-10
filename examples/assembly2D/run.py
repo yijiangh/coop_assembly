@@ -3,9 +3,13 @@ from __future__ import print_function
 
 import argparse
 import os, sys
+import cProfile
+import json
+import pstats
 from collections import namedtuple
 from termcolor import cprint
 import numpy as np
+from numpy.linalg import norm
 import math
 import pybullet as pb
 
@@ -25,12 +29,32 @@ from pddlstream.utils import read, get_file_path, inclusive_range, INF
 from pddlstream.language.temporal import compute_duration, get_end
 
 from coop_assembly.data_structure import WorldPose, MotionTrajectory
+from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
+    flatten_commands
+from coop_assembly.planning.motion import display_trajectories
 
 from pybullet_planning import set_camera_pose, connect, pose_from_base_values, create_box, wait_if_gui, set_pose, create_plane, \
     draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
-    create_flying_body, create_shape, get_mesh_geometry, SE2, get_movable_joints, get_configuration, set_configuration, get_links
+    create_flying_body, create_shape, get_mesh_geometry, SE2, get_movable_joints, get_configuration, set_configuration, get_links, \
+    has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer
 
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn
+
+# pddlstream algorithm options
+STRIPSTREAM_ALGORITHM = [
+    'incremental',
+    'incremental_sa', # semantic attachment
+    'focused',
+    'binding',
+    'adaptive',
+]
+ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
+
+SS_OPTIONS = {
+    'focused' : {'max_skeletons':None, 'bind':False, 'search_sample_ratio':0,},
+    'binding' : {'max_skeletons':None, 'bind':True, 'search_sample_ratio':0,},
+    'adaptive': {'max_skeletons':INF, 'bind':True, 'search_sample_ratio':2,},
+}
 
 # viz settings
 GROUND_COLOR = 0.8*np.ones(3)
@@ -186,6 +210,108 @@ def get_test_cfree():
 
 ##################################################
 
+def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
+                     collisions=True, disable=False, max_time=60*4, algorithm='focused',
+                     debug=False, costs=False, teleops=False, **kwargs):
+    fluent_special = algorithm == 'incremental_sa'
+    if fluent_special:
+        cprint('Using incremental + semantic attachment.', 'yellow')
+
+    pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, collisions=collisions,
+                   return_home=True, teleops=teleops, partial_orders=partial_orders)
+                   # , printed=set(), removed=set(),
+
+    if debug:
+        print('Init:', pddlstream_problem.init)
+        print('Goal:', pddlstream_problem.goal)
+    print('='*10)
+
+    # Reachability heuristics good for detecting dead-ends
+    # Infeasibility from the start means disconnected or collision
+    set_cost_scale(1)
+    # planner = 'ff-ehc'
+    # planner = 'ff-lazy-tiebreak' # Branching factor becomes large. Rely on preferred. Preferred should also be cheaper
+    # planner = 'max-astar'
+
+    # planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
+    # planner = 'ff-lazy' | 'ff-wastar3'
+
+    def get_planner(costs):
+        return 'ff-astar' if costs else 'ff-wastar3'
+    success_cost = 0 if costs else INF
+
+    pr = cProfile.Profile()
+    pr.enable()
+    with LockRenderer(lock=True):
+        if algorithm in ['incremental', 'incremental_sa']:
+            discrete_planner = 'max-astar' # get_planner(costs)
+            solution = solve_incremental(pddlstream_problem, max_time=600, #planner=discrete_planner,
+                                        success_cost=success_cost, unit_costs=not costs,
+                                        max_planner_time=300, debug=debug, verbose=True)
+        elif algorithm in SS_OPTIONS:
+            # creates unique free variable for each output during the focused algorithm
+            # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
+            stream_info = {
+                'sample-place': StreamInfo(PartialInputs(unique=True)),
+                'sample-move': StreamInfo(PartialInputs(unique=True)),
+                'test-cfree': StreamInfo(negate=True),
+            }
+            # TODO: effort_weight=0 will lead to noplan found
+            effort_weight = 1e-3 if costs else None
+            # effort_weight = 1e-3 if costs else 1 # | 0
+
+            # TODO what can we tell about a problem if it requires many iterations?
+            # ? max_time: the maximum amount of time to apply streams
+            # ? max_planner_time: maximal time allowed for the discrete search at each iter
+            # ? effort_weight: a multiplier for stream effort compared to action costs
+            # ? unit_efforts: use unit stream efforts rather than estimated numeric efforts
+            # ? unit_costs: use unit action costs rather than numeric costs
+            # ? reorder: if True, stream plans are reordered to minimize the expected sampling overhead
+            # ? initial_complexity: the initial effort limit
+            # ? max_failure only applies if max_skeletons=None
+            # ? success_cost is the max cost of allowed solutions
+            #   success_cost=0 runs the planner in a true anytime mode
+            #   success_cost=INF terminates whenever any plan is found
+            solution = solve_focused(pddlstream_problem, stream_info=stream_info,
+                                     planner=get_planner(costs), max_planner_time=60, max_time=max_time,
+                                     max_skeletons=SS_OPTIONS[algorithm]['max_skeletons'],
+                                     bind=SS_OPTIONS[algorithm]['bind'],
+                                     search_sample_ratio=SS_OPTIONS[algorithm]['search_sample_ratio'],
+                                     # ---
+                                     unit_costs=not costs, success_cost=success_cost,
+                                     unit_efforts=True, effort_weight=effort_weight,
+                                     max_failures=0,  # 0 | INF
+                                     reorder=False, initial_complexity=1,
+                                     # ---
+                                     debug=debug, verbose=True, visualize=False)
+        else:
+            raise NotImplementedError('Algorithm |{}| not in {}'.format(algorithm, STRIPSTREAM_ALGORITHM))
+    pr.disable()
+    if debug:
+        pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
+
+    # print(solution)
+    print_solution(solution)
+    plan, _, facts = solution
+    print('-'*10)
+    # if debug:
+    #     # cprint('certified facts: ', 'yellow')
+    #     # for fact in facts[0]:
+    #     #     print(fact)
+    #     if facts[1] is not None:
+    #         # preimage facts: the facts that support the returned plan
+    #         cprint('preimage facts: ', 'green')
+    #         for fact in facts[1]:
+    #             print(fact)
+    # TODO: post-process by calling planner again
+    # TODO: could solve for trajectories conditioned on the sequence
+
+    # is the irrelevant predicated discarded at the end?
+    return plan
+
+
+##################################################
+
 def load_2d_world(viewer=False):
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     with HideOutput():
@@ -238,81 +364,111 @@ def get_assembly_problem():
     grounded_elements = [0, 1, 2]
     return element_from_index, connectors, grounded_elements
 
+def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
+    end_effector = load_2d_world(viewer=args.viewer)
+    element_from_index, connectors, grounded_elements = get_assembly_problem()
+
+    robots = [end_effector]
+    fixed_obstacles = []
+
+    saver = WorldSaver()
+    # elements_from_layer = defaultdict(set)
+    # if args.partial_ordering:
+    #     for v in bar_struct.nodes():
+    #         elements_from_layer[bar_struct.node[v]['layer']].add(v)
+    #     partial_orders = compute_orders(elements_from_layer)
+    # else:
+    partial_orders = []
+    print('Partial orders: ', partial_orders)
+    # input("Enter to proceed.")
+
+    if args.algorithm in STRIPSTREAM_ALGORITHM:
+        plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
+            collisions=args.collisions, algorithm=args.algorithm, costs=args.costs,
+            debug=debug, teleops=args.teleops)
+    # elif args.algorithm == 'regression':
+    #     with LockRenderer(True):
+    #         plan, data = regression(robot, fixed_obstacles, bar_struct, collision=args.collisions, motions=True, stiffness=True,
+    #             revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
+    else:
+        raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
+
+    if plan is None:
+        cprint('No plan found.', 'red')
+        assert False, 'No plan found.'
+    else:
+        cprint('plan found.', 'green')
+        if args.algorithm in STRIPSTREAM_ALGORITHM:
+            commands = []
+            place_actions = [action for action in reversed(plan) if action.name == 'place']
+            start_conf_id = 1 if args.algorithm == 'incremental_sa' else 2
+            for pc in place_actions:
+                print_command = pc.args[-1]
+                robot_name = pc.args[0]
+                for action in plan:
+                    if action.name == 'move' and action.args[0] == robot_name and \
+                        norm(action.args[start_conf_id].positions-print_command.start_conf)<1e-8:
+                        commands.append(action.args[-1])
+                        break
+                commands.append(print_command)
+            trajectories = flatten_commands(commands)
+        else:
+            # regression plan is flattened already
+            trajectories = plan
+
+        if write:
+            here = os.path.dirname(__file__)
+            plan_path = '{}_{}_solution_{}.json'.format(args.file_spec, args.algorithm, get_date())
+            save_path = os.path.join(here, 'results', plan_path)
+            with open(save_path, 'w') as f:
+               json.dump({'problem' : args.file_spec,
+                          'plan' : [p.to_data() for p in trajectories]}, f)
+            cprint('Result saved to: {}'.format(save_path), 'green')
+        if watch and has_gui():
+            saver.restore()
+            #label_nodes(node_points)
+            # elements = recover_sequence(trajectories, element_from_index)
+            # endpts_from_element = bar_struct.get_axis_pts_from_element()
+            # draw_ordered(elements, endpts_from_element)
+            wait_if_gui('Ready to simulate trajectory.')
+            for e in element_from_index:
+               set_color(element_from_index[e].body, (1, 0, 0, 0))
+            if step_sim:
+                time_step = None
+            else:
+                time_step = 0.0
+            display_trajectories(trajectories, time_step=time_step)
+        # verify
+        # if args.collisions:
+        #     valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui() or debug, \
+        #         bar_only=args.bar_only, refine_num=1, debug=debug)
+        #     cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
+        #     assert valid
+        # else:
+        #     cprint('Collision disabled, no verfication performed.', 'yellow')
+    reset_simulation()
+    disconnect()
+
 #####################################################
 
 def main():
     parser = argparse.ArgumentParser()
     #parser.add_argument('-p', '--problem', default='blocked', help='The name of the problem to solve')
-    parser.add_argument('-a', '--algorithm', default='focused', help='Specifies the algorithm')
+    parser.add_argument('-a', '--algorithm', default='focused', choices=ALGORITHMS, help='Stripstream algorithms')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enable the pybullet viewer.')
     parser.add_argument('-c', '--collisions', action='store_false', help='Disable collision checking.')
-    parser.add_argument('-uc', '--unit_cost', action='store_true', help='Uses unit costs')
+    parser.add_argument('-co', '--costs', action='store_true', help='Uses unit costs')
+    parser.add_argument('-to', '--teleops', action='store_true', help='use teleop for trajectories (turn off in-between traj planning)')
+    parser.add_argument('-po', '--partial_ordering', action='store_true', help='use partial ordering (if-any)')
     parser.add_argument('-db', '--debug', action='store_true', help='debug mode')
+
+    parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')
+    parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
+    parser.add_argument('-wr', '--write', action='store_true', help='Export results')
     args = parser.parse_args()
     print('Arguments:', args)
 
-    end_effector = load_2d_world(viewer=args.viewer)
-
-    element_from_index, connectors, grounded_elements = get_assembly_problem()
-    wait_if_gui()
-
-    robots = [end_effector]
-    static_obstacles = []
-    pddlstream_problem = get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors, collisions=args.collisions,
-                   return_home=True, teleops=False)
-                   # partial_orders={}, printed=set(), removed=set(),
-
-    if args.debug:
-        print('Init:', pddlstream_problem.init)
-        print('Goal:', pddlstream_problem.goal)
-    print('='*10)
-
-    # success_cost = 0 if args.unit_cost else INF
-
-    # # discrete_planner = 'ff-ehc'
-    # # discrete_planner = 'ff-lazy-tiebreak' # Branching factor becomes large. Rely on preferred. Preferred should also be cheaper
-    # # discrete_planner = 'max-astar'
-    # #
-    # # discrete_planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
-    # # discrete_planner = 'ff-lazy'
-    # discrete_planner = 'ff-wastar3'
-
-    # if args.algorithm == 'focused':
-    #     # ? Must-have: apply test-cfree implicitly, only needed in the optimistic algorithms
-    #     stream_info = {
-    #         # 'test-cfree': StreamInfo(negate=True),
-    #     }
-
-    #     #solution = solve_serialized(pddlstream_problem, planner='max-astar', unit_costs=args.unit, stream_info=stream_info)
-    #     solution = solve_focused(pddlstream_problem, unit_costs=args.unit_cost, stream_info=stream_info, debug=False)
-    # elif args.algorithm == 'incremental':
-    #     solution = solve_incremental(pddlstream_problem, planner=discrete_planner, max_time=600,
-    #                                  success_cost=success_cost, unit_costs=not args.unit_cost,
-    #                                  max_planner_time=300, debug=args.debug, verbose=True)
-    # else:
-    #     raise ValueError(args.algorithm)
-
-    # print("="*20)
-    # if solution[0] is None:
-    #     cprint('No solution found!', 'red')
-    #     return
-    # else:
-    #     cprint('Solution found!', 'green')
-    # print_solution(solution)
-    # plan, cost, facts = solution
-
-    # if args.debug:
-    #     cprint('certified facts: ', 'yellow')
-    #     for fact in facts[0]:
-    #         print(fact)
-    #     if facts[1] is not None:
-    #         # preimage facts: the facts that support the returned plan
-    #         cprint('preimage facts: ', 'green')
-    #         for fact in facts[1]:
-    #             print(fact)
-
-    # apply_plan(tamp_problem, plan)
-
+    run_pddlstream(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write)
 
 if __name__ == '__main__':
     main()
