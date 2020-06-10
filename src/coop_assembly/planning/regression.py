@@ -59,21 +59,13 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 
 ##################################################
 
-def regression(robot, obstacles, bar_struct, partial_orders=[],
+def regression(robot, obstacles, element_from_index, grounded_elements, connectors, partial_orders=[],
                max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
                collision=True, stiffness=True, motions=True, lazy=True, checker=None, verbose=True, **kwargs):
+    # TODO: replace bar_struct, directly take in element_from_index etc.
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = INITIAL_CONF if not bar_only else np.concatenate([BAR_INITIAL_POINT, BAR_INITIAL_EULER])
-
-    # axis_pts_from_element = bar_struct.get_axis_pts_from_element()
-    # element_bodies = bar_struct.get_element_bodies()
-    element_from_index = bar_struct.get_element_from_index()
-    all_elements = frozenset(element_from_index)
-    grounded_elements = bar_struct.get_grounded_bar_keys()
-
-    contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
-    connectors = list(contact_from_connectors.keys())
 
     end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
                                tool_link=link_from_name(robot, TOOL_LINK_NAME),
@@ -88,6 +80,7 @@ def regression(robot, obstacles, bar_struct, partial_orders=[],
 
     # TODO: allow choice of config
     final_conf = initial_conf
+    all_elements = frozenset(element_from_index)
     final_printed = all_elements
     queue = []
     visited = {final_printed: Node(None, None)}

@@ -81,8 +81,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
 
 ##############################################
 
-def validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, allow_failure=False, watch=False, debug=False, **kwargs):
-    element_from_index = bar_struct.get_element_from_index()
+def validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, allow_failure=False, watch=False, debug=False, **kwargs):
     print('Collided element should be included in the future (unprinted) set.')
     element_seq = recover_sequence(trajectories, element_from_index)
     collision_facts = []
@@ -116,5 +115,5 @@ def validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, allow_failure=
         visualize_collision_digraph(collision_facts)
 
     valid = validate_trajectories(element_from_index, fixed_obstacles, trajectories, \
-        grounded_elements=bar_struct.get_grounded_bar_keys(), allow_failure=allow_failure, watch=watch, **kwargs)
+        grounded_elements=grounded_elements, allow_failure=allow_failure, watch=watch, **kwargs)
     return valid

@@ -72,7 +72,8 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             debug=debug, teleops=args.teleops)
     elif args.algorithm == 'regression':
         with LockRenderer(True):
-            plan, data = regression(robot, fixed_obstacles, bar_struct, collision=args.collisions, motions=True, stiffness=True,
+            plan, data = regression(robot, fixed_obstacles, element_from_index, grounded_elements, connectors, collision=args.collisions,
+                motions=True, stiffness=True,
                 revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
     else:
         raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
@@ -124,7 +125,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             display_trajectories(trajectories, time_step=time_step)
         # verify
         if args.collisions:
-            valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui() or debug, \
+            valid = validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui() or debug, \
                 bar_only=args.bar_only, refine_num=1, debug=debug)
             cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
             assert valid

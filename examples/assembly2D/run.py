@@ -32,13 +32,14 @@ from coop_assembly.data_structure import WorldPose, MotionTrajectory
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 from coop_assembly.planning.motion import display_trajectories
+from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 
-from pybullet_planning import set_camera_pose, connect, pose_from_base_values, create_box, wait_if_gui, set_pose, create_plane, \
+from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui, set_pose, create_plane, \
     draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
-    create_flying_body, create_shape, get_mesh_geometry, SE2, get_movable_joints, get_configuration, set_configuration, get_links, \
+    create_flying_body, create_shape, get_mesh_geometry, get_movable_joints, get_configuration, set_configuration, get_links, \
     has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer
 
-from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn
+from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
 
 # pddlstream algorithm options
 STRIPSTREAM_ALGORITHM = [
@@ -48,7 +49,7 @@ STRIPSTREAM_ALGORITHM = [
     'binding',
     'adaptive',
 ]
-ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
+ALGORITHMS = STRIPSTREAM_ALGORITHM #+ ['regression']
 
 SS_OPTIONS = {
     'focused' : {'max_skeletons':None, 'bind':False, 'search_sample_ratio':0,},
@@ -64,7 +65,9 @@ SHADOWS = False
 # robot geometry data files
 HERE = os.path.dirname(__file__)
 DUCK_OBJ_PATH = os.path.join(HERE, 'data', 'duck.obj')
-INITIAL_CONF = [-1.0, 0.0, 0.0] # x, y, yaw
+
+SE2_xz = ['x', 'z', 'pitch']
+INITIAL_CONF = [-1.0, 0.0, 0.0]
 
 # representation used in pddlstream
 ROBOT_TEMPLATE = 'r{}'
@@ -102,7 +105,7 @@ Element2D = namedtuple('Element2D', ['index',
 
 def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
                    partial_orders={}, printed=set(), removed=set(), collisions=True,
-                   return_home=True, teleops=False, **kwargs): # checker=None, transit=False,
+                   return_home=True, teleops=False, fluent_special=False, **kwargs): # checker=None, transit=False,
     # TODO update removed & printed
     assert not removed & printed, 'choose one of them!'
     remaining = set(element_from_index) - removed - printed
@@ -111,18 +114,23 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
     initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot, INITIAL_CONF) for i, robot in enumerate(robots)}
 
-    domain_pddl = read(get_file_path(__file__, 'pddl/domain.pddl'))
-    stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
-    constant_map = {}
+    if not fluent_special:
+        domain_pddl = read(get_file_path(__file__, 'pddl/domain.pddl'))
+        stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
+    else:
+        domain_pddl = read(get_file_path(__file__, 'pddl/domain_fluent.pddl'))
+        stream_pddl = read(get_file_path(__file__, 'pddl/stream_fluent.pddl'))
 
+    constant_map = {}
     stream_map = {
-        'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+        'sample-place': get_wild_2d_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, \
-                                              initial_confs=initial_confs, teleops=teleops, **kwargs),
+                                              initial_confs=initial_confs, teleops=teleops, fluent_special=fluent_special, **kwargs),
         'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
 
+    # if not fluent_special:
     #     stream_map.update({
     #         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
     #                                                partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
@@ -164,8 +172,8 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
 ##################################################
 
-def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
-        initial_confs={}, teleops=False, fluent_special=True, **kwargs):
+def get_wild_2d_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
+        initial_confs={}, teleops=False, fluent_special=False, **kwargs):
     """ fluent_special : True if we are running incremental + semantic attachment
     """
     gen_fn_from_robot = {}
@@ -218,7 +226,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
         cprint('Using incremental + semantic attachment.', 'yellow')
 
     pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, collisions=collisions,
-                   return_home=True, teleops=teleops, partial_orders=partial_orders)
+                   return_home=True, teleops=teleops, partial_orders=partial_orders, fluent_special=fluent_special)
                    # , printed=set(), removed=set(),
 
     if debug:
@@ -253,7 +261,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
             stream_info = {
                 'sample-place': StreamInfo(PartialInputs(unique=True)),
-                'sample-move': StreamInfo(PartialInputs(unique=True)),
+                # 'sample-move': StreamInfo(PartialInputs(unique=True)),
                 'test-cfree': StreamInfo(negate=True),
             }
             # TODO: effort_weight=0 will lead to noplan found
@@ -319,43 +327,44 @@ def load_2d_world(viewer=False):
        # duck_body = create_obj(DUCK_OBJ_PATH, scale=0.2 * 1e-3, color=apply_alpha(GREEN, 0.5))
        # treat end effector as a flying 2D robot
        collision_id, visual_id = create_shape(get_mesh_geometry(DUCK_OBJ_PATH, scale=0.2 * 1e-3), collision=True, color=apply_alpha(GREEN, 0.5))
-       end_effector = create_flying_body(SE2, collision_id, visual_id)
+       end_effector = create_flying_body(SE2_xz, collision_id, visual_id)
 
-    # looking down from the top since it's 2D
-    # TODO: view point a bit odd, can we change row value of the camera?
-    camera_target_point = [0,0,0]
-    set_camera_pose(camera_target_point + np.array([1e-3,1e-3,.5]), camera_target_point)
-    draw_pose(unit_pose())
-    return end_effector
+    return end_effector, floor
 
 def get_assembly_problem():
     # TODO: load 2D truss exported from GH
     # creating beams
     width = 0.01
-    h = 0.01 # this dimension doesn't matter
+    l = 0.01 # this dimension doesn't matter
     length = 0.2
     shrink = 0.015
-    initial_pose = WorldPose('init', pose_from_base_values([0.3,-0.2,0]))
-    element_dims = {0 : [width, length*np.sqrt(2)-2*shrink, h],
-                    1 : [width, length-2*shrink, h],
-                    2 : [width, length*np.sqrt(2)-2*shrink, h],
-                    3 : [width, 2*length, h],
+    initial_pose = WorldPose('init', pose_from_xz_values([0.3,-0.2,0]))
+    element_dims = {0 : [width, l, length*np.sqrt(2)-2*shrink],
+                    1 : [width, l, length-2*shrink],
+                    2 : [width, l, length*np.sqrt(2)-2*shrink],
+                    3 : [width, l, 2*length],
                     }
     element_from_index = {0 : Element2D(0, element_dims[0],
                                         create_box(*element_dims[0]),
-                                        initial_pose, WorldPose(0, pose_from_base_values([0,length/2,np.pi/4]))),
+                                        initial_pose, WorldPose(0, pose_from_xz_values([0,length/2,-np.pi/4]))),
                           1 : Element2D(1, element_dims[1],
                                         create_box(*element_dims[1]),
-                                        initial_pose, WorldPose(1, pose_from_base_values([length/2,length/2,0]))),
+                                        initial_pose, WorldPose(1, pose_from_xz_values([length/2,length/2,0]))),
                           2 : Element2D(2, element_dims[2],
                                         create_box(*element_dims[2]),
-                                        initial_pose, WorldPose(2, pose_from_base_values([length,length/2,-np.pi/4]))),
+                                        initial_pose, WorldPose(2, pose_from_xz_values([length,length/2,np.pi/4]))),
                           3 : Element2D(3, element_dims[3],
                                         create_box(*element_dims[3], color=BLUE),
-                                        initial_pose, WorldPose(3, pose_from_base_values([length/2,length,np.pi/2]))),
+                                        initial_pose, WorldPose(3, pose_from_xz_values([length/2,length,np.pi/2]))),
                           }
     for ei, e in element_from_index.items():
         set_pose(e.body, e.goal_pose.value)
+
+    # looking down from the top since it's 2D
+    # TODO: use centroid of geometry here
+    camera_target_point = [0.1,0,0.1]
+    set_camera_pose(camera_target_point + np.array([0,-0.3,0]), camera_target_point)
+    draw_pose(unit_pose())
 
     connectors = {(0,3) : np.array([0,0]),
                   (1,3) : np.array([0,0]),
@@ -365,11 +374,11 @@ def get_assembly_problem():
     return element_from_index, connectors, grounded_elements
 
 def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
-    end_effector = load_2d_world(viewer=args.viewer)
+    end_effector, floor = load_2d_world(viewer=args.viewer)
     element_from_index, connectors, grounded_elements = get_assembly_problem()
 
     robots = [end_effector]
-    fixed_obstacles = []
+    fixed_obstacles = [floor]
 
     saver = WorldSaver()
     # elements_from_layer = defaultdict(set)
@@ -384,8 +393,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
 
     if args.algorithm in STRIPSTREAM_ALGORITHM:
         plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
-            collisions=args.collisions, algorithm=args.algorithm, costs=args.costs,
-            debug=debug, teleops=args.teleops)
+            collisions=args.collisions, algorithm=args.algorithm, costs=args.costs, debug=debug, teleops=args.teleops)
     # elif args.algorithm == 'regression':
     #     with LockRenderer(True):
     #         plan, data = regression(robot, fixed_obstacles, bar_struct, collision=args.collisions, motions=True, stiffness=True,
@@ -436,16 +444,16 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             if step_sim:
                 time_step = None
             else:
-                time_step = 0.0
+                time_step = 0.05
             display_trajectories(trajectories, time_step=time_step)
         # verify
-        # if args.collisions:
-        #     valid = validate_pddl_plan(trajectories, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui() or debug, \
-        #         bar_only=args.bar_only, refine_num=1, debug=debug)
-        #     cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
-        #     assert valid
-        # else:
-        #     cprint('Collision disabled, no verfication performed.', 'yellow')
+        if args.collisions:
+            valid = validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False,
+                allow_failure=has_gui() or debug, refine_num=1, debug=debug, bar_only=True)
+            cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
+            assert valid
+        else:
+            cprint('Collision disabled, no verfication performed.', 'yellow')
     reset_simulation()
     disconnect()
 

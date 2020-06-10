@@ -1,4 +1,4 @@
-(define (domain assembly2d)
+(define (domain construction)
   (:requirements :strips :equality)
   (:predicates
     (Robot ?r)
@@ -7,7 +7,8 @@
     (Assembled ?e)
     (Removed ?e)
 
-    (PlaceAction ?r ?e ?t)
+    (PlaceAction ?r ?e ?q1 ?q2 ?t)
+    (MoveAction ?r ?q1 ?q2 ?t2)
     (Grounded ?e)
     (Connected ?e)
     (Joined ?e1 ?e2)
@@ -16,6 +17,7 @@
     (CollisionFree ?r ?t ?e)
     (UnSafeTraj ?r ?t)
 
+    (CanMove ?r)
     (Conf ?r ?q)
     (AtConf ?r ?q)
     (AtStart ?q ?t)
@@ -24,25 +26,43 @@
     ; (Stiff)
   )
 
+  (:action move
+    :parameters (?r ?q1 ?q2 ?t2)
+    :precondition (and
+                        (Conf ?r ?q1)
+                        ; (AtConf ?r ?q1)
+                        (Conf ?r ?q2)
+                        (Traj ?r ?t2)
+                        (CanMove ?r)
+                        (MoveAction ?r ?q1 ?q2 ?t2)
+                        ;;; collision constraint
+                        (not (UnSafeTraj ?r ?t2))
+                       )
+    :effect (and
+                ;  (not (AtConf ?r ?q1))
+                 (AtConf ?r ?q2)
+                 (not (CanMove ?r)) ; switch to avoid transit forever
+                 )
+  )
+
   ; place = remove the element
   (:action place
-    :parameters (?r ?e ?t)
+    :parameters (?r ?e ?q1 ?q2 ?t)
     :precondition (and
-                       (PlaceAction ?r ?e ?t)
+                       (PlaceAction ?r ?e ?q1 ?q2 ?t)
                        (Assembled ?e)
                        ; (Stiff)
                        (Connected ?e)
-
-                       ; TODO: the following precondition will cause the following error:
-                       ;  line 51, in compile_fluents_as_attachments
-                       ;  if literal.predicate in predicate_map:
-                       ;  AttributeError: 'UniversalCondition' object has no attribute 'predicate'
-                    ;    (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
-
-                       ;; uncomment if not using fluent
-                    ;    (not (UnSafeTraj ?r ?t))
+                       ; e2 must be remove before e
+                       (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
+                       ;; Collision constraint
+                       (not (UnSafeTraj ?r ?t))
+                       ;; comment the following two if no transit
+                    ;    (AtConf ?r ?q1) ; this will force a move action
+                    ;    (not (CanMove ?r))
                        )
     :effect (and (Removed ?e)
+                 (CanMove ?r)
                  (not (Assembled ?e))
                  )
   )
@@ -65,4 +85,3 @@
   )
 
 )
-

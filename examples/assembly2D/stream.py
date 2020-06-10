@@ -17,7 +17,8 @@ from pybullet_planning import link_from_name, set_pose, \
     interpolate_poses, create_attachment, plan_cartesian_motion, INF, GREEN, BLUE, RED, set_color, get_all_links, step_simulation, get_aabb, \
     get_bodies_in_region, pairwise_link_collision, BASE_LINK, get_client, clone_collision_shape, clone_visual_shape, get_movable_joints, \
     create_flying_body, SE3, euler_from_quat, create_shape, get_cylinder_geometry, wait_if_gui, set_joint_positions, dump_body, get_links, \
-    get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, base_values_from_pose
+    get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, quat_from_euler, \
+    quat_from_pose
 
 from coop_assembly.planning.utils import Command, prune_dominated
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
@@ -40,6 +41,22 @@ ORI_STEP_SIZE = np.pi/180
 # collision checking safe margin
 MAX_DISTANCE = 0.0
 
+#######################################
+
+def xz_values_from_pose(pose, tolerance=1e-3):
+    (point, quat) = pose
+    x, _, z = point
+    roll, pitch, yaw = euler_from_quat(quat)
+    # assert (abs(roll) < tolerance) and (abs(yaw) < tolerance)
+    return (x, z, pitch)
+
+def pose_from_xz_values(base_values, default_pose=unit_pose()):
+    x, z, pitch = base_values
+    _, y, _ = point_from_pose(default_pose)
+    roll, _, yaw = euler_from_quat(quat_from_pose(default_pose))
+    return (x, y, z), quat_from_euler([roll, pitch, yaw])
+
+######################################
 
 def get_2d_element_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_grasp=False, safety_margin_length=0.0):
     # rotate the box's frame to make x axis align with the longitude axis
@@ -74,8 +91,8 @@ def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
     """
     lower = [-epsilon]*2 + [-angle]
     upper = [epsilon]*2 + [angle]
-    for [x, y, yaw] in interval_generator(lower, upper): # halton?
-        pose = Pose(point=[x,y,0], euler=Euler(yaw=yaw))
+    for [x, z, pitch] in interval_generator(lower, upper): # halton?
+        pose = Pose(point=[x,0,z], euler=Euler(pitch=pitch))
         yield pose
 
 def get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRASP_MAX_ATTEMPTS, collision=True, teleops=False):
@@ -171,18 +188,15 @@ def compute_2d_place_path(gripper_robot, pregrasp_poses, grasp, index, element_f
     """ IK computation, attachment. EE path is given.
     """
     body = element_from_index[index].body
-    # no inverse kinematics involved in the bar_only mode
-    # element_robot = element_from_index[index].element_robot
     gripper_joints = get_movable_joints(gripper_robot)
     gripper_body_link = get_links(gripper_robot)[-1]
 
-    # attach_conf = np.concatenate([pregrasp_poses[-1][0], intrinsic_euler_from_quat(pregrasp_poses[-1][1])])
-    attach_conf = base_values_from_pose(pregrasp_poses[-1])
+    attach_conf = xz_values_from_pose(pregrasp_poses[-1])
     set_joint_positions(gripper_robot, gripper_joints, attach_conf)
     set_pose(body, pregrasp_poses[-1])
     attachment = create_attachment(gripper_robot, gripper_body_link, body)
     command = Command([MotionTrajectory(gripper_robot, gripper_joints,
-                      [base_values_from_pose(p) for p in pregrasp_poses], \
+                      [xz_values_from_pose(p) for p in pregrasp_poses], \
                       attachments=[attachment], tag='place_approach', element=index)])
     return command
 
@@ -255,8 +269,6 @@ def get_2d_place_gen_fn(end_effector, element_from_index, fixed_obstacles, colli
                 yield command,
                 break
             # else:
-            #     # this will run if no break is called, prevent a StopIteraton error
-            #     # https://docs.python.org/3/tutorial/controlflow.html#break-and-continue-statements-and-else-clauses-on-loops
                 # if allow_failure:
                     # yield None,
         else:

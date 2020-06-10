@@ -38,9 +38,9 @@ def results_dir():
     return os.path.join(here, 'results')
 
 @pytest.mark.skip(reason='not ready to be auto tested...')
-@pytest.mark.wip_pddl
+@pytest.mark.pddlstream
 def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug_mode):
-    from coop_assembly.planning.stripstream import run_pddlstream
+    from coop_assembly.planning.run import run_pddlstream
     Arguments = namedtuple('Arguments', ['problem', 'algorithm', 'collisions', 'bar_only', 'partial_ordering', 'costs', 'teleops'])
     partial_ordering = True
     costs = False
@@ -86,13 +86,18 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
     fixed_obstacles, robot = load_world()
     # wait_if_gui()
 
+    element_from_index = bar_struct.get_element_from_index()
+    grounded_elements = bar_struct.get_grounded_bar_keys()
+    contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
+    connectors = list(contact_from_connectors.keys())
+
     n_attempts = int(n_trails)
     success = 0
     splan = None
     for i in range(n_attempts):
         print('#'*10)
         with LockRenderer(True):
-            plan, data = regression(robot, fixed_obstacles, bar_struct, collision=collision, motions=motion, stiffness=stiffness,
+            plan, data = regression(robot, fixed_obstacles, element_from_index, grounded_elements, connectors, collision=collision, motions=motion, stiffness=stiffness,
                 revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False, bar_only=bar_only)
             print(data)
         if plan is None:
@@ -124,7 +129,7 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
             display_trajectories(splan, time_step=time_step, #video=True,
                                  animate=False)
         if collision:
-            valid = validate_pddl_plan(splan, bar_struct, fixed_obstacles, watch=False, allow_failure=has_gui(), \
+            valid = validate_pddl_plan(splan, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui(), \
                 bar_only=bar_only, refine_num=1)
             assert valid
     reset_simulation()
