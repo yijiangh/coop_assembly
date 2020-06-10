@@ -24,27 +24,48 @@ from pddlstream.language.function import FunctionInfo
 from pddlstream.utils import read, get_file_path, inclusive_range, INF
 from pddlstream.language.temporal import compute_duration, get_end
 
-from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
+from coop_assembly.data_structure import WorldPose, MotionTrajectory
 
 from pybullet_planning import set_camera_pose, connect, pose_from_base_values, create_box, wait_if_gui, set_pose, create_plane, \
     draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
-    create_flying_body, create_shape, get_mesh_geometry, SE2
+    create_flying_body, create_shape, get_mesh_geometry, SE2, get_movable_joints, get_configuration, set_configuration, get_links
 
+from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn
+
+# viz settings
 GROUND_COLOR = 0.8*np.ones(3)
 BACKGROUND_COLOR = [0.9, 0.9, 1.0] # 229, 229, 255
 SHADOWS = False
 
+# robot geometry data files
 HERE = os.path.dirname(__file__)
 DUCK_OBJ_PATH = os.path.join(HERE, 'data', 'duck.obj')
+INITIAL_CONF = [-1.0, 0.0, 0.0] # x, y, yaw
 
-# GRASP = np.array([0, 0])
-# ELEMENT_TEMPLATE = 'E{}'
-# CLAMP_TEMPLATE = 'C{}'
-# GRIPPER_TEMPLATE = 'G{}'
+# representation used in pddlstream
+ROBOT_TEMPLATE = 'r{}'
+ELEMENT_ROBOT_TEMPLATE = 'e{}'
 
-ELEMENT_TEMPLATE = 'Element{}'
-CLAMP_TEMPLATE = 'Clamp{}'
-GRIPPER_TEMPLATE = 'Gripper{}'
+def index_from_name(robots, name):
+    return robots[int(name[1:])]
+
+class Conf(object):
+    """wrapper for robot (incl. the element robot) configurations in pddlstream formulation
+    """
+    def __init__(self, robot, positions=None, element=None):
+        self.robot = robot
+        self.joints = get_movable_joints(self.robot)
+        if positions is None:
+            positions = get_configuration(self.robot)
+        self.positions = positions
+        self.element = element
+    def assign(self):
+        set_configuration(self.robot, self.positions)
+    def __repr__(self):
+        return '{}(E{})'.format(self.__class__.__name__, self.element)
+
+###########################################
+# convenient classes
 
 Element2D = namedtuple('Element2D', ['index',
                                      'wlh',
@@ -53,127 +74,115 @@ Element2D = namedtuple('Element2D', ['index',
                                     #  'grasps', 'layer'
                                      ])
 
-Gripper = namedtuple('Gripper', ['index',
-                            'rest_pose',
-                            ]
-                            )
-
-Clamp = namedtuple('Clamp', ['index',
-                            'rest_pose',
-                            ]
-                            )
-
 ###################################################
 
-def value_from_name(object_from_index, name):
-    return object_from_index[int(name[1:])]
+def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
+                   partial_orders={}, printed=set(), removed=set(), collisions=True,
+                   return_home=True, teleops=False, **kwargs): # checker=None, transit=False,
+    # TODO update removed & printed
+    assert not removed & printed, 'choose one of them!'
+    remaining = set(element_from_index) - removed - printed
+    element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
+    obstacles = set(static_obstacles) | element_obstacles
 
-def is_close(p1, p2):
-    return np.linalg.norm(p1-p2) < 1e-3
+    initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot, INITIAL_CONF) for i, robot in enumerate(robots)}
 
-def get_dock_region_test(gripper_from_index, clamp_from_index):
-    def test_fn(ee_name, p):
-        # return interval_contains(regions[r], get_block_interval(b, p))
-        if ee_name[0] == 'g':
-            return is_close(p, value_from_name(gripper_from_index, ee_name).rest_pose)
-        elif ee_name[1] == 'c':
-            return is_close(p, value_from_name(clamp_from_index, ee_name).rest_pose)
-        else:
-            raise ValueError('not an end effector: {}'.format(ee_name))
-    return test_fn
+    domain_pddl = read(get_file_path(__file__, 'pddl/domain.pddl'))
+    stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
+    constant_map = {}
 
-###################################################
-
-def get_pddlstream_problem(element_from_index, grounded_elements, connectors, gripper_from_index, clamp_from_index):
-    domain_pddl = read(os.path.join(HERE, 'domain.pddl'))
-    stream_pddl = read(os.path.join(HERE, 'stream.pddl'))
-
-    constant_map = {
-        'gripper_restpose': gripper_from_index[0].rest_pose,
+    stream_map = {
+        'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+                                              partial_orders=partial_orders, collisions=collisions, \
+                                              initial_confs=initial_confs, teleops=teleops, **kwargs),
+        'test-cfree': from_test(get_test_cfree()),
+        # 'test-stiffness': from_test(test_stiffness),
     }
 
-    element_names = {e : ELEMENT_TEMPLATE.format(e) for e in element_from_index}
-    gripper_names = {g : GRIPPER_TEMPLATE.format(g) for g in gripper_from_index}
-    clamp_names = {c : CLAMP_TEMPLATE.format(c) for c in clamp_from_index}
+    #     stream_map.update({
+    #         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+    #                                                partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
+    #                                                initial_confs=initial_confs, teleops=teleops, **kwargs),
+    #     })
 
-    # robot
-    initial_conf = np.array([0,-2])
-
-    init = [
-        ('CanMove',),
-        ('Conf', initial_conf),
-        ('AtConf', initial_conf),
-        ('FlangeEmpty',),
-        ('HandEmpty',),
-        # Equal((TOTAL_COST,), 0)] + \
-        ]
-
-    for g, gp in gripper_from_index.items():
+    # * initial facts
+    init = []
+    # if transit:
+    #     init.append(('Move',))
+    for name, conf in initial_confs.items():
         init.extend([
-            ('Gripper', gripper_names[g]),
-            ('EndEffector', gripper_names[g]),
-            ('Pose', gp.rest_pose),
-            ('DockPose', gripper_names[g], gp.rest_pose),
-            ('AtPose', gripper_names[g], gp.rest_pose),
+            ('Robot', name),
+            ('Conf', name, conf),
+            ('AtConf', name, conf),
+            ('CanMove', name),
         ])
-
-    for c, cl in clamp_from_index.items():
+    # static facts
+    init.extend(('Grounded', e) for e in grounded_elements)
+    init.extend(('Joined', e1, e2) for e1, e2 in connectors)
+    init.extend(('Joined', e2, e1) for e1, e2 in connectors)
+    init.extend(('Order',) + tup for tup in partial_orders)
+    for e in remaining:
         init.extend([
-            ('Clamp', clamp_names[c]),
-            ('EndEffector', clamp_names[c]),
-            ('Pose', cl.rest_pose),
-            ('DockPose', clamp_names[c], cl.rest_pose),
-            ('AtPose', clamp_names[c], cl.rest_pose),
+            ('Element', e),
+            ('Assembled', e),
         ])
+    for rname in initial_confs:
+            init.extend([('Assigned', rname, e) for e in remaining])
 
-    init.extend(('Grounded', element_names[e]) for e in grounded_elements)
-    for joined, join_pose  in connectors.items():
-        init.append(('Joined', element_names[joined[0]], element_names[joined[1]]))
-        init.append(('Joined', element_names[joined[1]], element_names[joined[0]]))
-        init.append(('Pose', join_pose))
-        init.append(('ConnectorPose', element_names[joined[0]], element_names[joined[1]], join_pose))
-        init.append(('ConnectorPose', element_names[joined[1]], element_names[joined[0]], join_pose))
-
-    # init.extend(('Order',) + tup for tup in partial_orders)
-
-    for e, element in element_from_index.items():
-        init.extend([
-            ('Element', element_names[e]),
-            ('Removed', e),
-            ('Pose', element.initial_pose),
-            ('Pose', element.goal_pose),
-            ('AtPose', element_names[e], element.initial_pose),
-            ('GoalPose', element_names[e], element.goal_pose),
-        ])
-
+    # * goal facts
     goal_literals = []
     # if return_home:
     #     goal_literals.extend(('AtConf', r, q) for r, q in initial_confs.items())
-    goal_literals.extend(('Assembled', element_names[e]) for e in element_from_index)
-    # goal_literals.extend(('AtPose', element_names[e], element.goal_pose) for e, element in element_from_index.items())
+    goal_literals.extend(('Removed', e) for e in remaining)
     goal = And(*goal_literals)
 
-    cprint('Initial predicates:', 'blue')
-    print(init)
-    cprint('Goal predicates:', 'blue')
-    print(goal)
-
-    # TODO: convert to lower case
-    stream_map = {
-        # ? in this case of a floating gripper the IK is trivial
-        'inverse-kinematics':  from_fn(lambda p: (p + GRASP,)),
-        ##
-        # ? if tested in collision, certify CollisionFree
-        # 'test-cfree': from_test(lambda *args: not collision_test(*args)),
-        #'sample-pose': from_gen_fn(lambda: ((np.array([x, 0]),) for x in range(len(poses), n_poses))),
-        # ? simple enumerator
-        # 'sample-pose': from_gen_fn(lambda: ((p,) for p in tamp_problem.poses)),
-        # 't-dock_region': from_test(get_dock_region_test(gripper_from_index, clamp_from_index)),
-        # # 'collision': collision_test,
-        # 'distance': distance_fn,
-    }
-
     return PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
+
+##################################################
+
+def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
+        initial_confs={}, teleops=False, fluent_special=True, **kwargs):
+    """ fluent_special : True if we are running incremental + semantic attachment
+    """
+    gen_fn_from_robot = {}
+    for robot in robots:
+        ee_link = get_links(robot)[-1]
+        tool_link = get_links(robot)[-1]
+        pick_gen_fn = get_2d_place_gen_fn(robot, element_from_index, obstacles, verbose=False, \
+            collisions=collisions, teleops=teleops, **kwargs)
+        gen_fn_from_robot[robot] = pick_gen_fn
+
+    def wild_gen_fn(robot_name, element, fluents=[]):
+        robot = index_from_name(robots, robot_name)
+        printed = []
+        # print('E{} - fluent {}'.format(element, fluents))
+        for fact in fluents:
+            if fact[0] == 'assembled':
+                if fact[1] != element:
+                    printed.append(fact[1])
+            else:
+                raise NotImplementedError(fact[0])
+        for command, in gen_fn_from_robot[robot](element, printed=printed):
+            if not fluent_special:
+                q1 = Conf(robot, np.array(command.start_conf), element)
+                q2 = Conf(robot, np.array(command.end_conf), element)
+                outputs = [(q1, q2, command)]
+            else:
+                outputs = [(command,)]
+            facts = []
+            yield WildOutput(outputs, facts)
+            # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
+            # facts.append(('AtConf', robot_name, initial_confs[robot_name]))
+            # cprint('print facts: {}'.format(command.colliding), 'yellow')
+            # yield (q1, q2, command),
+
+    return wild_gen_fn
+
+def get_test_cfree():
+    def test_fn(robot_name, traj, element):
+        # return True if no collision detected
+        return element not in traj.colliding
+    return test_fn
 
 ##################################################
 
@@ -181,17 +190,20 @@ def load_2d_world(viewer=False):
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     with HideOutput():
        floor = create_plane(color=GROUND_COLOR)
-    #    duck_body = create_obj(DUCK_OBJ_PATH, scale=0.2 * 1e-3, color=apply_alpha(GREEN, 0.5))
+       # duck_body = create_obj(DUCK_OBJ_PATH, scale=0.2 * 1e-3, color=apply_alpha(GREEN, 0.5))
+       # treat end effector as a flying 2D robot
        collision_id, visual_id = create_shape(get_mesh_geometry(DUCK_OBJ_PATH, scale=0.2 * 1e-3), collision=True, color=apply_alpha(GREEN, 0.5))
        end_effector = create_flying_body(SE2, collision_id, visual_id)
 
     # looking down from the top since it's 2D
+    # TODO: view point a bit odd, can we change row value of the camera?
     camera_target_point = [0,0,0]
     set_camera_pose(camera_target_point + np.array([1e-3,1e-3,.5]), camera_target_point)
     draw_pose(unit_pose())
     return end_effector
 
 def get_assembly_problem():
+    # TODO: load 2D truss exported from GH
     # creating beams
     width = 0.01
     h = 0.01 # this dimension doesn't matter
@@ -226,11 +238,14 @@ def get_assembly_problem():
     grounded_elements = [0, 1, 2]
     return element_from_index, connectors, grounded_elements
 
+#####################################################
+
 def main():
     parser = argparse.ArgumentParser()
     #parser.add_argument('-p', '--problem', default='blocked', help='The name of the problem to solve')
     parser.add_argument('-a', '--algorithm', default='focused', help='Specifies the algorithm')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enable the pybullet viewer.')
+    parser.add_argument('-c', '--collisions', action='store_false', help='Disable collision checking.')
     parser.add_argument('-uc', '--unit_cost', action='store_true', help='Uses unit costs')
     parser.add_argument('-db', '--debug', action='store_true', help='debug mode')
     args = parser.parse_args()
@@ -241,10 +256,16 @@ def main():
     element_from_index, connectors, grounded_elements = get_assembly_problem()
     wait_if_gui()
 
-    gp_initial_conf = np.array([1,-2])
-    gripper_from_index = {0 : Gripper(0, gp_initial_conf)}
+    robots = [end_effector]
+    static_obstacles = []
+    pddlstream_problem = get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors, collisions=args.collisions,
+                   return_home=True, teleops=False)
+                   # partial_orders={}, printed=set(), removed=set(),
 
-    # pddlstream_problem = get_pddlstream_problem(element_from_index, grounded_elements, connectors, gripper_from_index)
+    if args.debug:
+        print('Init:', pddlstream_problem.init)
+        print('Goal:', pddlstream_problem.goal)
+    print('='*10)
 
     # success_cost = 0 if args.unit_cost else INF
 

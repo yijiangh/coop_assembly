@@ -9,7 +9,7 @@ from coop_assembly.planning.utils import get_element_neighbors, get_connector_fr
     flatten_commands
 from coop_assembly.planning.motion import display_trajectories
 
-from .stream import get_delta_pose_generator, get_2d_element_grasp_gen_fn, get_2d_pregrasp_gen_fn, compute_2d_place_path
+from .stream import get_delta_pose_generator, get_2d_element_grasp_gen_fn, get_2d_pregrasp_gen_fn, compute_2d_place_path, get_2d_place_gen_fn
 from .run import load_2d_world, get_assembly_problem
 
 def test_stream(viewer, collision):
@@ -17,8 +17,8 @@ def test_stream(viewer, collision):
     element_from_index, connectors, grounded_elements = get_assembly_problem()
     wait_if_gui("Model loaded.")
 
-    printed = set([1,2,3])
-    chosen = 0
+    printed = set([0,2,3])
+    chosen = 1
 
     # color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
     # wait_if_gui()
@@ -26,13 +26,12 @@ def test_stream(viewer, collision):
     n_attempts = 5
     # tool_pose = Pose(euler=Euler(yaw=np.pi/2))
     tool_pose = unit_pose()
-
     obstacles = []
 
     # goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen_fn = get_2d_element_grasp_gen_fn(element_from_index, tool_pose=tool_pose, reverse_grasp=False, safety_margin_length=0.005)
     pregrasp_gen_fn = get_2d_pregrasp_gen_fn(element_from_index, [], collision=collision, teleops=False)
-    # pick_gen = get_2d_place_gen_fn(end_effector, element_from_index, obstacles, collisions=collision, verbose=True) #max_attempts=n_attempts,
+    pick_gen = get_2d_place_gen_fn(end_effector, element_from_index, obstacles, collisions=collision, verbose=True) #max_attempts=n_attempts,
 
     ee_joints = get_movable_joints(end_effector)
     ee_body_link = get_links(end_effector)[-1]
@@ -63,11 +62,11 @@ def test_stream(viewer, collision):
         handles.extend(draw_pose(p, length=0.05))
 
         # * sample pick trajectory
-        # command, = next(pick_gen(chosen, printed=printed, diagnosis=False))
-
-        command = compute_2d_place_path(end_effector, pregrasp_poses, grasp, chosen, element_from_index)
+        command, = next(pick_gen(chosen, printed=printed, diagnosis=False))
+        # command = compute_2d_place_path(end_effector, pregrasp_poses, grasp, chosen, element_from_index)
         # command = None
 
+        print('Colliding: {}'.format(command.colliding))
         if not command:
             print('no command found')
             gripper_from_bar = grasp.attach
@@ -86,7 +85,8 @@ def test_stream(viewer, collision):
         else:
             print('command found!')
             trajs = flatten_commands([command])
-            time_step = None if has_gui() else 0.1
+            # time_step = None if has_gui() else 0.1
+            time_step = 0.05
             display_trajectories(trajs, time_step=time_step, #video=True,
                                  animate=True)
             print('*'*10)

@@ -7,8 +7,6 @@ from termcolor import cprint
 from collections import namedtuple
 from itertools import islice
 
-# from extrusion.utils import get_disabled_collisions, get_custom_limits, MotionTrajectory
-
 from pybullet_planning import link_from_name, set_pose, \
     multiply, invert, inverse_kinematics, plan_direct_joint_motion, Attachment, set_joint_positions, plan_joint_motion, \
     get_configuration, wait_for_interrupt, point_from_pose, HideOutput, load_pybullet, draw_pose, unit_quat, create_obj, \
@@ -24,7 +22,6 @@ from pybullet_planning import link_from_name, set_pose, \
 from coop_assembly.planning.utils import Command, prune_dominated
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 
-# TODO: fix self collision
 ENABLE_SELF_COLLISIONS = False
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 100
@@ -38,24 +35,10 @@ ANGLE = np.pi/3
 POS_STEP_SIZE = 0.001
 ORI_STEP_SIZE = np.pi/180
 
-RETREAT_DISTANCE = 0.025
+# RETREAT_DISTANCE = 0.025
 
 # collision checking safe margin
 MAX_DISTANCE = 0.0
-
-# def get_goal_pose_gen_fn(element_from_index):
-#     def gen_fn(index):
-#         """return a world_from_goal_pose, the central point is invariant,
-#         just rotate around the bar's local z axis (for bars, the longitude axis)
-#         """
-#         body_pose = element_from_index[index].goal_pose.value
-#         # by default, the longitude axis is z
-#         # https://pybullet-planning.readthedocs.io/en/latest/reference/generated/pybullet_planning.interfaces.env_manager.create_cylinder.html#pybullet_planning.interfaces.env_manager.create_cylinder
-#         while True:
-#             theta = random.uniform(-np.pi, +np.pi)
-#             rotation = Pose(euler=Euler(yaw=theta))
-#             yield WorldPose(index, multiply(body_pose, rotation)),
-#     return gen_fn
 
 
 def get_2d_element_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_grasp=False, safety_margin_length=0.0):
@@ -88,26 +71,12 @@ def get_element_body_in_goal_pose(element_from_index, printed):
 
 def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
     """sample an infinitestimal pregrasp pose
-
-    Parameters
-    ----------
-    epsilon : [type]
-        [description]
-    angle : [type], optional
-        [description], by default np.pi/2
-
-    Yields
-    -------
-    Pose
     """
     lower = [-epsilon]*2 + [-angle]
     upper = [epsilon]*2 + [angle]
     for [x, y, yaw] in interval_generator(lower, upper): # halton?
         pose = Pose(point=[x,y,0], euler=Euler(yaw=yaw))
         yield pose
-
-def pose2conf(pose):
-    return np.concatenate([np.array(pose[0]), intrinsic_euler_from_quat(np.array(pose[1]))])
 
 def get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRASP_MAX_ATTEMPTS, collision=True, teleops=False):
     pose_gen = get_delta_pose_generator()
@@ -122,7 +91,7 @@ def get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PRE
         if not collision:
             obstacles = set()
 
-        ee_collision_fn = get_floating_body_collision_fn(body, obstacles, max_distance=MAX_DISTANCE)
+        element_collision_fn = get_floating_body_collision_fn(body, obstacles, max_distance=MAX_DISTANCE)
 
         for _ in range(max_attempts):
             delta_pose = next(pose_gen)
@@ -135,7 +104,7 @@ def get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PRE
             for p in offset_path: # [:-1]
                 # TODO: if colliding at the world_from_bar pose, use local velocity + normal check
                 # TODO: normal can be derived from
-                if ee_collision_fn(p):
+                if element_collision_fn(p):
                 # if element_robot_collision_fn(pose2conf(p)):
                     is_colliding = True
                     break
@@ -173,7 +142,7 @@ def command_collision(command, bodies):
             set_joint_positions(robot, joints, conf)
             for attach in trajectory.attachments:
                 attach.assign()
-                set_color(attach.child, (0,1,0,0.5))
+                # set_color(attach.child, (0,1,0,0.5))
 
             #for body, _ in get_bodies_in_region(tool_aabb):
             for i, body in enumerate(bodies):
@@ -183,18 +152,9 @@ def command_collision(command, bodies):
                 for attach in trajectory.attachments:
                     if not collisions[idx]:
                         collisions[idx] |= pairwise_collision(attach.child, body)
-
                     # if collisions[idx]:
                     #     print('colliding E{} - E{}'.format(attach.child, body))
                     #     wait_if_gui()
-
-        # tool_link_name = TOOL_LINK_NAME if end_effector else get_link_name(robot, get_links(robot)[-1])
-        # for tool_pose in randomize(trajectory.get_link_path(tool_link_name)): # TODO: bisect
-        #     joints = get_movable_joints(robot)
-        # if end_effector:
-        #     end_effector.set_pose(tool_pose)
-        # if not collisions[idx]:
-        #     collisions[idx] |= pairwise_collision(end_effector.body, body)
 
     # * checking robot bodies
     for trajectory in command.trajectories:
@@ -203,14 +163,6 @@ def command_collision(command, bodies):
             for i, body in enumerate(bodies):
                 if not collisions[i]:
                     collisions[i] |= pairwise_collision(trajectory.robot, body)
-
-                # if collisions[idx]:
-                #     print('colliding R{} - E{}'.format(trajectory.robot, body))
-                #     dump_body(trajectory.robot)
-                #     wait_if_gui()
-
-    #for element, unsafe in zip(elements, collisions):
-    #    command.safe_per_element[element] = unsafe
     return collisions
 
 ######################################
@@ -236,44 +188,25 @@ def compute_2d_place_path(gripper_robot, pregrasp_poses, grasp, index, element_f
 
 ######################################
 
-# the initial pose is fixed, the goal poses can be generated by rotational symmetry
-# so the total grasp posibility is generated by:
-# rotational goal pose x grasp sliding
-# the approach pose is independent of grasp and symmetry, can be generated independently
-
-# choosing joint resolution:
-# http://openrave.org/docs/0.6.6/openravepy/databases.linkstatistics/
-
-def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisions=True,
-    max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, bar_only=False,
-    precompute_collisions=False, teleops=False):
-    if not collisions:
-        precompute_collisions = False
+def get_2d_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisions=True,
+    max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, teleops=False):
 
     # goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_2d_element_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
     pregrasp_gen_fn = get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=collisions, teleops=teleops) # max_attempts=max_attempts,
 
-    retreat_distance = RETREAT_DISTANCE
-    retreat_vector = retreat_distance*np.array([0, 0, -1])
+    # retreat_distance = RETREAT_DISTANCE
+    # retreat_vector = retreat_distance*np.array([0, 0, -1])
+    # ee_joints = get_movable_joints(end_effector)
+    # ee_body_link = get_links(end_effector)[-1]
 
     def gen_fn(element, printed=[], diagnosis=False):
-        assert implies(bar_only, element_from_index[element].element_robot is not None)
-
         print('new stream fn - printed: {}'.format(printed))
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
         if not collisions:
             obstacles = set()
         elements_order = [e for e in element_from_index if (e != element) and (element_from_index[e].body not in obstacles)]
-
-        # attachment is assumed to be empty here, since pregrasp sampler guarantees that
-        if not bar_only:
-            collision_fn = get_collision_fn(robot, ik_joints, obstacles=obstacles, attachments=[],
-                                            self_collisions=ENABLE_SELF_COLLISIONS,
-                                            disabled_collisions=disabled_collisions,
-                                            custom_limits=get_custom_limits(robot),
-                                            max_distance=MAX_DISTANCE)
 
         # keep track of sampled traj, prune newly sampled one with more collided element
         trajectories = []
@@ -283,34 +216,35 @@ def get_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisio
             grasp = grasp_t[0]
             # * ik iterations, usually 1 is enough
             for _ in range(max_attempts):
-                # when used in pddlstream, the pregrasp sampler assumes no elements assembled at all time
+                # when used in pddlstream without fluents, the pregrasp sampler assumes no elements assembled at all time
                 pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed))
                 if not pregrasp_poses:
                     if verbose : print('pregrasp failure.')
                     continue
 
+                # in 2D case, command will never be None since there is no collision_fn
+                # passed in for checking robot's body collision with assembled stuff
                 command = compute_2d_place_path(end_effector, pregrasp_poses, grasp, element, element_from_index)
                 if command is None:
                     continue
 
                 # ? why update safe?
                 # command.update_safe(printed)
-                # TODO: not need this when running incremental + semantic attachment
-                if precompute_collisions:
-                    bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-                    colliding = command_collision(command, bodies_order)
-                    for element2, unsafe in zip(elements_order, colliding):
-                        if unsafe:
-                            command.set_unsafe(element2)
-                        else:
-                            command.set_safe(element2)
+                # this is only for checking collision between the robot and env
+                # pregrasp path takes care about the element-element collision
+                bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
+                colliding = command_collision(command, bodies_order)
+                for element2, unsafe in zip(elements_order, colliding):
+                    if unsafe:
+                        command.set_unsafe(element2)
+                    else:
+                        command.set_safe(element2)
 
                 # if not is_ground(element, ground_nodes) and (neighboring_elements <= command.colliding):
                 #     continue # TODO If all neighbors collide
 
                 trajectories.append(command)
-                if precompute_collisions:
-                    prune_dominated(trajectories)
+                prune_dominated(trajectories)
                 if command not in trajectories:
                     continue
 
