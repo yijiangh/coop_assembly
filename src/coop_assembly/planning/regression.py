@@ -18,7 +18,7 @@ import os, sys
 
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
-    set_joint_positions
+    set_joint_positions, get_relative_pose
 
 from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
 from coop_assembly.data_structure.utils import MotionTrajectory
@@ -28,7 +28,7 @@ from .visualization import draw_element
 from .stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands, Command, check_connected
 from .motion import compute_motion, BAR_INITIAL_POINT, BAR_INITIAL_EULER
-from .robot_setup import INITIAL_CONF, TOOL_LINK_NAME, EE_LINK_NAME
+from .robot_setup import INITIAL_CONF # , TOOL_LINK_NAME, EE_LINK_NAME
 
 MAX_REVISIT = 5
 
@@ -59,23 +59,22 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 
 ##################################################
 
-def regression(robot, obstacles, element_from_index, grounded_elements, connectors, partial_orders=[],
+def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders=[],
                max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
                collision=True, stiffness=True, motions=True, lazy=True, checker=None, verbose=True, **kwargs):
-    # TODO: replace bar_struct, directly take in element_from_index etc.
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = INITIAL_CONF if not bar_only else np.concatenate([BAR_INITIAL_POINT, BAR_INITIAL_EULER])
 
-    end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
-                               tool_link=link_from_name(robot, TOOL_LINK_NAME),
-                               visual=False, collision=True)
+    # end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
+    #                            tool_link=link_from_name(robot, TOOL_LINK_NAME),
+    #                            visual=False, collision=True)
 
     # if checker is None:
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
     # TODO: partial ordering
-    pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
+    pick_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
         precompute_collisions=False, allow_failure=True)
 
     # TODO: allow choice of config

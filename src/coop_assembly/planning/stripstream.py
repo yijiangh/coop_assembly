@@ -274,16 +274,9 @@ def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elemen
     """
     gen_fn_from_robot = {}
     for robot in robots:
-        ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
-        tool_link = link_from_name(robot, TOOL_LINK_NAME) if not bar_only else get_links(robot)[-1]
-        # TODO end_effector is unused in bar_only setting
-        end_effector = EndEffector(robot, ee_link=ee_link,
-                                   tool_link=tool_link,
-                                   visual=False, collision=True)
-
         # TODO: not need precompute_collisions when running incremental + semantic attachment
         # but just do it for now
-        pick_gen_fn = get_place_gen_fn(end_effector, element_from_index, obstacles, verbose=False, \
+        pick_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False, \
             precompute_collisions=True, collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
         gen_fn_from_robot[robot] = pick_gen_fn
 

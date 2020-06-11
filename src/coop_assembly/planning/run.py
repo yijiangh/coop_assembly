@@ -14,14 +14,15 @@ from collections import defaultdict
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
-    set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color
+    set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color, get_relative_pose, create_shape, get_mesh_geometry, \
+    create_flying_body, SE3, YELLOW
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
-from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES
+from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, get_gripper_mesh_path
 from coop_assembly.planning.utils import load_world
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
@@ -48,7 +49,14 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     bar_struct, o_struct = load_structure(args.problem, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
 
-    robots = [robot]
+    tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
+    # end effector robot
+    ee_mesh_path = get_gripper_mesh_path()
+    collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
+    end_effector = create_flying_body(SE3, collision_id, visual_id)
+
+    # the arm itself
+    robots = [end_effector] if args.bar_only else [robot]
 
     saver = WorldSaver()
     element_from_index = bar_struct.get_element_from_index()
@@ -72,9 +80,8 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             debug=debug, teleops=args.teleops)
     elif args.algorithm == 'regression':
         with LockRenderer(True):
-            plan, data = regression(robot, fixed_obstacles, element_from_index, grounded_elements, connectors, collision=args.collisions,
-                motions=True, stiffness=True,
-                revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
+            plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors, collision=args.collisions,
+                motions=True, stiffness=True, revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
     else:
         raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
 

@@ -53,7 +53,7 @@ def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorit
     run_pddlstream(args, viewer=viewer, watch=watch, debug=debug_mode, step_sim=step_sim, write=write)
 
 @pytest.mark.skip(reason='not ready to be auto tested...')
-@pytest.mark.wip_pddlstream_parse
+@pytest.mark.pddlstream_parse
 def test_parse_pddlstream(viewer, file_spec, collision, bar_only):
     from coop_assembly.planning.stripstream import get_pddlstream
 
@@ -84,9 +84,14 @@ def test_parse_pddlstream(viewer, file_spec, collision, bar_only):
 @pytest.mark.regression
 def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revisit, n_trails, write, bar_only):
     # TODO: retire this in the light of run.py
-    bar_struct, o_struct = load_structure(file_spec, viewer, apply_alpha(RED, 0))
+    bar_struct, _ = load_structure(file_spec, viewer, apply_alpha(RED, 0))
     fixed_obstacles, robot = load_world()
+    tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
     # wait_if_gui()
+
+    ee_mesh_path = get_gripper_mesh_path()
+    collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
+    end_effector = create_flying_body(SE3, collision_id, visual_id)
 
     element_from_index = bar_struct.get_element_from_index()
     grounded_elements = bar_struct.get_grounded_bar_keys()
@@ -99,7 +104,8 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
     for i in range(n_attempts):
         print('#'*10)
         with LockRenderer(True):
-            plan, data = regression(robot, fixed_obstacles, element_from_index, grounded_elements, connectors, collision=collision, motions=motion, stiffness=stiffness,
+            plan, data = regression(end_effector if bar_only else robot, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors,
+                collision=collision, motions=motion, stiffness=stiffness,
                 revisit=revisit, verbose=False if n_attempts>1 else True, lazy=False, bar_only=bar_only)
             print(data)
         if plan is None:
@@ -181,7 +187,7 @@ def test_stream(viewer, file_spec, collision, bar_only):
     ee_mesh_path = get_gripper_mesh_path()
     collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
     end_effector = create_flying_body(SE3, collision_id, visual_id)
-    ee_joints = get_movable_joints(robot)
+    ee_joints = get_movable_joints(end_effector)
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
 
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
