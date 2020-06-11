@@ -16,7 +16,7 @@ from .run import load_2d_world, get_assembly_problem
 def test_stream(viewer, collision):
     end_effector, floor = load_2d_world(viewer=viewer)
     element_from_index, connectors, grounded_elements = get_assembly_problem()
-    wait_if_gui("Model loaded.")
+    # wait_if_gui("Model loaded.")
 
     printed = set([0,2,3])
     chosen = 1

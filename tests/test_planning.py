@@ -11,7 +11,8 @@ from collections import namedtuple
 from pybullet_planning import connect, has_gui, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
-    set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color
+    set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color, create_shape, get_mesh_geometry, create_flying_body, \
+    SE3, YELLOW, get_movable_joints, get_relative_pose
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -25,12 +26,13 @@ from coop_assembly.planning.utils import get_element_neighbors, get_connector_fr
     flatten_commands
 
 from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
-    get_element_body_in_goal_pose
+    get_element_body_in_goal_pose, se3_conf_from_pose
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
+from coop_assembly.planning.robot_setup import get_gripper_mesh_path
 
 @pytest.fixture
 def results_dir():
@@ -153,7 +155,7 @@ def test_rotate_goal_pose_gen(viewer, file_spec):
         remove_handles(handles)
 
 @pytest.mark.stream
-def test_stream(viewer, file_spec, collision):
+def test_stream(viewer, file_spec, collision, bar_only):
     bar_struct, _ = load_structure(file_spec, viewer)
     element_bodies = bar_struct.get_element_bodies()
     element_from_index = bar_struct.get_element_from_index()
@@ -173,14 +175,20 @@ def test_stream(viewer, file_spec, collision):
     n_attempts = 5
     # tool_pose = Pose(euler=Euler(yaw=np.pi/2))
     tool_pose = unit_pose()
-    end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
-                               tool_link=link_from_name(robot, TOOL_LINK_NAME),
-                               visual=False, collision=True)
+    # end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
+    #                            tool_link=link_from_name(robot, TOOL_LINK_NAME),
+    #                            visual=False, collision=True)
+    ee_mesh_path = get_gripper_mesh_path()
+    collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
+    end_effector = create_flying_body(SE3, collision_id, visual_id)
+    ee_joints = get_movable_joints(robot)
+    tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
 
     goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
-    grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, \
-        reverse_grasp=True, safety_margin_length=0.005)
-    pick_gen = get_place_gen_fn(end_effector, element_from_index, obstacles, collisions=collision, verbose=True) #max_attempts=n_attempts,
+    grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, reverse_grasp=True, safety_margin_length=0.005)
+    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, obstacles, collision=collision, teleops=False) # max_attempts=max_attempts,
+    pick_gen = get_place_gen_fn(end_effector if bar_only else robot, tool_from_ee, element_from_index, obstacles,
+        collisions=collision, verbose=True, bar_only=bar_only) #max_attempts=n_attempts,
 
     # body_pose = element_from_index[chosen].goal_pose.value
     for _ in range(n_attempts):
@@ -189,7 +197,7 @@ def test_stream(viewer, file_spec, collision):
         # couple rotations in goal pose' symmetry and translational grasp
         grasp, = next(grasp_gen(chosen))
         world_pose, = next(goal_pose_gen_fn(chosen))
-        # pregrasp_poses, = next(pregrasp_gen_fn(chosen, world_pose, printed=printed))
+        pregrasp_poses, = next(pregrasp_gen_fn(chosen, world_pose, printed=printed))
 
         # visualize grasp
         p = world_pose.value
@@ -197,9 +205,9 @@ def test_stream(viewer, file_spec, collision):
         set_pose(element_from_index[chosen].body, p)
         world_from_ee = end_effector_from_body(p, gripper_from_bar)
 
-        # end_effector.set_pose(world_from_ee)
-        # handles.extend(draw_pose(world_from_ee, length=0.05))
-        # handles.extend(draw_pose(p, length=0.05))
+        set_joint_positions(end_effector, ee_joints, se3_conf_from_pose(world_from_ee))
+        handles.extend(draw_pose(world_from_ee, length=0.05))
+        handles.extend(draw_pose(p, length=0.05))
 
         # * sample pick trajectory
         command, = next(pick_gen(chosen, printed=printed, diagnosis=False))

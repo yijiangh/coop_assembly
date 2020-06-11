@@ -14,7 +14,7 @@ PICKNPLACE_FILENAMES = {
     '1_tets.json' : 'single_tet_point2triangle.json',
 }
 
-def get_assembly_path(assembly_name):
+def get_assembly_path(assembly_name, file_dir=PICKNPLACE_DIRECTORY):
     if assembly_name.endswith('.json'):
         filename = os.path.basename(assembly_name)
     elif assembly_name in PICKNPLACE_FILENAMES:
@@ -22,7 +22,7 @@ def get_assembly_path(assembly_name):
     else:
         filename = '{}.json'.format(assembly_name)
     root_directory = os.path.dirname(__file__)
-    return os.path.abspath(os.path.join(root_directory, PICKNPLACE_DIRECTORY, filename))
+    return os.path.abspath(os.path.join(root_directory, file_dir, filename))
 
 def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     """connect pybullet env and load the bar system

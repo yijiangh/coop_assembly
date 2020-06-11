@@ -81,6 +81,9 @@ def get_picknplace_robot_data():
 def get_picknplace_end_effector_urdf():
     return coop_assembly.get_data('models/kuka_kr6_r900/urdf/mit_arch_grasp_end_effector.urdf')
 
+def get_gripper_mesh_path():
+    return coop_assembly.get_data("models/kuka_kr6_r900/meshes/mit_arch_grasp_end_effector/collision/mit_arch_grasp_end_effector_collision.stl")
+
 # def get_picknplace_tcp_def():
 #     # TODO: should be derived from the end effector URDF
 #     # in meter

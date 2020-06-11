@@ -37,7 +37,7 @@ from coop_assembly.planning.validator import validate_trajectories, validate_pdd
 from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui, set_pose, create_plane, \
     draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
     create_flying_body, create_shape, get_mesh_geometry, get_movable_joints, get_configuration, set_configuration, get_links, \
-    has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer
+    has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer, YELLOW
 
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
 
@@ -60,7 +60,7 @@ SS_OPTIONS = {
 # viz settings
 GROUND_COLOR = 0.8*np.ones(3)
 BACKGROUND_COLOR = [0.9, 0.9, 1.0] # 229, 229, 255
-SHADOWS = False
+SHADOWS = True
 
 # robot geometry data files
 HERE = os.path.dirname(__file__)
@@ -326,7 +326,7 @@ def load_2d_world(viewer=False):
        floor = create_plane(color=GROUND_COLOR)
        # duck_body = create_obj(DUCK_OBJ_PATH, scale=0.2 * 1e-3, color=apply_alpha(GREEN, 0.5))
        # treat end effector as a flying 2D robot
-       collision_id, visual_id = create_shape(get_mesh_geometry(DUCK_OBJ_PATH, scale=0.2 * 1e-3), collision=True, color=apply_alpha(GREEN, 0.5))
+       collision_id, visual_id = create_shape(get_mesh_geometry(DUCK_OBJ_PATH, scale=0.2 * 1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
        end_effector = create_flying_body(SE2_xz, collision_id, visual_id)
 
     return end_effector, floor
@@ -366,12 +366,84 @@ def get_assembly_problem():
     set_camera_pose(camera_target_point + np.array([0,-0.3,0]), camera_target_point)
     draw_pose(unit_pose())
 
-    connectors = {(0,3) : np.array([0,0]),
-                  (1,3) : np.array([0,0]),
-                  (2,3) : np.array([0,0]),
+    connectors = {(0,3) : None,
+                  (1,3) : None,
+                  (2,3) : None,
                   }
     grounded_elements = [0, 1, 2]
     return element_from_index, connectors, grounded_elements
+
+SHAPE_DIRECTORY = os.path.join('..', '..', '..', 'examples', 'assembly2D', 'problems')
+
+def parse_2D_truss(problem, viewer=False, write=False, **kwargs):
+    """[summary]
+
+    Parameters
+    ----------
+    problem : [type]
+        problem name, see `planning.parsing.get_assembly_path`
+    viewer : bool, optional
+        enable pybullet viewer, by default False
+    radius : float, optional
+        bar radius in millimeter, by default 3.17
+    write : bool, optional
+        [description], by default False
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
+    problem_path = get_assembly_path(problem, SHAPE_DIRECTORY)
+    with open(problem_path) as json_file:
+        data = json.load(json_file)
+        cprint('Parsed from : {}'.format(problem_path), 'green')
+
+    net = Network.from_data(data)
+
+    # TODO waiting for compas update to use ordered dict for nodes
+    # node_points, edges = net.to_nodes_and_edges()
+    node_points = [np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
+    edges = [e for e in net.edges()]
+    ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
+
+    # print('parsed edges from to_node_and_edges: {}'.format(edges))
+    # # print('parsed edges from net.edges(): {}'.format(edges2))
+    # print('parsed node_points in Py3: {}'.format(node_points))
+    # print('parsed grounded_nodes in Py3: {}'.format(ground_nodes))
+    # print('parsed lines in Py3: {}'.format(net.to_lines()))
+
+    # * collision check for beams at goal poses
+    # for i in range(150):
+    #     for j in range(i+1, 150):
+    #         if (i, j) not in collided_pairs and (j, i) not in collided_pairs:
+    #             if pairwise_collision(beam_from_names[i], beam_from_names[j]):
+    #                 # using meshes (comparing to the `create_box` approach above) induces numerical errors
+    #                 # in our case here the touching faces will be checked as collisions.
+    #                 # Thus, we have to query the getClosestPoint info and use the penetration depth to filter these "touching" cases out
+    #                 # reference for these info: https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.cb0co8y2vuvc
+    #                 cr = body_collision_info(beam_from_names[i], beam_from_names[j])
+    #                 penetration_depth = get_distance(cr[0][5], cr[0][6])
+    #                 # this numner `3e-3` below is based on some manual experiement,
+    #                 # might need to be changed accordingly for specific scales and input models
+    #                 if penetration_depth > 3e-3:
+    #                     cprint('({}-{}) colliding : penetrating depth {:.4E}'.format(i,j, penetration_depth), 'red')
+    #                     collided_pairs.add((i,j))
+    #                     if debug:
+    #                         draw_collision_diagnosis(cr, focus_camera=False)
+
+    set_camera(node_points)
+
+    # draw the ideal truss that we want to achieve
+    label_points([pt*1e-3 for pt in node_points])
+    for e in edges:
+        p1 = node_points[e[0]] * 1e-3
+        p2 = node_points[e[1]] * 1e-3
+        add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
+    for v in ground_nodes:
+        draw_circle(node_points[v]*1e-3, 0.01)
+
+    return b_struct
 
 def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
     end_effector, floor = load_2d_world(viewer=args.viewer)
