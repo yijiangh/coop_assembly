@@ -11,7 +11,13 @@ from coop_assembly.planning.motion import display_trajectories
 
 from .stream import get_delta_pose_generator, get_2d_element_grasp_gen_fn, get_2d_pregrasp_gen_fn, compute_2d_place_path, get_2d_place_gen_fn, \
     xz_values_from_pose
-from .run import load_2d_world, get_assembly_problem
+from .run import load_2d_world, get_assembly_problem, parse_2D_truss
+
+@pytest.mark.model
+def test_import_model(viewer, file_spec, debug_mode):
+    end_effector, floor = load_2d_world(viewer=viewer)
+    element_from_index, connectors, grounded_elements = parse_2D_truss(file_spec, debug=debug_mode)
+    wait_if_gui()
 
 def test_stream(viewer, collision):
     end_effector, floor = load_2d_world(viewer=viewer)

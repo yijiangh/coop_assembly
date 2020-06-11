@@ -28,16 +28,22 @@ from pddlstream.language.function import FunctionInfo
 from pddlstream.utils import read, get_file_path, inclusive_range, INF
 from pddlstream.language.temporal import compute_duration, get_end
 
+from compas.datastructures import Network
+
 from coop_assembly.data_structure import WorldPose, MotionTrajectory
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
+from coop_assembly.planning.parsing import get_assembly_path
+from coop_assembly.planning.visualization import set_camera, label_points
+from coop_assembly.geometry_generation.utils import get_element_neighbors
 
 from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui, set_pose, create_plane, \
     draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
     create_flying_body, create_shape, get_mesh_geometry, get_movable_joints, get_configuration, set_configuration, get_links, \
-    has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer, YELLOW
+    has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer, YELLOW, add_line, draw_circle, pairwise_collision, \
+    body_collision_info, get_distance, draw_collision_diagnosis
 
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
 
@@ -373,28 +379,9 @@ def get_assembly_problem():
     grounded_elements = [0, 1, 2]
     return element_from_index, connectors, grounded_elements
 
-SHAPE_DIRECTORY = os.path.join('..', '..', '..', 'examples', 'assembly2D', 'problems')
 
-def parse_2D_truss(problem, viewer=False, write=False, **kwargs):
-    """[summary]
-
-    Parameters
-    ----------
-    problem : [type]
-        problem name, see `planning.parsing.get_assembly_path`
-    viewer : bool, optional
-        enable pybullet viewer, by default False
-    radius : float, optional
-        bar radius in millimeter, by default 3.17
-    write : bool, optional
-        [description], by default False
-
-    Returns
-    -------
-    [type]
-        [description]
-    """
-    problem_path = get_assembly_path(problem, SHAPE_DIRECTORY)
+def parse_2D_truss(problem, scale=1e-3, debug=False):
+    problem_path = get_assembly_path(problem)
     with open(problem_path) as json_file:
         data = json.load(json_file)
         cprint('Parsed from : {}'.format(problem_path), 'green')
@@ -403,51 +390,78 @@ def parse_2D_truss(problem, viewer=False, write=False, **kwargs):
 
     # TODO waiting for compas update to use ordered dict for nodes
     # node_points, edges = net.to_nodes_and_edges()
-    node_points = [np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
-    edges = [e for e in net.edges()]
+    node_points = [np.array([net.node[v]['x'], 0, net.node[v]['z']]) for v in range(net.number_of_nodes())]
     ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
 
-    # print('parsed edges from to_node_and_edges: {}'.format(edges))
-    # # print('parsed edges from net.edges(): {}'.format(edges2))
-    # print('parsed node_points in Py3: {}'.format(node_points))
-    # print('parsed grounded_nodes in Py3: {}'.format(ground_nodes))
-    # print('parsed lines in Py3: {}'.format(net.to_lines()))
+    initial_pose = WorldPose('init', pose_from_xz_values([2.0,0,2.0]))
+    length = 0.01 # out-of-plane thickness
+    element_from_index = {}
+    grounded_elements = []
+    for e, e_attr in net.edges(True):
+        height = e_attr['radius'] * scale
+        shrink = e_attr['shrink'] * scale
+        width = norm(node_points[e[0]] - node_points[e[1]]) * scale
+        wlh = [width - 2*shrink, length, height]
+
+        mid_pt = (node_points[e[0]] + node_points[e[1]]) / 2 * scale
+        # assert abs(mid_pt[1]) < 1e-9
+
+        diff = (node_points[e[1]] - node_points[e[0]])
+        pitch = np.math.atan2(diff[0], diff[2])
+        e_pose = pose_from_xz_values([mid_pt[0],mid_pt[2],pitch+np.pi/2])
+        e2d = Element2D(e, wlh,
+                        create_box(*wlh),
+                        initial_pose, WorldPose(e, e_pose))
+        element_from_index[e] = e2d
+        set_pose(e2d.body, e2d.goal_pose.value)
+
+        if e_attr['fixed']:
+            grounded_elements.append(e)
+
+    connectors = {}
+    element_neighbors = get_element_neighbors(element_from_index)
+    for e, ens in element_neighbors.items():
+        for en in ens:
+            connectors[(e, en)] = None
 
     # * collision check for beams at goal poses
-    # for i in range(150):
-    #     for j in range(i+1, 150):
-    #         if (i, j) not in collided_pairs and (j, i) not in collided_pairs:
-    #             if pairwise_collision(beam_from_names[i], beam_from_names[j]):
-    #                 # using meshes (comparing to the `create_box` approach above) induces numerical errors
-    #                 # in our case here the touching faces will be checked as collisions.
-    #                 # Thus, we have to query the getClosestPoint info and use the penetration depth to filter these "touching" cases out
-    #                 # reference for these info: https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.cb0co8y2vuvc
-    #                 cr = body_collision_info(beam_from_names[i], beam_from_names[j])
-    #                 penetration_depth = get_distance(cr[0][5], cr[0][6])
-    #                 # this numner `3e-3` below is based on some manual experiement,
-    #                 # might need to be changed accordingly for specific scales and input models
-    #                 if penetration_depth > 3e-3:
-    #                     cprint('({}-{}) colliding : penetrating depth {:.4E}'.format(i,j, penetration_depth), 'red')
-    #                     collided_pairs.add((i,j))
-    #                     if debug:
-    #                         draw_collision_diagnosis(cr, focus_camera=False)
+    collided_pairs = set()
+    # `p_tol` is based on some manual experiement,
+    # might need to be changed accordingly for specific scales and input models
+    p_tol = 1e-3
+    for i in element_from_index:
+        for j in element_from_index:
+            if i == j:
+                continue
+            if (i, j) not in collided_pairs and (j, i) not in collided_pairs:
+                if pairwise_collision(element_from_index[i].body, element_from_index[j].body):
+                    cr = body_collision_info(element_from_index[i].body, element_from_index[j].body)
+                    penetration_depth = get_distance(cr[0][5], cr[0][6])
+                    if penetration_depth > p_tol:
+                        cprint('({}-{}) colliding : penetrating depth {:.4E}'.format(i,j, penetration_depth), 'red')
+                        collided_pairs.add((i,j))
+                        if debug:
+                            draw_collision_diagnosis(cr, focus_camera=False)
+    assert len(collided_pairs) == 0, 'model has mutual collision between elements!'
+    cprint('No mutual collisions among elements in the model | penetration threshold: {}'.format(p_tol), 'green')
 
-    set_camera(node_points)
+    set_camera(node_points, camera_dir=np.array([0,-1,0]), camera_dist=0.3)
 
     # draw the ideal truss that we want to achieve
     label_points([pt*1e-3 for pt in node_points])
-    for e in edges:
+    for e in net.edges():
         p1 = node_points[e[0]] * 1e-3
         p2 = node_points[e[1]] * 1e-3
         add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
     for v in ground_nodes:
         draw_circle(node_points[v]*1e-3, 0.01)
 
-    return b_struct
+    return element_from_index, connectors, grounded_elements
 
 def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
     end_effector, floor = load_2d_world(viewer=args.viewer)
-    element_from_index, connectors, grounded_elements = get_assembly_problem()
+    # element_from_index, connectors, grounded_elements = get_assembly_problem()
+    element_from_index, connectors, grounded_elements = parse_2D_truss(args.problem)
 
     robots = [end_effector]
     fixed_obstacles = [floor]
@@ -468,7 +482,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             collisions=args.collisions, algorithm=args.algorithm, costs=args.costs, debug=debug, teleops=args.teleops)
     # elif args.algorithm == 'regression':
     #     with LockRenderer(True):
-    #         plan, data = regression(robot, fixed_obstacles, bar_struct, collision=args.collisions, motions=True, stiffness=True,
+    #         plan, data = regression(robots[0], fixed_obstacles, bar_struct, collision=args.collisions, motions=True, stiffness=True,
     #             revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
     else:
         raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
@@ -516,7 +530,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             if step_sim:
                 time_step = None
             else:
-                time_step = 0.05
+                time_step = 0.01
             display_trajectories(trajectories, time_step=time_step)
         # verify
         if args.collisions:
@@ -533,7 +547,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
 
 def main():
     parser = argparse.ArgumentParser()
-    #parser.add_argument('-p', '--problem', default='blocked', help='The name of the problem to solve')
+    parser.add_argument('-p', '--problem', default='2D_truss_0_skeleton.json', help='The name of the problem to solve')
     parser.add_argument('-a', '--algorithm', default='focused', choices=ALGORITHMS, help='Stripstream algorithms')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enable the pybullet viewer.')
     parser.add_argument('-c', '--collisions', action='store_false', help='Disable collision checking.')
