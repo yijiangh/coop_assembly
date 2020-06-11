@@ -10,7 +10,7 @@ from coop_assembly.planning.robot_setup import TOOL_LINK_NAME
 
 """ simple container for an element
 """
-Element = namedtuple('Element', ['index', 'axis_endpoints', 'radius', 'body', 'element_robot', 'initial_pose', 'goal_pose',
+Element = namedtuple('Element', ['index', 'axis_endpoints', 'radius', 'body', 'initial_pose', 'goal_pose',
                                  'grasps', 'goal_supports', 'layer'])
 
 class WorldPose(object):

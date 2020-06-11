@@ -22,12 +22,12 @@ DIAGNOSIS = False
 
 ##################################################
 
-BAR_INITIAL_POINT = np.array([0.4, 0, 0.2])
-BAR_INITIAL_EULER = np.array([0, np.pi/2, 0])
-BAR_INITIAL_CONF = np.concatenate([BAR_INITIAL_POINT, BAR_INITIAL_EULER])
+EE_INITIAL_POINT = np.array([0.4, 0, 0.2])
+EE_INITIAL_EULER = np.array([0, np.pi/2, 0])
+EE_INITIAL_CONF = np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
 
 # TODO: derived from bounding box
-BAR_CUSTOM_LIMITS = {
+EE_CUSTOM_LIMITS = {
     # 'x': (0.25, 1.0),
     # 'y': (-1.0, 1.0),
     # 'z': (-0.3, 0.4),
@@ -35,8 +35,8 @@ BAR_CUSTOM_LIMITS = {
     'y': (-2.0, 2.0),
     'z': (-0.3, 1.5),
 }
-# BAR_RESOLUTION = [0.003]*3 + [np.pi/60]*3
-BAR_RESOLUTION = [0.1]*3 + [np.pi/6]*3
+# EE_RESOLUTION = [0.003]*3 + [np.pi/60]*3
+EE_RESOLUTION = [0.1]*3 + [np.pi/6]*3
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
@@ -53,11 +53,11 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         weights = np.ones(len(joints))
         # resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
         # resolutions = np.array([POS_STEP_SIZE]*3 + [ORI_STEP_SIZE]*3)
-        resolutions = BAR_RESOLUTION
+        resolutions = EE_RESOLUTION
         disabled_collisions = {}
         custom_limits = {}
         joint_from_group = dict(zip(SE3, joints))
-        custom_limits = {joint_from_group[j]: l for j, l in BAR_CUSTOM_LIMITS.items()}
+        custom_limits = {joint_from_group[j]: l for j, l in EE_CUSTOM_LIMITS.items()}
 
     assert len(joints) == len(end_conf)
 

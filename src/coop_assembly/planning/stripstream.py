@@ -33,7 +33,7 @@ from pybullet_planning import has_gui, get_movable_joints, get_configuration, se
 from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn, command_collision
 from .utils import flatten_commands, recover_sequence, Command, get_index_from_bodies
 from .visualization import draw_ordered
-from .motion import display_trajectories, compute_motion, BAR_INITIAL_CONF
+from .motion import display_trajectories, compute_motion, EE_INITIAL_CONF
 from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions, INITIAL_CONF
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions import METER_SCALE
@@ -87,7 +87,7 @@ def compute_orders(elements_from_layer):
 
 ##################################################
 
-def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
+def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                    printed=set(), removed=set(), collisions=True,
                    transit=False, return_home=True, checker=None, bar_only=False, teleops=False, fluent_special=False, **kwargs):
     """ special_fluent: True if using incremental + semantic attachment (fluents)
@@ -98,11 +98,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
     obstacles = set(static_obstacles) | element_obstacles
 
-    if not bar_only:
-        initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot, INITIAL_CONF) for i, robot in enumerate(robots)}
-    else:
-        robots = [element_from_index[e].element_robot for e in element_from_index]
-        initial_confs = {ELEMENT_ROBOT_TEMPLATE.format(i): Conf(robot, BAR_INITIAL_CONF) for i, robot in enumerate(robots)}
+    initial_confs = {ROBOT_TEMPLATE.format(i): Conf(robot, EE_INITIAL_CONF if bar_only else INITIAL_CONF) for i, robot in enumerate(robots)}
 
     if not fluent_special:
         domain_pddl = read(get_file_path(__file__, 'pddl/domain.pddl'))
@@ -113,7 +109,7 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
     constant_map = {}
 
     stream_map = {
-        'sample-place': get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+        'sample-place': get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
                                               initial_confs=initial_confs, teleops=teleops, fluent_special=fluent_special, **kwargs),
         'test-cfree': from_test(get_test_cfree()),
@@ -146,11 +142,9 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
             ('Element', e),
             ('Assembled', e),
         ])
-    if not bar_only:
-        for rname in initial_confs:
-            init.extend([('Assigned', rname, e) for e in remaining])
-    else:
-        init.extend([('Assigned', rname, e) for e, rname in zip(remaining, initial_confs)])
+
+    for rname in initial_confs:
+        init.extend([('Assigned', rname, e) for e in remaining])
 
     goal_literals = []
     # if return_home:
@@ -162,14 +156,14 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
 ##################################################
 
-def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
+def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                      collisions=True, disable=False, max_time=60*4, bar_only=False, algorithm='focused',
                      debug=False, costs=False, teleops=False, **kwargs):
     fluent_special = algorithm == 'incremental_sa'
     if fluent_special:
         cprint('Using incremental + semantic attachment.', 'yellow')
 
-    pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
+    pddlstream_problem = get_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
                                         collisions=collisions, bar_only=bar_only, teleops=teleops, fluent_special=fluent_special, **kwargs)
 
     if debug:
@@ -197,8 +191,8 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
         if algorithm in ['incremental', 'incremental_sa']:
             discrete_planner = 'max-astar' # get_planner(costs)
             solution = solve_incremental(pddlstream_problem, max_time=600, #planner=discrete_planner,
-                                        success_cost=success_cost, unit_costs=not costs,
-                                        max_planner_time=300, debug=debug, verbose=True)
+                                         success_cost=success_cost, unit_costs=not costs,
+                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm in SS_OPTIONS:
             # creates unique free variable for each output during the focused algorithm
             # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
@@ -241,12 +235,6 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     if debug:
         pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
 
-    if bar_only:
-        # reset all element_robots to clear the visual scene
-        for e in element_from_index:
-            e_robot = element_from_index[e].element_robot
-            set_joint_positions(e_robot, get_movable_joints(e_robot), np.zeros(6))
-
     # print(solution)
     print_solution(solution)
     plan, _, facts = solution
@@ -268,7 +256,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 
 ###############################################################
 
-def get_wild_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
+def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
     bar_only=False, initial_confs={}, teleops=False, fluent_special=False, **kwargs):
     """ fluent_special : True if we are running incremental + semantic attachment
     """
@@ -312,7 +300,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
     # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
 
     def wild_gen_fn(robot_name, q1, q2, current_command, fluents=[]):
-        # transit_start_conf = INITIAL_CONF if not bar_only else BAR_INITIAL_CONF
+        # transit_start_conf = INITIAL_CONF if not bar_only else EE_INITIAL_CONF
         # assert norm(q1.positions - transit_start_conf) < 1e-8
         init_q = initial_confs[robot_name]
         assert norm(q2.positions - current_command.start_conf) < 1e-8

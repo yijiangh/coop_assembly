@@ -52,6 +52,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
     # end effector robot
     ee_mesh_path = get_gripper_mesh_path()
+    # TODO offer option to turn off end effector collision by setting collision=False
     collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
     end_effector = create_flying_body(SE3, collision_id, visual_id)
 
@@ -75,12 +76,13 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     # input("Enter to proceed.")
 
     if args.algorithm in STRIPSTREAM_ALGORITHM:
-        plan = solve_pddlstream(robots, fixed_obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
+        plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
             collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
             debug=debug, teleops=args.teleops)
     elif args.algorithm == 'regression':
         with LockRenderer(True):
-            plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors, collision=args.collisions,
+            plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles, element_from_index,
+                grounded_elements, connectors, collision=args.collisions,
                 motions=True, stiffness=True, revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
     else:
         raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))

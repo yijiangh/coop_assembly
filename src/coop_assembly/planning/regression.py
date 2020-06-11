@@ -27,7 +27,7 @@ from coop_assembly.geometry_generation.utils import outgoing_from_edges
 from .visualization import draw_element
 from .stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands, Command, check_connected
-from .motion import compute_motion, BAR_INITIAL_POINT, BAR_INITIAL_EULER
+from .motion import compute_motion, EE_INITIAL_POINT, EE_INITIAL_EULER
 from .robot_setup import INITIAL_CONF # , TOOL_LINK_NAME, EE_LINK_NAME
 
 MAX_REVISIT = 5
@@ -64,11 +64,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
                collision=True, stiffness=True, motions=True, lazy=True, checker=None, verbose=True, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
-    initial_conf = INITIAL_CONF if not bar_only else np.concatenate([BAR_INITIAL_POINT, BAR_INITIAL_EULER])
-
-    # end_effector = EndEffector(robot, ee_link=link_from_name(robot, EE_LINK_NAME),
-    #                            tool_link=link_from_name(robot, TOOL_LINK_NAME),
-    #                            visual=False, collision=True)
+    initial_conf = INITIAL_CONF if not bar_only else np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
 
     # if checker is None:
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
@@ -204,12 +200,6 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
             #     break
 
         add_successors(next_printed, command)
-
-    if bar_only:
-        # reset all element_robots to clear the visual scene
-        for e in element_from_index:
-            e_robot = element_from_index[e].element_robot
-            set_joint_positions(e_robot, get_movable_joints(e_robot), np.zeros(6))
 
     data = {
         #'memory': get_memory_in_kb(), # May need to update instead

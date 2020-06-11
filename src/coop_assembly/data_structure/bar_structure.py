@@ -106,7 +106,6 @@ class BarStructure(Network):
                                    "index_sol":None,    # tangent plane config (one out of four config)
                                    "mean_point":None,   # mean point used for local axis construction (SP uses this for gripping plane computation)
                                    "pb_body":bar_body,  # pybullet body
-                                   "pb_element_robot":None,
                                    "goal_pose":goal_pose,
                                    'radius':radius,
                                    "grounded":grounded,
@@ -261,15 +260,6 @@ class BarStructure(Network):
         set_color(self.node[bar_v_key]['pb_body'], color)
         return self.node[bar_v_key]['pb_body']
 
-    def get_bar_element_robot(self, bar_v_key, color=apply_alpha(RED, 0)):
-        if 'pb_element_robot' not in self.node[bar_v_key] or self.node[bar_v_key]['pb_element_robot'] is None or \
-            self.node[bar_v_key]['pb_element_robot'] not in get_bodies():
-            axis_pts = self.get_bar_axis_end_pts(bar_v_key)
-            radius = self.node[bar_v_key]['radius']
-            self.node[bar_v_key]['pb_element_robot'] = create_bar_flying_body(np.array(axis_pts)*METER_SCALE, radius*METER_SCALE)
-        set_color(self.node[bar_v_key]['pb_element_robot'], color)
-        return self.node[bar_v_key]['pb_element_robot']
-
     ##################################
     # export dict info for planning
 
@@ -289,11 +279,10 @@ class BarStructure(Network):
             axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=METER_SCALE)]
             radius=self.node[index]['radius']*METER_SCALE
             body = self.get_bar_pb_body(index)
-            element_robot = self.get_bar_element_robot(index)
             goal_pose = self.node[index]['goal_pose']
             layer = self.node[index]['layer']
             # all data in Element is in meter
-            element_from_index[index] = Element(index=index, body=body, element_robot=element_robot,
+            element_from_index[index] = Element(index=index, body=body,
                                                 axis_endpoints=axis_pts,
                                                 radius=radius,
                                                 initial_pose=WorldPose(index, None),
