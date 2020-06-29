@@ -26,30 +26,30 @@ Update bar axis end point
     find_points_extreme
     find_bar_ends
 
-Correction & Collision checking
---------------------------------
+# Correction & Collision checking
+# --------------------------------
 
-.. autosummary::
-    :toctree: generated/
-    :nosignatures:
+# .. autosummary::
+#     :toctree: generated/
+#     :nosignatures:
 
-    correct_point
-    calc_correction_vector
-    correct_angle
-    calc_correction_vector_tip
-    check_colisions
+#     correct_point
+#     calc_correction_vector
+#     correct_angle
+#     calc_correction_vector_tip
+#     check_colisions
 
-First Bar position calculation
-------------------------------
+# First Bar position calculation
+# ------------------------------
 
-.. autosummary::
-    :toctree: generated/
-    :nosignatures:
+# .. autosummary::
+#     :toctree: generated/
+#     :nosignatures:
 
-    first_tangent
-    tangent_from_point_one
-    p_planes_tangent_to_cylinder
-    lines_tangent_to_cylinder
+#     first_tangent
+#     compute_tangent_from_two_lines
+#     p_planes_tangent_to_cylinder
+#     lines_tangent_to_cylinder
 
 """
 
@@ -57,4 +57,3 @@ from __future__ import print_function
 
 from .drawing import *
 from .helpers_geometry import *
-from .tangents import *

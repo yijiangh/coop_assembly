@@ -26,10 +26,10 @@ from compas.geometry import rotate_points
 from compas.geometry import angle_vectors
 from compas.geometry import centroid_points
 
+from coop_assembly.geometry_generation.tangents import first_tangent, second_tangent, third_tangent
 from coop_assembly.help_functions.helpers_geometry import calculate_coord_sys, calculate_bar_z, \
     dropped_perpendicular_points, update_bar_lengths, correct_point, find_bar_ends, compute_contact_line_between_bars, \
     contact_to_ground
-from coop_assembly.help_functions.tangents import first_tangent, second_tangent, third_tangent
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from pybullet_planning import connect, reset_simulation, disconnect

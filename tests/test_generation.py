@@ -19,8 +19,8 @@ from coop_assembly.geometry_generation.tet_sequencing import \
     point2triangle_tet_sequencing
 from coop_assembly.geometry_generation.execute import execute_from_points
 from coop_assembly.geometry_generation.generate_truss import gen_truss
+from coop_assembly.geometry_generation.tangents import lines_tangent_to_cylinder
 
-from coop_assembly.help_functions.tangents import lines_tangent_to_cylinder
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning.visualization import set_camera, SHADOWS, BACKGROUND_COLOR, label_elements
@@ -53,11 +53,10 @@ def diff_norm(p1, p2):
 @pytest.mark.tan
 def test_lines_tangent_to_cylinder():
     # testing computing tangent planes passing a given point and a cylinder
-    base_point = np.array([0,1,0])
-    line_vect = np.array([0,1,0])
     ref_point = np.array([1,0,0])
+    cylinder_line = [np.array([0,0,0]), np.array([0,1,0])]
     dist = 0.5
-    ptM, delta_up, delta_down = list(map(np.array, lines_tangent_to_cylinder(base_point, line_vect, ref_point, dist)))
+    ptM, delta_up, delta_down = list(map(np.array, lines_tangent_to_cylinder(cylinder_line, ref_point, dist)))
     assert norm(ptM-np.zeros(3)) < 1e-12
     assert abs(norm(delta_up) - dist) < 1e-12
     assert abs(norm(delta_down) - dist) < 1e-12
@@ -65,7 +64,7 @@ def test_lines_tangent_to_cylinder():
     assert abs((ptM+delta_down-ref_point).dot(delta_down)) < 1e-12
 
     # flipping the line vector direction would only swap the up/down delta vectors
-    ptM2, delta_up2, delta_down2 = list(map(np.array, lines_tangent_to_cylinder(base_point, -line_vect, ref_point, dist)))
+    ptM2, delta_up2, delta_down2 = list(map(np.array, lines_tangent_to_cylinder(cylinder_line[::-1], ref_point, dist)))
     assert norm(ptM - ptM2) < 1e-12
     assert norm(delta_up - delta_down2) < 1e-12
     assert norm(delta_down - delta_up2) < 1e-12
@@ -75,9 +74,9 @@ def test_lines_tangent_to_cylinder():
         # random_y = np.random.random()*1e5
         random_y = 0
         r = dist
-        assert(lines_tangent_to_cylinder(base_point, line_vect, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist) is None)
+        assert(lines_tangent_to_cylinder(cylinder_line, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist) is None)
         r = dist+1e-8
-        assert(lines_tangent_to_cylinder(base_point, line_vect, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist))
+        assert(lines_tangent_to_cylinder(cylinder_line, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist))
 
 @pytest.mark.gen_truss
 @pytest.mark.parametrize('radius', [(3.17), ])

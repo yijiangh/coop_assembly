@@ -21,14 +21,14 @@ from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle, dropped_perpendicular_points
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
-from coop_assembly.help_functions.tangents import tangent_from_point_one, lines_tangent_to_cylinder, solve_one_one_tangent, \
-    solve_second_tangent, solve_third_tangent
 from coop_assembly.help_functions.helpers_geometry import find_points_extreme, calculate_coord_sys, compute_local_coordinate_system, \
     bar_sec_verts, compute_contact_line_between_bars
 
 from coop_assembly.data_structure import OverallStructure, BarStructure
 from coop_assembly.geometry_generation.tet_sequencing import SearchState, compute_candidate_nodes
 from coop_assembly.geometry_generation.utils import *
+from coop_assembly.geometry_generation.tangents import compute_tangent_from_two_lines, lines_tangent_to_cylinder, solve_one_one_tangent, \
+    solve_second_tangent, solve_third_tangent
 
 from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.planning.visualization import draw_element, GROUND_COLOR, BACKGROUND_COLOR, SHADOWS, set_camera, \
@@ -330,7 +330,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         contact_node_pt = bar_from_elements[contact_e][contact_v_id]
         supp_node_pt = bar_from_elements[contact_e][supp_v_id]
 
-        t_pts = lines_tangent_to_cylinder(contact_node_pt, supp_node_pt - contact_node_pt, new_point, 2*radius)
+        t_pts = lines_tangent_to_cylinder(bar_from_elements[contact_e], new_point, 2*radius)
         if t_pts is not None:
             normals = [np.array(t_pts[j]) for j in [1,2]]
             contact_pt = randomize(normals)[0] + contact_node_pt
@@ -348,11 +348,9 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         supp_v_id_1 = list(set(contact_e[0]) - set(element))[0]
         supp_v_id_2 = list(set(contact_e[1]) - set(element))[0]
         for tangent_side in randomize(range(4)):
-            axis_vector = np.array(tangent_from_point_one(bar_from_elements[contact_e[0]][contact_v_id],
-                                                          - bar_from_elements[contact_e[0]][supp_v_id_1] + bar_from_elements[contact_e[0]][contact_v_id],
-                                                          bar_from_elements[contact_e[1]][contact_v_id],
-                                                          - bar_from_elements[contact_e[1]][supp_v_id_2] + bar_from_elements[contact_e[1]][contact_v_id],
-                                                          new_point, 2*radius, 2*radius, tangent_side)[0])
+            axis_vector = np.array(compute_tangent_from_two_lines(bar_from_elements[contact_e[0]],
+                                                                  bar_from_elements[contact_e[1]],
+                                                                  new_point, 2*radius, 2*radius, tangent_side))
             if axis_vector is not None:
                 break
 
@@ -409,14 +407,15 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         contact_pt1 = bar_from_elements[contact_e1][new_node_id]
         supp_pt1 = bar_from_elements[contact_e1][supp_v_id]
 
-        pt_b_1, l1 = convert_pt_vec(bar_from_elements[contact_bars[1][0]])
-        pt_b_2, l2 = convert_pt_vec(bar_from_elements[contact_bars[1][1]])
+        # pt_b_1, l1 = convert_pt_vec(bar_from_elements[contact_bars[1][0]])
+        # pt_b_2, l2 = convert_pt_vec(bar_from_elements[contact_bars[1][1]])
 
         R = compute_local_coordinate_system(contact_pt1, supp_pt1)
         ex = R[:,1]
         ey = R[:,2]
         for ind in range(4):
-            ret_sst = solve_second_tangent(contact_pt1, ex, ey, radius, pt_b_1, l1, pt_b_2, l2, 2*radius, 2*radius, ind)
+            ret_sst = solve_second_tangent(contact_pt1, ex, ey, radius,
+                bar_from_elements[contact_bars[1][0]], bar_from_elements[contact_bars[1][1]], 2*radius, 2*radius, ind)
             if ret_sst is not None:
                 break
         assert(ret_sst is not None)
@@ -555,9 +554,9 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
 
     print('parsed edges from to_node_and_edges: {}'.format(edges))
     # print('parsed edges from net.edges(): {}'.format(edges2))
-    print('parsed node_points in Py3: {}'.format(node_points))
-    print('parsed grounded_nodes in Py3: {}'.format(ground_nodes))
-    # print('parsed lines in Py3: {}'.format(net.to_lines()))
+    print('parsed node_points: {}'.format(node_points))
+    print('parsed grounded_nodes: {}'.format(ground_nodes))
+    # print('parsed lines: {}'.format(net.to_lines()))
 
     # if not verbose:
     #     # used when rpc call is made to get around stdout error
