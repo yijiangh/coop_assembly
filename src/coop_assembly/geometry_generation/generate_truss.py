@@ -208,6 +208,8 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
                 # new contact pts
                 new_contact_pts = dropped_perpendicular_points(*new_axis_endpts.values(),
                                                                *bar_from_elements[contact_e].values())
+                print('new cotant pt: ', new_contact_pts)
+
                 candidate_end_pts.append(new_contact_pts[1])
                 line_drawing = add_line(np.array(new_contact_pts[0])*1e-3, np.array(new_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
                 handles.append(line_drawing)
@@ -335,12 +337,13 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         contact_v_id = list(set(element) - set([new_node_id]))[0]
         print('new node id {} | contact id {}'.format(new_node_id, contact_v_id))
 
-        colinear = True
-        for cb in contact_bars[1]:
-            dist = distance_point_line(node_points[new_node_id], [node_points[cb[0]], node_points[cb[1]]])
-            if dist > 1e-6:
-                colinear = False
-        assert not colinear or len(contact_bars[1]) == 0
+        # * colinear check
+        # colinear = True
+        # for cb in contact_bars[1]:
+        #     dist = distance_point_line(node_points[new_node_id], [node_points[cb[0]], node_points[cb[1]]])
+        #     if dist > 1e-6:
+        #         colinear = False
+        # assert not colinear or len(contact_bars[1]) == 0
         new_point = node_points[new_node_id]
     cprint('new pt: {}'.format(new_point))
 
@@ -371,6 +374,10 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
             # sanity check: dropped points should be the same as above
             # contact_pt, _ = dropped_perpendicular_points(new_point, contact_pt, *bar_from_elements[contact_e].values())
             # print('contact pt: {}'.format(contact_pt))
+        else:
+            # colinear case, use the nearest axis pt as the contact point
+            contact_axis_pts = list(bar_from_elements[contact_e].values())
+            contact_pt = contact_axis_pts[0] if norm(contact_axis_pts[0]-new_point) < norm(contact_axis_pts[1]-new_point) else contact_axis_pts[1]
         # convert to a list, conforming to other cases' output
         contact_e = [contact_e]
     elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 2:

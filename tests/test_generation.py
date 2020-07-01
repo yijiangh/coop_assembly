@@ -5,12 +5,12 @@ import numpy as np
 from numpy.linalg import norm
 
 from compas.datastructures import Network
-from compas.geometry import scale_vector
+from compas.geometry import scale_vector, closest_point_on_segment
 # from compas_fab.backends.pybullet import pb_pose_from_Transformation
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.help_functions import find_point_id, tet_surface_area, \
-    tet_volume, distance_point_triangle
+    tet_volume, distance_point_triangle, dropped_perpendicular_points
 from coop_assembly.geometry_generation.tet_sequencing import \
     compute_distance_from_grounded_node
 from coop_assembly.geometry_generation.tet_sequencing import \
@@ -77,6 +77,56 @@ def test_lines_tangent_to_cylinder():
         assert(lines_tangent_to_cylinder(cylinder_line, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist) is None)
         r = dist+1e-8
         assert(lines_tangent_to_cylinder(cylinder_line, np.array([r*np.cos(theta),random_y,r*np.sin(theta)]), dist))
+
+@pytest.mark.drop_contact
+def test_contact_pts():
+    # intersecting case
+    line1 = [np.array([-1.,0,0]), np.array([1.,0,0])]
+    line2 = [np.array([1.,1,0]), np.array([-1.,-1.,0])]
+    pt0, pt1 = dropped_perpendicular_points(*line1, *line2)
+    assert norm(pt0 - np.array([0.,0,0])) < 1e-12
+    assert norm(pt0 - np.array([0.,0,0])) < 1e-12
+
+    # parallel case
+    line1 = [np.array([0.,0,0]), np.array([1.,0,0])]
+    line2 = [np.array([0.,0,1]), np.array([1.,0,1])]
+    pt0, pt1 = dropped_perpendicular_points(*line1, *line2)
+    # any line in-between would be valid
+    assert abs((pt0-pt1).dot(line1[0]-line1[1])) < 1e-12
+    assert abs(norm(pt1-pt0) - 1.0) < 1e-12
+
+    # colinear, non-touching case
+    line1 = [np.array([0.,0,0]), np.array([1.,0,0])]
+    line2 = [np.array([1.5,0,0]), np.array([2.,0,0])]
+    pt0, pt1 = dropped_perpendicular_points(*line1, *line2)
+    assert norm(pt0 - line1[1]) < 1e-12
+    assert norm(pt1 - line2[0]) < 1e-12
+
+    # colinear, touching case
+    line1 = [np.array([0.,0,0]), np.array([1.,0,0])]
+    line2 = [np.array([1.,0,0]), np.array([2.,0,0])]
+    pt0, pt1 = dropped_perpendicular_points(*line1, *line2)
+    assert norm(pt0 - line1[1]) < 1e-12
+    assert norm(pt1 - line2[0]) < 1e-12
+
+    # colinear, overlapped case
+    line1 = [np.array([0.,0,0]), np.array([1.,0,0])]
+    line2 = [np.array([0.5,0,0]), np.array([2.,0,0])]
+    pt0, pt1 = dropped_perpendicular_points(*line1, *line2)
+    assert norm(pt0 - line1[1]) < 1e-12
+    assert norm(pt1 - line1[1]) < 1e-12
+
+# @pytest.mark.cl_seg
+def test_closest_pt_segment():
+    pt = np.array([0.,1,0])
+    line = [np.array([1.,0,0]), np.array([2.,0,0])]
+    cl_pt = closest_point_on_segment(pt, line)
+    assert norm(cl_pt - line[0]) < 1e-12
+
+    pt = np.array([0.5,0,0])
+    line = [np.array([0.,0,0]), np.array([1.,0,0])]
+    cl_pt = closest_point_on_segment(pt, line)
+    assert norm(cl_pt - pt) < 1e-12
 
 @pytest.mark.gen_truss
 @pytest.mark.parametrize('radius', [(3.17), ])

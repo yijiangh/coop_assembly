@@ -28,7 +28,7 @@ from compas.geometry import intersection_line_plane
 from compas.geometry import is_point_on_line, is_point_infront_plane, is_coplanar
 from compas.geometry import project_point_plane, translate_points
 from compas.geometry import distance_point_point, distance_point_line, distance_point_plane, \
-    area_triangle, volume_polyhedron, rotate_points
+    area_triangle, volume_polyhedron, rotate_points, closest_point_on_segment, norm_vector
 
 from coop_assembly.help_functions.shared_const import EPS, NODE_CORRECTION_TOP_DISTANCE, NODE_CORRECTION_SINE_ANGLE, \
     HAS_PYBULLET, METER_SCALE, USE_BOX, TOL, EPS
@@ -237,7 +237,9 @@ def calculate_bar_z(points):
 
 def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2):
     """compute the projected tangent point on axis defined by [L1_pt1, L1_pt2] and [L2_pt1, L2_pt2]
-    ! Note that the length of these two lines does not matter, we are considering infinite long lines here
+    This is probably one of the most used geometry helper functions in this repo...
+
+    Note that the length of these two lines does not matter, we are considering infinite long lines here
 
     See Fig. 3.7 in SP's dissertaion (below). We are computing the point pair (P1, P_{C1}) here, given the axis endpoints of bar b_{e1} and b_{n1}
 
@@ -248,14 +250,14 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
 
     Parameters
     ----------
-    line_point_1_1 : [type]
-        [description]
-    line_point_1_2 : [type]
-        [description]
-    line_point_2_1 : [type]
-        [description]
-    line_point_2_2 : [type]
-        [description]
+    line_point_1_1 : sequence of float
+        line 1 axis end pt 1
+    line_point_1_2 : sequence of float
+        line 1 axis end pt 2
+    line_point_2_1 : sequence of float
+        line 2 axis end pt 1
+    line_point_2_2 : sequence of float
+        line 2 axis end pt 2
 
     Returns
     -------
@@ -265,15 +267,25 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
     line_unity_vector_1 = normalize_vector(vector_from_points(line_point_1_1, line_point_1_2))
     line_unity_vector_2 = normalize_vector(vector_from_points(line_point_2_1, line_point_2_2))
     d_vector = cross_vectors(line_unity_vector_1, line_unity_vector_2)
-
-    normal_1 = cross_vectors(line_unity_vector_1, d_vector)
-    normal_2 = cross_vectors(line_unity_vector_2, d_vector)
-    plane_1 = (line_point_1_1, normal_1)
-    plane_2 = (line_point_2_1, normal_2)
-    line_1_dp_point = intersection_line_plane((line_point_1_1, line_point_1_2), plane_2)
-    line_2_dp_point = intersection_line_plane((line_point_2_1, line_point_2_2), plane_1)
-
-    return [np.array(line_1_dp_point), np.array(line_2_dp_point)]
+    if norm_vector(d_vector) > 1e-12:
+        normal_1 = cross_vectors(line_unity_vector_1, d_vector)
+        normal_2 = cross_vectors(line_unity_vector_2, d_vector)
+        plane_1 = (line_point_1_1, normal_1)
+        plane_2 = (line_point_2_1, normal_2)
+        line_1_dp_point = intersection_line_plane((line_point_1_1, line_point_1_2), plane_2)
+        line_2_dp_point = intersection_line_plane((line_point_2_1, line_point_2_2), plane_1)
+        return [np.array(line_1_dp_point), np.array(line_2_dp_point)]
+    else:
+        # two vectors are parellel
+        # treat two lines as segment in this case
+        contact_pt1 = closest_point_on_segment(line_point_1_1, [line_point_2_1, line_point_2_2])
+        dist1 = distance_point_point(contact_pt1, line_point_1_1)
+        contact_pt2 = closest_point_on_segment(line_point_1_2, [line_point_2_1, line_point_2_2])
+        dist2 = distance_point_point(contact_pt2, line_point_1_2)
+        if dist1 < dist2:
+            return [line_point_1_1, contact_pt1]
+        else:
+            return [line_point_1_2, contact_pt2]
 
 def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
     """a convenient wrapper for ``dropped_perpendicular_points`` to operate directly on BarStructure and its bar vertices
