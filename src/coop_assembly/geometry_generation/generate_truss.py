@@ -149,6 +149,9 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
     bar_from_elements = {}
 
     for _, element in enumerate(edge_seq):
+        # temporal drawing cache for each iter
+        handles = []
+
         # next_printed = printed | {element}
         # unprinted = all_elements - next_printed
         n0, n1 = element
@@ -175,52 +178,74 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
         neighbor_pairs = list(product(n_neighbors[n0], n_neighbors[n1]))
         cprint('produced neighnor pairs: {}'.format(neighbor_pairs), 'yellow')
 
-        new_axis_endpts = None
-        contact_elements = None
-        # TODO: use the pairs that produces the minial neighbor element extension
-        for contact_bars in randomize(neighbor_pairs):
+        chosen_new_axis_endpts = None
+        chosen_contact_element_axis_pts = {}
+        extension_score = np.inf
+        # TODO: iterate through all neighboring pairs and use the pairs that produces the minial neighbor element extension
+        # for contact_bars in randomize(neighbor_pairs):
+        for contact_bars in neighbor_pairs:
             new_axis_endpts, contact_elements = compute_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius)
-            if new_axis_endpts:
-                cprint('new axis pt: {} | contact elements : {}'.format(new_axis_endpts, contact_elements), 'cyan')
-                break
+            # if new_axis_endpts:
+            #     cprint('new axis pt: {} | contact elements : {}'.format(new_axis_endpts, contact_elements), 'cyan')
+            #     break
+
+            tmp_contact_elements = {}
+            tmp_extension_score = 0.0
+            for contact_e in contact_elements:
+                neighbor_elements = list(set(element_neighbors[contact_e]) & set(printed))
+                candidate_end_pts = []
+                contact_e_axis_pts = list(bar_from_elements[contact_e].values())
+                candidate_end_pts.extend(contact_e_axis_pts)
+                # existing contact pts
+                for e in neighbor_elements:
+                    ne_contact_pts = dropped_perpendicular_points(*list(bar_from_elements[contact_e].values()),
+                                                                  *list(bar_from_elements[e].values()))
+                    candidate_end_pts.append(ne_contact_pts[0])
+
+                    # draw new contact pts
+                    # add_line(np.array(ne_contact_pts[0])*1e-3, np.array(ne_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
+
+                # new contact pts
+                new_contact_pts = dropped_perpendicular_points(*new_axis_endpts.values(),
+                                                               *bar_from_elements[contact_e].values())
+                candidate_end_pts.append(new_contact_pts[1])
+                line_drawing = add_line(np.array(new_contact_pts[0])*1e-3, np.array(new_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
+                handles.append(line_drawing)
+
+                extended_end_pts = find_points_extreme(candidate_end_pts, list(bar_from_elements[contact_e].values()))
+                tmp_extension_score += abs(norm(extended_end_pts[0] - extended_end_pts[1]) - norm(contact_e_axis_pts[0]- contact_e_axis_pts[1]))
+
+                tmp_contact_elements[contact_e] = {}
+                if norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][contact_e[0]])) > \
+                   norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][contact_e[1]])):
+                    tmp_contact_elements[contact_e][contact_e[1]] = np.array(extended_end_pts[0])
+                    tmp_contact_elements[contact_e][contact_e[0]] = np.array(extended_end_pts[1])
+                else:
+                    tmp_contact_elements[contact_e][contact_e[0]] = np.array(extended_end_pts[0])
+                    tmp_contact_elements[contact_e][contact_e[1]] = np.array(extended_end_pts[1])
+
+                # print('original: {}'.format(bar_from_elements[contact_e]))
+                # print('extended: {}'.format(extended_end_pts))
+            if tmp_extension_score < extension_score:
+                extension_score = tmp_extension_score
+                chosen_new_axis_endpts = new_axis_endpts
+                chosen_contact_element_axis_pts = copy(tmp_contact_elements)
+
+        for contact_e, end_pts in chosen_contact_element_axis_pts.items():
+            # draw new axis pts
+            end_pts = list(end_pts.values())
+            add_line(end_pts[0]*1e-3, end_pts[1]*1e-3, color=apply_alpha(GREEN, 1))
+
         assert set(new_axis_endpts.keys()) == set(n_neighbors.keys())
 
-        # update all neighbor bars to element, find the furthest pair of contact pts
-        for contact_e in contact_elements:
-            neighbor_elements = list(set(element_neighbors[contact_e]) & set(printed))
-            candidate_end_pts = []
-            candidate_end_pts.extend(list(bar_from_elements[contact_e].values()))
-            for e in neighbor_elements:
-                ne_contact_pts = dropped_perpendicular_points(*list(bar_from_elements[contact_e].values()),
-                                                                      *list(bar_from_elements[e].values()))
-                candidate_end_pts.append(ne_contact_pts[0])
-                add_line(np.array(ne_contact_pts[0])*1e-3, np.array(ne_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
-
-            new_contact_pts = dropped_perpendicular_points(*new_axis_endpts.values(),
-                                                           *bar_from_elements[contact_e].values())
-            add_line(np.array(new_contact_pts[0])*1e-3, np.array(new_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
-
-            candidate_end_pts.append(new_contact_pts[1])
-            extended_end_pts = find_points_extreme(candidate_end_pts, list(bar_from_elements[contact_e].values()))
-
-            if norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][contact_e[0]])) > \
-               norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][contact_e[1]])):
-                bar_from_elements[contact_e][contact_e[1]] = np.array(extended_end_pts[0])
-                bar_from_elements[contact_e][contact_e[0]] = np.array(extended_end_pts[1])
-            else:
-                bar_from_elements[contact_e][contact_e[0]] = np.array(extended_end_pts[0])
-                bar_from_elements[contact_e][contact_e[1]] = np.array(extended_end_pts[1])
-
-            # print('original: {}'.format(bar_from_elements[contact_e]))
-            # print('extended: {}'.format(extended_end_pts))
-            add_line(np.array(extended_end_pts[0])*1e-3, np.array(extended_end_pts[1])*1e-3, color=apply_alpha(GREEN, 1))
-
-        bar_from_elements[element] = new_axis_endpts
+        # update the new found bar axis
+        bar_from_elements[element] = chosen_new_axis_endpts
+        # update bar_from_elements, update corresponding entries
+        bar_from_elements.update(chosen_contact_element_axis_pts)
         visited_nodes |= set([n0, n1])
         printed = printed | {element}
 
         # update all bar element drawing
-        handles = []
         for e in bar_from_elements.values():
             # convert mil to meter
             h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
