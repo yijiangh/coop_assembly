@@ -273,7 +273,7 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
     line_1_dp_point = intersection_line_plane((line_point_1_1, line_point_1_2), plane_2)
     line_2_dp_point = intersection_line_plane((line_point_2_1, line_point_2_2), plane_1)
 
-    return [line_1_dp_point, line_2_dp_point]
+    return [np.array(line_1_dp_point), np.array(line_2_dp_point)]
 
 def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
     """a convenient wrapper for ``dropped_perpendicular_points`` to operate directly on BarStructure and its bar vertices

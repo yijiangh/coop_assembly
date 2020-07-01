@@ -35,7 +35,6 @@ def compute_tangent_from_two_lines(line1, line2, ref_point, radius1, radius2, nb
     """compute tangent bar axis vector for connecting a new point to two existing bars.
     This is done by computing tangent planes for two bars separately, and then take
 
-
     .. image:: ../images/first_tangent_plane_intersection.png
 
         :scale: 80 %
@@ -43,9 +42,9 @@ def compute_tangent_from_two_lines(line1, line2, ref_point, radius1, radius2, nb
 
     Parameters
     ----------
-    line1 : list of two points
+    line1 : sequence of two points
         axis line for cylinder 1, [axis pt 0, axis pt 1]
-    line2 : list of two points
+    line2 : sequence of two points
         axis line for cylinder 2, [axis pt 0, axis pt 1]
     ref_point : point
         new vertex point Q
@@ -60,7 +59,6 @@ def compute_tangent_from_two_lines(line1, line2, ref_point, radius1, radius2, nb
     -------
     if
     list of one vector
-        (not sure why SP needed a list around this single entry)
         a vector representing the new bar's axis
     """
     # planes1 in format [origin, axis vec, y axis], [origin, axis vec, y axis]
@@ -80,7 +78,7 @@ def compute_tangent_from_two_lines(line1, line2, ref_point, radius1, radius2, nb
     if not (abs(dot_vectors(plane_x_axis, normal)) < 1e-8 and abs(dot_vectors(plane_y_axis, normal)) < 1e-8):
         s = intersect_plane_plane_u(plane_x_axis, plane_y_axis, normal)
         s = normalize_vector(s)
-        return s
+        return np.array(s)
     else:
         raise NotImplementedError("two tangent planes are parallel")
 
@@ -109,8 +107,10 @@ def lines_tangent_to_cylinder(cylinder_line, ref_point, radius):
         [contact point projected on the cylinder axis (point `M`), vector MB, -1 * vector MB], the latter two entries represent
         the tangent points' local coordinate in the plane [point M, e_x, e_y]
     """
-    l_vect = normalize_vector(subtract_vectors(cylinder_line[1], cylinder_line[0]))
-    base_point = cylinder_line[0]
+    line_pts = list(cylinder_line.values()) if isinstance(cylinder_line, dict) else list(cylinder_line)
+    # assert isinstance(line_pts, list)
+    l_vect = normalize_vector(subtract_vectors(line_pts[1], line_pts[0]))
+    base_point = line_pts[0]
     line_QMprime = subtract_vectors(ref_point, base_point)
     # * project out longitutude axis component of the base_point to obtain point M
     point_M = add_vectors(base_point, scale_vector(l_vect, dot_vectors(line_QMprime, l_vect)))
@@ -173,7 +173,11 @@ def planes_tangent_to_cylinder(cylinder_line, ref_point, radius, info='plane'):
             upper_tang_pt is the upper contact (tangent) point
             dot1 = dot_vectors(ref_point, upper_tang_pt)
     """
-    tangent_pts = lines_tangent_to_cylinder(cylinder_line, ref_point, radius)
+    line_pts = list(cylinder_line.values()) if isinstance(cylinder_line, dict) else list(cylinder_line)
+    # print('type: {}'.format(type(line_pts)))
+    # assert isinstance(line_pts, list)
+
+    tangent_pts = lines_tangent_to_cylinder(line_pts, ref_point, radius)
     if tangent_pts is None:
         return None
     point_M, upper_delta_x, lower_delta_x = tangent_pts
@@ -185,7 +189,7 @@ def planes_tangent_to_cylinder(cylinder_line, ref_point, radius, info='plane'):
         r1  = subtract_vectors(add_vectors(point_M, upper_delta_x), ref_point)
         r2  = subtract_vectors(add_vectors(point_M, lower_delta_x), ref_point)
         r2  = normalize_vector(r2)
-        l_vect  = normalize_vector(subtract_vectors(cylinder_line[1], cylinder_line[0]))
+        l_vect  = normalize_vector(subtract_vectors(line_pts[1], line_pts[0]))
         return [[ref_point, l_vect, r1], [ref_point, l_vect, r2]]
     elif info == 'contact':
         dot_1 = dot_vectors(ref_point, upper_delta_x)
@@ -808,24 +812,24 @@ def solve_second_tangent(new_point, ex, ey, radius, line1, line2, diameter_1, di
 
     Parameters
     ----------
-    new_point : [type]
-        [description]
-    ex : [type]
-        [description]
-    ey : [type]
-        [description]
-    radius : [type]
-        [description]
-    line1 : [type]
-        [description]
-    line2 : [type]
-        [description]
+    new_point : point
+        the ideal new vertex to be achieved by this new bar
+    ex : vector
+        local x axis vector for parameterizing the contact point
+    ey : vector
+        local y axis vector for parameterizing the contact point
+    radius : float
+        radius of the new bar
+    line1 : list or dict of two points
+        line axis for contact bar 1
+    line2 : list or dict of two points
+        line axis for contact bar 2
     diameter_1 : [type]
         [description]
     diameter_2 : [type]
         [description]
-    ind : [type]
-        [description]
+    ind : int
+        \in [0, 1, 2, 3]; tangent cases
     debug : bool, optional
         [description], by default False
 
@@ -844,13 +848,11 @@ def solve_second_tangent(new_point, ex, ey, radius, line1, line2, diameter_1, di
         # point on the new bar
         ref_point = add_vectors(new_point, delta_x)
         vec = compute_tangent_from_two_lines(line1, line2, ref_point, diameter_1, diameter_2, ind)
-        return ref_point, vec
+        return np.array(ref_point), vec
 
     def fn(x):
-        ref_point, vecs_l_all = compute_tan_pt(x)
-        if vecs_l_all:
-            vec_l = vecs_l_all[0]
-        else:
+        ref_point, vec_l = compute_tan_pt(x)
+        if vec_l is None:
             print("error in f")
             val = 1
             return val
@@ -860,15 +862,10 @@ def solve_second_tangent(new_point, ex, ey, radius, line1, line2, diameter_1, di
 
     res_opt = scipy.optimize.fminbound(fn, -2*radius, 2*radius, full_output=True, disp=0 if not debug else 3)
     if res_opt[1] > 0.1:
-        return None
+        return None, None
 
     x = float(res_opt[0])
-    ret_fp2 = compute_tan_pt(x)
-    if ret_fp2[1] is None:
-        return None
-    else:
-        pt_2, vec_l = ret_fp2
-        return pt_2, vec_l[0]
+    return compute_tan_pt(x)
 
 def solve_third_tangent(pt_mid, ex, ey, radius, line_pair1, line_pair2, ind_1, ind_2, debug=False):
     assert len(line_pair1) == 2 and len(line_pair2) == 2
@@ -883,23 +880,14 @@ def solve_third_tangent(pt_mid, ex, ey, radius, line_pair1, line_pair2, ind_1, i
         vec_l1 = compute_tangent_from_two_lines(*line_pair1, ref_point, 2*radius, 2*radius, ind_1)
         # ! this does not conform to bar3 and bar4's own radius
         vec_l2 = compute_tangent_from_two_lines(*line_pair2, ref_point, 2*radius, 2*radius, ind_2)
-        if not vec_l1[0] or not vec_l2[0]:
-            return None
-        ang = angle_vectors(vec_l1[0], vec_l2[0])
-        return ang, ref_point, vec_l1, vec_l2
+        ang = None
+        if vec_l1 is not None and vec_l2 is not None:
+            ang = angle_vectors(vec_l1, vec_l2)
+        return ang, np.array(ref_point), vec_l1, vec_l2
 
     def fn(x):
-        _, _, tfp_1, tfp_2 = compute_third_tan_pts(x)
-        if tfp_1:
-            vec_l1 = tfp_1[0]
-        else:
-            print("problem in opt 3 - 1")
-            f = 180
-            return f
-        if tfp_2:
-        #     vec_l2 = tfp_2[ind_2]
-            vec_l2 = tfp_2[0]
-        else:
+        _, _, vec_l1, vec_l2 = compute_third_tan_pts(x)
+        if vec_l1 is None or vec_l2 is None:
             print("problem in opt 3 - 1")
             f = 180
             return f
@@ -914,13 +902,8 @@ def solve_third_tangent(pt_mid, ex, ey, radius, line_pair1, line_pair2, ind_1, i
     if res_opt[1] > 0.1:
         return None
 
-    # ret_fp3 = find_point_3(list(map(float, res_opt[0])), *args)
-    ret_fp3 = compute_third_tan_pts(list(map(float, res_opt[0])))
-    if not ret_fp3:
-        return None
-    else:
-        ang, ref_point, vec_l1, vec_l2 = ret_fp3
-        return ref_point, vec_l1[0], vec_l2[0], ang
+    # ang, ref_point, vec_l1, vec_l2
+    return compute_third_tan_pts(list(map(float, res_opt[0])))
 
 ##########################################
 

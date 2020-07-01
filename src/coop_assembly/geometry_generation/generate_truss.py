@@ -16,7 +16,7 @@ from compas.geometry import is_coplanar, subtract_vectors, angle_vectors
 from compas.datastructures import Network
 
 from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED, BLUE, GREEN, BLACK, apply_alpha, \
-    add_line, draw_circle, remove_handles, add_segments, BROWN, YELLOW
+    add_line, draw_circle, remove_handles, add_segments, BROWN, YELLOW, reset_simulation, disconnect
 
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle, dropped_perpendicular_points
@@ -155,12 +155,13 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
         n_neighbors = {n0 : list(set(node_neighbors[n0]) & printed), \
                        n1 : list(set(node_neighbors[n1]) & printed)}
         print('------')
-        print('visited node: ', visited_nodes)
-        print('printed bars: ', printed)
-        print('existing node_neighbors: {}'.format(n_neighbors))
+        # print('visited node: ', visited_nodes)
+        # print('printed bars: ', printed)
+        # print('existing node_neighbors: {}'.format(n_neighbors))
         # print('n#{} neighbors: {}'.format(n0, set(node_neighbors[n0])))
         # print('n#{} neighbors: {}'.format(n1, set(node_neighbors[n1])))
 
+        # find neighnor elements of each node
         for i in [n0, n1]:
             # fill in empty tuple for product
             if len(n_neighbors[i]) == 0:
@@ -172,10 +173,11 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
 
         # each of these should be segmented into 2 pairs
         neighbor_pairs = list(product(n_neighbors[n0], n_neighbors[n1]))
-        cprint('produce neighnor pairs: {}'.format(neighbor_pairs), 'yellow')
+        cprint('produced neighnor pairs: {}'.format(neighbor_pairs), 'yellow')
 
         new_axis_endpts = None
         contact_elements = None
+        # TODO: use the pairs that produces the minial neighbor element extension
         for contact_bars in randomize(neighbor_pairs):
             new_axis_endpts, contact_elements = compute_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius)
             if new_axis_endpts:
@@ -194,8 +196,8 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
                 candidate_end_pts.append(ne_contact_pts[0])
                 add_line(np.array(ne_contact_pts[0])*1e-3, np.array(ne_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
 
-            new_contact_pts = dropped_perpendicular_points(*list(new_axis_endpts.values()),
-                                                           *list(bar_from_elements[contact_e].values()))
+            new_contact_pts = dropped_perpendicular_points(*new_axis_endpts.values(),
+                                                           *bar_from_elements[contact_e].values())
             add_line(np.array(new_contact_pts[0])*1e-3, np.array(new_contact_pts[1])*1e-3, color=apply_alpha(BLACK, 1))
 
             candidate_end_pts.append(new_contact_pts[1])
@@ -217,6 +219,7 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
         visited_nodes |= set([n0, n1])
         printed = printed | {element}
 
+        # update all bar element drawing
         handles = []
         for e in bar_from_elements.values():
             # convert mil to meter
@@ -233,6 +236,7 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
         wait_if_gui()
         remove_handles(handles)
 
+    # * compile bars into a BarStructure
     b_struct = BarStructure()
     centroid_pt = np.average(node_points, axis=0)
 
@@ -285,19 +289,20 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         Computed axis end pts for element :
         {n1 : axis pt 1, n2 : axis pt 2}, where element = (n1, n2)
     """
-    reverse = False
+    # order the contact bar pairs based on number of bars in each entry
     contact_bars = copy(in_contact_bars)
     if len(in_contact_bars[1]) < len(in_contact_bars[0]):
-        reverse = True
         contact_bars = copy(in_contact_bars[::-1])
     assert(len(contact_bars[1])<=2)
     cprint('chosen element {}'.format(element), 'cyan')
     cprint('contact_bars: {}'.format(contact_bars), 'blue')
 
+    # compute a new node vertex to achieve if any
     new_point = None
+    # shared by all 0-x cases
+    # fill in new_node_id and contact_v_id for them
     if len(contact_bars[0]) == 0:
-        # new_point = node_points[element[0]] if not reverse else node_points[element[1]]
-        # chose the pt that's not on existing line
+        # * chose the pt that's not on existing line
         existing_nodes = set()
         for cb in contact_bars[1]:
             existing_nodes |= set(cb)
@@ -312,9 +317,10 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
                 colinear = False
         assert not colinear or len(contact_bars[1]) == 0
         new_point = node_points[new_node_id]
-
     cprint('new pt: {}'.format(new_point))
 
+    # * each case needs to provide the following data:
+    #   {new_node_id : new_point, contact_v_id : np.array(contact_pt)}, contact_e
     axis_vector = None
     if len(contact_bars[0]) == 0 and len(contact_bars[1]) == 0:
         cprint('0 - 0', 'yellow')
@@ -328,17 +334,19 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         contact_e = contact_bars[1][0]
         supp_v_id = list(set(contact_e) - set(element))[0]
         contact_node_pt = bar_from_elements[contact_e][contact_v_id]
-        supp_node_pt = bar_from_elements[contact_e][supp_v_id]
+        # supp_node_pt = bar_from_elements[contact_e][supp_v_id]
 
+        # t_pts = [point_M, d_e_add, d_e_sub]
         t_pts = lines_tangent_to_cylinder(bar_from_elements[contact_e], new_point, 2*radius)
         if t_pts is not None:
             normals = [np.array(t_pts[j]) for j in [1,2]]
+            # randomly choose one of the contact normal (up or down)
             contact_pt = randomize(normals)[0] + contact_node_pt
-            print('contact pt: {}'.format(contact_pt))
-            contact_pt, _ = dropped_perpendicular_points(new_point, contact_pt,
-                                                         bar_from_elements[contact_e][contact_v_id], bar_from_elements[contact_e][supp_v_id])
-            print('contact pt: {}'.format(contact_pt))
-        # conform format
+            # print('contact pt: {}'.format(contact_pt))
+            # sanity check: dropped points should be the same as above
+            # contact_pt, _ = dropped_perpendicular_points(new_point, contact_pt, *bar_from_elements[contact_e].values())
+            # print('contact pt: {}'.format(contact_pt))
+        # convert to a list, conforming to other cases' output
         contact_e = [contact_e]
     elif len(contact_bars[0]) == 0 and len(contact_bars[1]) == 2:
         # one is floating or bare-grounded, use `first_tangent` strategy
@@ -347,6 +355,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         contact_e = contact_bars[1]
         supp_v_id_1 = list(set(contact_e[0]) - set(element))[0]
         supp_v_id_2 = list(set(contact_e[1]) - set(element))[0]
+        # randomly choose from the four tangent sides
         for tangent_side in randomize(range(4)):
             axis_vector = np.array(compute_tangent_from_two_lines(bar_from_elements[contact_e[0]],
                                                                   bar_from_elements[contact_e[1]],
@@ -356,13 +365,10 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
 
         assert(axis_vector is not None)
         if axis_vector is not None:
-            new_contact_pt1, _ = dropped_perpendicular_points(new_point, new_point+axis_vector,
-                                                bar_from_elements[contact_e[0]][contact_v_id], bar_from_elements[contact_e[0]][supp_v_id_1])
-            new_contact_pt2, _ = dropped_perpendicular_points(new_point, new_point+axis_vector,
-                                                bar_from_elements[contact_e[1]][contact_v_id], bar_from_elements[contact_e[1]][supp_v_id_2])
-            new_contact_pt1 = np.array(new_contact_pt1)
-            new_contact_pt2 = np.array(new_contact_pt2)
-            contact_pt = new_point + axis_vector * max([norm(new_contact_pt1-new_point), norm(new_contact_pt2-new_point)])
+            # choose the contact pt that's with a longer bar length
+            new_contact_pt1, _ = dropped_perpendicular_points(new_point, new_point+axis_vector, *bar_from_elements[contact_e[0]].values())
+            new_contact_pt2, _ = dropped_perpendicular_points(new_point, new_point+axis_vector, *bar_from_elements[contact_e[1]].values())
+            contact_pt = new_contact_pt1 if norm(new_contact_pt1-new_point) > norm(new_contact_pt2-new_point) else new_contact_pt2
     elif len(contact_bars[0])==1 and len(contact_bars[1])==1:
         # deg 1 - deg 1 (4 configs)
         cprint('1 - 1', 'yellow')
@@ -370,6 +376,8 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         contact_e2 = contact_bars[1][0]
         contact_e = contact_bars[0] + contact_bars[1]
 
+        # required output dict key data
+        # contact / support vertex ids for the contact bars
         contact_v_id_1 = list(set(contact_e1) & set(element))[0]
         supp_v_id_1 = list(set(contact_e1) - set(element))[0]
         contact_v_id_2 = list(set(contact_e2) & set(element))[0]
@@ -378,6 +386,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
 
         line1 = [bar_from_elements[contact_e1][contact_v_id_1], bar_from_elements[contact_e1][supp_v_id_1]]
         line2 = [bar_from_elements[contact_e2][contact_v_id_2], bar_from_elements[contact_e2][supp_v_id_2]]
+        # iterate through the two tangent cases
         for ind_1 in range(2):
             contact_pt1, vec_l1 = solve_one_one_tangent(line1, line2, radius, ind_1)
             if contact_pt1 is not None and vec_l1 is not None:
@@ -392,13 +401,14 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
             contact_pt = np.array(contact_pt2)
         else:
             assert False, 'no solution found!'
-
     elif len(contact_bars[0])==1 and len(contact_bars[1])==2:
-        # deg 1 - deg 2 (2x4 configs)
+        # deg 1 - deg 2 (2x2 configs)
         # use `second_tangent` strategy
         cprint('1 - 2', 'yellow')
         contact_e = list(contact_bars[0]) + list(contact_bars[1])
         contact_e1 = contact_bars[0][0]
+        # required output dict key data
+        # contact / support vertex ids for the contact bars
         new_node_id = list(set(contact_e1) & set(element))[0]
         supp_v_id = list(set(contact_e1) - set(element))[0]
         contact_v_id = list(set(contact_bars[1][0]) & set(element))[0]
@@ -414,43 +424,41 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         ex = R[:,1]
         ey = R[:,2]
         for ind in range(4):
-            ret_sst = solve_second_tangent(contact_pt1, ex, ey, radius,
+            new_point, axis_vector = solve_second_tangent(contact_pt1, ex, ey, radius,
                 bar_from_elements[contact_bars[1][0]], bar_from_elements[contact_bars[1][1]], 2*radius, 2*radius, ind)
-            if ret_sst is not None:
+            if axis_vector is not None:
                 break
-        assert(ret_sst is not None)
-        new_point, axis_vector = list(map(np.array, ret_sst))
-        # add_line(contact_pt1*1e-3, axis_vector + contact_pt1*1e-3, color=YELLOW, width=0.5)
+        assert(axis_vector is not None)
 
         if axis_vector is not None:
-            new_contact_pt1, _ = dropped_perpendicular_points(new_point, new_point+axis_vector, pt_b_1, pt_b_1+l1)
-            new_contact_pt2, _ = dropped_perpendicular_points(new_point, new_point+axis_vector, pt_b_2, pt_b_2+l2)
-            new_contact_pt1 = np.array(new_contact_pt1)
-            new_contact_pt2 = np.array(new_contact_pt2)
-            if axis_vector.dot(new_contact_pt1-new_point)<0:
-                axis_vector *= -1
-            contact_pt = new_point + axis_vector * max([norm(new_contact_pt1-new_point), norm(new_contact_pt2-new_point)])
+            new_contact_pt1, _ = dropped_perpendicular_points(new_point, new_point+axis_vector, *bar_from_elements[contact_bars[1][0]].values())
+            new_contact_pt2, _ = dropped_perpendicular_points(new_point, new_point+axis_vector, *bar_from_elements[contact_bars[1][1]].values())
+            # use the point with longer bar length
+            contact_pt = new_contact_pt1 if norm(new_contact_pt1-new_point) > norm(new_contact_pt2-new_point) else new_contact_pt2
 
     elif len(contact_bars[0])==2 and len(contact_bars[1])==2:
-        # deg 2 - deg 2
+        # 2 - 2 tangent bars on each end
         # use `third_tangent` strategy
         cprint('2 - 2', 'yellow')
         contact_e = list(contact_bars[0]) + list(contact_bars[1])
 
+        # required output dict key data
+        # contact / support vertex ids for the contact bars
         new_node_id = list(set(contact_bars[0][0]) & set(contact_bars[0][1]))[0]
         contact_v_id = list(set(contact_bars[1][0]) & set(contact_bars[1][1]))[0]
         assert set(element) == set([new_node_id, contact_v_id])
 
-        pt_b_1, l1 = convert_pt_vec(bar_from_elements[contact_bars[0][0]])
-        pt_b_2, l2 = convert_pt_vec(bar_from_elements[contact_bars[0][1]])
-        pt_b_3, l3 = convert_pt_vec(bar_from_elements[contact_bars[1][0]])
-        pt_b_4, l4 = convert_pt_vec(bar_from_elements[contact_bars[1][1]])
+        # convenient alises
+        line1 = bar_from_elements[contact_bars[0][0]].values()
+        line2 = bar_from_elements[contact_bars[0][1]].values()
+        line3 = bar_from_elements[contact_bars[1][0]].values()
+        line4 = bar_from_elements[contact_bars[1][1]].values()
 
         # contact point 1
-        pts_axis_1 = dropped_perpendicular_points(pt_b_1, pt_b_1 + l1, pt_b_2, pt_b_2 + l2)
+        pts_axis_1 = dropped_perpendicular_points(*line1, *line2)
         contact_pt1 = centroid_points(pts_axis_1)
         # contact point 2
-        pts_axis_2 = dropped_perpendicular_points(pt_b_3, pt_b_3 + l3, pt_b_4, pt_b_4 + l4)
+        pts_axis_2 = dropped_perpendicular_points(*line3, *line4)
         contact_pt2 = centroid_points(pts_axis_2)
         pt_mid = centroid_points([contact_pt1, contact_pt2])
 
@@ -459,20 +467,22 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         ey = R[:,2]
 
         # solve from mid point to both contact points
+        # four tangent cases on each double-tangent end
         for ind_1, ind_2 in product(range(4), range(4)):
-            result = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l1, pt_b_2, l2, pt_b_3, l3, pt_b_4, l4, ind_1, ind_2, debug=True)
-            if result:
+            ang, ref_point, vec_l1, vec_l2 = solve_third_tangent(pt_mid, ex, ey, radius, [line1, line2], [line3, line4], ind_1, ind_2, debug=True)
+            if vec_l1 is not None and vec_l2 is not None:
                 break
-        assert(result is not None)
-        pt3, vec_l1, vec_l2, ang_check = list(map(np.array, result))
+        assert(vec_l1 is not None and vec_l2 is not None)
+        # pt3, vec_l1, vec_l2, ang_check = list(map(np.array, result))
         # add_line(pt3*1e-3, pt3 + vec_l1*1e-3, color=YELLOW, width=0.5)
         # add_line(pt3*1e-3, pt3 + vec_l2*1e-3, color=BLUE, width=0.5)
 
+        # use the point with longer bar length as the end pt for the new bar
         candidate_end_pts = []
-        for pt_b, lb in zip([pt_b_1, pt_b_2, pt_b_3, pt_b_3], [l1, l2, l3, l4]):
-            b_contact_pts, _ = dropped_perpendicular_points(pt3, pt3+vec_l1, pt_b, pt_b + lb)
+        for line in [line1, line2, line3, line4]:
+            b_contact_pts, _ = dropped_perpendicular_points(ref_point, ref_point+vec_l1, *line)
             candidate_end_pts.append(b_contact_pts)
-        extended_end_pts = list(map(np.array, find_points_extreme(candidate_end_pts, [pt3, pt3+vec_l1])))
+        extended_end_pts = list(map(np.array, find_points_extreme(candidate_end_pts, [ref_point, ref_point+vec_l1])))
 
         if norm(extended_end_pts[0] - node_points[new_node_id]) < norm(extended_end_pts[0] - node_points[contact_v_id]):
             new_point, contact_pt = extended_end_pts
@@ -583,6 +593,8 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
         export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)
         # export_structure_data(b_struct.to_data(), radius=radius, **kwargs)
 
+    cprint('Done.', 'green')
+
     return b_struct
 
 #############################################################
@@ -607,6 +619,10 @@ def main():
         export_file_name = export_file_name.split('_skeleton')[0] + '.json'
 
     gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=export_file_name)
+
+    reset_simulation()
+    disconnect()
+
 
 if __name__ == '__main__':
     main()
