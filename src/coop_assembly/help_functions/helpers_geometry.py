@@ -19,6 +19,7 @@ import numpy as np
 from numpy.linalg import norm
 from itertools import combinations
 from copy import deepcopy
+from termcolor import cprint
 
 from compas.geometry import Plane
 from compas.geometry import normalize_vector, subtract_vectors, cross_vectors, vector_from_points, \
@@ -278,6 +279,7 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
     else:
         # two vectors are parellel
         # treat two lines as segment in this case
+        # cprint('parellel in drop', 'yellow')
         contact_pt1 = closest_point_on_segment(line_point_1_1, [line_point_2_1, line_point_2_2])
         dist1 = distance_point_point(contact_pt1, line_point_1_1)
         contact_pt2 = closest_point_on_segment(line_point_1_2, [line_point_2_1, line_point_2_2])

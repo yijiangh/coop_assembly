@@ -16,11 +16,12 @@ import math
 import scipy.optimize
 import numpy as np
 from numpy.linalg import norm
+from termcolor import cprint
 
 from compas.geometry import add_vectors, subtract_vectors, cross_vectors, normalize_vector, scale_vector, vector_from_points, dot_vectors, length_vector
 from compas.geometry import distance_point_point, distance_point_line, distance_line_line
 from compas.geometry import is_point_on_segment
-from compas.geometry import angle_vectors
+from compas.geometry import angle_vectors, norm_vector
 from compas.geometry import centroid_points
 from compas.geometry import project_points_plane
 
@@ -61,26 +62,36 @@ def compute_tangent_from_two_lines(line1, line2, ref_point, radius1, radius2, nb
     list of one vector
         a vector representing the new bar's axis
     """
-    # planes1 in format [origin, axis vec, y axis], [origin, axis vec, y axis]
-    planes1 = planes_tangent_to_cylinder(
-        line1, ref_point, radius1, info='plane')
-    # planes2 in format [normal, dot], [normal, dot]
-    planes2 = planes_tangent_to_cylinder(
-        line2, ref_point, radius2, info='contact')
-    if planes1 == None or planes2 == None:
-        print("Tangent planes not found")
-        return None
+    if norm_vector(cross_vectors(subtract_vectors(*line1), subtract_vectors(*line2))) > 1e-8:
+        # planes1 in format [origin, axis vec, y axis], [origin, axis vec, y axis]
+        planes1 = planes_tangent_to_cylinder(line1, ref_point, radius1, info='plane')
+        # planes2 in format [normal, dot], [normal, dot]
+        planes2 = planes_tangent_to_cylinder(line2, ref_point, radius2, info='contact')
+        if planes1 == None or planes2 == None:
+            print("Tangent planes not found")
+            return None
 
-    _, plane_x_axis, plane_y_axis = planes1[0] if nb == 0 or nb == 1 else planes1[1]
-    plane_x_axis = normalize_vector(plane_x_axis)
-    plane_y_axis = normalize_vector(plane_y_axis)
-    normal = normalize_vector(planes2[nb%2][0])
-    if not (abs(dot_vectors(plane_x_axis, normal)) < 1e-8 and abs(dot_vectors(plane_y_axis, normal)) < 1e-8):
+        # up or down tangent plane
+        _, plane_x_axis, plane_y_axis = planes1[0] if nb == 0 or nb == 1 else planes1[1]
+        plane_x_axis = normalize_vector(plane_x_axis)
+        plane_y_axis = normalize_vector(plane_y_axis)
+        normal = normalize_vector(planes2[nb%2][0])
+        # assert abs(dot_vectors(plane_x_axis, normal)) > 1e-8 and abs(dot_vectors(plane_y_axis, normal)) > 1e-8
         s = intersect_plane_plane_u(plane_x_axis, plane_y_axis, normal)
         s = normalize_vector(s)
         return np.array(s)
     else:
-        raise NotImplementedError("two tangent planes are parallel")
+        # TODO: make sure the two segments actually touch
+        # raise NotImplementedError("two tangent planes are parallel")
+        # line1 and line2 parellel
+        assert abs(radius1 - radius2) < 1e-8 and 'Can only handle parallel cases for bar with the same radius now.'
+        planes1 = planes_tangent_to_cylinder(line1, ref_point, radius1, info='contact')
+        normal = normalize_vector(planes1[nb%2][0])
+        pt0, _ = dropped_perpendicular_points(*line1, *line2)
+        # print('pt0 {} | pt1 {}'.format(pt0, pt1))
+        s = subtract_vectors(pt0 + radius1*np.array(normal), ref_point)
+        s = normalize_vector(s)
+        return np.array(s)
 
 def lines_tangent_to_cylinder(cylinder_line, ref_point, radius):
     """Calculating tangent planes to a cylinder axis passing through the `ref_point`.
@@ -179,6 +190,7 @@ def planes_tangent_to_cylinder(cylinder_line, ref_point, radius, info='plane'):
 
     tangent_pts = lines_tangent_to_cylinder(line_pts, ref_point, radius)
     if tangent_pts is None:
+        cprint('{} | {}'.format(line_pts, ref_point), 'red')
         return None
     point_M, upper_delta_x, lower_delta_x = tangent_pts
     if info == 'plane':
