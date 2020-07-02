@@ -193,13 +193,13 @@ def get_wild_2d_place_gen_fn(robots, obstacles, element_from_index, grounded_ele
     def wild_gen_fn(robot_name, element, fluents=[]):
         robot = index_from_name(robots, robot_name)
         printed = []
-        # print('E{} - fluent {}'.format(element, fluents))
         for fact in fluents:
             if fact[0] == 'assembled':
                 if fact[1] != element:
                     printed.append(fact[1])
             else:
                 raise NotImplementedError(fact[0])
+        print('E{} - fluent printed {}'.format(element, printed))
         for command, in gen_fn_from_robot[robot](element, printed=printed):
             if not fluent_special:
                 q1 = Conf(robot, np.array(command.start_conf), element)
@@ -259,7 +259,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
     with LockRenderer(lock=True):
         if algorithm in ['incremental', 'incremental_sa']:
             discrete_planner = 'max-astar' # get_planner(costs)
-            solution = solve_incremental(pddlstream_problem, max_time=600, #planner=discrete_planner,
+            solution = solve_incremental(pddlstream_problem, max_time=600, planner=discrete_planner,
                                         success_cost=success_cost, unit_costs=not costs,
                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm in SS_OPTIONS:
@@ -337,8 +337,7 @@ def load_2d_world(viewer=False):
 
     return end_effector, floor
 
-def get_assembly_problem():
-    # TODO: load 2D truss exported from GH
+def get_example_assembly_problem():
     # creating beams
     width = 0.01
     l = 0.01 # this dimension doesn't matter
