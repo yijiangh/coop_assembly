@@ -3,6 +3,7 @@ import pytest
 from itertools import combinations
 import numpy as np
 from numpy.linalg import norm
+from termcolor import cprint
 
 from compas.datastructures import Network
 from compas.geometry import scale_vector, closest_point_on_segment
@@ -155,6 +156,7 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
     contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
     connectors = list(contact_from_connectors.keys())
 
+    # TODO: sometimes there are excessive connectors
     # * connectors from bar
     connector_from_elements = get_connector_from_elements(connectors, elements)
     for bar in bar_struct.vertices():
@@ -174,6 +176,7 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
 
     # TODO: some sanity check here
     # mutual collision checks
+    is_collided = False
     for bar1, bar2 in connectors:
         b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
         b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
@@ -183,11 +186,13 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
         if pairwise_collision(b1_body, b2_body):
             cr = pairwise_collision_info(b1_body, b2_body)
             draw_collision_diagnosis(cr, focus_camera=True)
+            is_collided = True
             if not viewer:
                 assert False, '{}-{} collision!'.format(b1_body, b2_body)
         print('-'*10)
-    if viewer:
-        wait_for_user('Done.')
+
+    cprint('Valid: {}'.format(not is_collided), 'red' if is_collided else 'green')
+    wait_if_gui('Done.')
 
 @pytest.mark.gen_from_pts
 @pytest.mark.parametrize('radius', [(3.17), ])
