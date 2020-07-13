@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 # add your PDDLStream path here: https://github.com/caelan/pddlstream
 sys.path.append(os.environ['PDDLSTREAM_PATH'])
-from pddlstream.algorithms.downward import set_cost_scale
+from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused
 from pddlstream.algorithms.disabled import process_stream_plan
@@ -227,18 +227,38 @@ def get_test_cfree():
 
 ##################################################
 
+def get_height(element):
+    with BodySaver(element.body):
+        set_pose(element.body, element.goal_pose.value)
+        _, upper = get_aabb(element.body)
+        z = upper[2]
+    return z
+
 def get_bias_fn(element_from_index):
     def bias_fn(state, goal, operators):
         assembled = {obj_from_pddl(atom.args[0]).value for atom in state.atoms if atom.predicate == 'assembled'}
         height = 0
         for index in assembled:
             element = element_from_index[index]
-            with BodySaver(element.body):
-                set_pose(element.body, element.goal_pose.value)
-                lower, upper = get_aabb(element.body)
-            height = max(height, upper[2])
+            height = max(height, get_height(element))
         return height
     return bias_fn
+
+def get_order_fn(element_from_index):
+    def order_fn(state, goal, operators):
+        actions = [op for op in operators if op.__class__.__name__ == 'Action'] # TODO: repair ugliness
+        height_from_action = {}
+        for action in actions:
+            name, args = parse_action(action.fd_action.name)
+            height = 0
+            if name == 'place':
+                args = [obj_from_pddl(arg).value for arg in args]
+                _, index, _ = args
+                element = element_from_index[index]
+                height = get_height(element)
+            height_from_action[action] = height
+        return sorted(actions, key=height_from_action.__getitem__, reverse=True)
+    return order_fn
 
 def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                      collisions=True, disable=False, max_time=60*4, algorithm='focused',
@@ -279,9 +299,11 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             discrete_planner = {
                 'search': 'eager',
                 'evaluator': 'greedy',
-                #'heuristic': 'ff',
-                'heuristic': ['ff', get_bias_fn(element_from_index)],
-                'successors': 'all',
+                'heuristic': 'ff',
+                #'heuristic': ['ff', get_bias_fn(element_from_index)],
+                #'successors': 'all',
+                'successors': get_order_fn(element_from_index),
+
             }
             solution = solve_incremental(pddlstream_problem, max_time=600, planner=discrete_planner,
                                         success_cost=success_cost, unit_costs=not costs,
