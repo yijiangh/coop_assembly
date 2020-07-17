@@ -47,6 +47,7 @@
                  )
   )
 
+  ; TODO: could also enforce within the fluent condition
   (:derived (Connected ?e2)
    (or (Grounded ?e2)
        (exists (?e1) (and (Joined ?e1 ?e2)
@@ -57,12 +58,12 @@
    )
   )
 
-  (:derived (UnSafeTraj ?r ?t)
-   (exists (?e2) (and   (Element ?e2) (Traj ?r ?t) (Robot ?r)
-                        (Assembled ?e2)
-                        (not (CollisionFree ?r ?t ?e2))
-                  ))
-  )
+  ;(:derived (UnSafeTraj ?r ?t)
+  ; (exists (?e2) (and   (Element ?e2) (Traj ?r ?t) (Robot ?r)
+  ;                      (Assembled ?e2)
+  ;                      (not (CollisionFree ?r ?t ?e2))
+  ;                ))
+  ;)
 
 )
 

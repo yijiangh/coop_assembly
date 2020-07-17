@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 # add your PDDLStream path here: https://github.com/caelan/pddlstream
 sys.path.append(os.environ['PDDLSTREAM_PATH'])
-from pddlstream.algorithms.downward import set_cost_scale
+from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused
 from pddlstream.algorithms.disabled import process_stream_plan
@@ -27,6 +27,7 @@ from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput
 from pddlstream.language.function import FunctionInfo
 from pddlstream.utils import read, get_file_path, inclusive_range, INF
 from pddlstream.language.temporal import compute_duration, get_end
+from pddlstream.language.conversion import obj_from_pddl
 
 from compas.datastructures import Network
 
@@ -43,7 +44,7 @@ from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui,
     draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
     create_flying_body, create_shape, get_mesh_geometry, get_movable_joints, get_configuration, set_configuration, get_links, \
     has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer, YELLOW, add_line, draw_circle, pairwise_collision, \
-    body_collision_info, get_distance, draw_collision_diagnosis
+    body_collision_info, get_distance, draw_collision_diagnosis, get_aabb, BodySaver
 
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
 
@@ -191,6 +192,8 @@ def get_wild_2d_place_gen_fn(robots, obstacles, element_from_index, grounded_ele
         gen_fn_from_robot[robot] = pick_gen_fn
 
     def wild_gen_fn(robot_name, element, fluents=[]):
+        # TODO: could check connectivity here
+        #fluents = [] # For debugging
         robot = index_from_name(robots, robot_name)
         printed = []
         for fact in fluents:
@@ -224,6 +227,39 @@ def get_test_cfree():
 
 ##################################################
 
+def get_height(element):
+    with BodySaver(element.body):
+        set_pose(element.body, element.goal_pose.value)
+        _, upper = get_aabb(element.body)
+        z = upper[2]
+    return z
+
+def get_bias_fn(element_from_index):
+    def bias_fn(state, goal, operators):
+        assembled = {obj_from_pddl(atom.args[0]).value for atom in state.atoms if atom.predicate == 'assembled'}
+        height = 0
+        for index in assembled:
+            element = element_from_index[index]
+            height = max(height, get_height(element))
+        return height
+    return bias_fn
+
+def get_order_fn(element_from_index):
+    def order_fn(state, goal, operators):
+        actions = [op for op in operators if op.__class__.__name__ == 'Action'] # TODO: repair ugliness
+        height_from_action = {}
+        for action in actions:
+            name, args = parse_action(action.fd_action.name)
+            height = 0
+            if name == 'place':
+                args = [obj_from_pddl(arg).value for arg in args]
+                _, index, _ = args
+                element = element_from_index[index]
+                height = get_height(element)
+            height_from_action[action] = height
+        return sorted(actions, key=height_from_action.__getitem__, reverse=True)
+    return order_fn
+
 def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                      collisions=True, disable=False, max_time=60*4, algorithm='focused',
                      debug=False, costs=False, teleops=False, **kwargs):
@@ -249,16 +285,26 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 
     # planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
     # planner = 'ff-lazy' | 'ff-wastar3'
-
-    def get_planner(costs):
-        return 'ff-astar' if costs else 'ff-wastar3'
     success_cost = 0 if costs else INF
 
     pr = cProfile.Profile()
     pr.enable()
-    with LockRenderer(lock=True):
-        if algorithm in ['incremental', 'incremental_sa']:
-            discrete_planner = 'max-astar' # get_planner(costs)
+    with LockRenderer(lock=False):
+        if algorithm == 'incremental':
+            discrete_planner = 'max-astar'
+            solution = solve_incremental(pddlstream_problem, max_time=600, planner=discrete_planner,
+                                        success_cost=success_cost, unit_costs=not costs,
+                                        max_planner_time=300, debug=debug, verbose=True)
+        elif algorithm == 'incremental_sa':
+            discrete_planner = {
+                'search': 'eager',
+                'evaluator': 'greedy',
+                'heuristic': 'ff',
+                #'heuristic': ['ff', get_bias_fn(element_from_index)],
+                #'successors': 'all',
+                'successors': get_order_fn(element_from_index),
+
+            }
             solution = solve_incremental(pddlstream_problem, max_time=600, planner=discrete_planner,
                                         success_cost=success_cost, unit_costs=not costs,
                                         max_planner_time=300, debug=debug, verbose=True)
@@ -273,6 +319,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             # TODO: effort_weight=0 will lead to noplan found
             effort_weight = 1e-3 if costs else None
             # effort_weight = 1e-3 if costs else 1 # | 0
+            planner = 'ff-astar' if costs else 'ff-wastar3'
 
             # TODO what can we tell about a problem if it requires many iterations?
             # ? max_time: the maximum amount of time to apply streams
@@ -287,7 +334,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
             #   success_cost=0 runs the planner in a true anytime mode
             #   success_cost=INF terminates whenever any plan is found
             solution = solve_focused(pddlstream_problem, stream_info=stream_info,
-                                     planner=get_planner(costs), max_planner_time=60, max_time=max_time,
+                                     planner=planner, max_planner_time=60, max_time=max_time,
                                      max_skeletons=SS_OPTIONS[algorithm]['max_skeletons'],
                                      bind=SS_OPTIONS[algorithm]['bind'],
                                      search_sample_ratio=SS_OPTIONS[algorithm]['search_sample_ratio'],
