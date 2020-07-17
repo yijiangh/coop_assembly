@@ -70,7 +70,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
     # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
     # TODO: partial ordering
-    pick_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
+    place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
         precompute_collisions=False, allow_failure=True)
 
     # TODO: allow choice of config
@@ -143,7 +143,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
         if revisit and visits < MAX_REVISIT:
             heapq.heappush(queue, (visits + 1, priority, printed, current_command))
 
-        command, = next(pick_gen_fn(element, printed=next_printed))
+        command, = next(place_gen_fn(element, printed=next_printed))
         if command is None:
             if verbose:
                 cprint('<'*5, 'red')
