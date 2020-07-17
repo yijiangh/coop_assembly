@@ -63,7 +63,8 @@ def get_picknplace_robot_data():
 
     base_link_name = robot.get_base_link_name(group=move_group)
     ik_joint_names = robot.get_configurable_joint_names(group=move_group)
-    disabled_self_collision_link_names = robot_semantics.get_disabled_collisions()
+    # disabled_self_collision_link_names = robot_semantics.get_disabled_collisions()
+    disabled_self_collision_link_names = []
     # * the bare arm flange attach link
     ee_link_name = robot.get_end_effector_link_name(group='manipulator')
     # * the TCP link
@@ -71,8 +72,10 @@ def get_picknplace_robot_data():
     # tool_link_name = None # set to None since end effector is not included in the robot URDF, but attached later
 
     workspace_model = RobotModel.from_urdf_file(workspace_urdf)
-    workspace_semantics = RobotSemantics.from_srdf_file(workspace_srdf, workspace_model)
-    workspace_robot_disabled_link_names = workspace_semantics.get_disabled_collisions()
+    # workspace_semantics = RobotSemantics.from_srdf_file(workspace_srdf, workspace_model)
+    # workspace_semantics = RobotSemantics.from_srdf_file(workspace_srdf, workspace_model)
+    # workspace_robot_disabled_link_names = workspace_semantics.get_disabled_collisions()
+    workspace_robot_disabled_link_names = []
     workspace_robot_disabled_link_names = []
 
     return (robot_urdf, base_link_name, tool_link_name, ee_link_name, ik_joint_names, disabled_self_collision_link_names), \
