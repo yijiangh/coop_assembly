@@ -18,7 +18,7 @@ import os, sys
 
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
-    set_joint_positions, get_relative_pose
+    set_joint_positions, get_relative_pose, WorldSaver
 
 from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
 from coop_assembly.data_structure.utils import MotionTrajectory
@@ -91,6 +91,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
                 priority = (num_remaining, random.random())
                 heapq.heappush(queue, (visits, priority, printed, element, command))
 
+    # * connectivity & stiffness constraint checking
     if check_connected(connectors, grounded_elements, all_elements):
     # and (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):
         final_command = Command([MotionTrajectory(robot, joints, [final_conf])])
@@ -143,32 +144,48 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
         if revisit and visits < MAX_REVISIT:
             heapq.heappush(queue, (visits + 1, priority, printed, current_command))
 
-        command, = next(place_gen_fn(element, printed=next_printed))
+        with WorldSaver():
+            command, = next(place_gen_fn(element, printed=next_printed))
         if command is None:
             if verbose:
                 cprint('<'*5, 'red')
-                cprint('Pick planning failure.', 'red')
+                cprint('Place planning failure.', 'red')
             extrusion_failures += 1
             continue
 
         # TODO: use pick conf
         # transit_start_conf = command.end_conf
-        transit_start_conf = initial_conf
+        transfer_start_conf = initial_conf
         if motions and not lazy:
-            # transit to the start of last pick conf
-            if not(bar_only and len(printed) == len(all_elements)):
-                # skip to final conf transit motion if bar_only
-                motion_traj = compute_motion(current_command.start_robot, obstacles, element_from_index, printed,
-                                             transit_start_conf, current_command.start_conf,
-                                             collisions=collision, attachments=current_command.trajectories[0].attachments,
-                                             max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
-                if motion_traj is None:
-                    transit_failures += 1
-                    if verbose:
-                        cprint('%'*5, 'red')
-                        cprint('Transit planning failure.', 'yellow')
-                    continue
-                command.trajectories.append(motion_traj)
+            # if not(bar_only and len(printed) == len(all_elements)):
+            # if bar_only, skip to final conf transit motion
+            with WorldSaver():
+                transit_traj = compute_motion(command.end_robot, obstacles, element_from_index, printed,
+                                              command.end_conf, transfer_start_conf,
+                                              collisions=collision, attachments=[],
+                                              max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
+            if transit_traj is None:
+                transit_failures += 1
+                if verbose:
+                    cprint('%'*5, 'red')
+                    cprint('Transit planning failure.', 'yellow')
+                continue
+            transit_traj.tag = 'transit'
+            command.trajectories.append(transit_traj)
+
+            with WorldSaver():
+                transfer_traj = compute_motion(command.start_robot, obstacles, element_from_index, next_printed,
+                                               transfer_start_conf, command.start_conf,
+                                               collisions=collision, attachments=command.trajectories[0].attachments,
+                                               max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
+            if transfer_traj is None:
+                transit_failures += 1
+                if verbose:
+                    cprint('%'*5, 'red')
+                    cprint('Transfer planning failure.', 'yellow')
+                continue
+            transfer_traj.tag = 'transfer'
+            command.trajectories.insert(0, transfer_traj)
 
         if num_remaining < min_remaining:
             min_remaining = num_remaining
@@ -180,17 +197,17 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
             commands = retrace_commands(visited, next_printed, reverse=True)
             plan = flatten_commands(commands)
 
-            # * start config transit
+            # * return-to-start transit
             if motions and not lazy:
-                motion_traj = compute_motion(plan[0].robot, obstacles, element_from_index, frozenset(),
+                transit_traj = compute_motion(plan[0].robot, obstacles, element_from_index, frozenset(),
                                              initial_conf, plan[0].start_conf,
                                              collisions=collision, attachments=command.trajectories[0].attachments,
                                              max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
-                if motion_traj is None:
+                if transit_traj is None:
                     plan = None
                     transit_failures += 1
                 else:
-                    plan.insert(0, motion_traj)
+                    plan.insert(0, transit_traj)
             # TODO: lazy
             # if motions and lazy:
             #     plan = compute_motions(robot, obstacles, element_bodies, initial_conf, plan,

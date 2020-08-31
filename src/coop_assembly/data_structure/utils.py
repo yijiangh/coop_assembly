@@ -84,7 +84,7 @@ class MotionTrajectory(Trajectory):
                 attachment.assign()
             yield conf
     def __repr__(self):
-        return 'm({},{},E{},{})'.format(len(self.joints), len(self.path),self.element,self.tag)
+        return 'm(#J{},#pt{},E{},{})'.format(len(self.joints), len(self.path),self.element,self.tag)
     def to_data(self):
         data = {}
         data['element'] = self.element

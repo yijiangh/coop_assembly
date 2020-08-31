@@ -88,7 +88,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         index_from_body = get_index_from_bodies(element_from_index)
         element = index_from_body[attachments[0].child]
 
-    return MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit2place')
+    return MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit')
 
 ###################################
 
@@ -159,7 +159,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
             #     last_point = current_point
 
             if time_step is None:
-                wait_for_user() #'{}'.format(conf))
+                wait_for_user('step sim.') #'{}'.format(conf))
             else:
                 wait_for_duration(time_step)
 

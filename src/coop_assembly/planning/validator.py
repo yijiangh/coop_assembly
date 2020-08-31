@@ -5,10 +5,11 @@ from pybullet_planning import has_gui, wait_for_user, connect, reset_simulation,
     disconnect, wait_for_duration, BLACK, RED, GREEN, BLUE, remove_all_debug, apply_alpha, pairwise_collision, \
     set_color, refine_path, get_collision_fn, link_from_name, BASE_LINK, get_links, wait_if_gui, set_pose
 from coop_assembly.data_structure.utils import MotionTrajectory
-from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, command_collision
+from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, command_collision, MAX_DISTANCE
 from .robot_setup import get_disabled_collisions, EE_LINK_NAME
 from .utils import recover_sequence, Command
 from .visualization import label_elements, visualize_collision_digraph
+
 
 ##################################################
 
@@ -26,6 +27,8 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
     valid = True
     obstacles = list(fixed_obstacles)
     for i, trajectory in enumerate(trajectories):
+        cprint(trajectory, 'cyan')
+
         robot = trajectory.robot
         joints = trajectory.joints
         attachments = trajectory.attachments
@@ -34,13 +37,17 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
             set_color(attach.child, GREEN)
             ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
             extra_disabled_collisions.add(((robot, ee_link), (attach.child, BASE_LINK)))
+        # if detach, ignore end effector's collision with the element
+        if 'retreat' in trajectory.tag:
+            extra_disabled_collisions.add(((robot, ee_link), (element_from_index[trajectory.element].body, BASE_LINK)))
+
         disabled_collisions = {} if bar_only else get_disabled_collisions(trajectory.robot)
         collision_fn = get_collision_fn(robot, joints, obstacles=obstacles, attachments=attachments,
                                         self_collisions=ENABLE_SELF_COLLISIONS,
                                         disabled_collisions=disabled_collisions,
                                         extra_disabled_collisions=extra_disabled_collisions,
                                         custom_limits={}, #get_custom_limits(robot),
-                                        max_distance=0)
+                                        max_distance=MAX_DISTANCE)
 
         # if isinstance(trajectory, MotionTrajectory) and \
         #     (trajectory.tag == 'transit2place'):
@@ -67,7 +74,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
                 wait_if_gui()
 
         if isinstance(trajectory, MotionTrajectory) \
-            and ((not bar_only and trajectory.tag == 'place_retreat') or (bar_only and trajectory.tag == 'place_approach')):
+            and 'retreat' in trajectory.tag:
             # set into goal pose
             body = element_from_index[trajectory.element].body
             set_pose(body, element_from_index[trajectory.element].goal_pose.value)
@@ -77,6 +84,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
                 set_color(body, apply_alpha(BLUE))
             obstacles.append(body)
         # wait_if_gui()
+        cprint('>'*10, 'cyan')
     return valid
 
 ##############################################
