@@ -52,21 +52,6 @@ def se3_conf_from_pose(p):
 
 ###########################################
 
-def get_goal_pose_gen_fn(element_from_index):
-    def gen_fn(index):
-        """return a world_from_goal_pose, the central point is invariant,
-        just rotate around the bar's local z axis (for bars, the longitude axis)
-        """
-        body_pose = element_from_index[index].goal_pose.value
-        # by default, the longitude axis is z
-        # https://pybullet-planning.readthedocs.io/en/latest/reference/generated/pybullet_planning.interfaces.env_manager.create_cylinder.html#pybullet_planning.interfaces.env_manager.create_cylinder
-        while True:
-            theta = random.uniform(-np.pi, +np.pi)
-            rotation = Pose(euler=Euler(yaw=theta))
-            yield WorldPose(index, multiply(body_pose, rotation)),
-    return gen_fn
-
-
 def get_bar_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_grasp=False, safety_margin_length=0.0):
     # converted from https://pybullet-planning.readthedocs.io/en/latest/reference/generated/pybullet_planning.primitives.grasp_gen.get_side_cylinder_grasps.html
     # to get rid of the rotation around the local z axis
@@ -344,7 +329,7 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
         disabled_collisions = {}
         # ee_body_link = get_links(end_effector)[-1]
 
-    goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
+    # goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
     pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=collisions, teleops=teleops) # max_attempts=max_attempts,
 
@@ -369,14 +354,15 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
                                         max_distance=MAX_DISTANCE)
 
         # keep track of sampled traj, prune newly sampled one with more collided element
+        element_goal_pose = element_from_index[element].goal_pose
         trajectories = []
-        for attempt, (world_pose_t, grasp_t) in enumerate(zip(islice(goal_pose_gen_fn(element), max_grasp), islice(grasp_gen(element), max_grasp))):
-            world_pose = world_pose_t[0]
+        for attempt, grasp_t in enumerate(islice(grasp_gen(element), max_grasp)):
+            # world_pose = world_pose_t[0]
             grasp = grasp_t[0]
             # * ik iterations, usually 1 is enough
             for _ in range(max_attempts):
                 # when used in pddlstream, the pregrasp sampler assumes no elements assembled at all time
-                pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed))
+                pregrasp_poses, = next(pregrasp_gen_fn(element, element_goal_pose, printed))
                 if not pregrasp_poses:
                     if verbose : print('pregrasp failure.')
                     continue
