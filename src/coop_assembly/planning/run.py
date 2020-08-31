@@ -28,7 +28,7 @@ from coop_assembly.planning.visualization import color_structure, draw_ordered, 
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 
-from coop_assembly.planning.stream import get_goal_pose_gen_fn, get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
+from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose
 from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES

@@ -239,16 +239,14 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
     tool_link = link_from_name(robot, TOOL_LINK_NAME)
     robot_base_link = link_from_name(robot, BASE_LINK_NAME)
     ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
+
     if IK_MODULE:
         assert IK_MODULE.get_dof() == len(ik_joints)
         # free_dof safe_guard?
+        attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
     else:
         # joint conf sample fn, used when ikfast is not used
         sample_fn = get_sample_fn(robot, ik_joints)
-
-    if IK_MODULE:
-        attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
-    else:
         set_joint_positions(robot, ik_joints, sample_fn())  # Random seed
         attach_conf = inverse_kinematics(robot, tool_link, attach_pose)
 
@@ -273,16 +271,13 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         if verbose : print('approach collision failure.')
         return None
 
-    # set_joint_positions(robot, ik_joints, approach_conf)
-    # path = plan_direct_joint_motion(robot, ik_joints, attach_conf,
-    #                                 obstacles=obstacles,
-    #                                 self_collisions=ENABLE_SELF_COLLISION,
-    #                                 disabled_collisions=disabled_collisions,
-    #                                 attachments=[])
-    # path = plan_cartesian_motion(robot, robot_base_link, tool_link, pregrasp_poses)
-    # TODO if teleops
-    # TODO: ladder graph-based Cartesian planning
-    path = [approach_conf, attach_conf]
+    if teleops:
+        path = [approach_conf, attach_conf]
+    else:
+        set_joint_positions(robot, ik_joints, approach_conf)
+        path = plan_cartesian_motion(robot, ik_joints[0], tool_link, pre_attach_poses)
+        # TODO: ladder graph-based Cartesian planning
+
     if path is None:
         if verbose : print('direct approach motion failure.')
         return None
