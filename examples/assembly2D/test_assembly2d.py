@@ -7,7 +7,7 @@ from pybullet_planning import connect, has_gui, LockRenderer, remove_handles, ad
 
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
-from coop_assembly.planning.motion import display_trajectories
+from coop_assembly.planning.visualization import display_trajectories
 
 from .stream import get_delta_pose_generator, get_2d_element_grasp_gen_fn, get_2d_pregrasp_gen_fn, compute_2d_place_path, get_2d_place_gen_fn, \
     xz_values_from_pose

@@ -34,10 +34,9 @@ from compas.datastructures import Network
 from coop_assembly.data_structure import WorldPose, MotionTrajectory
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
-from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.parsing import get_assembly_path
-from coop_assembly.planning.visualization import set_camera, label_points
+from coop_assembly.planning.visualization import set_camera, label_points, display_trajectories
 from coop_assembly.geometry_generation.utils import get_element_neighbors
 
 from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui, set_pose, create_plane, \
@@ -570,7 +569,6 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             # elements = recover_sequence(trajectories, element_from_index)
             # endpts_from_element = bar_struct.get_axis_pts_from_element()
             # draw_ordered(elements, endpts_from_element)
-            wait_if_gui('Ready to simulate trajectory.')
             for e in element_from_index:
                set_color(element_from_index[e].body, (1, 0, 0, 0))
             if step_sim:

@@ -32,8 +32,8 @@ from pybullet_planning import has_gui, get_movable_joints, get_configuration, se
     set_joint_positions, get_links, set_pose, INF
 from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn, command_collision
 from .utils import flatten_commands, recover_sequence, Command, get_index_from_bodies
-from .visualization import draw_ordered
-from .motion import display_trajectories, compute_motion, EE_INITIAL_CONF
+from .visualization import draw_ordered, display_trajectories
+from .motion import compute_motion, EE_INITIAL_CONF
 from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions, INITIAL_CONF
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions import METER_SCALE

@@ -212,8 +212,15 @@ def command_collision(command, bodies):
     # than the full placement motion of the robot
     for trajectory in command.trajectories:
         robot = trajectory.robot
-        for conf in randomize(trajectory.path):
+        # for conf in randomize(trajectory.path):
+        for i, conf in enumerate(trajectory.path):
+            # TODO ignore if penetration depth is smaller than 5e-4
+            if trajectory.tag == 'place_approach' and i==len(trajectory.path)-1:
+                # ! if issue if attachment contains gripper parts
+                # avoid failure between element in goal pose and other built elements
+                continue
             # TODO: bisect or refine
+            # TODO from joint name
             joints = get_movable_joints(robot)
             set_joint_positions(robot, joints, conf)
             for attach in trajectory.attachments:

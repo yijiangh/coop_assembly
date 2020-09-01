@@ -61,17 +61,18 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
             # for attach in trajectory.attachments:
             #     set_color(attach.child, GREEN)
             if collision_fn(conf, diagnosis=has_gui()):
-                # if trajectory.tag == 'place_approach' and \
-                #     not bar_only and len(path) >= 2 and t > len(path)-2:
-                #         pass
-                # else:
-                cprint('Collision on trajectory {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag), 'red')
-                valid = False
-                if not allow_failure:
-                    return False
-            if watch:
-                print('Traj {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag))
-                wait_if_gui()
+                if trajectory.tag == 'place_approach' and \
+                    len(path) >= 2 and t == len(path)-1:
+                # TODO ignore if penetration depth is smaller than 5e-4
+                        pass
+                else:
+                    cprint('Collision on trajectory {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag), 'red')
+                    valid = False
+                    if not allow_failure:
+                        return False
+                    # else:
+                    #     print('Traj {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag))
+                    #     wait_if_gui('collision!')
 
         if isinstance(trajectory, MotionTrajectory) \
             and 'retreat' in trajectory.tag:

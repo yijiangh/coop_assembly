@@ -24,13 +24,13 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, get_gripper_mesh_path
 from coop_assembly.planning.utils import load_world
-from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera
+from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera,\
+    display_trajectories
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose
-from coop_assembly.planning.motion import display_trajectories
 from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
@@ -80,7 +80,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
             debug=debug, teleops=args.teleops)
     elif args.algorithm == 'regression':
-        with LockRenderer(True):
+        with LockRenderer(not args.debug):
             plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles, element_from_index,
                 grounded_elements, connectors, collision=args.collisions,
                 motions=True, stiffness=True, revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
@@ -124,14 +124,13 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             elements = recover_sequence(trajectories, element_from_index)
             endpts_from_element = bar_struct.get_axis_pts_from_element()
             draw_ordered(elements, endpts_from_element)
-            wait_if_gui('Ready to simulate trajectory.')
             for e in element_from_index:
                set_color(element_from_index[e].body, (1, 0, 0, 0))
             if step_sim:
                 time_step = None
             else:
                 time_step = 0.01 if args.bar_only else 0.05
-            display_trajectories(trajectories, time_step=time_step)
+            display_trajectories(trajectories, time_step=time_step, element_from_index=element_from_index)
         # verify
         if args.collisions:
             valid = validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui() or debug, \

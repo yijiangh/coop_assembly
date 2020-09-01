@@ -1,8 +1,11 @@
 import colorsys
 import numpy as np
 from pybullet_planning import RED, BLUE, GREEN, BLACK, add_line, set_color, apply_alpha, get_visual_data, \
-    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name
+    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body
+
 from coop_assembly.help_functions.shared_const import METER_SCALE
+
+from coop_assembly.data_structure.utils import MotionTrajectory
 
 BAR_LINE_WIDTH = 1.0
 CONNECTOR_LINE_WIDTH = 1.0
@@ -191,3 +194,97 @@ def visualize_collision_digraph(collision_facts):
 
     plt.title('Collision constraint graph')
     plt.show()
+
+###################################
+
+def display_trajectories(trajectories, time_step=0.02, video=False, animate=True, element_from_index=None):
+    """[summary]
+
+    Parameters
+    ----------
+    trajectories : [type]
+        [description]
+    time_step : float, optional
+        [description], by default 0.02
+    video : bool, optional
+        [description], by default False
+    animate : bool, optional
+        if set to False, display sequence colormap only, skip trajectory animation, by default True
+    """
+    # node_points, ground_nodes,
+    if trajectories is None:
+        return
+    # set_extrusion_camera(node_points)
+    # planned_elements = recover_sequence(trajectories)
+    # colors = sample_colors(len(planned_elements))
+    # if not animate:
+    #     draw_ordered(planned_elements, node_points)
+    #     wait_for_user()
+    #     disconnect()
+    #     return
+
+    video_saver = None
+    if video:
+        # handles = draw_model(planned_elements, node_points, ground_nodes) # Allows user to adjust the camera
+        wait_if_gui()
+        # remove_all_debug()
+        # wait_for_duration(0.1)
+        # video_saver = VideoSaver('video.mp4') # has_gui()
+        # time_step = 0.001
+    else:
+        wait_if_gui('Ready to simulate trajectories.')
+
+    remove_all_debug()
+    #element_bodies = dict(zip(planned_elements, create_elements(node_points, planned_elements)))
+    #for body in element_bodies.values():
+    #    set_color(body, (1, 0, 0, 0))
+    # connected_nodes = set(ground_nodes)
+    # TODO: resolution depends on bar distance to convex hull of obstacles
+    # TODO: fine resolution still results in collision?
+    printed_elements = []
+    print('Trajectories:', len(trajectories))
+    for i, trajectory in enumerate(trajectories):
+        #wait_for_user()
+        #set_color(element_bodies[element], (1, 0, 0, 1))
+        last_point = None
+        handles = []
+
+        bounding = None
+        if printed_elements and 'tran' in trajectory.tag and element_from_index is not None:
+            node_points = []
+            for e in printed_elements:
+                node_points.extend(element_from_index[e].axis_endpoints)
+            from coop_assembly.planning.motion import create_bounding_mesh
+            bounding = create_bounding_mesh(bodies=None, node_points=node_points,
+                                            buffer=0.1)
+
+        if isinstance(trajectory, MotionTrajectory):
+            for attach in trajectory.attachments:
+                set_color(attach.child, GREEN)
+
+        for conf in trajectory.iterate():
+            # TODO: the robot body could be different
+            if time_step is None:
+                wait_for_user('step sim.') #'{}'.format(conf))
+            else:
+                wait_for_duration(time_step)
+
+        if isinstance(trajectory, MotionTrajectory):
+            for attach in trajectory.attachments:
+                set_color(attach.child, BLUE)
+            is_connected = True
+            print('{}) {:9} | Connected: {} | Ground: {} | Length: {}'.format(
+                i, str(trajectory), is_connected, True, len(trajectory.path)))
+                # is_ground(trajectory.element, ground_nodes)
+        #     if not is_connected:
+        #         wait_for_user()
+        #     connected_nodes.add(trajectory.n2)
+
+        if bounding is not None:
+            remove_body(bounding)
+        if 'retreat' in trajectory.tag:
+            printed_elements.append(trajectory.element)
+
+    # if video_saver is not None:
+    #     video_saver.restore()
+    wait_if_gui('Simulation finished.')
