@@ -38,4 +38,3 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
         endpts_from_element = b_struct.get_axis_pts_from_element(scale=1)
         set_camera([p[0] for e, p in endpts_from_element.items()])
     return b_struct, o_struct
-

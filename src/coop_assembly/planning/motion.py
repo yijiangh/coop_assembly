@@ -153,7 +153,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
     collision_fn = get_collision_fn(robot, joints, obstacles=obstacles, attachments=attachments, self_collisions=ENABLE_SELF_COLLISIONS,
                                     disabled_collisions=disabled_collisions, extra_disabled_collisions=extra_disabled_collisions,
                                     custom_limits=custom_limits, max_distance=MAX_DISTANCE)
-    fine_extend_fn = get_extend_fn(robot, joints, resolutions=0.01*resolutions) #, norm=INF)
+    fine_extend_fn = get_extend_fn(robot, joints, resolutions=0.1*resolutions) #, norm=INF)
 
     def test_bounding(q):
         set_joint_positions(robot, joints, q)

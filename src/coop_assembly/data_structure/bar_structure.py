@@ -22,7 +22,8 @@ from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_
     compute_contact_line_between_bars, create_bar_body, create_bar_flying_body
 from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
-from pybullet_planning import create_plane, set_point, Point, get_pose, apply_alpha, RED, set_color, has_body, dump_world, get_bodies
+from pybullet_planning import create_plane, set_point, Point, get_pose, apply_alpha, RED, set_color, has_body, dump_world, get_bodies, \
+    is_connected, remove_body
 
 from .utils import Element, WorldPose
 
@@ -100,22 +101,22 @@ class BarStructure(Network):
     def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False):
         v_key = self.add_node()
         bar_body = create_bar_body(_axis_endpoints, radius)
-        goal_pose = get_pose(bar_body)
+        # goal_pose = get_pose(bar_body)
         self.node[v_key].update({"bar_type":_bar_type,
-                                   "axis_endpoints":_axis_endpoints,
-                                   "index_sol":None,    # tangent plane config (one out of four config)
-                                   "mean_point":None,   # mean point used for local axis construction (SP uses this for gripping plane computation)
-                                   "pb_body":bar_body,  # pybullet body
-                                   "goal_pose":goal_pose,
-                                   'radius':radius,
-                                   "grounded":grounded,
-                                   "crosec_type":_crosec_type,
-                                   "crosec_values":_crosec_values,
-                                   "zdir":_zdir,
-                                   "bar_parameters":_bar_parameters,
-                                   "exchange_values":{},
-                                   "layer":None, # tet group ids to indicate assembly partial ordering
-                                   })
+                                 "axis_endpoints":_axis_endpoints,
+                                 "index_sol":None,    # tangent plane config (one out of four config)
+                                 "mean_point":None,   # mean point used for local axis construction (SP uses this for gripping plane computation)
+                                 "pb_body":bar_body,  # pybullet body
+                                #  "goal_pose":goal_pose,
+                                 'radius':radius,
+                                 "grounded":grounded,
+                                 "crosec_type":_crosec_type,
+                                 "crosec_values":_crosec_values,
+                                 "zdir":_zdir,
+                                 "bar_parameters":_bar_parameters,
+                                 "exchange_values":{},
+                                 "layer":None, # tet group ids to indicate assembly partial ordering
+                                  })
         return v_key
         # TODO: bisect search for local disassembly motion
 
@@ -165,12 +166,19 @@ class BarStructure(Network):
                 self.edge[v_key1][v_key2]["grounded"] = grounded
         else:
             # create an new edge
+            has_key_v1 = v_key1 in self.node
+            has_key_v2 = v_key2 in self.node
             self.add_edge(v_key1, v_key2, {"connections_count":1,
                                            "endpoints":{0:_endpoints},
                                            "connection_type":{0:_connection_type},
                                            "connection_parameters":{0:_connection_parameters},
                                            "exchange_values":{0:{}},
                                            "grounded":grounded or False})
+            # avoid auto-created nodes
+            if not has_key_v1:
+                del self.node[v_key1]
+            if not has_key_v2:
+                del self.node[v_key2]
         return (v_key1, v_key2)
 
     def update_bar_lengths(self):
@@ -237,7 +245,7 @@ class BarStructure(Network):
         end_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
         return (scale_vector(end_pts[0], scale), scale_vector(end_pts[1], scale))
 
-    def get_bar_pb_body(self, bar_v_key, color=apply_alpha(RED, 0)):
+    def get_bar_pb_body(self, bar_v_key, color=apply_alpha(RED, 0), regenerate=False):
         """get pybullet body of a particular bar
 
         Parameters
@@ -250,7 +258,10 @@ class BarStructure(Network):
         int
             [description]
         """
-        if 'pb_body' not in self.node[bar_v_key] or \
+        if bar_v_key not in self.node:
+            # cprint('bar key not in the node {}'.format(bar_v_key))
+            return None
+        if regenerate or 'pb_body' not in self.node[bar_v_key] or \
             self.node[bar_v_key]['pb_body'] is None or \
             self.node[bar_v_key]['pb_body'] not in get_bodies():
             # if cannot find the body in the environment, useful when the env is recreated
@@ -271,7 +282,10 @@ class BarStructure(Network):
         dict
             bar vkey -> pb body
         """
-        return {v : self.get_bar_pb_body(v, color) for v in self.nodes()}
+        return {v : self.get_bar_pb_body(v, color) for v in self.nodes() if len(self.node[v])>0}
+
+    def set_body_color(self, color):
+        self.get_element_bodies(color)
 
     def get_element_from_index(self):
         element_from_index = {}
@@ -279,7 +293,8 @@ class BarStructure(Network):
             axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=METER_SCALE)]
             radius=self.node[index]['radius']*METER_SCALE
             body = self.get_bar_pb_body(index)
-            goal_pose = self.node[index]['goal_pose']
+            # goal_pose = self.node[index]['goal_pose']
+            goal_pose = get_pose(body)
             layer = self.node[index]['layer']
             # all data in Element is in meter
             element_from_index[index] = Element(index=index, body=body,
@@ -313,8 +328,45 @@ class BarStructure(Network):
         # return frozenset(filter(lambda e: is_ground(e, ground_nodes), elements))
         return frozenset([bv for bv, attr in self.nodes(True) if attr['grounded']])
 
+    def get_grounded_connector_keys(self):
+        # return frozenset([bv for bv, attr in self.nodes(True) if attr['grounded']])
+        pass
+
     ##################################
     # mutual collision check
+
+    ##################################
+    # tform
+    @property
+    def base_centroid(self, scale=1.0):
+        node_points = []
+        for _, pts in self.get_axis_pts_from_element(scale=scale).items():
+            node_points.extend(pts)
+        centroid = np.average(np.array(node_points), axis=0)
+        min_z = np.min(node_points, axis=0)[2]  # - 1e-2
+        return np.append(centroid[:2], [min_z])
+
+    def transform(self, new_base_centroid):
+        old_base_centroid = self.base_centroid
+        def recenter_point(point):
+            return (np.array(point) - old_base_centroid) + new_base_centroid
+
+        # update vertex end pts
+        for bar_k, bar_vals in self.node.items():
+            if is_connected() and 'pb_body' in self.node[bar_k] and \
+                self.node[bar_k]['pb_body'] in get_bodies():
+                remove_body(self.node[bar_k]['pb_body'])
+            self.node[bar_k]["axis_endpoints"] = (list(recenter_point(bar_vals["axis_endpoints"][0])),
+                                                  list(recenter_point(bar_vals["axis_endpoints"][1]))
+                                                  )
+            self.node[bar_k]['pb_body'] = self.get_bar_pb_body(bar_k, regenerate=True)
+
+        # update connector end pts
+        for b1, b2 in self.edges():
+            contact_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
+            self.edge[b1][b2]["endpoints"].update({0:(list(recenter_point(contact_pts[0])), list(recenter_point(contact_pts[1])))})
+
+    # TODO: rotation, scaling: https://github.com/caelan/pb-construction/blob/master/extrusion/run.py#L75
 
     ##################################
     # structural model extraction

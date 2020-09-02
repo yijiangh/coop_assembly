@@ -16,7 +16,7 @@ from compas.geometry import is_coplanar, subtract_vectors, angle_vectors
 from compas.datastructures import Network
 
 from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED, BLUE, GREEN, BLACK, apply_alpha, \
-    add_line, draw_circle, remove_handles, add_segments, BROWN, YELLOW, reset_simulation, disconnect
+    add_line, draw_circle, remove_handles, add_segments, BROWN, YELLOW, reset_simulation, disconnect, draw_pose, unit_pose
 
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle, dropped_perpendicular_points
@@ -34,6 +34,8 @@ from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.planning.visualization import draw_element, GROUND_COLOR, BACKGROUND_COLOR, SHADOWS, set_camera, \
     label_points
 from coop_assembly.planning.utils import load_world
+
+GROUND_INDEX = -1
 
 #######################################
 
@@ -65,7 +67,7 @@ def add_successors(queue, all_elements, node_points, ground_nodes, heuristic_fn,
     #     heapq.heappush(queue, (priority, built_nodes, built_triangles, node_id, tri_node_ids))
 
 def generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None, partial_orders=[],
-        check_collision=False, viewer=False, verbose=True):
+        check_collision=False, viewer=False, verbose=True, debug=False):
     """ node points assumed to be in millimiter unit
     """
     start_time = time.time()
@@ -87,6 +89,7 @@ def generate_truss_progression(node_points, edges, ground_nodes, radius, heurist
     else:
         cprint('full structure not grounded!', 'yellow')
 
+    # TODO can also do searching and geometric checking at the same time
     plan = None
     min_remaining = len(all_elements)
     num_evaluated = 0
@@ -131,11 +134,11 @@ def generate_truss_progression(node_points, edges, ground_nodes, radius, heurist
     # TODO serialize plan and reparse
 
     # * convert axis lines into a BarStructure
-    return generate_truss_from_points(node_points, ground_nodes, plan, radius)
+    return generate_truss_from_points(node_points, ground_nodes, plan, radius, debug=debug)
 
 ##########################################
 # forming bar structure
-def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
+def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debug=False):
     printed = set()
     # all_elements = set(edge_seq)
     node_neighbors = get_node_neighbors(edge_seq)
@@ -273,7 +276,8 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
             # handles.extend([h] + ch1 + ch2)
             # handles.extend([h] + ch1 + ch2)
 
-        wait_if_gui('A new bar is added.')
+        if debug:
+            wait_if_gui('A new bar is added.')
         remove_handles(handles)
 
     # * compile bars into a BarStructure
@@ -295,8 +299,20 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius):
             contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e], index_from_element[ne])
             b_struct.edge[index_from_element[e]][index_from_element[ne]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
 
+    # * add grounded connector
+    grounded_bars = list(b_struct.get_grounded_bar_keys())
+    for ground_k in grounded_bars:
+        b_struct.connect_bars(ground_k, GROUND_INDEX)
+        # find the lower pt of the two
+        axis_endpts = b_struct.get_bar_axis_end_pts(ground_k)
+        if axis_endpts[0][2] > axis_endpts[1][2]:
+            axis_endpts = axis_endpts[::-1]
+        contact_pts = [axis_endpts[0], axis_endpts[0]-np.array([0,0,radius])]
+        b_struct.edge[ground_k][GROUND_INDEX]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
+
     element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 0.5))
-    wait_if_gui('Final bar assembly.')
+    if debug:
+        wait_if_gui('Final bar assembly.')
 
     return b_struct
 
@@ -571,7 +587,7 @@ def retrace_sequence(visited, current_state, horizon=INF):
     return previous_tet_ids + [command]
 
 #############################################################
-def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
+def gen_truss(problem, viewer=False, radius=3.17, write=False, debug=False, **kwargs):
     """[summary]
 
     Parameters
@@ -616,6 +632,8 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
     # fixed_obstacles, robot = load_world()
     set_camera(node_points)
 
+    draw_pose(unit_pose(), length=0.01)
+
     # draw the ideal truss that we want to achieve
     label_points([pt*1e-3 for pt in node_points])
     for e in edges:
@@ -625,10 +643,11 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, **kwargs):
     for v in ground_nodes:
         draw_circle(node_points[v]*1e-3, 0.01)
 
-    wait_if_gui('Ideal truss...')
+    if debug:
+        wait_if_gui('Ideal truss...')
 
     b_struct = generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None,
-        check_collision=False, viewer=False, verbose=True)
+        check_collision=False, viewer=False, verbose=True, debug=debug)
 
     if write:
         export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)

@@ -1,5 +1,6 @@
 import colorsys
 import numpy as np
+from termcolor import cprint
 from pybullet_planning import RED, BLUE, GREEN, BLACK, add_line, set_color, apply_alpha, get_visual_data, \
     set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body
 
@@ -87,6 +88,9 @@ def color_structure(element_bodies, printed, next_element=None, built_alpha=1.0,
     for element in remaining:
         element_colors[element] = apply_alpha(BLACK, alpha=remaining_alpha)
     for element, color in element_colors.items():
+        if element not in element_bodies:
+            cprint('element {} not in bodies, skipped'.format(element), 'yellow')
+            continue
         body = element_bodies[element]
         try:
             # TODO: might return nothing is pytest without -s ?

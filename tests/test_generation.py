@@ -71,7 +71,7 @@ def test_lines_tangent_to_cylinder():
     assert norm(delta_down - delta_up2) < 1e-12
 
     for _ in range(10):
-        theta = np.random.random()*2*np.pi
+        theta = np.random.rand()*2*np.pi
         # random_y = np.random.random()*1e5
         random_y = 0
         r = dist
@@ -138,15 +138,30 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
     if 'skeleton' in export_file_name:
         export_file_name = export_file_name.split('_skeleton')[0] + '.json'
 
-    bar_struct = gen_truss(truss_problem, viewer=viewer, radius=radius, write=write, save_dir=save_dir, file_name=export_file_name)
+    bar_struct = gen_truss(truss_problem, viewer=viewer, radius=radius, write=write, save_dir=save_dir, file_name=export_file_name, debug=False)
     reset_simulation()
     disconnect()
 
-    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
+    connect(use_gui=viewer, shadows=True, color=BACKGROUND_COLOR)
+    draw_pose(unit_pose())
+
+    # built plate
+    new_base = np.array([650, 0, 23])
+    # floor = create_plane(color=BLUE)
+    # set_point(floor, Point(z=new_base[2]))
+
+    bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
+    # focus camera
     endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1)
     set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
+    wait_if_gui('before tf')
 
+    bar_struct.transform(new_base)
     element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
+    print('new base_centroid:', bar_struct.base_centroid)
+    wait_if_gui('after tf')
+
+    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1)
     handles = []
     handles.extend(label_elements(element_bodies))
     wait_if_gui('reconstructed truss axes labeled.')
@@ -158,6 +173,7 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
 
     # TODO: sometimes there are excessive connectors
     # * connectors from bar
+    print('Visualize connectors.')
     connector_from_elements = get_connector_from_elements(connectors, elements)
     for bar in bar_struct.vertices():
         handles = []
@@ -169,6 +185,7 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
         remove_handles(handles)
 
     # * neighbor elements from elements
+    print('Visualize neighnor elements.')
     element_neighbors = get_element_neighbors(connectors, elements)
     for element, connected_bars in element_neighbors.items():
         color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
@@ -180,6 +197,9 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
     for bar1, bar2 in connectors:
         b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
         b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
+        if b1_body is None or b2_body is None:
+            continue
+
         assert len(get_bodies()) == len(element_bodies)
         # dump_world()
 
