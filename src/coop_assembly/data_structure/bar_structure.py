@@ -98,9 +98,9 @@ class BarStructure(Network):
 
     #####################################
 
-    def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False):
+    def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False, pb_scale=METER_SCALE):
         v_key = self.add_node()
-        bar_body = create_bar_body(_axis_endpoints, radius)
+        bar_body = create_bar_body(_axis_endpoints, radius, scale=pb_scale)
         # goal_pose = get_pose(bar_body)
         self.node[v_key].update({"bar_type":_bar_type,
                                  "axis_endpoints":_axis_endpoints,
@@ -245,7 +245,7 @@ class BarStructure(Network):
         end_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
         return (scale_vector(end_pts[0], scale), scale_vector(end_pts[1], scale))
 
-    def get_bar_pb_body(self, bar_v_key, color=apply_alpha(RED, 0), regenerate=False):
+    def get_bar_pb_body(self, bar_v_key, color=apply_alpha(RED, 0), regenerate=False, scale=METER_SCALE):
         """get pybullet body of a particular bar
 
         Parameters
@@ -267,14 +267,14 @@ class BarStructure(Network):
             # if cannot find the body in the environment, useful when the env is recreated
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
             radius = self.node[bar_v_key]['radius']
-            self.node[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius)
+            self.node[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius, scale=scale)
         set_color(self.node[bar_v_key]['pb_body'], color)
         return self.node[bar_v_key]['pb_body']
 
     ##################################
     # export dict info for planning
 
-    def get_element_bodies(self, color=apply_alpha(RED, 0)):
+    def get_element_bodies(self, color=apply_alpha(RED, 0), scale=METER_SCALE):
         """[summary]
 
         Returns
@@ -282,17 +282,17 @@ class BarStructure(Network):
         dict
             bar vkey -> pb body
         """
-        return {v : self.get_bar_pb_body(v, color) for v in self.nodes() if len(self.node[v])>0}
+        return {v : self.get_bar_pb_body(v, color, scale=scale) for v in self.nodes() if len(self.node[v])>0}
 
     def set_body_color(self, color):
         self.get_element_bodies(color)
 
-    def get_element_from_index(self):
+    def get_element_from_index(self,scale=1.0):
         element_from_index = {}
         for index in self.nodes():
-            axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=METER_SCALE)]
-            radius=self.node[index]['radius']*METER_SCALE
-            body = self.get_bar_pb_body(index)
+            axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=scale)]
+            radius=self.node[index]['radius']*scale
+            body = self.get_bar_pb_body(index, scale=scale)
             # goal_pose = self.node[index]['goal_pose']
             goal_pose = get_pose(body)
             layer = self.node[index]['layer']
@@ -307,7 +307,7 @@ class BarStructure(Network):
                                                 layer=layer)
         return element_from_index
 
-    def get_axis_pts_from_element(self, scale=METER_SCALE):
+    def get_axis_pts_from_element(self, scale=1.0):
         """[summary]
 
         Returns
@@ -317,7 +317,7 @@ class BarStructure(Network):
         """
         return {v : self.get_bar_axis_end_pts(v, scale=scale) for v in self.nodes()}
 
-    def get_connectors(self, scale=METER_SCALE):
+    def get_connectors(self, scale=1.0):
         connectors = {}
         for b1, b2 in self.edges():
             connectors[(b1, b2)] = self.get_connector_end_pts(b1, b2, scale)
@@ -337,7 +337,6 @@ class BarStructure(Network):
 
     ##################################
     # tform
-    @property
     def base_centroid(self, scale=1.0):
         node_points = []
         for _, pts in self.get_axis_pts_from_element(scale=scale).items():
@@ -346,10 +345,10 @@ class BarStructure(Network):
         min_z = np.min(node_points, axis=0)[2]  # - 1e-2
         return np.append(centroid[:2], [min_z])
 
-    def transform(self, new_base_centroid):
-        old_base_centroid = self.base_centroid
+    def transform(self, new_base_centroid, scale=1.0):
+        old_base_centroid = self.base_centroid(scale)
         def recenter_point(point):
-            return (np.array(point) - old_base_centroid) + new_base_centroid
+            return 1/scale * (scale*np.array(point) - old_base_centroid + new_base_centroid)
 
         # update vertex end pts
         for bar_k, bar_vals in self.node.items():
@@ -359,7 +358,7 @@ class BarStructure(Network):
             self.node[bar_k]["axis_endpoints"] = (list(recenter_point(bar_vals["axis_endpoints"][0])),
                                                   list(recenter_point(bar_vals["axis_endpoints"][1]))
                                                   )
-            self.node[bar_k]['pb_body'] = self.get_bar_pb_body(bar_k, regenerate=True)
+            self.node[bar_k]['pb_body'] = self.get_bar_pb_body(bar_k, regenerate=True, scale=scale)
 
         # update connector end pts
         for b1, b2 in self.edges():

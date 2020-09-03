@@ -1,5 +1,8 @@
 import os
-from pybullet_planning import connect, LockRenderer
+import json
+import datetime
+from termcolor import cprint
+from pybullet_planning import connect, LockRenderer, get_date
 from .visualization import set_camera
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
@@ -13,6 +16,8 @@ PICKNPLACE_FILENAMES = {
     # just an alias, I always mistype...
     '1_tets.json' : 'single_tet_point2triangle.json',
 }
+
+RESULTS_DIRECTORY = os.path.join('..', '..', '..', 'tests', 'results')
 
 def get_assembly_path(assembly_name, file_dir=PICKNPLACE_DIRECTORY):
     if assembly_name.endswith('.json'):
@@ -38,3 +43,13 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
         endpts_from_element = b_struct.get_axis_pts_from_element(scale=1)
         set_camera([p[0] for e, p in endpts_from_element.items()])
     return b_struct, o_struct
+
+def save_plan(problem, algorithm, trajectories):
+    here = os.path.dirname(__file__)
+    plan_path = '{}_{}_solution_{}.json'.format(problem, algorithm, get_date())
+    save_path = os.path.join(here, RESULTS_DIRECTORY, plan_path)
+    with open(save_path, 'w') as f:
+       json.dump({'problem' : problem,
+                  'write_time' : str(datetime.datetime.now()),
+                  'plan' : [p.to_data() for p in trajectories]}, f)
+    cprint('Result saved to: {}'.format(save_path), 'green')

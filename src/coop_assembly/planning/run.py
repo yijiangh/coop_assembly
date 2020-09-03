@@ -13,7 +13,7 @@ from collections import defaultdict
 
 from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
-    dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
+    dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, RED, GREEN, refine_path, joints_from_names, \
     set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color, get_relative_pose, create_shape, get_mesh_geometry, \
     create_flying_body, SE3, YELLOW
 
@@ -31,13 +31,16 @@ from coop_assembly.planning.utils import get_element_neighbors, get_connector_fr
 
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose
-from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES
+from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES, save_plan
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
 from coop_assembly.planning.regression import regression
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
+
+BUILD_PLATE_CENTER = [0.65, 0, 0.023]
+BOTTOM_BUFFER = 0.001
 
 ########################################
 # two_tets
@@ -47,8 +50,11 @@ ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
 def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
     bar_struct, o_struct = load_structure(args.problem, viewer, apply_alpha(RED, 0))
-    fixed_obstacles, robot = load_world()
+    # transform the bar struct to the center
+    bar_radius = bar_struct.node[0]['radius']*METER_SCALE
+    bar_struct.transform(BUILD_PLATE_CENTER + np.array([0,0,bar_radius+BOTTOM_BUFFER]), scale=METER_SCALE)
 
+    fixed_obstacles, robot = load_world(built_plate_z=BUILD_PLATE_CENTER[2])
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
     # end effector robot
     ee_mesh_path = get_gripper_mesh_path()
@@ -60,10 +66,14 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     robots = [end_effector] if args.bar_only else [robot]
 
     saver = WorldSaver()
-    element_from_index = bar_struct.get_element_from_index()
+    element_from_index = bar_struct.get_element_from_index(scale=METER_SCALE)
     grounded_elements = bar_struct.get_grounded_bar_keys()
     contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
     connectors = list(contact_from_connectors.keys())
+
+    bar_struct.set_body_color(RED)
+    print('base: ', bar_struct.base_centroid(METER_SCALE))
+    wait_if_gui('Please review structure\'s workspace position.')
 
     elements_from_layer = defaultdict(set)
     if args.partial_ordering:
@@ -111,13 +121,8 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
             trajectories = plan
 
         if write:
-            here = os.path.dirname(__file__)
-            plan_path = '{}_{}_solution_{}.json'.format(args.file_spec, args.algorithm, get_date())
-            save_path = os.path.join(here, 'results', plan_path)
-            with open(save_path, 'w') as f:
-               json.dump({'problem' : args.file_spec,
-                          'plan' : [p.to_data() for p in trajectories]}, f)
-            cprint('Result saved to: {}'.format(save_path), 'green')
+            save_plan(args.problem, args.algorithm, trajectories)
+
         if watch and has_gui():
             saver.restore()
             #label_nodes(node_points)

@@ -89,12 +89,12 @@ def Frame_to_plane_data(frame):
 # pybullet body creation functions used in planning
 
 SHRINK_RADIUS = 0.0001 # meter
-def create_bar_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0)):
+def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=apply_alpha(RED, 0)):
     """inputs are in millimeter
     """
     p1, p2 = axis_end_pts
-    p1 = np.array(p1) * METER_SCALE
-    p2 = np.array(p2) * METER_SCALE
+    p1 = np.array(p1) * scale
+    p2 = np.array(p2) * scale
     # height = max(np.linalg.norm(p2 - p1) - 2*shrink, 0)
     height = max(np.linalg.norm(p2 - p1), 0)
     center = (p1 + p2) / 2
@@ -105,7 +105,7 @@ def create_bar_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha
     theta = np.math.acos(z / np.linalg.norm(delta))
     quat = quat_from_euler(Euler(pitch=theta, yaw=phi))
     # p1 is z=-height/2, p2 is z=+height/2
-    diameter = 2*(bar_radius*METER_SCALE - SHRINK_RADIUS)
+    diameter = 2*(bar_radius*scale - SHRINK_RADIUS)
 
     if use_box:
         # Much smaller than cylinder

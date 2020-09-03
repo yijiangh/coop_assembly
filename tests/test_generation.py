@@ -146,22 +146,22 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
     draw_pose(unit_pose())
 
     # built plate
-    new_base = np.array([650, 0, 23])
+    new_base = np.array([650, 0, 23])*1e-3
     # floor = create_plane(color=BLUE)
     # set_point(floor, Point(z=new_base[2]))
 
     bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
     # focus camera
-    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1)
+    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
     set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
     wait_if_gui('before tf')
 
-    bar_struct.transform(new_base)
+    bar_struct.transform(new_base, scale=1e-3)
     element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
-    print('new base_centroid:', bar_struct.base_centroid)
+    print('new base_centroid:', bar_struct.base_centroid())
     wait_if_gui('after tf')
 
-    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1)
+    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
     handles = []
     handles.extend(label_elements(element_bodies))
     wait_if_gui('reconstructed truss axes labeled.')
