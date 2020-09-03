@@ -1,5 +1,6 @@
 from collections import namedtuple
 import numpy as np
+import jsonpickle
 
 from pybullet_planning import point_from_pose
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
@@ -90,6 +91,8 @@ class MotionTrajectory(Trajectory):
         data['element'] = self.element
         data['tag'] = self.tag
         data['path'] = self.path
+        # data['attachments'] = [jsonpickle.encode(attach, keys=True) for attach in self.attachments]
+        data['attachments'] = [attach.to_data() for attach in self.attachments]
         return data
     @classmethod
     def from_data(cls, data, robot, joints, attachments):

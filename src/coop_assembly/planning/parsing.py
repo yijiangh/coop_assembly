@@ -1,6 +1,7 @@
 import os
 import json
 import datetime
+import copy
 from termcolor import cprint
 from pybullet_planning import connect, LockRenderer, get_date
 from .visualization import set_camera
@@ -44,12 +45,39 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
         set_camera([p[0] for e, p in endpts_from_element.items()])
     return b_struct, o_struct
 
-def save_plan(problem, algorithm, trajectories):
+def save_plan(problem, algorithm, trajectories, overwrite=True):
     here = os.path.dirname(__file__)
-    plan_path = '{}_{}_solution_{}.json'.format(problem, algorithm, get_date())
+    plan_path = '{}_{}_solution{}.json'.format(problem, algorithm, '' if overwrite else '_'+get_date())
     save_path = os.path.join(here, RESULTS_DIRECTORY, plan_path)
     with open(save_path, 'w') as f:
-       json.dump({'problem' : problem,
-                  'write_time' : str(datetime.datetime.now()),
-                  'plan' : [p.to_data() for p in trajectories]}, f)
+        data = {'problem' : problem,
+                'write_time' : str(datetime.datetime.now()),
+                # 'plan' : [jsonpickle.encode(p, keys=True) for p in trajectories]}
+                # 'plan' : [p.to_data() for p in trajectories]}
+                }
+        data['plan'] = []
+        e_path = []
+        e_id = trajectories[0].element
+        for traj in trajectories:
+            print(traj)
+            if traj.element is not None and e_id != traj.element:
+                print('break')
+                # break subprocess if there is a discontinuity in the element id
+                data['plan'].append(copy.deepcopy(e_path))
+                e_path = []
+                e_id = traj.element
+            e_path.append(traj.to_data())
+        else:
+            data['plan'].append(e_path)
+
+        json.dump(data, f)
     cprint('Result saved to: {}'.format(save_path), 'green')
+
+def parse_plan(file_name):
+    here = os.path.dirname(__file__)
+    save_path = os.path.join(here, RESULTS_DIRECTORY, file_name)
+    with open(save_path) as json_file:
+        data = json.load(json_file)
+    cprint('Saved path parsed: file name:{} | write_time: {}'.format(
+        data['problem'], data['write_time']), 'green')
+    return data['plan']
