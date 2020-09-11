@@ -216,3 +216,13 @@ def get_connected_structures(connectors, elements):
     edges = {(e1, e2) for e1, neighbors in get_element_neighbors(connectors, elements).items()
              for e2 in neighbors}
     return get_connected_components(elements, edges)
+
+######################################################
+
+def get_midpoint(element_from_index, element):
+    return np.average([element_from_index[element].axis_endpoints[i] for i in range(2)], axis=0)
+
+def compute_z_distance(element_from_index, element):
+    # Distance to a ground plane
+    # Opposing gravitational force
+    return get_midpoint(element_from_index, element)[2]

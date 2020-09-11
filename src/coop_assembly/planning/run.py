@@ -26,7 +26,7 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, get_gripper_mesh_path
 from coop_assembly.planning.utils import load_world
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera,\
-    display_trajectories
+    display_trajectories, check_model
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 
@@ -40,8 +40,8 @@ from coop_assembly.planning.regression import regression
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
-BUILD_PLATE_CENTER = [0.65, 0, 0.023]
-BOTTOM_BUFFER = 0.001
+BUILD_PLATE_CENTER = np.array([700, 0, -14.23])*1e-3
+BOTTOM_BUFFER = 0.005
 
 ########################################
 # two_tets
@@ -66,13 +66,17 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     # the arm itself
     robots = [end_effector] if args.bar_only else [robot]
 
-    element_from_index = bar_struct.get_element_from_index(scale=METER_SCALE)
+    # element_from_index = bar_struct.get_element_from_index(scale=METER_SCALE)
+    chosen_bars = [0,3,5]
+    element_from_index = bar_struct.get_element_from_index(indices=chosen_bars, scale=METER_SCALE)
     grounded_elements = bar_struct.get_grounded_bar_keys()
     contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
     connectors = list(contact_from_connectors.keys())
 
-    bar_struct.set_body_color(RED)
+    bar_struct.set_body_color(RED, indices=chosen_bars)
     print('base: ', bar_struct.base_centroid(METER_SCALE))
+
+    # check_model(bar_struct, chosen_bars)
 
     elements_from_layer = defaultdict(set)
     if args.partial_ordering:
@@ -121,7 +125,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
                 # regression plan is flattened already
                 trajectories = plan
             if write:
-                save_plan(args.problem, args.algorithm, trajectories)
+                save_plan(args.problem, args.algorithm, trajectories, TCP_link_name=TOOL_LINK_NAME, element_from_index=element_from_index)
     else:
         # parse a saved plan
         e_trajs = parse_plan(saved_plan)

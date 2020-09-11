@@ -21,6 +21,7 @@ from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DIAGNOSIS = False
+DYNMAIC_RES_RATIO = 0.5
 
 ##################################################
 
@@ -153,7 +154,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
     collision_fn = get_collision_fn(robot, joints, obstacles=obstacles, attachments=attachments, self_collisions=ENABLE_SELF_COLLISIONS,
                                     disabled_collisions=disabled_collisions, extra_disabled_collisions=extra_disabled_collisions,
                                     custom_limits=custom_limits, max_distance=MAX_DISTANCE)
-    fine_extend_fn = get_extend_fn(robot, joints, resolutions=0.1*resolutions) #, norm=INF)
+    fine_extend_fn = get_extend_fn(robot, joints, resolutions=DYNMAIC_RES_RATIO*resolutions) #, norm=INF)
 
     def test_bounding(q):
         set_joint_positions(robot, joints, q)

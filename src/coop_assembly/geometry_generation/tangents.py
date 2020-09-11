@@ -850,6 +850,9 @@ def solve_second_tangent(new_point, ex, ey, radius, line1, line2, diameter_1, di
     [type]
         [description]
     """
+    assert len(line1) == 2 and len(line2) == 2
+    assert len(line1[0]) == 3 and len(line1[1]) == 3
+    assert len(line2[0]) == 3 and len(line2[1]) == 3
 
     # try twice?
     # for i in range(2):

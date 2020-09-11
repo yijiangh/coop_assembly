@@ -158,6 +158,8 @@ def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
 
     bar_struct.transform(new_base, scale=1e-3)
     element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
+    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
+    set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
     print('new base_centroid:', bar_struct.base_centroid())
     wait_if_gui('after tf')
 

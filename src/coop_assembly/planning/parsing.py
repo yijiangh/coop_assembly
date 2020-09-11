@@ -45,7 +45,7 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
         set_camera([p[0] for e, p in endpts_from_element.items()])
     return b_struct, o_struct
 
-def save_plan(problem, algorithm, trajectories, overwrite=True):
+def save_plan(problem, algorithm, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None):
     here = os.path.dirname(__file__)
     plan_path = '{}_{}_solution{}.json'.format(problem, algorithm, '' if overwrite else '_'+get_date())
     save_path = os.path.join(here, RESULTS_DIRECTORY, plan_path)
@@ -66,9 +66,22 @@ def save_plan(problem, algorithm, trajectories, overwrite=True):
                 data['plan'].append(copy.deepcopy(e_path))
                 e_path = []
                 e_id = traj.element
-            e_path.append(traj.to_data())
+            tdata = traj.to_data()
+            if TCP_link_name is not None:
+                tdata.update({'link_path' : {TCP_link_name : traj.get_link_path(TCP_link_name)}})
+            e_path.append(tdata)
         else:
             data['plan'].append(e_path)
+
+        if element_from_index is not None:
+            element_data = {}
+            for e_id, element in element_from_index.items():
+                element_data[e_id] = {
+                    'axis_endpoints' : [list(pt) for pt in element.axis_endpoints],
+                    'radius' : element.radius,
+                    'goal_pose' : element.goal_pose.to_data(),
+                }
+            data['element_from_index'] = element_data
 
         json.dump(data, f)
     cprint('Result saved to: {}'.format(save_path), 'green')

@@ -459,7 +459,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         else:
             assert False, 'no solution found!'
     elif len(contact_bars[0])==1 and len(contact_bars[1])==2:
-        # deg 1 - deg 2 (2x2 configs)
+        # deg 1 - deg 2
         # use `second_tangent` strategy
         cprint('1 - 2', 'yellow')
         contact_e = list(contact_bars[0]) + list(contact_bars[1])

@@ -20,6 +20,10 @@ class WorldPose(object):
     def __init__(self, index, value):
         self.index = index
         self.value = value
+    def to_data(self):
+        data = {'index' : self.index,
+                'value' : [list(self.value[i]) for i in range(2)]}
+        return data
     def __repr__(self):
         return '{}({},{})'.format(self.__class__.__name__, self.index,
                                   str(np.array(point_from_pose(self.value))))

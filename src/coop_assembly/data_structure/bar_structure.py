@@ -274,7 +274,7 @@ class BarStructure(Network):
     ##################################
     # export dict info for planning
 
-    def get_element_bodies(self, color=apply_alpha(RED, 0), scale=METER_SCALE):
+    def get_element_bodies(self, indices=None, color=apply_alpha(RED, 0), scale=METER_SCALE):
         """[summary]
 
         Returns
@@ -282,14 +282,18 @@ class BarStructure(Network):
         dict
             bar vkey -> pb body
         """
-        return {v : self.get_bar_pb_body(v, color, scale=scale) for v in self.nodes() if len(self.node[v])>0}
+        bar_keys = self.nodes() if indices is None else indices
+        return {v : self.get_bar_pb_body(v, color, scale=scale) for v in bar_keys if len(self.node[v])>0}
 
-    def set_body_color(self, color):
-        self.get_element_bodies(color)
+    def set_body_color(self, color, indices=None):
+        bar_keys = self.nodes() if indices is None else indices
+        for k in bar_keys:
+            set_color(self.node[k]['pb_body'], color)
 
-    def get_element_from_index(self,scale=1.0):
+    def get_element_from_index(self, indices=None, scale=1.0):
         element_from_index = {}
-        for index in self.nodes():
+        bar_keys = self.nodes() if indices is None else indices
+        for index in bar_keys:
             axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=scale)]
             radius=self.node[index]['radius']*scale
             body = self.get_bar_pb_body(index, scale=scale)
@@ -348,7 +352,7 @@ class BarStructure(Network):
     def transform(self, new_base_centroid, scale=1.0):
         old_base_centroid = self.base_centroid(scale)
         def recenter_point(point):
-            return 1/scale * (scale*np.array(point) - old_base_centroid + new_base_centroid)
+            return 1.0/scale * (scale*np.array(point) - old_base_centroid + new_base_centroid)
 
         # update vertex end pts
         for bar_k, bar_vals in self.node.items():
@@ -363,7 +367,7 @@ class BarStructure(Network):
         # update connector end pts
         for b1, b2 in self.edges():
             contact_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
-            self.edge[b1][b2]["endpoints"].update({0:(list(recenter_point(contact_pts[0])), list(recenter_point(contact_pts[1])))})
+            self.edge[b1][b2]["endpoints"] = {0:(list(recenter_point(contact_pts[0])), list(recenter_point(contact_pts[1])))}
 
     # TODO: rotation, scaling: https://github.com/caelan/pb-construction/blob/master/extrusion/run.py#L75
 

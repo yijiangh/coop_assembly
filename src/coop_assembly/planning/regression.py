@@ -18,33 +18,37 @@ import os, sys
 
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
-    set_joint_positions, get_relative_pose, WorldSaver
+    set_joint_positions, get_relative_pose, WorldSaver, set_renderer
 
 from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.geometry_generation.utils import outgoing_from_edges
 
-from .visualization import draw_element
+from .visualization import draw_element, color_structure, label_elements
 from .stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands, Command, check_connected
 from .motion import compute_motion, EE_INITIAL_POINT, EE_INITIAL_EULER
 from .robot_setup import INITIAL_CONF # , TOOL_LINK_NAME, EE_LINK_NAME
+from .heuristics import get_heuristic_fn
+
+PAUSE_UPON_BT = True
 
 MAX_REVISIT = 5
 
 Node = namedtuple('Node', ['action', 'state'])
 
-def draw_action(node_points, printed, element):
-    """printed elements are drawn green, current element drawn red
-    """
-    if not has_gui():
-        return []
-    with LockRenderer():
-        remove_all_debug()
-        handles = [draw_element(node_points, element, color=(1, 0, 0))]
-        handles.extend(draw_element(node_points, e, color=(0, 1, 0)) for e in printed)
-    wait_for_user()
-    return handles
+# def draw_action(element_bodies, printed, element):
+#     """printed elements are drawn green, current element drawn red
+#     """
+#     if not has_gui():
+#         return []
+#     with LockRenderer():
+#         remove_all_debug()
+#         # handles = [draw_element(node_points, element, color=(1, 0, 0))]
+#         # handles.extend(draw_element(node_points, e, color=(0, 1, 0)) for e in printed)
+#         color_structure(element_bodies, printed, next_element=element, built_alpha=0.6)
+#     wait_for_user()
+#     return handles
 
 ##################################################
 
@@ -68,10 +72,12 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
 
     # if checker is None:
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
-    # heuristic_fn = get_heuristic_fn(robot, extrusion_path, heuristic, checker=checker, forward=False)
-    # TODO: partial ordering
+    heuristic = 'z'
+    heuristic_fn = get_heuristic_fn(robot, element_from_index, heuristic, checker=None, forward=False)
     place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
         precompute_collisions=False, allow_failure=True)
+
+    # TODO: partial ordering
 
     # TODO: allow choice of config
     final_conf = initial_conf
@@ -88,7 +94,8 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
             # if not (outgoing_from_element[element] & printed) and implies(is_ground(element, ground_nodes), only_ground):
             if not (outgoing_from_element[element] & printed):
                 visits = 0
-                priority = (num_remaining, random.random())
+                bias = heuristic_fn(printed, element)
+                priority = (num_remaining, bias, random.random())
                 heapq.heappush(queue, (visits, priority, printed, element, command))
 
     # * connectivity & stiffness constraint checking
@@ -101,6 +108,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
     else:
         cprint('The initial state not connected to the ground!', 'yellow')
 
+    # * preview the precomputed heuristic on elements
     # if has_gui():
     #     sequence = sorted(final_printed, key=lambda e: heuristic_fn(final_printed, e, conf=None), reverse=True)
     #     remove_all_debug()
@@ -113,11 +121,8 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
     while queue and (elapsed_time(start_time) < max_time): #  and check_memory(): #max_memory):
         visits, priority, printed, element, current_command = heapq.heappop(queue)
         num_remaining = len(printed)
-        backtrack = num_remaining - min_remaining
-        max_backtrack = max(max_backtrack, backtrack)
-        if backtrack_limit < backtrack:
-            break # continue
         num_evaluated += 1
+        backtrack = num_remaining - min_remaining
 
         if verbose:
             print('#'*10)
@@ -125,14 +130,27 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
                 num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time), backtrack, visits))
         next_printed = printed - {element}
 
-        # * debug visualize
-        # draw_action(axis_pts_from_element, next_printed, element)
-        # if 3 < backtrack + 1:
-        #    remove_all_debug()
-        #    set_renderer(enable=True)
-        #    draw_model(next_printed, node_points, ground_nodes)
-        #    wait_for_user()
+        if backtrack > max_backtrack:
+            max_backtrack = backtrack
+            # * debug visualize
+            # draw_action(axis_pts_from_element, next_printed, element)
+            if PAUSE_UPON_BT:
+                remove_all_debug()
+                set_renderer(enable=True)
+                color_structure(element_from_index, printed, next_element=element, built_alpha=0.6)
+                label_elements({k : element_from_index[k] for k in list(printed | {element})})
+                wait_for_user('BT increased. Blues are the remaining ones, green is the current one, blacks are the already removed ones.')
+                set_renderer(enable=False)
 
+        if backtrack_limit < backtrack:
+            cprint('backtrack {} exceeds limit {}, exit.'.format(backtrack, backtrack_limit), 'red')
+            raise KeyboardInterrupt
+            # break # continue
+
+        # if RECORD_QUEUE:
+        #     snapshot_state(queue_data, reason='queue_history', queue_log_cnt=QUEUE_COUNT)
+
+        # * constraint checking
         if next_printed in visited:
             continue
         if not check_connected(connectors, grounded_elements, next_printed):

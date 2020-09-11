@@ -1,11 +1,11 @@
 import colorsys
 import numpy as np
 from termcolor import cprint
-from pybullet_planning import RED, BLUE, GREEN, BLACK, add_line, set_color, apply_alpha, get_visual_data, \
-    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body
+from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, get_visual_data, \
+    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body, \
+    remove_handles, pairwise_collision, pairwise_collision_info, draw_collision_diagnosis, has_gui
 
 from coop_assembly.help_functions.shared_const import METER_SCALE
-
 from coop_assembly.data_structure.utils import MotionTrajectory
 
 BAR_LINE_WIDTH = 1.0
@@ -91,13 +91,17 @@ def color_structure(element_bodies, printed, next_element=None, built_alpha=1.0,
         if element not in element_bodies:
             cprint('element {} not in bodies, skipped'.format(element), 'yellow')
             continue
-        body = element_bodies[element]
+        if isinstance(element_bodies[element], int):
+            body = element_bodies[element]
+        else:
+            body = element_bodies[element].body
         try:
             # TODO: might return nothing is pytest without -s ?
             [shape] = get_visual_data(body)
             if color != shape.rgbaColor:
                 set_color(body, color=color)
         except:
+            print('Color change failure.')
             pass
 
 ###########################################
@@ -122,7 +126,10 @@ def set_camera(node_points, camera_dir=[1, 1, 1], camera_dist=0.25):
 ######################################################
 
 def label_element(element_bodies, element, tag=None):
-    element_body = element_bodies[element]
+    if isinstance(element_bodies[element], int):
+        element_body = element_bodies[element]
+    else:
+        element_body = element_bodies[element].body
     tag = '-'+tag if tag is not None else ''
     return [
         add_text('b'+str(element)+tag, position=(0, 0, 0), parent=element_body),
@@ -146,6 +153,63 @@ def label_connector(connector_pts, c, **kwargs):
 
 def label_points(points, **kwargs):
     return [add_text(node, position=point, **kwargs) for node, point in enumerate(points)]
+
+#####################################################
+
+def check_model(bar_struct, indices=None):
+    from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
+    elements = list(bar_struct.nodes()) if indices is None else indices
+
+    element_bodies = bar_struct.get_element_bodies(indices=elements, color=apply_alpha(RED, 0.3))
+    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
+    set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
+
+    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
+    connectors = list(contact_from_connectors.keys())
+
+    # TODO: sometimes there are excessive connectors
+    # * connectors from bar
+    cprint('Visualize connectors.', 'yellow')
+    connector_from_elements = get_connector_from_elements(connectors, elements)
+    for bar in elements:
+        handles = []
+        bar_connectors = connector_from_elements[bar]
+        current_connectors = []
+        for c in list(bar_connectors):
+            if c[0] in elements and c[1] in elements:
+                current_connectors.append(c)
+                handles.append(add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2))
+        color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
+        wait_if_gui('connector: {}'.format(current_connectors))
+        remove_handles(handles)
+
+    # * neighbor elements from elements
+    print('Visualize neighnor elements.')
+    element_neighbors = get_element_neighbors(connectors, elements)
+    for element, connected_bars in element_neighbors.items():
+        color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
+        wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
+
+    # TODO: some sanity check here
+    # mutual collision checks
+    is_collided = False
+    for bar1, bar2 in connectors:
+        if not (bar1 in elements and bar2 in elements):
+            continue
+        b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
+        b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
+        if b1_body is None or b2_body is None:
+            continue
+        print('-'*10)
+        if pairwise_collision(b1_body, b2_body):
+            cr = pairwise_collision_info(b1_body, b2_body)
+            draw_collision_diagnosis(cr, focus_camera=True)
+            is_collided = True
+            if not has_gui():
+                assert False, '{}-{} collision!'.format(b1_body, b2_body)
+
+    wait_if_gui('model checking finished.')
+
 
 ######################################################
 
