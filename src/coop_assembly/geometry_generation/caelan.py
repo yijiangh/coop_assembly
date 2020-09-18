@@ -13,7 +13,7 @@ sys.path.append(os.environ['PDDLSTREAM_PATH'])
 from pddlstream.utils import adjacent_from_edges
 from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, wait_for_user, disconnect, GREEN, add_line, \
     RED, draw_pose, Pose, aabb_from_points, draw_aabb, get_aabb_center, get_aabb_extent, AABB, get_distance, get_pairs, wait_if_gui, \
-    INF, STATIC_MASS, set_color, quat_from_euler, apply_alpha
+    INF, STATIC_MASS, set_color, quat_from_euler, apply_alpha, create_cylinder, set_point, set_quat, get_aabb, Euler
 
 from itertools import combinations
 from collections import defaultdict
@@ -28,7 +28,7 @@ print(DATA_DIR)
 
 #sys.path.append(os.path.join(DATA_DIR, 'external', 'pybullet_planning', 'src', 'pybullet_planning'))
 
-SCALE = 1e-2
+SCALE = 1e-2 # original units of millimeters
 
 def parse_point(json_point):
     return SCALE*np.array([json_point[k] for k in ['x', 'y', 'z']])
@@ -39,7 +39,24 @@ def unbounded_var(model):
 def np_var(model, d=3):
     return np.array([unbounded_var(model) for _ in range(d)])
 
-def solve_gurobi(nodes, edges, max_distance, epsilon=0.01, num_solutions=INF,
+def create_element(p1, p2, radius, color=apply_alpha(RED, alpha=1)):
+    height = np.linalg.norm(p2 - p1)
+    center = (p1 + p2) / 2
+    # extents = (p2 - p1) / 2
+    delta = p2 - p1
+    x, y, z = delta
+    phi = np.math.atan2(y, x)
+    theta = np.math.acos(z / np.linalg.norm(delta))
+    quat = quat_from_euler(Euler(pitch=theta, yaw=phi))
+    # p1 is z=-height/2, p2 is z=+height/2
+
+    # Visually, smallest diameter is 2e-3
+    body = create_cylinder(radius, height, color=color, mass=STATIC_MASS)
+    set_point(body, center)
+    set_quat(body, quat)
+    return body
+
+def solve_gurobi(nodes, edges, max_distance, epsilon=0.001, num_solutions=INF,
                  max_time=1*60, verbose=True):
     # https://www.gurobi.com/documentation/9.0/refman/py_python_api_details.html
 
@@ -89,7 +106,7 @@ def solve_gurobi(nodes, edges, max_distance, epsilon=0.01, num_solutions=INF,
             continue
         var1, var2 = x_vars[edge1, node1], x_vars[edge2, node2]
         difference = var2 - var1
-        distance = 2*(edges[edge1]['radius'] + edges[edge2]['radius'])
+        distance = edges[edge1]['radius'] + edges[edge2]['radius']
         model.addConstr(sum(difference*difference) >= distance**2)
         if node1 == node2:
             pair = frozenset({edge1, edge2})
@@ -112,9 +129,11 @@ def solve_gurobi(nodes, edges, max_distance, epsilon=0.01, num_solutions=INF,
     for (edge, node), var in x_vars.items():
         point = np.array([v.x for v in var])
         edge_points[edge].append(point)
-    for points in edge_points.values():
+    bodies = []
+    for edge, points in edge_points.items():
         point1, point2 = points
-        add_line(point1, point2, color=GREEN)
+        bodies.append(create_element(point1, point2, edges[edge]['radius']))
+        #add_line(point1, point2, color=GREEN)
     wait_if_gui()
 
 def main():
