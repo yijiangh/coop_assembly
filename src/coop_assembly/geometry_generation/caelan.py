@@ -10,10 +10,11 @@ sys.path.append(os.environ['PDDLSTREAM_PATH'])
 
 # PDDLSTREAM_PATH
 
-from pddlstream.utils import adjacent_from_edges
+from pddlstream.utils import adjacent_from_edges, str_from_object
 from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, wait_for_user, disconnect, GREEN, add_line, \
     RED, draw_pose, Pose, aabb_from_points, draw_aabb, get_aabb_center, get_aabb_extent, AABB, get_distance, get_pairs, wait_if_gui, \
-    INF, STATIC_MASS, set_color, quat_from_euler, apply_alpha, create_cylinder, set_point, set_quat, get_aabb, Euler
+    INF, STATIC_MASS, set_color, quat_from_euler, apply_alpha, create_cylinder, set_point, set_quat, get_aabb, Euler, SEPARATOR, \
+    draw_point, BLUE, safe_zip, apply_alpha
 
 from itertools import combinations
 from collections import defaultdict
@@ -30,14 +31,16 @@ print(DATA_DIR)
 
 SCALE = 1e-2 # original units of millimeters
 
+COORDINATES = ['x', 'y', 'z']
+
 def parse_point(json_point):
-    return SCALE*np.array([json_point[k] for k in ['x', 'y', 'z']])
+    return SCALE*np.array([json_point[k] for k in COORDINATES])
 
-def unbounded_var(model):
-    return model.addVar(lb=-GRB.INFINITY, ub=GRB.INFINITY)
+def unbounded_var(model, name=''):
+    return model.addVar(lb=-GRB.INFINITY, ub=GRB.INFINITY, name=name)
 
-def np_var(model, d=3):
-    return np.array([unbounded_var(model) for _ in range(d)])
+def np_var(model, name=''):
+    return np.array([unbounded_var(model, name=name) for k in COORDINATES])
 
 def create_element(p1, p2, radius, color=apply_alpha(RED, alpha=1)):
     height = np.linalg.norm(p2 - p1)
@@ -56,26 +59,40 @@ def create_element(p1, p2, radius, color=apply_alpha(RED, alpha=1)):
     set_quat(body, quat)
     return body
 
-def solve_gurobi(nodes, edges, max_distance, epsilon=0.001, num_solutions=INF,
-                 max_time=1*60, verbose=True):
+def solve_gurobi(nodes, edges, max_distance, epsilon=0.001, num_solutions=1,
+                 max_time=1*30, verbose=True):
     # https://www.gurobi.com/documentation/9.0/refman/py_python_api_details.html
 
+    print(SEPARATOR)
     model = Model(name='Construction')
+    # https://www.gurobi.com/documentation/9.0/refman/parameters.html#sec:Parameters
     model.setParam(GRB.Param.OutputFlag, verbose)
     model.setParam(GRB.Param.TimeLimit, max_time)
     model.setParam(GRB.Param.NonConvex, 2) # PSDTol
     if num_solutions < INF:
         model.setParam(GRB.Param.SolutionLimit, num_solutions)
 
+    # TODO: name the variables
     x_vars = {}
     objective = []
     for edge in edges:
         for node in edge:
             var = np_var(model, d=3)
+            for v, hint in safe_zip(var, nodes[node]['point']):
+                # VarHintVal versus Start: Variables hints and MIP starts are similar in concept,
+                # but they behave in very different ways
+                v.VarHintVal = hint # case insensitive?
+                #v.setAttr(GRB.Attr.VarHintVal, hint)
+                #v.getAttr(GRB.Attr.VarHintVal) # TODO: error
             x_vars[edge, node] = var
             difference = var - nodes[node]['point']
             objective.append(sum(difference*difference))
-            #model.addConstr( ) #, "c0")
+        node1, node2 = edge
+        length = get_distance(nodes[node1]['point'], nodes[node2]['point'])
+        print('Edge: {} | Length: {:.3f}'.format(str_from_object(edge), length))
+        difference = x_vars[edge, node2] - x_vars[edge, node1]
+        # model.addConstr(sum(difference * difference) >= (length - epsilon) ** 2)
+        # model.addConstr(sum(difference * difference) <= (length + epsilon) ** 2)
     model.setObjective(quicksum(objective), sense=GRB.MINIMIZE)
 
     #adjacent = adjacent_from_edges(edges) # vertices
@@ -89,17 +106,17 @@ def solve_gurobi(nodes, edges, max_distance, epsilon=0.001, num_solutions=INF,
         #num_tangents = min(len(neighbors) - 1, 2)
         #print(len(edges), num_tangents)
         for pair in map(frozenset, combinations(neighbors, r=2)):
-            z_vars[pair, node] = model.addVar(vtype=GRB.BINARY)  # , name="x")
+            z_vars[pair, node] = model.addVar(vtype=GRB.BINARY, name='')  # , name="x")
 
     z_var_from_edge = defaultdict(list)
     for (pair, node), var in z_vars.items():
         for edge in pair:
             z_var_from_edge[edge, node].append(var)
-    for vars in z_var_from_edge.values():
-        degree = len(vars) + 1
+    for neighbors in z_var_from_edge.values():
+        degree = len(neighbors) + 1
         num_tangents = min(degree - 1, 2)
-        #print(len(vars), degree, num_tangents)
-        model.addConstr(sum(vars) == num_tangents)
+        #print(len(neighbors), degree, num_tangents)
+        model.addConstr(sum(neighbors) == num_tangents)
 
     for (edge1, node1), (edge2, node2) in combinations(x_vars, r=2):
         if edge1 == edge2:
@@ -119,20 +136,36 @@ def solve_gurobi(nodes, edges, max_distance, epsilon=0.001, num_solutions=INF,
         model.optimize()
     except GurobiError as e:
         raise e
-    print('Objective: {:.3f}'.format(model.objVal))
+    # TODO: forbid solutions
+    print('Objective: {:.3f} | Solutions: {} | Status: {}'.format(model.objVal, model.solCount, model.status))
 
-    # https://www.gurobi.com/documentation/7.5/refman/optimization_status_codes.html
-    if model.status in (GRB.INFEASIBLE, GRB.INF_OR_UNBD):  # OPTIMAL | SUBOPTIMAL
-        pass
+    for constraint in model.getVars(): # TODO: deviation
+        print(constraint, constraint.__dict__)
+
+    for constraint in model.getConstrs(): # TODO: constraint violation
+        print(constraint, constraint.__dict__)
+
+    if not model.solCount:
+        return
+    # https://www.gurobi.com/documentation/9.0/refman/optimization_status_codes.html
+    #model.status in (GRB.INFEASIBLE, GRB.INF_OR_UNBD)  # OPTIMAL | SUBOPTIMAL
+
+    # https://www.gurobi.com/documentation/9.0/refman/attributes.html
+    # print(model.X)
+    # print(model.Xn)
 
     edge_points = defaultdict(list)
     for (edge, node), var in x_vars.items():
         point = np.array([v.x for v in var])
         edge_points[edge].append(point)
+        draw_point(point, size=2*edges[edge]['radius'], color=BLUE)
+
+    # TODO: analyze collisions and proximity
     bodies = []
     for edge, points in edge_points.items():
         point1, point2 = points
-        bodies.append(create_element(point1, point2, edges[edge]['radius']))
+        print('{}: {:.3f}'.format(str_from_object(edge), get_distance(point1, point2)))
+        bodies.append(create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, 0.25)))
         #add_line(point1, point2, color=GREEN)
     wait_if_gui()
 
