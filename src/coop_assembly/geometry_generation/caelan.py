@@ -72,8 +72,13 @@ def get_length(edge, nodes):
     n1, n2 = list(edge)
     return get_distance(nodes[n1]['point'], nodes[n2]['point'])
 
-def solve_gurobi(nodes, edges, aabb, min_tangents=2, spacing=2.,
-                 length_tolerance=SCALE*1, contact_tolerance=SCALE*10, buffer_tolerance=SCALE*1,
+def enumerate_steps(edge, nodes, edges, fraction=0.1, spacing=1.5):
+    step_size = spacing * edges[edge]['radius']
+    num_steps = int(np.ceil(fraction * get_length(edge, nodes) / step_size))
+    return np.linspace(start=0., stop=fraction, num=num_steps, endpoint=True)
+
+def solve_gurobi(nodes, edges, aabb, min_tangents=2,
+                 length_tolerance=SCALE*10, contact_tolerance=SCALE*10, buffer_tolerance=SCALE*0,
                  num_solutions=1, max_time=1*60, verbose=True):
     # https://www.gurobi.com/documentation/9.0/refman/py_python_api_details.html
 
@@ -155,20 +160,17 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, spacing=2.,
         #model.addConstr(sum(difference*difference) >= (distance + buffer_tolerance)**2) # All nodes
 
         if node1 == node2:
-            model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2) # Only neighbors
+            #model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2) # Only neighbors
             pair = frozenset({edge1, edge2})
             z_var = z_vars[pair, node1]
             model.addConstr(sum(difference * difference) <=
                             (distance + contact_tolerance) ** 2 + (1 - z_var) * max_distance ** 2)
 
-            fraction = 0.25
             other1 = get_other(edge1, node1)
-            num_steps1 = int(np.ceil(fraction*get_length(edge1, nodes) / (spacing * edges[edge1]['radius'])))
-            for l1 in np.linspace(start=0., stop=fraction, num=num_steps1, endpoint=True)[1:]: # TODO: edge cases
+            for l1 in enumerate_steps(edge1, nodes, edges):
                 point1 = (1 - l1) * var1 + (l1 * x_vars[edge1, other1])
                 other2 = get_other(edge2, node2)
-                num_steps2 = int(np.ceil(fraction * get_length(edge2, nodes) / (spacing * edges[edge2]['radius'])))
-                for l2 in np.linspace(start=0., stop=fraction, num=num_steps2, endpoint=True)[1:]:
+                for l2 in enumerate_steps(edge2, nodes, edges):
                     point2 = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
                     difference = point2 - point1
                     model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2)  # Only neighbors
@@ -207,8 +209,15 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, spacing=2.,
         point = np.array([v.x for v in var])
         edge_points[edge].append(point)
         draw_point(point, size=2*edges[edge]['radius'], color=BLUE)
-        body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
-        set_point(body, point)
+
+        # body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+        # set_point(body, point)
+
+        point2 = np.array([v.x for v in x_vars[edge, get_other(edge, node)]])
+        for l in enumerate_steps(edge, nodes, edges):
+            trailing = (1 - l) * point + (l * point2)
+            body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+            set_point(body, trailing)
 
     # TODO: analyze collisions and proximity
     #bodies = []
@@ -223,15 +232,11 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, spacing=2.,
 
 ##################################################
 
-def test(nodes, edges, scale=0.5, spacing=2.):
+def visualize(nodes, edges):
     for edge in edges:
         n1, n2 = edge
         point1, point2 = nodes[n1]['point'], nodes[n2]['point']
-        length = scale*get_distance(point1, point2)
-        step_length = spacing*edges[edge]['radius']
-        num_steps = int(np.ceil(length / step_length))
-        #for l in np.arange(start=0., stop=length, step=step_length): # normalize
-        for l in np.linspace(start=0., stop=scale, num=num_steps, endpoint=True)[1:]:
+        for l in enumerate_steps(edge, nodes, edges):
             point = l*point1 + (1-l)*point2
             draw_point(point, size=2. * edges[edge]['radius'], color=BLUE)
             body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
@@ -268,7 +273,6 @@ def main():
     nodes = {n: {'point': parse_point(info), 'fixed': info['fixed']} for n, info in json_data['node'].items()}
     print(nodes)
 
-
     connect(use_gui=args.viewer)
     #floor = create_plane(color=GREEN)
     handles = draw_pose(Pose(), length=1)
@@ -285,7 +289,9 @@ def main():
     #handles.extend(draw_aabb(aabb, color=GREEN))
     #wait_if_gui()
 
+    #visualize(nodes, edges)
     #wait_if_gui()
+
     solve_gurobi(nodes, edges, aabb)
 
     wait_if_gui()
