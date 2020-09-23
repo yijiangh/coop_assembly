@@ -14,7 +14,7 @@ from pddlstream.utils import adjacent_from_edges, str_from_object
 from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, wait_for_user, disconnect, GREEN, add_line, \
     RED, draw_pose, Pose, aabb_from_points, draw_aabb, get_aabb_center, get_aabb_extent, AABB, get_distance, get_pairs, wait_if_gui, \
     INF, STATIC_MASS, set_color, quat_from_euler, apply_alpha, create_cylinder, set_point, set_quat, get_aabb, Euler, SEPARATOR, \
-    draw_point, BLUE, safe_zip, apply_alpha, create_sphere
+    draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule
 
 from itertools import combinations
 from collections import defaultdict
@@ -58,7 +58,9 @@ def create_element(p1, p2, radius, color=apply_alpha(RED, alpha=1)):
     # p1 is z=-height/2, p2 is z=+height/2
 
     # Visually, smallest diameter is 2e-3
-    body = create_cylinder(radius, height, color=color, mass=STATIC_MASS)
+    # TODO: boxes
+    #body = create_cylinder(radius, height, color=color, mass=STATIC_MASS)
+    body = create_capsule(radius, height, color=color, mass=STATIC_MASS)
     set_point(body, center)
     set_quat(body, quat)
     return body
@@ -129,10 +131,10 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2,
         print('Neighbors: {} | Tangents: {}'.format(len(neighbors), num_tangents))
         model.addConstr(sum(neighbors) == num_tangents)
         if len(neighbors) == num_tangents:
-            print(neighbors)
-            # for z_var in neighbors:
-            #     z_var.lb = 1
-            #     z_var.start = 1
+            for z_var in neighbors:
+                #model.addConstr(z_var == 1)
+                z_var.lb = z_var.ub = 1
+                #z_var.start = 1
 
     for (edge1, node1), (edge2, node2) in combinations(x_vars, r=2):
         if edge1 == edge2:
@@ -187,9 +189,8 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2,
         set_point(body, point)
 
     # TODO: analyze collisions and proximity
-    bodies = []
+    #bodies = []
     for edge, points in edge_points.items():
-        # TODO: capsule, boxes
         point1, point2 = points
         print('{}: {:.3f}'.format(str_from_object(edge), get_distance(point1, point2)))
         element = create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, 0.25))
@@ -243,6 +244,22 @@ def main():
     aabb = AABB(lower=center - scale*extent/2, upper=center + scale*extent/2)
     #handles.extend(draw_aabb(aabb, color=GREEN))
     #wait_if_gui()
+
+    for edge in edges:
+        n1, n2 = edge
+        point1, point2 = nodes[n1]['point'], nodes[n2]['point']
+        length = get_distance(point1, point2)
+        step_length = 2*edges[edge]['radius'] # 1 | 2
+        num_steps = int(np.ceil(length / step_length))
+        #for l in np.arange(start=0., stop=length, step=step_length): # normalize
+        for l in np.linspace(start=0., stop=1., num=num_steps, endpoint=True):
+            point = l*point1 + (1-l)*point2
+            draw_point(point, size=2. * edges[edge]['radius'], color=BLUE)
+            body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+            set_point(body, point)
+
+    wait_if_gui()
+    return
 
     solve_gurobi(nodes, edges, aabb)
 
