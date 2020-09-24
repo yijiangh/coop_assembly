@@ -32,10 +32,63 @@ from coop_assembly.geometry_generation.tangents import compute_tangent_from_two_
 
 from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.planning.visualization import draw_element, GROUND_COLOR, BACKGROUND_COLOR, SHADOWS, set_camera, \
-    label_points
+    label_points, check_model
 from coop_assembly.planning.utils import load_world
 
 GROUND_INDEX = -1
+
+METHOD_OPTIONS = ['search', 'shrink']
+
+#######################################
+# directly turn a 3D line graph into truss by shrinking the edges to avoid collision
+
+def generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, radius, debug=False):
+    b_struct = BarStructure()
+    centroid_pt = np.average(node_points, axis=0)
+
+    all_elements = frozenset(edges)
+    bar_from_elements = {}
+    for e in all_elements:
+        p0 = node_points[e[0]]
+        p1 = node_points[e[1]]
+        delta_p = (p1 - p0) / norm(p1 - p0)
+        bar_from_elements[e] = {
+            e[0] : p0 + edge_attributes[e]['shrink']*delta_p,
+            e[1] : p1 - edge_attributes[e]['shrink']*delta_p
+            }
+
+    index_from_element = {}
+    for e, pts in bar_from_elements.items():
+        axis_endpts = list(pts.values())
+        _ , _, vec_z = calculate_coord_sys(axis_endpts, centroid_pt)
+        is_grounded = e[0] in ground_nodes or e[1] in ground_nodes
+        bar_key = b_struct.add_bar(None, [p.tolist() for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
+        index_from_element[e] = bar_key
+
+    element_neighbors = get_element_neighbors(list(bar_from_elements.keys()))
+    for e, pts in bar_from_elements.items():
+        # update contact point into BarS's edges
+        for ne in element_neighbors[e]:
+            b_struct.connect_bars(index_from_element[e], index_from_element[ne])
+            contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e], index_from_element[ne])
+            b_struct.edge[index_from_element[e]][index_from_element[ne]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
+
+    # * add grounded connector
+    grounded_bars = list(b_struct.get_grounded_bar_keys())
+    for ground_k in grounded_bars:
+        b_struct.connect_bars(ground_k, GROUND_INDEX)
+        # find the lower pt of the two
+        axis_endpts = b_struct.get_bar_axis_end_pts(ground_k)
+        if axis_endpts[0][2] > axis_endpts[1][2]:
+            axis_endpts = axis_endpts[::-1]
+        contact_pts = [axis_endpts[0], axis_endpts[0]-np.array([0,0,radius])]
+        b_struct.edge[ground_k][GROUND_INDEX]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
+
+    element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 0.5))
+    if debug:
+        wait_if_gui('Final bar assembly.')
+
+    return b_struct
 
 #######################################
 
@@ -587,7 +640,7 @@ def retrace_sequence(visited, current_state, horizon=INF):
     return previous_tet_ids + [command]
 
 #############################################################
-def gen_truss(problem, viewer=False, radius=3.17, write=False, debug=False, **kwargs):
+def gen_truss(problem, viewer=False, radius=3.17, write=False, debug=False, method='search', **kwargs):
     """[summary]
 
     Parameters
@@ -617,6 +670,7 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, debug=False, **kw
     # node_points, edges = net.to_nodes_and_edges()
     node_points = [np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
     edges = [e for e in net.edges()]
+    edge_attributes = {e[0] : e[1] for e in net.edges(True)}
     ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
 
     print('parsed edges from to_node_and_edges: {}'.format(edges))
@@ -646,8 +700,13 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, debug=False, **kw
     if debug:
         wait_if_gui('Ideal truss...')
 
-    b_struct = generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None,
-        check_collision=False, viewer=False, verbose=True, debug=debug)
+    if method == 'search':
+        b_struct = generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None,
+            check_collision=False, viewer=False, verbose=True, debug=debug)
+    elif method == 'shrink':
+        b_struct = generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, radius, debug=debug)
+    else:
+        raise NotImplementedError('Unsupported method : {}'.format(method))
 
     if write:
         export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)
@@ -666,10 +725,12 @@ def main():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--problem', default='truss_one_tet_skeleton.json', help='The name of the problem to solve')
+    parser.add_argument('-m', '--method', default='search', choices=METHOD_OPTIONS, help='Computing method')
     parser.add_argument('-r', '--radius', default=3.17, help='Radius of bars in millimeter')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     parser.add_argument('-wr', '--write', action='store_true', help='Export results')
-    # parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
+    parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
+    parser.add_argument('--subset_bars', nargs='+', default=None, help='Plan for only subset of bar indices.')
     args = parser.parse_args()
     print('Arguments:', args)
 
@@ -678,7 +739,9 @@ def main():
     if 'skeleton' in export_file_name:
         export_file_name = export_file_name.split('_skeleton')[0] + '.json'
 
-    gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=export_file_name)
+    bar_struct = gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=export_file_name,
+        method=args.method, debug=args.debug)
+    check_model(bar_struct, args.subset_bars)
 
     reset_simulation()
     disconnect()

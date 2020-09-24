@@ -41,13 +41,13 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
         b_struct.create_pb_bodies(color=color)
         o_struct.struct_bar = b_struct # TODO: better way to do this
         # set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
-        endpts_from_element = b_struct.get_axis_pts_from_element(scale=1)
-        set_camera([p[0] for e, p in endpts_from_element.items()])
+        endpts_from_element = b_struct.get_axis_pts_from_element(scale=1e-3)
+        set_camera([p[0] for e, p in endpts_from_element.items()], scale=1.)
     return b_struct, o_struct
 
-def save_plan(problem, algorithm, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None):
+def save_plan(problem, algorithm, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None, suffix=None):
     here = os.path.dirname(__file__)
-    plan_path = '{}_{}_solution{}.json'.format(problem, algorithm, '' if overwrite else '_'+get_date())
+    plan_path = '{}_{}{}_solution{}.json'.format(problem, algorithm, '' if suffix is None else '_' + suffix, '' if overwrite else '_'+get_date())
     save_path = os.path.join(here, RESULTS_DIRECTORY, plan_path)
     with open(save_path, 'w') as f:
         data = {'problem' : problem,

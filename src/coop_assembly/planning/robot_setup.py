@@ -38,7 +38,8 @@ CUSTOM_LIMITS = {
 RESOLUTION = 0.01
 
 # INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
-INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
+# INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
+INITIAL_CONF = np.radians([5., -90., 100, 5, 10, -5])
 
 # TODO: compute joint weight as np.reciprocal(joint velocity bound) from URDF
 JOINT_WEIGHTS = np.reciprocal([6.28318530718, 5.23598775598, 6.28318530718,

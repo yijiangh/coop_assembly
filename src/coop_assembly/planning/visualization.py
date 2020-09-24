@@ -106,7 +106,7 @@ def color_structure(element_bodies, printed, next_element=None, built_alpha=1.0,
 
 ###########################################
 
-def set_camera(node_points, camera_dir=[1, 1, 1], camera_dist=0.25):
+def set_camera(node_points, camera_dir=[1, 1, 1], camera_dist=0.25, scale=METER_SCALE):
     """pointing camera towards the centroid of a list of pts
     Note that the node points are all assumed to be in millimeter scale, we do scaling inside this fn.
 
@@ -119,7 +119,7 @@ def set_camera(node_points, camera_dir=[1, 1, 1], camera_dist=0.25):
     camera_dist : float, optional
         [description], by default 0.25
     """
-    centroid = np.average(node_points, axis=0) * METER_SCALE
+    centroid = np.average(node_points, axis=0) * scale
     camera_offset = camera_dist * np.array(camera_dir)
     set_camera_pose(camera_point=centroid + camera_offset, target_point=centroid)
 
@@ -137,10 +137,15 @@ def label_element(element_bodies, element, tag=None):
     ]
 
 
-def label_elements(element_bodies, body_index=False):
+def label_elements(element_bodies, indices=None, body_index=False):
     handles = []
     # +z points parallel to each element body
-    for element, body in element_bodies.items():
+    keys = element_bodies.keys() if indices is None else indices
+    for element in keys:
+        if element not in element_bodies:
+            cprint('element {} not in bodies, skipped'.format(element), 'yellow')
+            continue
+        body = element_bodies[element]
         handles.extend(label_element(element_bodies, element, tag=get_name(body) if body_index else None))
         # handles.extend(draw_pose(get_pose(body), length=0.02))
         # wait_for_user()
@@ -162,32 +167,42 @@ def check_model(bar_struct, indices=None):
 
     element_bodies = bar_struct.get_element_bodies(indices=elements, color=apply_alpha(RED, 0.3))
     endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
-    set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
+    set_camera([np.array(p[0]) for e, p in endpts_from_element.items()],scale=1.)
 
     contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
     connectors = list(contact_from_connectors.keys())
 
-    # TODO: sometimes there are excessive connectors
+    # * grounded elements
+    cprint('Visualize grounded elements.', 'yellow')
+    grounded_elements = list(set(bar_struct.get_grounded_bar_keys()) & set(elements))
+    remove_all_debug()
+    for bar in grounded_elements:
+        label_elements(element_bodies, [bar])
+    color_structure(element_bodies, set(grounded_elements), next_element=None, built_alpha=0.6)
+    wait_if_gui('grounded element: {}'.format(grounded_elements))
+
     # * connectors from bar
     cprint('Visualize connectors.', 'yellow')
     connector_from_elements = get_connector_from_elements(connectors, elements)
     for bar in elements:
-        handles = []
         bar_connectors = connector_from_elements[bar]
         current_connectors = []
+        remove_all_debug()
         for c in list(bar_connectors):
             if c[0] in elements and c[1] in elements:
                 current_connectors.append(c)
-                handles.append(add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2))
+                label_elements(element_bodies, c)
+                add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2)
         color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
         wait_if_gui('connector: {}'.format(current_connectors))
-        remove_handles(handles)
 
     # * neighbor elements from elements
     print('Visualize neighnor elements.')
     element_neighbors = get_element_neighbors(connectors, elements)
     for element, connected_bars in element_neighbors.items():
+        remove_all_debug()
         color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
+        label_elements(element_bodies, list(connected_bars) + [element])
         wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
 
     # TODO: some sanity check here
@@ -200,14 +215,13 @@ def check_model(bar_struct, indices=None):
         b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
         if b1_body is None or b2_body is None:
             continue
-        print('-'*10)
         if pairwise_collision(b1_body, b2_body):
             cr = pairwise_collision_info(b1_body, b2_body)
             draw_collision_diagnosis(cr, focus_camera=True)
             is_collided = True
             if not has_gui():
                 assert False, '{}-{} collision!'.format(b1_body, b2_body)
-
+    cprint('Model valid: {}'.format(not is_collided), 'red' if is_collided else 'green')
     wait_if_gui('model checking finished.')
 
 

@@ -21,7 +21,7 @@ from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DIAGNOSIS = False
-DYNMAIC_RES_RATIO = 0.5
+DYNMAIC_RES_RATIO = 0.2
 
 ##################################################
 

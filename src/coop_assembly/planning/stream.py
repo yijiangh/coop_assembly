@@ -19,7 +19,8 @@ from pybullet_planning import link_from_name, set_pose, \
     interpolate_poses, create_attachment, plan_cartesian_motion, INF, GREEN, BLUE, RED, set_color, get_all_links, step_simulation, get_aabb, \
     get_bodies_in_region, pairwise_link_collision, BASE_LINK, get_client, clone_collision_shape, clone_visual_shape, get_movable_joints, \
     create_flying_body, SE3, euler_from_quat, create_shape, get_cylinder_geometry, wait_if_gui, set_joint_positions, dump_body, get_links, \
-    get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, get_relative_pose
+    get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, get_relative_pose, \
+    remove_handles
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
 from .utils import Command, prune_dominated
@@ -46,6 +47,8 @@ RETREAT_DISTANCE = 0.025
 
 # collision checking safe margin
 MAX_DISTANCE = 0.0
+
+JOINT_JUMP_THRESHOLD = np.pi/3
 
 ###########################################
 
@@ -266,6 +269,18 @@ def command_collision(command, bodies):
 
 ######################################
 
+def check_path(joints, path, collision_fn=None, jump_threshold=None, diagnosis=False):
+    joint_jump_threshold = jump_threshold or [JOINT_JUMP_THRESHOLD for jt in joints]
+    for jt1, jt2 in zip(path[:-1], path[1:]):
+        delta_j = np.abs(np.array(jt1) - np.array(jt2))
+        if any(delta_j > np.array(joint_jump_threshold)):
+            return False
+    if collision_fn is not None:
+        for q in path:
+            if collision_fn(q, diagnosis):
+                return False
+    return True
+
 def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, element_from_index, collision_fn,
     bar_only=False, verbose=False, diagnosis=False, retreat_vector=np.array([0, 0, -1]), teleops=False):
     """Give the grasp and EE workspace poses, compute cartesian planning for pre-detach ~ detach ~ post-detach process.
@@ -305,11 +320,17 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
     robot_base_link = link_from_name(robot, BASE_LINK_NAME)
     ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
 
+    # tool_pose = get_link_pose(robot, tool_link)
+    # draw_pose(tool_pose)
+
     if IK_MODULE:
+    # try:
         assert IK_MODULE.get_dof() == len(ik_joints)
         # free_dof safe_guard?
         attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
+        assert attach_conf is not None
     else:
+    # except:
         # joint conf sample fn, used when ikfast is not used
         sample_fn = get_sample_fn(robot, ik_joints)
         set_joint_positions(robot, ik_joints, sample_fn())  # Random seed
@@ -317,6 +338,11 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
 
     if (attach_conf is None):
         if verbose : print('attach ik failure.')
+        # ?
+        # handles = draw_pose(attach_pose)
+        # wait_if_gui()
+        # remove_handles(handles)
+
         return None
     if collision_fn(attach_conf, diagnosis):
         if verbose : print('attach collision failure.')
@@ -342,10 +368,8 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         set_joint_positions(robot, ik_joints, approach_conf)
         path = plan_cartesian_motion(robot, ik_joints[0], tool_link, pre_attach_poses)
         if path is not None:
-            for q in path:
-                if collision_fn(q, diagnosis):
-                    path = None
-                    break
+            if not check_path(ik_joints, [approach_conf] + path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
+                path = None
 
     if path is None:
         if verbose : print('direct approach motion failure.')
@@ -369,10 +393,8 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         set_joint_positions(robot, ik_joints, attach_conf)
         path = plan_cartesian_motion(robot, ik_joints[0], tool_link, post_attach_poses)
         if path is not None:
-            for q in path:
-                if collision_fn(q, diagnosis):
-                    path = None
-                    break
+            if not check_path(ik_joints, [attach_conf] + path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
+                path = None
     if path is None:
         if verbose : print('direct retreat motion failure.')
         return None
