@@ -3,6 +3,7 @@ from __future__ import print_function
 import argparse
 import os
 import sys
+import json
 
 import numpy as np
 
@@ -31,6 +32,7 @@ SCALE = 1e-2 # original units of millimeters
 COORDINATES = ['x', 'y', 'z']
 
 def parse_point(json_point):
+    print(json_point)
     return SCALE*np.array([json_point[k] for k in COORDINATES])
 
 def unbounded_var(model, lower=-GRB.INFINITY, upper=GRB.INFINITY, name=''):
@@ -99,6 +101,21 @@ def visualize_solution(nodes, edges, solution):
         add_line(point1, point2, color=BLUE)
     wait_if_gui()
 
+def create_hint(nodes, edges, shrink=True):
+    hint_solution = {}
+    for edge in edges:
+        for node in edge:
+            node_point = nodes[node]['point']
+            if shrink:
+                other = get_other(edge, node)
+                other_point = nodes[other]['point']
+                fraction = 2*edges[edge]['radius'] / get_distance(node_point, other_point)
+                point = fraction*other_point + (1 - fraction)*node_point
+            else:
+                point = node_point
+            hint_solution[edge, node] = point
+    return hint_solution
+
 def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
                  length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0,
                  num_solutions=1, max_time=1*60, verbose=True):
@@ -108,18 +125,7 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
     assert contact_tolerance >= buffer_tolerance
     max_distance = get_distance(*aabb)
 
-    hint_solution = {}
-    for edge in edges:
-        for node in edge:
-            node_point = nodes[node]['point']
-            if False:
-                point = node_point
-            else:
-                other = get_other(edge, node)
-                other_point = nodes[other]['point']
-                fraction = 2*edges[edge]['radius'] / get_distance(node_point, other_point)
-                point = fraction*other_point + (1 - fraction)*node_point
-            hint_solution[edge, node] = point
+    hint_solution = create_hint(nodes, edges)
     visualize_solution(nodes, edges, hint_solution)
 
     model = Model(name='Construction')
@@ -274,21 +280,26 @@ def main():
     args = parser.parse_args()
     print('Arguments:', args)
 
-    skeletons = [file_name for file_name in os.listdir(DATA_DIR) if file_name.endswith('_skeleton.json')]
-    print(len(skeletons), skeletons)
-    #skeleton = skeletons[0]
-    skeleton = 'cube_skeleton.json'
+    #skeletons = [file_name for file_name in os.listdir(DATA_DIR) if file_name.endswith('_skeleton.json')]
+    #print(len(skeletons), skeletons)
+    #file_name = skeletons[0]
+    file_name = 'cube_skeleton.json'
+    file_name = '2_tets.json'
 
-    json_data = read_json(os.path.join(DATA_DIR, skeleton))
-    #print(json.dumps(json_data, sort_keys=True, indent=2))
+    json_data = read_json(os.path.join(DATA_DIR, file_name))
+    print(json.dumps(json_data, sort_keys=True, indent=2))
+    json_data = json_data['overall_structure'] # bar_structure | overall_structure
+    # bar_structure: adjacency, attributes, edge, node
+    # overall_structure: adjacency, edge, node
 
     neighbors_from_node = {n: (set(neighbors)) for n, neighbors in json_data['adjacency'].items()} # sorted
     print(neighbors_from_node)
     edges = {frozenset({n1, n2}): info for n1, neighbors in json_data['edge'].items() for n2, info in neighbors.items()}
     for info in edges.values():
+        info['radius'] = 3.17
         info['radius'] *= SCALE
     print(edges)
-    nodes = {n: {'point': parse_point(info), 'fixed': info['fixed']} for n, info in json_data['node'].items()}
+    nodes = {n: {'point': parse_point(info)} for n, info in json_data['node'].items()} # 'fixed': info['fixed']
     print(nodes)
 
     connect(use_gui=args.viewer)
