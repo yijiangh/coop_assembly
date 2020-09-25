@@ -40,8 +40,10 @@ from coop_assembly.planning.regression import regression
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
-BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
-BOTTOM_BUFFER = 0.005
+# BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
+BUILD_PLATE_CENTER = np.array([650, 0, -14.23])*1e-3
+# BOTTOM_BUFFER = 0.005
+BOTTOM_BUFFER = 0.01
 # BOTTOM_BUFFER = 0.1
 
 ########################################

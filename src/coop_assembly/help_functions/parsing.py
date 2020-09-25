@@ -28,4 +28,7 @@ def parse_saved_structure_data(file_path):
     with open(file_path, 'r')  as f:
         data = json.load(f)
     cprint('Parsed file name: {} | write_time: {} | '.format(file_path, data['write_time']), 'green')
-    return data['bar_structure'], data['overall_structure'], data['radius']
+    o_data = None
+    if 'overall_structure' in data:
+        o_data = data['overall_structure']
+    return data['bar_structure'], o_data

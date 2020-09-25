@@ -37,7 +37,70 @@ from coop_assembly.planning.utils import load_world
 
 GROUND_INDEX = -1
 
-METHOD_OPTIONS = ['search', 'shrink']
+METHOD_OPTIONS = ['search', 'shrink', 'bar_network']
+
+########################################
+def from_bar_network(problem, debug=False, viewer=False):
+    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
+
+    problem_path = get_assembly_path(problem)
+    with open(problem_path) as json_file:
+        data = json.load(json_file)
+        cprint('Parsed from : {}'.format(problem_path), 'green')
+    bar_network = Network.from_data(data)
+
+    b_struct = BarStructure()
+    centroid_pt = np.zeros(3)
+
+    # all_elements = frozenset(edges)
+    # bar_from_elements = {}
+    # for e in all_elements:
+    #     p0 = node_points[e[0]]
+    #     p1 = node_points[e[1]]
+    #     delta_p = (p1 - p0) / norm(p1 - p0)
+    #     shrink = 0.0
+    #     if 'shrink' in edge_attributes[e]:
+    #         shrink = edge_attributes[e]['shrink']
+    #     bar_from_elements[e] = {
+    #         e[0] : p0 + shrink*delta_p,
+    #         e[1] : p1 - shrink*delta_p
+    #         }
+
+    index_from_element = {}
+    for v, v_data in bar_network.nodes(data=True):
+        axis_endpts = v_data['axis_endpoints']
+        _ , _, vec_z = calculate_coord_sys(axis_endpts, centroid_pt)
+        is_grounded = v_data['fixed']
+        radius = v_data['radius']
+        bar_key = b_struct.add_bar(v, [p for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
+        index_from_element[v] = bar_key
+
+    for e in bar_network.edges():
+        # update contact point into BarS's edges
+        # b_struct.connect_bars(*e)
+        # contact_pts = compute_contact_line_between_bars(b_struct, *e)
+        # b_struct.edge[e[0]][e[1]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
+
+        b_struct.connect_bars(index_from_element[e[0]], index_from_element[e[1]])
+        contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e[0]], index_from_element[e[1]])
+        b_struct.edge[index_from_element[e[0]]][index_from_element[e[1]]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
+
+    # * add grounded connector
+    grounded_bars = list(b_struct.get_grounded_bar_keys())
+    for ground_k in grounded_bars:
+        b_struct.connect_bars(ground_k, GROUND_INDEX)
+        # find the lower pt of the two
+        axis_endpts = b_struct.get_bar_axis_end_pts(ground_k)
+        if axis_endpts[0][2] > axis_endpts[1][2]:
+            axis_endpts = axis_endpts[::-1]
+        contact_pts = [axis_endpts[0], axis_endpts[0]-np.array([0,0,radius])]
+        b_struct.edge[ground_k][GROUND_INDEX]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
+
+    element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 0.5))
+    if debug:
+        wait_if_gui('Final bar assembly.')
+
+    return b_struct
 
 #######################################
 # directly turn a 3D line graph into truss by shrinking the edges to avoid collision
@@ -52,9 +115,12 @@ def generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, r
         p0 = node_points[e[0]]
         p1 = node_points[e[1]]
         delta_p = (p1 - p0) / norm(p1 - p0)
+        shrink = 0.0
+        if 'shrink' in edge_attributes[e]:
+            shrink = edge_attributes[e]['shrink']
         bar_from_elements[e] = {
-            e[0] : p0 + edge_attributes[e]['shrink']*delta_p,
-            e[1] : p1 - edge_attributes[e]['shrink']*delta_p
+            e[0] : p0 + shrink*delta_p,
+            e[1] : p1 - shrink*delta_p
             }
 
     index_from_element = {}
@@ -640,7 +706,7 @@ def retrace_sequence(visited, current_state, horizon=INF):
     return previous_tet_ids + [command]
 
 #############################################################
-def gen_truss(problem, viewer=False, radius=3.17, write=False, debug=False, method='search', **kwargs):
+def gen_truss(problem, viewer=False, radius=3.17, debug=False, method='search', **kwargs):
     """[summary]
 
     Parameters
@@ -651,8 +717,6 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, debug=False, meth
         enable pybullet viewer, by default False
     radius : float, optional
         bar radius in millimeter, by default 3.17
-    write : bool, optional
-        [description], by default False
 
     Returns
     -------
@@ -708,10 +772,6 @@ def gen_truss(problem, viewer=False, radius=3.17, write=False, debug=False, meth
     else:
         raise NotImplementedError('Unsupported method : {}'.format(method))
 
-    if write:
-        export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)
-        # export_structure_data(b_struct.to_data(), radius=radius, **kwargs)
-
     cprint('Done.', 'green')
 
     return b_struct
@@ -738,10 +798,20 @@ def main():
     export_file_name = args.problem
     if 'skeleton' in export_file_name:
         export_file_name = export_file_name.split('_skeleton')[0] + '.json'
+    if 'raw_bar_graph' in export_file_name:
+        export_file_name = export_file_name.split('_raw_bar_graph')[0] + '.json'
 
-    bar_struct = gen_truss(args.problem, viewer=args.viewer, radius=args.radius, write=args.write, save_dir=FILE_DIR, file_name=export_file_name,
-        method=args.method, debug=args.debug)
-    check_model(bar_struct, args.subset_bars)
+    if args.method != 'bar_network':
+        b_struct = gen_truss(args.problem, viewer=args.viewer, radius=args.radius,
+            method=args.method, debug=args.debug)
+    else:
+        b_struct = from_bar_network(args.problem, viewer=args.viewer, debug=args.debug)
+
+    if args.write:
+        export_structure_data(b_struct.data, save_dir=FILE_DIR, file_name=export_file_name)
+        # export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)
+
+    check_model(b_struct, args.subset_bars)
 
     reset_simulation()
     disconnect()

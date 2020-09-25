@@ -328,7 +328,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         assert IK_MODULE.get_dof() == len(ik_joints)
         # free_dof safe_guard?
         attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
-        assert attach_conf is not None
+        # assert attach_conf is not None
     else:
     # except:
         # joint conf sample fn, used when ikfast is not used
