@@ -8,15 +8,13 @@ import numpy as np
 
 sys.path.append(os.environ['PDDLSTREAM_PATH'])
 
-# PDDLSTREAM_PATH
-
-from pddlstream.utils import adjacent_from_edges, str_from_object, find_unique
-from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, wait_for_user, disconnect, GREEN, add_line, \
-    RED, draw_pose, Pose, aabb_from_points, draw_aabb, get_aabb_center, get_aabb_extent, AABB, get_distance, get_pairs, wait_if_gui, \
-    INF, STATIC_MASS, set_color, quat_from_euler, apply_alpha, create_cylinder, set_point, set_quat, get_aabb, Euler, SEPARATOR, \
+from pddlstream.utils import str_from_object, find_unique
+from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, disconnect, add_line, \
+    RED, draw_pose, Pose, aabb_from_points, get_aabb_center, get_aabb_extent, AABB, get_distance, wait_if_gui, \
+    INF, STATIC_MASS, quat_from_euler, set_point, set_quat, Euler, SEPARATOR, \
     draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule
 
-from itertools import combinations
+from itertools import combinations, permutations
 from collections import defaultdict
 from gurobipy import Model, GRB, quicksum, GurobiError
 
@@ -72,19 +70,58 @@ def get_length(edge, nodes):
     n1, n2 = list(edge)
     return get_distance(nodes[n1]['point'], nodes[n2]['point'])
 
-def enumerate_steps(edge, nodes, edges, fraction=0.1, spacing=1.5):
+def enumerate_steps(edge, nodes, edges, fraction=0.1, spacing=1.5): # 1e-3 | 0.1
     step_size = spacing * edges[edge]['radius']
     num_steps = int(np.ceil(fraction * get_length(edge, nodes) / step_size))
     return np.linspace(start=0., stop=fraction, num=num_steps, endpoint=True)
 
-def solve_gurobi(nodes, edges, aabb, min_tangents=2,
-                 length_tolerance=SCALE*10, contact_tolerance=SCALE*10, buffer_tolerance=SCALE*0,
+def visualize_solution(nodes, edges, solution):
+    edge_points = defaultdict(list)
+    for (edge, node), point in solution.items():
+        edge_points[edge].append(point)
+        draw_point(point, size=2*edges[edge]['radius'], color=BLUE)
+        # body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+        # set_point(body, point)
+
+        point2 = solution[edge, get_other(edge, node)]
+        for l in enumerate_steps(edge, nodes, edges):
+            trailing = (1 - l) * point + (l * point2)
+            body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+            set_point(body, trailing)
+
+    # TODO: analyze collisions and proximity
+    #bodies = []
+    for edge, points in edge_points.items():
+        point1, point2 = points
+        print('{}: {:.3f}'.format(str_from_object(edge), get_distance(point1, point2)))
+        element = create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, 0.25))
+        #bodies.append(element)
+        add_line(point1, point2, color=BLUE)
+    wait_if_gui()
+
+def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
+                 length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0,
                  num_solutions=1, max_time=1*60, verbose=True):
     # https://www.gurobi.com/documentation/9.0/refman/py_python_api_details.html
 
     print(SEPARATOR)
     assert contact_tolerance >= buffer_tolerance
     max_distance = get_distance(*aabb)
+
+    hint_solution = {}
+    for edge in edges:
+        for node in edge:
+            node_point = nodes[node]['point']
+            if False:
+                point = node_point
+            else:
+                other = get_other(edge, node)
+                other_point = nodes[other]['point']
+                fraction = 2*edges[edge]['radius'] / get_distance(node_point, other_point)
+                point = fraction*other_point + (1 - fraction)*node_point
+            hint_solution[edge, node] = point
+    visualize_solution(nodes, edges, hint_solution)
+
     model = Model(name='Construction')
     # https://www.gurobi.com/documentation/9.0/refman/parameters.html#sec:Parameters
     model.setParam(GRB.Param.OutputFlag, verbose)
@@ -98,8 +135,9 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2,
     objective = []
     for edge in edges:
         for node in edge:
+            hint = hint_solution[edge, node]
             var = np_var(model, lower=aabb.lower, upper=aabb.upper)
-            for v, hint in safe_zip(var, nodes[node]['point']):
+            for v, hint in safe_zip(var, hint):
                 # VarHintVal versus Start: Variables hints and MIP starts are similar in concept,
                 # but they behave in very different ways
                 v.VarHintVal = hint # case insensitive?
@@ -117,8 +155,9 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2,
         print('Edge: {} | Length: {:.3f}'.format(str_from_object(edge), length))
         difference = x_vars[edge, node2] - x_vars[edge, node1]
         if length_tolerance < INF:
-            model.addConstr(sum(difference * difference) >= (length - contact_tolerance) ** 2)
-            model.addConstr(sum(difference * difference) <= (length + contact_tolerance) ** 2)
+            # TODO: make length_tolerance a function of the radius
+            model.addConstr(sum(difference * difference) >= (length - length_tolerance) ** 2)
+            model.addConstr(sum(difference * difference) <= (length + length_tolerance) ** 2)
     model.setObjective(quicksum(objective), sense=GRB.MINIMIZE)
 
     #adjacent = adjacent_from_edges(edges) # vertices
@@ -204,43 +243,22 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2,
     for edge, neighbors in z_var_from_edge.items():
         print(str_from_object(edge), neighbors)
 
-    edge_points = defaultdict(list)
-    for (edge, node), var in x_vars.items():
-        point = np.array([v.x for v in var])
-        edge_points[edge].append(point)
-        draw_point(point, size=2*edges[edge]['radius'], color=BLUE)
-
-        # body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
-        # set_point(body, point)
-
-        point2 = np.array([v.x for v in x_vars[edge, get_other(edge, node)]])
-        for l in enumerate_steps(edge, nodes, edges):
-            trailing = (1 - l) * point + (l * point2)
-            body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
-            set_point(body, trailing)
-
-    # TODO: analyze collisions and proximity
-    #bodies = []
-    for edge, points in edge_points.items():
-        point1, point2 = points
-        print('{}: {:.3f}'.format(str_from_object(edge), get_distance(point1, point2)))
-        element = create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, 0.25))
-        #bodies.append(element)
-        add_line(point1, point2, color=BLUE)
-
-    wait_if_gui()
+    solution = {(edge, node): np.array([v.x for v in var])
+                for (edge, node), var in x_vars.items()}
+    visualize_solution(nodes, edges, solution)
 
 ##################################################
 
 def visualize(nodes, edges):
     for edge in edges:
-        n1, n2 = edge
-        point1, point2 = nodes[n1]['point'], nodes[n2]['point']
-        for l in enumerate_steps(edge, nodes, edges):
-            point = l*point1 + (1-l)*point2
-            draw_point(point, size=2. * edges[edge]['radius'], color=BLUE)
-            body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
-            set_point(body, point)
+        for n1, n2 in permutations(edge):
+            point1, point2 = nodes[n1]['point'], nodes[n2]['point']
+            for l in enumerate_steps(edge, nodes, edges):
+                point = l*point1 + (1-l)*point2
+                draw_point(point, size=2. * edges[edge]['radius'], color=BLUE)
+                body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+                set_point(body, point)
+    wait_if_gui()
 
 ##################################################
 
@@ -290,8 +308,6 @@ def main():
     #wait_if_gui()
 
     #visualize(nodes, edges)
-    #wait_if_gui()
-
     solve_gurobi(nodes, edges, aabb)
 
     wait_if_gui()
