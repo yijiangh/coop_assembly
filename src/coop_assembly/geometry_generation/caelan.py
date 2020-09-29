@@ -79,7 +79,7 @@ def get_length(edge, nodes):
     n1, n2 = list(edge)
     return get_distance(nodes[n1]['point'], nodes[n2]['point'])
 
-def enumerate_steps(length, radius, fraction=0.1, spacing=1.5): # 1e-3 | 0.1
+def enumerate_steps(length, radius, fraction=0.25, spacing=1.5): # 1e-3 | 0.1
     step_size = spacing * radius
     num_steps = int(np.ceil(fraction * length / step_size))
     return np.linspace(start=0., stop=fraction, num=num_steps, endpoint=True)
@@ -146,7 +146,7 @@ def create_hint(nodes, edges, shrink=True):
 
 ##################################################
 
-def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
+def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | INF
                  length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0,
                  num_solutions=1, max_time=1*60, verbose=True):
     # https://www.gurobi.com/documentation/9.0/refman/py_python_api_details.html
@@ -156,7 +156,8 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
     assert contact_tolerance >= buffer_tolerance
     max_distance = get_distance(*aabb)
 
-    hint_solution = create_hint(nodes, edges)
+    if hint_solution is None:
+        hint_solution = create_hint(nodes, edges)
     #visualize_solution(edges, hint_solution)
 
     model = Model(name='Construction')
@@ -174,12 +175,16 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
         for node in edge:
             hint = hint_solution[edge, node]
             var = np_var(model, lower=aabb.lower, upper=aabb.upper)
+            # TODO: infeasible IIS
             for v, hint in safe_zip(var, hint):
                 # VarHintVal versus Start: Variables hints and MIP starts are similar in concept,
                 # but they behave in very different ways
-                v.VarHintVal = hint # case insensitive?
+                v.varHintVal = hint # case insensitive?
+                #v.start = hint
                 #v.setAttr(GRB.Attr.VarHintVal, hint)
                 #v.getAttr(GRB.Attr.VarHintVal) # TODO: error
+                # TODO: diagnose
+
             x_vars[edge, node] = var
             difference = var - nodes[node]['point']
             objective.append(sum(difference*difference))
@@ -208,6 +213,7 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
         #num_tangents = min(len(neighbors) - 1, 2)
         #print(len(edges), num_tangents)
         for pair in map(EDGE, combinations(neighbors, r=2)):
+            # TODO: varHintVal
             z_vars[pair, node] = model.addVar(vtype=GRB.BINARY, name='')  # , name="x")
 
     z_var_from_edge = defaultdict(list)
@@ -241,6 +247,7 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
             z_var = z_vars[pair, node1]
             model.addConstr(sum(difference * difference) <=
                             (distance + contact_tolerance) ** 2 + (1 - z_var) * max_distance ** 2)
+            # TODO: allow nearby contact
 
             other1 = get_other(edge1, node1)
             for l1 in enumerate_steps(get_distance(nodes[node1]['point'], nodes[other1]['point']), edges[edge1]['radius']):
@@ -327,10 +334,9 @@ def main():
     #print(len(skeletons), skeletons)
     #file_name = skeletons[0]
     file_name = 'cube_skeleton.json'
-    file_name = '2_tets.json'
+    #file_name = '2_tets.json'
 
     json_data = read_json(os.path.join(DATA_DIR, file_name))
-    structure = 'bar_structure' # bar_structure | overall_structure
     print(json.dumps(json_data, sort_keys=True, indent=2))
     # bar_structure: adjacency, attributes, edge (endpoints), node (axis_endpoints, goal_pose, radius, grounded)
     # overall_structure: adjacency, edge (radius), node (point)
@@ -340,13 +346,19 @@ def main():
 
     connect(use_gui=args.viewer)
     #floor = create_plane(color=GREEN)
+
+    solution = None
+    if 'overall_structure' in json_data:
+        nodes, edges = parse_structure(json_data['overall_structure'])
+    else:
+        nodes, edges = parse_structure(json_data)
+
+    structure = 'overall_structure' # bar_structure | overall_structure
     if structure == 'bar_structure':
         edges, solution = parse_solution(json_data[structure])
         #visualize_solution(edges, solution)
-        nodes, _ = parse_structure(json_data['overall_structure'])
     elif structure == 'overall_structure':
-        nodes, edges = parse_structure(json_data[structure])
-        solution = None
+        pass
     else:
         raise NotImplementedError(structure)
 
@@ -364,7 +376,7 @@ def main():
     #wait_if_gui()
 
     #visualize_structure(nodes, edges)
-    solve_gurobi(nodes, edges, aabb)
+    solve_gurobi(nodes, edges, aabb, hint_solution=solution)
 
     wait_if_gui()
     disconnect()
