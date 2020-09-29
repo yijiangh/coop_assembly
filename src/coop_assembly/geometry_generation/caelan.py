@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 import json
-
+import math
 import numpy as np
 
 sys.path.append(os.environ['PDDLSTREAM_PATH'])
@@ -13,7 +13,7 @@ from pddlstream.utils import str_from_object, find_unique
 from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, disconnect, add_line, \
     RED, draw_pose, Pose, aabb_from_points, get_aabb_center, get_aabb_extent, AABB, get_distance, wait_if_gui, \
     INF, STATIC_MASS, quat_from_euler, set_point, set_quat, Euler, SEPARATOR, \
-    draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule
+    draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule, set_camera
 
 from itertools import combinations, permutations
 from collections import defaultdict
@@ -31,8 +31,15 @@ SCALE = 1e-2 # original units of millimeters
 
 COORDINATES = ['x', 'y', 'z']
 
+EDGE = frozenset
+#EDGE = lambda nodes: frozenset(map(int, nodes))
+#EDGE = lambda x, y: frozenset({x, y})
+#def EDGE(nodes):
+#    return frozenset(map(int, nodes))
+
+##################################################
+
 def parse_point(json_point):
-    print(json_point)
     return SCALE*np.array([json_point[k] for k in COORDINATES])
 
 def unbounded_var(model, lower=-GRB.INFINITY, upper=GRB.INFINITY, name=''):
@@ -72,34 +79,55 @@ def get_length(edge, nodes):
     n1, n2 = list(edge)
     return get_distance(nodes[n1]['point'], nodes[n2]['point'])
 
-def enumerate_steps(edge, nodes, edges, fraction=0.1, spacing=1.5): # 1e-3 | 0.1
-    step_size = spacing * edges[edge]['radius']
-    num_steps = int(np.ceil(fraction * get_length(edge, nodes) / step_size))
+def enumerate_steps(length, radius, fraction=0.1, spacing=1.5): # 1e-3 | 0.1
+    step_size = spacing * radius
+    num_steps = int(np.ceil(fraction * length / step_size))
     return np.linspace(start=0., stop=fraction, num=num_steps, endpoint=True)
 
-def visualize_solution(nodes, edges, solution):
+##################################################
+
+def center_viewer(nodes, pitch=-np.pi/8, distance=2):
+    # TODO: be robust to SCALE
+    centroid = np.average([nodes[node]['point'] for node in nodes], axis=0)
+    centroid[2] = min(nodes[node]['point'][2] for node in nodes)
+    set_camera(yaw=math.degrees(0), pitch=math.degrees(pitch), distance=distance, target_position=centroid)
+    return draw_pose(Pose(point=centroid), length=1)
+
+def visualize_structure(nodes, edges):
+    for edge in edges:
+        for n1, n2 in permutations(edge):
+            point1, point2 = nodes[n1]['point'], nodes[n2]['point']
+            for l in enumerate_steps(get_distance(point1, point2), edges[edge]['radius']):
+                point = l*point1 + (1-l)*point2
+                draw_point(point, size=2. * edges[edge]['radius'], color=BLUE)
+                body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+                set_point(body, point)
+    wait_if_gui()
+
+def visualize_solution(edges, solution, alpha=0.25, **kwargs):
+    bodies = []
     edge_points = defaultdict(list)
     for (edge, node), point in solution.items():
         edge_points[edge].append(point)
         draw_point(point, size=2*edges[edge]['radius'], color=BLUE)
-        # body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
-        # set_point(body, point)
 
         point2 = solution[edge, get_other(edge, node)]
-        for l in enumerate_steps(edge, nodes, edges):
+        for l in enumerate_steps(get_distance(point, point2), edges[edge]['radius'], **kwargs):
             trailing = (1 - l) * point + (l * point2)
-            body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+            body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, alpha), mass=STATIC_MASS)
             set_point(body, trailing)
+            bodies.append(body)
 
     # TODO: analyze collisions and proximity
-    #bodies = []
     for edge, points in edge_points.items():
         point1, point2 = points
         print('{}: {:.3f}'.format(str_from_object(edge), get_distance(point1, point2)))
-        element = create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, 0.25))
-        #bodies.append(element)
+        bodies.append(create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, alpha)))
         add_line(point1, point2, color=BLUE)
     wait_if_gui()
+    return bodies
+
+##################################################
 
 def create_hint(nodes, edges, shrink=True):
     hint_solution = {}
@@ -116,17 +144,20 @@ def create_hint(nodes, edges, shrink=True):
             hint_solution[edge, node] = point
     return hint_solution
 
+##################################################
+
 def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
                  length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0,
                  num_solutions=1, max_time=1*60, verbose=True):
     # https://www.gurobi.com/documentation/9.0/refman/py_python_api_details.html
 
+    # TODO: all elements meeting at a joint represented by a sphere
     print(SEPARATOR)
     assert contact_tolerance >= buffer_tolerance
     max_distance = get_distance(*aabb)
 
     hint_solution = create_hint(nodes, edges)
-    visualize_solution(nodes, edges, hint_solution)
+    #visualize_solution(edges, hint_solution)
 
     model = Model(name='Construction')
     # https://www.gurobi.com/documentation/9.0/refman/parameters.html#sec:Parameters
@@ -176,7 +207,7 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
     for node, neighbors in adjacent.items():
         #num_tangents = min(len(neighbors) - 1, 2)
         #print(len(edges), num_tangents)
-        for pair in map(frozenset, combinations(neighbors, r=2)):
+        for pair in map(EDGE, combinations(neighbors, r=2)):
             z_vars[pair, node] = model.addVar(vtype=GRB.BINARY, name='')  # , name="x")
 
     z_var_from_edge = defaultdict(list)
@@ -206,16 +237,16 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
 
         if node1 == node2:
             #model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2) # Only neighbors
-            pair = frozenset({edge1, edge2})
+            pair = EDGE({edge1, edge2})
             z_var = z_vars[pair, node1]
             model.addConstr(sum(difference * difference) <=
                             (distance + contact_tolerance) ** 2 + (1 - z_var) * max_distance ** 2)
 
             other1 = get_other(edge1, node1)
-            for l1 in enumerate_steps(edge1, nodes, edges):
+            for l1 in enumerate_steps(get_distance(nodes[node1]['point'], nodes[other1]['point']), edges[edge1]['radius']):
                 point1 = (1 - l1) * var1 + (l1 * x_vars[edge1, other1])
                 other2 = get_other(edge2, node2)
-                for l2 in enumerate_steps(edge2, nodes, edges):
+                for l2 in enumerate_steps(get_distance(nodes[node2]['point'], nodes[other2]['point']), edges[edge2]['radius']):
                     point2 = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
                     difference = point2 - point1
                     model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2)  # Only neighbors
@@ -251,32 +282,44 @@ def solve_gurobi(nodes, edges, aabb, min_tangents=2, # 2 | INF
 
     solution = {(edge, node): np.array([v.x for v in var])
                 for (edge, node), var in x_vars.items()}
-    visualize_solution(nodes, edges, solution)
+    visualize_solution(edges, solution)
 
 ##################################################
 
-def visualize(nodes, edges):
-    for edge in edges:
-        for n1, n2 in permutations(edge):
-            point1, point2 = nodes[n1]['point'], nodes[n2]['point']
-            for l in enumerate_steps(edge, nodes, edges):
-                point = l*point1 + (1-l)*point2
-                draw_point(point, size=2. * edges[edge]['radius'], color=BLUE)
-                body = create_sphere(edges[edge]['radius'], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
-                set_point(body, point)
-    wait_if_gui()
+def parse_structure(json_data, radius=3.17):
+    # neighbors_from_node = {int(n): (set(map(int, neighbors))) for n, neighbors in json_data['adjacency'].items()} # sorted
+    # print(neighbors_from_node)
+    edges = {EDGE(map(int, {n1, n2})): info for n1, neighbors in json_data['edge'].items() for n2, info in neighbors.items()}
+    for info in edges.values():
+        if radius is not None:
+            info['radius'] = radius
+        info['radius'] *= SCALE
+    print('\nEdges:', len(edges), edges)
+
+    nodes = {int(n): {'point': parse_point(info)} for n, info in json_data['node'].items()} # 'fixed': info['fixed']
+    print('\nNodes:', len(nodes), nodes)
+    return nodes, edges
+
+def parse_solution(json_data):
+    edges = {}
+    solution = {}
+    for info in json_data['node'].values():
+        #create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, 0.25))
+        #add_line(point1, point2, color=BLUE)
+        edge = EDGE(map(int, info['o_edge']))
+        edges[edge] = info
+        info['radius'] *= SCALE
+        for node, point in safe_zip(info['o_edge'], info['axis_endpoints']):
+            solution[edge, node] = SCALE*np.array(point)
+    return edges, solution
 
 ##################################################
 
 def main():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--viewer', action='store_true')
+    parser.add_argument('-v', '--viewer', action='store_true', help='')
     # parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
-    # parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')
-    # parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
-    # parser.add_argument('-wr', '--write', action='store_true', help='Export results')
-    # parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
     args = parser.parse_args()
     print('Arguments:', args)
 
@@ -287,26 +330,28 @@ def main():
     file_name = '2_tets.json'
 
     json_data = read_json(os.path.join(DATA_DIR, file_name))
+    structure = 'bar_structure' # bar_structure | overall_structure
     print(json.dumps(json_data, sort_keys=True, indent=2))
-    json_data = json_data['overall_structure'] # bar_structure | overall_structure
-    # bar_structure: adjacency, attributes, edge, node
-    # overall_structure: adjacency, edge, node
+    # bar_structure: adjacency, attributes, edge (endpoints), node (axis_endpoints, goal_pose, radius, grounded)
+    # overall_structure: adjacency, edge (radius), node (point)
 
-    neighbors_from_node = {n: (set(neighbors)) for n, neighbors in json_data['adjacency'].items()} # sorted
-    print(neighbors_from_node)
-    edges = {frozenset({n1, n2}): info for n1, neighbors in json_data['edge'].items() for n2, info in neighbors.items()}
-    for info in edges.values():
-        info['radius'] = 3.17
-        info['radius'] *= SCALE
-    print(edges)
-    nodes = {n: {'point': parse_point(info)} for n, info in json_data['node'].items()} # 'fixed': info['fixed']
-    print(nodes)
+    # for field in ['edge', 'node']:
+    #     print(field, list(json_data[field].items())[0])
 
     connect(use_gui=args.viewer)
     #floor = create_plane(color=GREEN)
-    handles = draw_pose(Pose(), length=1)
-    handles += [add_line(nodes[n1]['point'], nodes[n2]['point'], color=RED) for n1, n2 in edges]
+    if structure == 'bar_structure':
+        edges, solution = parse_solution(json_data[structure])
+        #visualize_solution(edges, solution)
+        nodes, _ = parse_structure(json_data['overall_structure'])
+    elif structure == 'overall_structure':
+        nodes, edges = parse_structure(json_data[structure])
+        solution = None
+    else:
+        raise NotImplementedError(structure)
 
+    center_viewer(nodes)
+    handles = [add_line(nodes[n1]['point'], nodes[n2]['point'], color=RED) for n1, n2 in edges]
     points = [info['point'] for info in nodes.values()]
     aabb = aabb_from_points(points)
     #hull = convex_hull(points)
@@ -318,7 +363,7 @@ def main():
     #handles.extend(draw_aabb(aabb, color=GREEN))
     #wait_if_gui()
 
-    #visualize(nodes, edges)
+    #visualize_structure(nodes, edges)
     solve_gurobi(nodes, edges, aabb)
 
     wait_if_gui()
