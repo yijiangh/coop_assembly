@@ -221,7 +221,6 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
         for edge in pair:
             z_var_from_edge[edge, node].append(var)
             # Constraint that one is less than the other
-            #l_var = model.addVar(lb=0, ub=1)
 
     for neighbors in z_var_from_edge.values():
         num_tangents = min(len(neighbors), min_tangents)
@@ -241,13 +240,16 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
         var1, var2 = x_vars[edge1, node1], x_vars[edge2, node2]
         other1 = get_other(edge1, node1)
         other2 = get_other(edge2, node2)
+        distance = edges[edge1]['radius'] + edges[edge2]['radius']
         if node1 == node2:
-            #model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2) # Only neighbors
-            l1 = l2 = 0
-            point1 = (1 - l1) * var1 + (l1 * x_vars[edge1, other1])
-            point2 = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
+            #l1_var = l2_var = 0
+            # https://en.wikipedia.org/wiki/Linear_complementarity_problem
+            # TODO: introduce slack variables for these points
+            l1_var = np.full(var1.shape, model.addVar(lb=0, ub=0.5)) # TODO: doesn't work as predicted
+            l2_var = np.full(var2.shape, model.addVar(lb=0, ub=0.5))
+            point1 = (1 - l1_var) * var1 + (l1_var * x_vars[edge1, other1])
+            point2 = (1 - l2_var) * var2 + (l2_var * x_vars[edge2, other2])
             difference = point2 - point1
-            distance = edges[edge1]['radius'] + edges[edge2]['radius']
             pair = EDGE({edge1, edge2})
             z_var = z_vars[pair, node1]
             model.addConstr(sum(difference * difference) <=
