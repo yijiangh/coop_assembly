@@ -220,6 +220,8 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
     for (pair, node), var in z_vars.items():
         for edge in pair:
             z_var_from_edge[edge, node].append(var)
+            # Constraint that one is less than the other
+            #l_var = model.addVar(lb=0, ub=1)
 
     for neighbors in z_var_from_edge.values():
         num_tangents = min(len(neighbors), min_tangents)
@@ -237,26 +239,30 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
             assert node1 != node2
             continue
         var1, var2 = x_vars[edge1, node1], x_vars[edge2, node2]
-        difference = var2 - var1
-        distance = edges[edge1]['radius'] + edges[edge2]['radius']
-        #model.addConstr(sum(difference*difference) >= (distance + buffer_tolerance)**2) # All nodes
-
+        other1 = get_other(edge1, node1)
+        other2 = get_other(edge2, node2)
         if node1 == node2:
             #model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2) # Only neighbors
+            l1 = l2 = 0
+            point1 = (1 - l1) * var1 + (l1 * x_vars[edge1, other1])
+            point2 = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
+            difference = point2 - point1
+            distance = edges[edge1]['radius'] + edges[edge2]['radius']
             pair = EDGE({edge1, edge2})
             z_var = z_vars[pair, node1]
             model.addConstr(sum(difference * difference) <=
                             (distance + contact_tolerance) ** 2 + (1 - z_var) * max_distance ** 2)
             # TODO: allow nearby contact
 
-            other1 = get_other(edge1, node1)
-            for l1 in enumerate_steps(get_distance(nodes[node1]['point'], nodes[other1]['point']), edges[edge1]['radius']):
+        if node1 == node2: # Only neighbors
+            distance1 = get_distance(nodes[node1]['point'], nodes[other1]['point'])
+            for l1 in enumerate_steps(distance1, edges[edge1]['radius']):
                 point1 = (1 - l1) * var1 + (l1 * x_vars[edge1, other1])
-                other2 = get_other(edge2, node2)
-                for l2 in enumerate_steps(get_distance(nodes[node2]['point'], nodes[other2]['point']), edges[edge2]['radius']):
+                distance2 = get_distance(nodes[node2]['point'], nodes[other2]['point'])
+                for l2 in enumerate_steps(distance2, edges[edge2]['radius']):
                     point2 = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
                     difference = point2 - point1
-                    model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2)  # Only neighbors
+                    model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2)
 
     try:
         model.optimize()
