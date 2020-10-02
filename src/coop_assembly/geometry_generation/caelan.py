@@ -146,10 +146,30 @@ def create_hint(nodes, edges, shrink=True):
 
 ##################################################
 
+def create_point_var(model, aabb, edge, node, hint_solution=None):
+    hint = hint_solution[edge, node]
+    var = np_var(model, lower=aabb.lower, upper=aabb.upper)
+    if hint_solution is not None:
+        # TODO: infeasible IIS
+        for v, hint in safe_zip(var, hint):
+            # VarHintVal versus Start: Variables hints and MIP starts are similar in concept,
+            # but they behave in very different ways
+            v.varHintVal = hint  # case insensitive?
+            # v.start = hint
+            # v.setAttr(GRB.Attr.VarHintVal, hint)
+            # v.getAttr(GRB.Attr.VarHintVal) # TODO: error
+            # TODO: diagnose
+    return var
+
 def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | INF
                  length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0,
                  num_solutions=1, max_time=1*60, verbose=True):
     # https://www.gurobi.com/documentation/9.0/refman/py_python_api_details.html
+    # https://scicomp.stackexchange.com/questions/83/is-there-a-high-quality-nonlinear-programming-solver-for-python
+    # https://docs.scipy.org/doc/scipy/reference/tutorial/optimize.html#constrained-minimization-of-multivariate-scalar-functions-minimize
+    # https://pypi.org/project/mystic/
+    # https://www.cvxpy.org/
+    # https://github.com/coin-or/Ipopt
 
     # TODO: all elements meeting at a joint represented by a sphere
     print(SEPARATOR)
@@ -173,20 +193,8 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
     objective = []
     for edge in edges:
         for node in edge:
-            hint = hint_solution[edge, node]
-            var = np_var(model, lower=aabb.lower, upper=aabb.upper)
-            # TODO: infeasible IIS
-            for v, hint in safe_zip(var, hint):
-                # VarHintVal versus Start: Variables hints and MIP starts are similar in concept,
-                # but they behave in very different ways
-                v.varHintVal = hint # case insensitive?
-                #v.start = hint
-                #v.setAttr(GRB.Attr.VarHintVal, hint)
-                #v.getAttr(GRB.Attr.VarHintVal) # TODO: error
-                # TODO: diagnose
-
-            x_vars[edge, node] = var
-            difference = var - nodes[node]['point']
+            x_vars[edge, node] = create_point_var(model, aabb, edge, node, hint_solution)
+            difference = x_vars[edge, node] - nodes[node]['point']
             objective.append(sum(difference*difference))
 
         node1, node2 = edge
@@ -200,7 +208,7 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
             # TODO: make length_tolerance a function of the radius
             model.addConstr(sum(difference * difference) >= (length - length_tolerance) ** 2)
             model.addConstr(sum(difference * difference) <= (length + length_tolerance) ** 2)
-    model.setObjective(quicksum(objective), sense=GRB.MINIMIZE)
+    #model.setObjective(quicksum(objective), sense=GRB.MINIMIZE)
 
     #adjacent = adjacent_from_edges(edges) # vertices
     adjacent = defaultdict(set)
@@ -233,6 +241,7 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
                 z_var.lb = z_var.ub = 1
                 #z_var.start = 1
 
+    epsilon = SCALE*1 # 0 | 1
     for (edge1, node1), (edge2, node2) in combinations(x_vars, r=2):
         if edge1 == edge2:
             assert node1 != node2
@@ -244,26 +253,38 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
         if node1 == node2:
             #l1_var = l2_var = 0
             # https://en.wikipedia.org/wiki/Linear_complementarity_problem
-            # TODO: introduce slack variables for these points
-            l1_var = np.full(var1.shape, model.addVar(lb=0, ub=0.5)) # TODO: doesn't work as predicted
+
+            l1_var = np.full(var1.shape, model.addVar(lb=0, ub=0.5))
+            point1_var = create_point_var(model, aabb, edge1, node1, hint_solution)
+            contact1_var = (1 - l1_var) * var1 + (l1_var * x_vars[edge1, other1])
+            #model.addConstr(contact1_var == point1_var)
+            diff1 = contact1_var - point1_var
+            #model.addConstr(sum(diff1*diff1) < 1e-2) # TODO: doesn't work (as predicted)
+            for x in diff1:
+                model.addConstr(x >= -epsilon)
+                model.addConstr(x <= epsilon)
+
             l2_var = np.full(var2.shape, model.addVar(lb=0, ub=0.5))
-            point1 = (1 - l1_var) * var1 + (l1_var * x_vars[edge1, other1])
-            point2 = (1 - l2_var) * var2 + (l2_var * x_vars[edge2, other2])
-            difference = point2 - point1
+            point2_var = create_point_var(model, aabb, edge2, node2, hint_solution)
+            contact2_var = (1 - l2_var) * var2 + (l2_var * x_vars[edge2, other2])
+            for x in (contact2_var - point2_var):
+                model.addConstr(x >= -epsilon)
+                model.addConstr(x <= epsilon)
+
+            difference = point2_var - point1_var
             pair = EDGE({edge1, edge2})
             z_var = z_vars[pair, node1]
             model.addConstr(sum(difference * difference) <=
                             (distance + contact_tolerance) ** 2 + (1 - z_var) * max_distance ** 2)
-            # TODO: allow nearby contact
 
         if node1 == node2: # Only neighbors
             distance1 = get_distance(nodes[node1]['point'], nodes[other1]['point'])
             for l1 in enumerate_steps(distance1, edges[edge1]['radius']):
-                point1 = (1 - l1) * var1 + (l1 * x_vars[edge1, other1])
+                point1_var = (1 - l1) * var1 + (l1 * x_vars[edge1, other1])
                 distance2 = get_distance(nodes[node2]['point'], nodes[other2]['point'])
                 for l2 in enumerate_steps(distance2, edges[edge2]['radius']):
-                    point2 = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
-                    difference = point2 - point1
+                    point2_var = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
+                    difference = point2_var - point1_var
                     model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2)
 
     try:
@@ -341,8 +362,8 @@ def main():
     #skeletons = [file_name for file_name in os.listdir(DATA_DIR) if file_name.endswith('_skeleton.json')]
     #print(len(skeletons), skeletons)
     #file_name = skeletons[0]
-    file_name = 'cube_skeleton.json'
-    #file_name = '2_tets.json'
+    #file_name = 'cube_skeleton.json'
+    file_name = '2_tets.json'
 
     json_data = read_json(os.path.join(DATA_DIR, file_name))
     print(json.dumps(json_data, sort_keys=True, indent=2))
@@ -361,10 +382,10 @@ def main():
     else:
         nodes, edges = parse_structure(json_data)
 
-    structure = 'overall_structure' # bar_structure | overall_structure
+    structure = 'bar_structure' # bar_structure | overall_structure
     if structure == 'bar_structure':
         edges, solution = parse_solution(json_data[structure])
-        #visualize_solution(edges, solution)
+        visualize_solution(edges, solution)
     elif structure == 'overall_structure':
         pass
     else:
@@ -386,7 +407,6 @@ def main():
     #visualize_structure(nodes, edges)
     solve_gurobi(nodes, edges, aabb, hint_solution=solution)
 
-    wait_if_gui()
     disconnect()
 
 if __name__ == '__main__':
