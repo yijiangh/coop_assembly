@@ -13,10 +13,10 @@ from pddlstream.utils import str_from_object, find_unique
 from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, disconnect, add_line, \
     RED, draw_pose, Pose, aabb_from_points, get_aabb_center, get_aabb_extent, AABB, get_distance, wait_if_gui, \
     INF, STATIC_MASS, quat_from_euler, set_point, set_quat, Euler, SEPARATOR, \
-    draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule, set_camera
+    draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule, set_camera, create_cylinder
 
 from itertools import combinations, permutations
-from collections import defaultdict
+from collections import defaultdict, Counter
 from gurobipy import Model, GRB, quicksum, GurobiError
 
 # https://github.com/yijiangh/coop_assembly/tree/feature/truss_gen/tests/test_data
@@ -53,7 +53,7 @@ def np_var(model, name='', lower=None, upper=None):
     return np.array([unbounded_var(model, lower=lower[i], upper=upper[i], name=name)
                      for i, k in enumerate(COORDINATES)])
 
-def create_element(p1, p2, radius, color=apply_alpha(RED, alpha=1)):
+def create_element(p1, p2, radius, capsule=True, color=apply_alpha(RED, alpha=1)):
     height = np.linalg.norm(p2 - p1)
     center = (p1 + p2) / 2
     # extents = (p2 - p1) / 2
@@ -66,8 +66,10 @@ def create_element(p1, p2, radius, color=apply_alpha(RED, alpha=1)):
 
     # Visually, smallest diameter is 2e-3
     # TODO: boxes
-    #body = create_cylinder(radius, height, color=color, mass=STATIC_MASS)
-    body = create_capsule(radius, height, color=color, mass=STATIC_MASS)
+    if capsule:
+        body = create_capsule(radius, height, color=color, mass=STATIC_MASS)
+    else:
+        body = create_cylinder(radius, height, color=color, mass=STATIC_MASS)
     set_point(body, center)
     set_quat(body, quat)
     return body
@@ -146,23 +148,23 @@ def create_hint(nodes, edges, shrink=True):
 
 ##################################################
 
-def create_point_var(model, aabb, edge, node, hint_solution=None):
+def create_point_var(model, aabb, edge, node, hint_solution=None, hard=False):
     hint = hint_solution[edge, node]
     var = np_var(model, lower=aabb.lower, upper=aabb.upper)
     if hint_solution is not None:
-        # TODO: infeasible IIS
         for v, hint in safe_zip(var, hint):
             # VarHintVal versus Start: Variables hints and MIP starts are similar in concept,
             # but they behave in very different ways
-            v.varHintVal = hint  # case insensitive?
-            # v.start = hint
-            # v.setAttr(GRB.Attr.VarHintVal, hint)
-            # v.getAttr(GRB.Attr.VarHintVal) # TODO: error
-            # TODO: diagnose
+            if hard:
+                v.start = hint
+            else:
+                v.varHintVal = hint  # case insensitive?
+                # v.setAttr(GRB.Attr.VarHintVal, hint)
+                # v.getAttr(GRB.Attr.VarHintVal) # TODO: error
     return var
 
-def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | INF
-                 length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0,
+def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimize=True, diagnose=False, # 2 | INF
+                 length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0, # 10 | INF
                  num_solutions=1, max_time=1*60, verbose=True):
     # https://www.gurobi.com/documentation/9.0/refman/py_python_api_details.html
     # https://scicomp.stackexchange.com/questions/83/is-there-a-high-quality-nonlinear-programming-solver-for-python
@@ -177,6 +179,7 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
     max_distance = get_distance(*aabb)
 
     if hint_solution is None:
+        # TODO: diagnose initial infeasibility
         hint_solution = create_hint(nodes, edges)
     #visualize_solution(edges, hint_solution)
 
@@ -185,6 +188,8 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
     model.setParam(GRB.Param.OutputFlag, verbose)
     model.setParam(GRB.Param.TimeLimit, max_time)
     model.setParam(GRB.Param.NonConvex, 2) # PSDTol
+    # https://www.gurobi.com/documentation/9.0/refman/num_tolerances_and_user_sc.html
+    #model.setParam(GRB.Param.FeasibilityTol, SCALE*1e-3) # 1e-6
     if num_solutions < INF:
         model.setParam(GRB.Param.SolutionLimit, num_solutions)
 
@@ -199,16 +204,18 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
 
         node1, node2 = edge
         length = get_distance(nodes[node1]['point'], nodes[node2]['point']) - 2*edges[edge]['radius']
-        steps = length / edges[edge]['radius']
-        print('Sphere approx: {:.3f}'.format(steps))
+        #steps = length / edges[edge]['radius']
+        #print('Sphere approx: {:.3f}'.format(steps))
+        #print('Edge: {} | Length: {:.3f}'.format(str_from_object(edge), length))
 
-        print('Edge: {} | Length: {:.3f}'.format(str_from_object(edge), length))
         difference = x_vars[edge, node2] - x_vars[edge, node1]
         if length_tolerance < INF:
             # TODO: make length_tolerance a function of the radius
             model.addConstr(sum(difference * difference) >= (length - length_tolerance) ** 2)
             model.addConstr(sum(difference * difference) <= (length + length_tolerance) ** 2)
-    #model.setObjective(quicksum(objective), sense=GRB.MINIMIZE)
+    if optimize:
+        # TODO: max deviation
+        model.setObjective(quicksum(objective), sense=GRB.MINIMIZE)
 
     #adjacent = adjacent_from_edges(edges) # vertices
     adjacent = defaultdict(set)
@@ -233,7 +240,7 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
     for neighbors in z_var_from_edge.values():
         num_tangents = min(len(neighbors), min_tangents)
         #degree = len(neighbors) + 1
-        print('Neighbors: {} | Tangents: {}'.format(len(neighbors), num_tangents))
+        #print('Neighbors: {} | Tangents: {}'.format(len(neighbors), num_tangents))
         model.addConstr(sum(neighbors) == num_tangents)
         if len(neighbors) == num_tangents:
             for z_var in neighbors:
@@ -287,11 +294,20 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
                     difference = point2_var - point1_var
                     model.addConstr(sum(difference * difference) >= (distance + buffer_tolerance) ** 2)
 
+    # https://www.gurobi.com/documentation/9.0/ampl-gurobi/index.html
+    # https://www.gurobi.com/resource/exporting-mps-files/
+    # https://www.gurobi.com/products/optimization-modeling-language-resources-support/ampl/
+    #model.write(filename='model.mps') # .mps, .rew, .lp, .rlp
     try:
         model.optimize()
     except GurobiError as e:
         raise e
     # TODO: forbid solutions (or apply other constraints)
+    # https://www.gurobi.com/documentation/9.0/refman/attributes.html
+
+    # https://www.gurobi.com/documentation/9.0/refman/optimization_status_codes.html
+    #feasible = model.status in (GRB.INFEASIBLE, GRB.INF_OR_UNBD) # OPTIMAL | SUBOPTIMAL
+    #obj = model.objVal if feasible else INF
     print('Objective: {:.3f} | Solutions: {} | Status: {}'.format(model.objVal, model.solCount, model.status))
 
     # print('\nVars: {}'.format(len(model.getVars())))
@@ -302,16 +318,28 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
     # for constraint in model.getConstrs(): # TODO: constraint violation
     #     print(constraint.GenConstrType)
     #     print(constraint.QCName, constraint.QCSlack)
-    #     print(constraint.GenConstrType, )
+    #     print(constraint.GenConstrType, ) # model.ConstrVioIndex
 
+    # TODO: scale values?
     if not model.solCount:
-        return
-    # https://www.gurobi.com/documentation/9.0/refman/optimization_status_codes.html
-    #model.status in (GRB.INFEASIBLE, GRB.INF_OR_UNBD)  # OPTIMAL | SUBOPTIMAL
+        # objective = model.feasRelax(relaxobjtype=0, # feasRelaxS
+        #                             minrelax=True,
+        #                             vars=[], lbpen=[], ubpen=[],
+        #                             constrs=elastic_constraints,
+        #                             rhspen=[1.]*len(elastic_constraints))
+
+        if diagnose:
+            model.setObjective(0.0)
+            model.computeIIS() # gurobipy.GurobiError: Cannot compute IIS on a feasible model
+            print('IIS is minimal\n' if model.IISMinimal else 'IIS is not minimal\n' )
+            iss_constraints = {c.constrName for c in model.getConstrs() if c.IISConstr}
+            print(iss_constraints)
+        return None
 
     # https://www.gurobi.com/documentation/9.0/refman/attributes.html
     # print(model.X)
     # print(model.Xn)
+    #print(model.ConstrVio, model.ConstrSVio, model.ConstrVioSum, model.ConstrSVioSum)
 
     for edge, neighbors in z_var_from_edge.items():
         print(str_from_object(edge), neighbors)
@@ -319,6 +347,7 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, # 2 | I
     solution = {(edge, node): np.array([v.x for v in var])
                 for (edge, node), var in x_vars.items()}
     visualize_solution(edges, solution)
+    return solution
 
 ##################################################
 
@@ -330,24 +359,33 @@ def parse_structure(json_data, radius=3.17):
         if radius is not None:
             info['radius'] = radius
         info['radius'] *= SCALE
-    print('\nEdges:', len(edges), edges)
+    print('\nElements:', len(edges), edges)
 
     nodes = {int(n): {'point': parse_point(info)} for n, info in json_data['node'].items()} # 'fixed': info['fixed']
     print('\nNodes:', len(nodes), nodes)
     return nodes, edges
 
 def parse_solution(json_data):
-    edges = {}
+    # TODO: recover tagents and contact points
+    elements = {}
     solution = {}
+    nodes = Counter()
     for info in json_data['node'].values():
-        #create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, 0.25))
+        #create_element(point1, point2, elements[edge]['radius'], color=apply_alpha(RED, 0.25))
         #add_line(point1, point2, color=BLUE)
         edge = EDGE(map(int, info['o_edge']))
-        edges[edge] = info
+        nodes.update(edge)
+        elements[edge] = info
         info['radius'] *= SCALE
+        # TODO: confirm the endpoints are correct
         for node, point in safe_zip(info['o_edge'], info['axis_endpoints']):
             solution[edge, node] = SCALE*np.array(point)
-    return edges, solution
+    print('Elements:', len(elements), set(elements))
+    print('Nodes:', len(nodes), sum(nodes.values()), nodes)
+
+    #edges = {EDGE(map(int, {n1, n2})) for n1, neighbors in json_data['edge'].items() for n2, info in neighbors.items()}
+    #print(len(edges), edges)
+    return elements, solution
 
 ##################################################
 
@@ -363,11 +401,13 @@ def main():
     #print(len(skeletons), skeletons)
     #file_name = skeletons[0]
     #file_name = 'cube_skeleton.json'
-    file_name = '2_tets.json'
+    #file_name = '2_tets.json'
+    file_name = 'single_tet_point2triangle.json'
 
     json_data = read_json(os.path.join(DATA_DIR, file_name))
+    #json_data = json_data['bar_structure'] # bar_structure | overall_structure
     print(json.dumps(json_data, sort_keys=True, indent=2))
-    # bar_structure: adjacency, attributes, edge (endpoints), node (axis_endpoints, goal_pose, radius, grounded)
+    # bar_structure: adjacency, attributes, edge (endpoints, grounded), node (axis_endpoints, goal_pose, radius, grounded)
     # overall_structure: adjacency, edge (radius), node (point)
 
     # for field in ['edge', 'node']:
@@ -376,16 +416,17 @@ def main():
     connect(use_gui=args.viewer)
     #floor = create_plane(color=GREEN)
 
+    # TODO: sub-structure
     solution = None
     if 'overall_structure' in json_data:
         nodes, edges = parse_structure(json_data['overall_structure'])
     else:
         nodes, edges = parse_structure(json_data)
 
-    structure = 'bar_structure' # bar_structure | overall_structure
+    structure = 'overall_structure' # bar_structure | overall_structure
     if structure == 'bar_structure':
         edges, solution = parse_solution(json_data[structure])
-        visualize_solution(edges, solution)
+        #visualize_solution(edges, solution)
     elif structure == 'overall_structure':
         pass
     else:
