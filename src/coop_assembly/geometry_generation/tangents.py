@@ -18,7 +18,8 @@ import numpy as np
 from numpy.linalg import norm
 from termcolor import cprint
 
-from compas.geometry import add_vectors, subtract_vectors, cross_vectors, normalize_vector, scale_vector, vector_from_points, dot_vectors, length_vector
+from compas.geometry import add_vectors, subtract_vectors, cross_vectors, normalize_vector, scale_vector, dot_vectors, length_vector, \
+    Point, Vector
 from compas.geometry import distance_point_point, distance_point_line, distance_line_line
 from compas.geometry import is_point_on_segment
 from compas.geometry import angle_vectors, norm_vector
@@ -407,8 +408,8 @@ def first_tangent(new_pt, contact_pt, max_len, b_v1_1, b_v1_2, b_struct, pt_mean
 
         # add extension for collision checking
         ext_len = 30
-        new_axis_end_pts = (add_vectors(new_pt, scale_vector(normalize_vector(vector_from_points(new_pt_e, new_pt)), ext_len)), \
-                            add_vectors(new_pt_e, scale_vector(normalize_vector(vector_from_points(new_pt, new_pt_e)), ext_len)))
+        new_axis_end_pts = (add_vectors(new_pt, scale_vector(normalize_vector(Point(*new_pt_e)-Point(*new_pt)), ext_len)), \
+                            add_vectors(new_pt_e, scale_vector(normalize_vector(Point(*new_pt)-Point(*new_pt_e)), ext_len)))
 
         is_collided = check_colisions(b_struct, new_axis_end_pts, radius, bar_nb=b_v0_n)
 
@@ -477,10 +478,10 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
 
     pt_b_1      = b2_1["axis_endpoints"][0]
     pt_b_1_2    = b2_1["axis_endpoints"][1]
-    l_1         = vector_from_points(pt_b_1, pt_b_1_2)
+    l_1         = Vector(*pt_b_1)-Vector(*pt_b_1_2)
     pt_b_2      = b2_2["axis_endpoints"][0]
     pt_b_2_2    = b2_2["axis_endpoints"][1]
-    l_2         = vector_from_points(pt_b_2, pt_b_2_2)
+    l_2         = Vector(*pt_b_2)-Vector(*pt_b_2_2)
 
     if not check_collision:
         if b_v0_n:
@@ -538,8 +539,8 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
             end_pts_0 = (pt2, pt2_e)
 
             ext_len = 30
-            end_pts_0 = (add_vectors(pt2, scale_vector(normalize_vector(vector_from_points(pt2_e, pt2)), ext_len)),
-                         add_vectors(pt2_e, scale_vector(normalize_vector(vector_from_points(pt2, pt2_e)), ext_len)))
+            end_pts_0 = (add_vectors(pt2, scale_vector(normalize_vector(Point(*pt2_e)-Point(*pt2)), ext_len)),
+                         add_vectors(pt2_e, scale_vector(normalize_vector(Point(*pt2)-Point(*pt2_e)), ext_len)))
 
             bool_col = check_colisions(b_struct, end_pts_0, radius, bar_nb=b_v0_n)
 
@@ -606,10 +607,10 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
     pt_b_1 = line_1[0]
     pt_b_2 = line_2[0]
 
-    l_1 = normalize_vector(vector_from_points(line_1[0], line_1[1]))
-    l_2 = normalize_vector(vector_from_points(line_2[0], line_2[1]))
-    l_3 = normalize_vector(vector_from_points(line_3[0], line_3[1]))
-    l_4 = normalize_vector(vector_from_points(line_4[0], line_4[1]))
+    l_1 = normalize_vector(Point(*line_1[0])-Point(*line_1[1]))
+    l_2 = normalize_vector(Point(*line_2[0])-Point(*line_2[1]))
+    l_3 = normalize_vector(Point(*line_3[0])-Point(*line_3[1]))
+    l_4 = normalize_vector(Point(*line_4[0])-Point(*line_4[1]))
 
     # contact point 1
     pts_axis_1 = dropped_perpendicular_points(line_1[0], line_1[1], line_2[0], line_2[1])
@@ -702,8 +703,8 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
                 end_pts_0 = (pt3_e2, pt3_e1)
 
                 ext_len = 30
-                end_pts_0 = (add_vectors(pt3_e2, scale_vector(normalize_vector(vector_from_points(pt3_e1, pt3_e2)), ext_len)),
-                             add_vectors(pt3_e1, scale_vector(normalize_vector(vector_from_points(pt3_e2, pt3_e1)), ext_len)))
+                end_pts_0 = (add_vectors(pt3_e2, scale_vector(normalize_vector(Point(*pt3_e1)-Point(*pt3_e2)), ext_len)),
+                             add_vectors(pt3_e1, scale_vector(normalize_vector(Point(*pt3_e2)-Point(*pt3_e1)), ext_len)))
 
                 bool_col = check_colisions(b_struct, end_pts_0, radius, bar_nb=b_v0_n)
 
@@ -872,7 +873,7 @@ def solve_second_tangent(new_point, ex, ey, radius, line1, line2, diameter_1, di
             val = 1
             return val
         # we want to have the contact line orthogonal to the new axis
-        val = abs(dot_vectors(normalize_vector(vec_l), normalize_vector(vector_from_points(new_point, ref_point))))
+        val = abs(dot_vectors(normalize_vector(vec_l), normalize_vector(Point(*new_point)-Point(*ref_point))))
         return val
 
     res_opt = scipy.optimize.fminbound(fn, -2*radius, 2*radius, full_output=True, disp=0 if not debug else 3)

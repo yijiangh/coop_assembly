@@ -21,8 +21,8 @@ from itertools import combinations
 from copy import deepcopy
 from termcolor import cprint
 
-from compas.geometry import Plane
-from compas.geometry import normalize_vector, subtract_vectors, cross_vectors, vector_from_points, \
+from compas.geometry import Plane, Point, Vector
+from compas.geometry import normalize_vector, subtract_vectors, cross_vectors, \
     add_vectors, scale_vector, angle_vectors
 from compas.geometry import centroid_points, length_vector
 from compas.geometry import intersection_line_plane
@@ -265,8 +265,8 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
     list of two points
        representing the contact line segment between the two axes
     """
-    line_unity_vector_1 = normalize_vector(vector_from_points(line_point_1_1, line_point_1_2))
-    line_unity_vector_2 = normalize_vector(vector_from_points(line_point_2_1, line_point_2_2))
+    line_unity_vector_1 = normalize_vector(Point(*line_point_1_1)-Point(*line_point_1_2))
+    line_unity_vector_2 = normalize_vector(Point(*line_point_2_1)-Point(*line_point_2_2))
     d_vector = cross_vectors(line_unity_vector_1, line_unity_vector_2)
     if norm_vector(d_vector) > 1e-12:
         normal_1 = cross_vectors(line_unity_vector_1, d_vector)
@@ -328,11 +328,11 @@ def find_points_extreme(pts_all, pts_init):
     [type]
         [description]
     """
-    vec_init = normalize_vector(vector_from_points(*pts_init))
+    vec_init = normalize_vector(Vector(*pts_init))
     # * find the pair of points with maximal distance
     sorted_pt_pairs = sorted(combinations(pts_all, 2), key=lambda pt_pair: distance_point_point(*pt_pair))
     farthest_pts = sorted_pt_pairs[-1]
-    vec_new = normalize_vector(vector_from_points(*farthest_pts))
+    vec_new = normalize_vector(Vector(*farthest_pts))
     if angle_vectors(vec_init, vec_new, deg=True) > 90:
         # angle can only be 0 or 180
         farthest_pts = farthest_pts[::-1]
@@ -431,8 +431,10 @@ def calc_correction_vector(b_struct, pt_new, bar_pair):
         return None if feasible (bigger than the angle threshold), otherwise return the line connecting pt_int and modified pt
     """
     pt_int = intersection_bars_base(b_struct, bar_pair)
-    vec_x   = normalize_vector(vector_from_points(*b_struct.get_bar_axis_end_pts(bar_pair[0])))
-    vec_y   = normalize_vector(vector_from_points(*b_struct.get_bar_axis_end_pts(bar_pair[1])))
+    pts_pair0 = b_struct.get_bar_axis_end_pts(bar_pair[0])
+    vec_x   = normalize_vector(Point(pts_pair0[1]) - Point(pts_pair0[0]))
+    pts_pair1 = b_struct.get_bar_axis_end_pts(bar_pair[1])
+    vec_y   = normalize_vector(Point(pts_pair1[1]) - Point(pts_pair1[0]))
     # contact vector
     vec_z   = normalize_vector(cross_vectors(vec_x, vec_y))
     # test plane
@@ -472,7 +474,7 @@ def correct_angle(pt_new, pt_int, pl_test):
         # dist_n = 0.3 * distance_point_point(pt_new, pt_int)
         dist_n = NODE_CORRECTION_SINE_ANGLE * distance_point_point(pt_new, pt_int)
         # modified point Pc
-        pt_m = add_vectors(pt_proj, scale_vector(normalize_vector(vector_from_points(pt_proj, pt_new)), dist_n))
+        pt_m = Vector(pt_proj) + scale_vector(normalize_vector(Point(*pt_new) - Point(*pt_proj))) + Vector(dist_n)
         lin_c = (pt_int, pt_m)
         return lin_c
     else:
@@ -495,15 +497,15 @@ def calc_correction_vector_tip(pt_new, base_pts):
         contact base points for the base bars
     """
     assert len(base_pts) == 3
-    vec_x   = normalize_vector(vector_from_points(base_pts[0], base_pts[1]))
-    vec_y   = normalize_vector(vector_from_points(base_pts[0], base_pts[2]))
+    vec_x   = normalize_vector(Point(*base_pts[1]) - Point(*base_pts[0]))
+    vec_y   = normalize_vector(Point(*base_pts[2]), Point(*base_pts[0]))
     vec_z   = normalize_vector(cross_vectors(vec_x, vec_y))
     pl_test = (base_pts[0], vec_z)
     dist_p  = distance_point_plane(pt_new, pl_test)
     pt_proj = project_point_plane(pt_new, pl_test)
 
     if dist_p < NODE_CORRECTION_TOP_DISTANCE:
-        vec_m = scale_vector(normalize_vector(vector_from_points(pt_proj, pt_new)), NODE_CORRECTION_TOP_DISTANCE)
+        vec_m = scale_vector(normalize_vector(Point(*pt_proj)-Point(*pt_new)), NODE_CORRECTION_TOP_DISTANCE)
         pt_n = add_vectors(pt_proj, vec_m)
     else:
         pt_n = None

@@ -47,24 +47,13 @@ def from_bar_network(problem, debug=False, viewer=False):
     with open(problem_path) as json_file:
         data = json.load(json_file)
         cprint('Parsed from : {}'.format(problem_path), 'green')
+
+    if 'data' in data:
+        data = data['data']
     bar_network = Network.from_data(data)
 
     b_struct = BarStructure()
     centroid_pt = np.zeros(3)
-
-    # all_elements = frozenset(edges)
-    # bar_from_elements = {}
-    # for e in all_elements:
-    #     p0 = node_points[e[0]]
-    #     p1 = node_points[e[1]]
-    #     delta_p = (p1 - p0) / norm(p1 - p0)
-    #     shrink = 0.0
-    #     if 'shrink' in edge_attributes[e]:
-    #         shrink = edge_attributes[e]['shrink']
-    #     bar_from_elements[e] = {
-    #         e[0] : p0 + shrink*delta_p,
-    #         e[1] : p1 - shrink*delta_p
-    #         }
 
     index_from_element = {}
     for v, v_data in bar_network.nodes(data=True):
@@ -76,11 +65,6 @@ def from_bar_network(problem, debug=False, viewer=False):
         index_from_element[v] = bar_key
 
     for e in bar_network.edges():
-        # update contact point into BarS's edges
-        # b_struct.connect_bars(*e)
-        # contact_pts = compute_contact_line_between_bars(b_struct, *e)
-        # b_struct.edge[e[0]][e[1]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
-
         b_struct.connect_bars(index_from_element[e[0]], index_from_element[e[1]])
         contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e[0]], index_from_element[e[1]])
         b_struct.edge[index_from_element[e[0]]][index_from_element[e[1]]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
@@ -728,6 +712,8 @@ def gen_truss(problem, viewer=False, radius=3.17, debug=False, method='search', 
         data = json.load(json_file)
         cprint('Parsed from : {}'.format(problem_path), 'green')
 
+    if 'data' in data:
+        data = data['data']
     net = Network.from_data(data)
 
     # TODO waiting for compas update to use ordered dict for nodes
@@ -788,8 +774,8 @@ def main():
     parser.add_argument('-m', '--method', default='search', choices=METHOD_OPTIONS, help='Computing method')
     parser.add_argument('-r', '--radius', default=3.17, help='Radius of bars in millimeter')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
-    parser.add_argument('-wr', '--write', action='store_true', help='Export results')
-    parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
+    parser.add_argument('-w', '--write', action='store_true', help='Export results')
+    parser.add_argument('-d', '--debug', action='store_true', help='Debug verbose mode')
     parser.add_argument('--subset_bars', nargs='+', default=None, help='Plan for only subset of bar indices.')
     args = parser.parse_args()
     print('Arguments:', args)
@@ -811,7 +797,7 @@ def main():
         export_structure_data(b_struct.data, save_dir=FILE_DIR, file_name=export_file_name)
         # export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)
 
-    check_model(b_struct, args.subset_bars)
+    check_model(b_struct, args.subset_bars, debug=args.debug)
 
     reset_simulation()
     disconnect()

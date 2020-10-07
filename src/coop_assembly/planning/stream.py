@@ -40,7 +40,7 @@ ANGLE = np.pi/3
 # pregrasp interpolation
 # POS_STEP_SIZE = 0.001
 # ORI_STEP_SIZE = np.pi/180
-POS_STEP_SIZE = 0.005
+POS_STEP_SIZE = 0.002 # | 0.005
 ORI_STEP_SIZE = np.pi/30
 
 RETREAT_DISTANCE = 0.025

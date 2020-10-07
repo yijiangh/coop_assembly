@@ -36,10 +36,14 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     with LockRenderer():
         b_struct_data, o_struct_data = parse_saved_structure_data(get_assembly_path(test_file_name))
+        if 'data' in b_struct_data:
+            b_struct_data = b_struct_data['data']
         b_struct = BarStructure.from_data(b_struct_data)
         b_struct.create_pb_bodies(color=color)
         o_struct = None
         if o_struct_data is not None:
+            if 'data' in o_struct_data:
+                o_struct_data = o_struct_data['data']
             o_struct = OverallStructure.from_data(o_struct_data)
             o_struct.struct_bar = b_struct # TODO: better way to do this
         # set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])

@@ -10,8 +10,8 @@ import itertools
 import math
 
 from compas.geometry import Transformation, Frame, Rotation, Translation
-from compas.geometry import add_vectors, normalize_vector, vector_from_points, scale_vector, cross_vectors, subtract_vectors,\
-    length_vector, length_vector, norm_vector
+from compas.geometry import add_vectors, normalize_vector, scale_vector, cross_vectors, subtract_vectors,\
+    length_vector, length_vector, norm_vector, Point, Vector
 from compas.geometry import distance_point_point, distance_point_line, distance_line_line, closest_point_on_line
 from compas.geometry import rotate_points
 from compas.geometry import angle_vectors
@@ -138,10 +138,10 @@ def contact_info_from_seq(o_struct, b_struct, bar_vkey, assembled_bv, verbose=Fa
         # ep = b_struct.edge[c[0]][c[1]]["endpoints"][list(b_struct.edge[c[0]][c[1]]["endpoints"].keys())[0]]
         ep = list(b_struct.edge[c[0]][c[1]]["endpoints"].values())[0]
         if is_point_on_line(ep[0], bar_endpts, TOL):
-            contact_vecs_from_o1.append(vector_from_points(ep[0], ep[1]))
+            contact_vecs_from_o1.append(Point(*ep[0])-Point(*ep[1]))
             contact_pts_from_o1.append(ep[1])
         elif is_point_on_line(ep[1], bar_endpts, TOL):
-            contact_vecs_from_o1.append(vector_from_points(ep[1], ep[0]))
+            contact_vecs_from_o1.append(Point(*ep[1])-Point(*ep[0]))
             contact_pts_from_o1.append(ep[0])
         else:
             raise RuntimeError("Connector (BarS edge) |{}| end points not on bar {} axis".format(c, bar_vkey))
@@ -153,10 +153,10 @@ def contact_info_from_seq(o_struct, b_struct, bar_vkey, assembled_bv, verbose=Fa
         # ep = b_struct.edge[c[0]][c[1]]["endpoints"][b_struct.edge[c[0]][c[1]]["endpoints"].keys()[0]]
         ep = list(b_struct.edge[c[0]][c[1]]["endpoints"].values())[0]
         if is_point_on_line(ep[0], bar_endpts, TOL):
-            contact_vecs_from_o2.append(vector_from_points(ep[0], ep[1]))
+            contact_vecs_from_o2.append(Point(*ep[0])-Point(*ep[1]))
             contact_pts_from_o2.append(ep[1])
         elif is_point_on_line(ep[1], bar_endpts, TOL):
-            contact_vecs_from_o2.append(vector_from_points(ep[1], ep[0]))
+            contact_vecs_from_o2.append(Point(*ep[1])-Point(*ep[0]))
             contact_pts_from_o2.append(ep[0])
         else:
             raise RuntimeError("no point found on axis - check function calculate_offset")
@@ -360,7 +360,7 @@ def calculate_offset_pos_two_side_one_point_locked(b_struct, v_key, pt_1, pt_2, 
     pt_1_new  = add_vectors(pt_1, scale_vector(v1, -1.*d_o_1))
     pt_2_new  = add_vectors(pt_2, scale_vector(v2, -1.*d_o_2))
 
-    vec_x_new = normalize_vector(vector_from_points(pt_1_new, pt_2_new))
+    vec_x_new = normalize_vector(Point(*pt_1_new)-Point(*pt_2_new))
     x_ax    = b_struct.vertex[v_key]["gripping_plane"][1]
 
     if not angle_vectors(x_ax, vec_x_new, deg=True) < 90:
@@ -398,7 +398,7 @@ def calculate_offset_pos_two_side_two_point_locked(b_struct, v_key, vecs_con_1, 
     pt_2    = centroid_points([pt_2_1, pt_2_2])
     pt_2_new  = translate_points([pt_2], vm_2)[0]
 
-    vec_x_new = normalize_vector(vector_from_points(pt_1_new, pt_2_new))
+    vec_x_new = normalize_vector(Point(*pt_1_new)-Point(*pt_2_new))
     x_ax    = b_struct.vertex[v_key]["gripping_plane"][1]
 
     if not angle_vectors(x_ax, vec_x_new, deg=True) < 90:

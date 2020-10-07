@@ -19,8 +19,8 @@ import itertools
 import math
 import warnings
 
-from compas.geometry import add_vectors, normalize_vector, vector_from_points, scale_vector, \
-    cross_vectors, subtract_vectors
+from compas.geometry import add_vectors, normalize_vector, scale_vector, \
+    cross_vectors, subtract_vectors, Point, Vector
 from compas.geometry import distance_point_point
 from compas.geometry import rotate_points
 from compas.geometry import angle_vectors
@@ -59,9 +59,9 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
 
     pt_0, pt_1, pt_2 = base_tri_pts
 
-    vec_0   = normalize_vector(vector_from_points(pt_0, pt_1))
-    vec_1   = normalize_vector(vector_from_points(pt_1, pt_2))
-    vec_2   = normalize_vector(vector_from_points(pt_2, pt_0))
+    vec_0   = normalize_vector(Point(pt_0)-Point(pt_1))
+    vec_1   = normalize_vector(Point(pt_1)-Point(pt_2))
+    vec_2   = normalize_vector(Point(pt_2)-Point(pt_0))
     c_0     = scale_vector(normalize_vector(cross_vectors(vec_0, vec_1)), 2*radius)
     c_1     = scale_vector(normalize_vector(cross_vectors(vec_1, vec_2)), 2*radius)
     c_2     = scale_vector(normalize_vector(cross_vectors(vec_2, vec_0)), 2*radius)

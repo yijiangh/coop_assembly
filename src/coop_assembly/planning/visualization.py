@@ -161,7 +161,7 @@ def label_points(points, **kwargs):
 
 #####################################################
 
-def check_model(bar_struct, indices=None):
+def check_model(bar_struct, indices=None, debug=False):
     from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
     elements = list(bar_struct.nodes()) if indices is None else indices
 
@@ -179,7 +179,8 @@ def check_model(bar_struct, indices=None):
     for bar in grounded_elements:
         label_elements(element_bodies, [bar])
     color_structure(element_bodies, set(grounded_elements), next_element=None, built_alpha=0.6)
-    wait_if_gui('grounded element: {}'.format(grounded_elements))
+    if debug:
+        wait_if_gui('grounded element: {}'.format(grounded_elements))
 
     # * connectors from bar
     cprint('Visualize connectors.', 'yellow')
@@ -194,7 +195,8 @@ def check_model(bar_struct, indices=None):
                 label_elements(element_bodies, c)
                 add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2)
         color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
-        wait_if_gui('connector: {}'.format(current_connectors))
+        if debug:
+            wait_if_gui('connector: {}'.format(current_connectors))
 
     # * neighbor elements from elements
     print('Visualize neighnor elements.')
@@ -203,7 +205,8 @@ def check_model(bar_struct, indices=None):
         remove_all_debug()
         color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
         label_elements(element_bodies, list(connected_bars) + [element])
-        wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
+        if debug:
+            wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
 
     # TODO: some sanity check here
     # mutual collision checks
