@@ -16,7 +16,7 @@ import os
 from collections import defaultdict
 
 from compas.datastructures import Network
-from compas.geometry import add_vectors, scale_vector, cross_vectors, subtract_vectors, vector_from_points
+from compas.geometry import add_vectors, scale_vector, cross_vectors, subtract_vectors
 from compas.geometry import distance_point_point, closest_point_on_plane
 from compas.geometry import centroid_points
 

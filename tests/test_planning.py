@@ -143,23 +143,6 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
     reset_simulation()
     disconnect()
 
-@pytest.mark.rotate_goal_pose
-def test_rotate_goal_pose_gen(viewer, file_spec):
-    bar_struct, _ = load_structure(file_spec, viewer)
-    element_bodies = bar_struct.get_element_bodies()
-    element_from_index = bar_struct.get_element_from_index()
-
-    printed = set([0,1,2])
-    chosen = 4
-    goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
-    handles = []
-    for _ in range(5):
-        goal_pose = next(goal_pose_gen_fn(chosen))[0].value
-        handles.extend(draw_pose(goal_pose, length=0.01))
-        color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
-        wait_if_gui(True)
-        remove_handles(handles)
-
 @pytest.mark.stream
 def test_stream(viewer, file_spec, collision, bar_only):
     bar_struct, _ = load_structure(file_spec, viewer)
@@ -333,19 +316,6 @@ def test_connector_debug(viewer, file_spec):
 
     printed_elements = set([0,3])
     assert check_connected(connectors, grounded_elements, printed_elements)
-
-@pytest.mark.contact_ground
-def test_contact_to_ground(viewer, file_spec):
-    bar_struct, _ = load_structure(file_spec, viewer, color=(1,0,0,0.3))
-    element_bodies = bar_struct.get_element_bodies()
-    handles = []
-    handles.extend(label_elements(element_bodies))
-    for bar_key in bar_struct.vertices():
-        if bar_struct.node[bar_key]['grounded']:
-            contact_pts = contact_to_ground(bar_struct.vertex[bar_key], built_plate_z=BUILT_PLATE_Z, scale=1)
-            handles.append(add_line(*contact_pts, color=(1,0,0,0), width=2))
-    wait_if_gui()
-    # and check connected test
 
 # https://github.com/yijiangh/assembly_instances/blob/master/tests/conftest.py#L25
 # def test_load_robot(viewer):

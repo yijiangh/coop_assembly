@@ -35,19 +35,25 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
     """
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     with LockRenderer():
-        b_struct_data, o_struct_data, _ = parse_saved_structure_data(get_assembly_path(test_file_name))
-        o_struct = OverallStructure.from_data(o_struct_data)
+        b_struct_data, o_struct_data = parse_saved_structure_data(get_assembly_path(test_file_name))
+        if 'data' in b_struct_data:
+            b_struct_data = b_struct_data['data']
         b_struct = BarStructure.from_data(b_struct_data)
         b_struct.create_pb_bodies(color=color)
-        o_struct.struct_bar = b_struct # TODO: better way to do this
+        o_struct = None
+        if o_struct_data is not None:
+            if 'data' in o_struct_data:
+                o_struct_data = o_struct_data['data']
+            o_struct = OverallStructure.from_data(o_struct_data)
+            o_struct.struct_bar = b_struct # TODO: better way to do this
         # set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
-        endpts_from_element = b_struct.get_axis_pts_from_element(scale=1)
-        set_camera([p[0] for e, p in endpts_from_element.items()])
+        endpts_from_element = b_struct.get_axis_pts_from_element(scale=1e-3)
+        set_camera([p[0] for e, p in endpts_from_element.items()], scale=1.)
     return b_struct, o_struct
 
-def save_plan(problem, algorithm, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None):
+def save_plan(problem, algorithm, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None, suffix=None):
     here = os.path.dirname(__file__)
-    plan_path = '{}_{}_solution{}.json'.format(problem, algorithm, '' if overwrite else '_'+get_date())
+    plan_path = '{}_{}{}_solution{}.json'.format(problem, algorithm, '' if suffix is None else '_' + suffix, '' if overwrite else '_'+get_date())
     save_path = os.path.join(here, RESULTS_DIRECTORY, plan_path)
     with open(save_path, 'w') as f:
         data = {'problem' : problem,

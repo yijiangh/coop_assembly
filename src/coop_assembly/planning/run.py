@@ -25,8 +25,8 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, get_gripper_mesh_path
 from coop_assembly.planning.utils import load_world
-from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera,\
-    display_trajectories, check_model
+from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, \
+    display_trajectories, check_model, set_camera
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 
@@ -40,8 +40,11 @@ from coop_assembly.planning.regression import regression
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
-BUILD_PLATE_CENTER = np.array([700, 0, -14.23])*1e-3
-BOTTOM_BUFFER = 0.005
+# BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
+BUILD_PLATE_CENTER = np.array([650, 0, -14.23])*1e-3
+# BOTTOM_BUFFER = 0.005
+BOTTOM_BUFFER = 0.01
+# BOTTOM_BUFFER = 0.1
 
 ########################################
 # two_tets
@@ -66,8 +69,8 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     # the arm itself
     robots = [end_effector] if args.bar_only else [robot]
 
-    # element_from_index = bar_struct.get_element_from_index(scale=METER_SCALE)
-    chosen_bars = [0,3,5]
+    # TODO make chosen bars an argument
+    chosen_bars = [int(b) for b in args.subset_bars] if args.subset_bars is not None else None
     element_from_index = bar_struct.get_element_from_index(indices=chosen_bars, scale=METER_SCALE)
     grounded_elements = bar_struct.get_grounded_bar_keys()
     contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
@@ -75,8 +78,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
 
     bar_struct.set_body_color(RED, indices=chosen_bars)
     print('base: ', bar_struct.base_centroid(METER_SCALE))
-
-    # check_model(bar_struct, chosen_bars)
+    set_camera([bar_struct.base_centroid(METER_SCALE)], scale=1.)
 
     elements_from_layer = defaultdict(set)
     if args.partial_ordering:
@@ -88,7 +90,10 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     print('Partial orders: ', partial_orders)
 
     if saved_plan is None:
-        wait_if_gui('Please review structure\'s workspace position.')
+        if args.check_model:
+            check_model(bar_struct, chosen_bars)
+        else:
+            wait_if_gui('Please review structure\'s workspace position.')
         with WorldSaver():
             if args.algorithm in STRIPSTREAM_ALGORITHM:
                 plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors,
@@ -99,7 +104,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
                 with LockRenderer(not args.debug):
                     plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles, element_from_index,
                         grounded_elements, connectors, collision=args.collisions,
-                        motions=True, stiffness=True, revisit=False, verbose=True, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
+                        motions=True, stiffness=True, revisit=False, verbose=debug, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
             else:
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
         if plan is None:
@@ -125,9 +130,11 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
                 # regression plan is flattened already
                 trajectories = plan
             if write:
-                save_plan(args.problem, args.algorithm, trajectories, TCP_link_name=TOOL_LINK_NAME, element_from_index=element_from_index)
+                save_plan(args.problem, args.algorithm, trajectories, TCP_link_name=TOOL_LINK_NAME if not args.bar_only else None,
+                    element_from_index=element_from_index, suffix='bar-only' if args.bar_only else None)
     else:
         # parse a saved plan
+        robot = end_effector if "bar-only" in saved_plan else robot
         e_trajs = parse_plan(saved_plan)
         trajectories = []
         joints = get_movable_joints(robot)
@@ -174,7 +181,7 @@ def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--problem', default='single_tet', help='The name of the problem to solve')
-    parser.add_argument('-a', '--algorithm', default='focused', choices=ALGORITHMS, help='Stripstream algorithms')
+    parser.add_argument('-a', '--algorithm', default='regression', choices=ALGORITHMS, help='Planning algorithms')
     parser.add_argument('-c', '--collisions', action='store_false', help='disable collision checking')
     parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for floating bars')
     parser.add_argument('-po', '--partial_ordering', action='store_true', help='use partial ordering (if-any)')
@@ -198,6 +205,8 @@ def main():
     parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
     parser.add_argument('-wr', '--write', action='store_true', help='Export results')
     parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
+    parser.add_argument('--check_model', action='store_true', help='Inspect model.')
+    parser.add_argument('--subset_bars', nargs='+', default=None, help='Plan for only subset of bar indices.')
     args = parser.parse_args()
     print('Arguments:', args)
 

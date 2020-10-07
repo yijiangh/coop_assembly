@@ -431,6 +431,8 @@ def parse_2D_truss(problem, scale=1e-3, debug=False):
         data = json.load(json_file)
         cprint('Parsed from : {}'.format(problem_path), 'green')
 
+    if 'data' in data:
+        data = data['data']
     net = Network.from_data(data)
 
     # TODO waiting for compas update to use ordered dict for nodes

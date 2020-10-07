@@ -94,7 +94,7 @@ class MotionTrajectory(Trajectory):
         data = {}
         data['element'] = self.element
         data['tag'] = self.tag
-        data['path'] = self.path
+        data['path'] = [list(conf) for conf in self.path]
         # data['attachments'] = [jsonpickle.encode(attach, keys=True) for attach in self.attachments]
         data['attachments'] = [attach.to_data() for attach in self.attachments]
         return data

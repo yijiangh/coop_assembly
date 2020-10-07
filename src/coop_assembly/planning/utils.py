@@ -173,6 +173,10 @@ def get_element_neighbors(connectors, elements):
         for c in connector_from_elements[e]:
             element_neighbors[e].update(c)
         element_neighbors[e].remove(e)
+        #     print('e: ', e)
+        #     print('neighbors: ', element_neighbors[e])
+        #     print('connector: ', connector_from_elements[e])
+        #     input('floating element!!!')
     return element_neighbors
 
 ##################################################

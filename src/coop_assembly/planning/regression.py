@@ -65,7 +65,7 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 
 def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders=[],
                max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
-               collision=True, stiffness=True, motions=True, lazy=True, checker=None, verbose=True, **kwargs):
+               collision=True, stiffness=True, motions=True, lazy=True, checker=None, verbose=False, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = INITIAL_CONF if not bar_only else np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
@@ -74,7 +74,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
     #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
     heuristic = 'z'
     heuristic_fn = get_heuristic_fn(robot, element_from_index, heuristic, checker=None, forward=False)
-    place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
+    place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=verbose, bar_only=bar_only,\
         precompute_collisions=False, allow_failure=True)
 
     # TODO: partial ordering
@@ -124,10 +124,10 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
         num_evaluated += 1
         backtrack = num_remaining - min_remaining
 
-        if verbose:
-            print('#'*10)
-            print('Iteration: {} | Best: {} | Printed: {} | Element: {} | Time: {:.3f} | BT : {} | Visit: {}'.format(
-                num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time), backtrack, visits))
+        # if verbose:
+        print('#'*10)
+        print('Iteration: {} | Best: {} | Printed: {} | Element: {} | Time: {:.3f} | BT : {} | Visit: {}'.format(
+            num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time), backtrack, visits))
         next_printed = printed - {element}
 
         if backtrack > max_backtrack:
@@ -139,7 +139,8 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
                 set_renderer(enable=True)
                 color_structure(element_from_index, printed, next_element=element, built_alpha=0.6)
                 label_elements({k : element_from_index[k] for k in list(printed | {element})})
-                wait_for_user('BT increased. Blues are the remaining ones, green is the current one, blacks are the already removed ones.')
+                # print('Blues are the remaining ones, green is the current one, blacks are the already removed ones.')
+                wait_for_user('BT increased. Remaining: {}'.format(list(printed | {element})))
                 set_renderer(enable=False)
 
         if backtrack_limit < backtrack:
