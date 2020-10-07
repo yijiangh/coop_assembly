@@ -13,7 +13,7 @@ from pddlstream.utils import str_from_object, find_unique
 from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, disconnect, add_line, \
     RED, draw_pose, Pose, aabb_from_points, get_aabb_center, get_aabb_extent, AABB, get_distance, wait_if_gui, \
     INF, STATIC_MASS, quat_from_euler, set_point, set_quat, Euler, SEPARATOR, \
-    draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule, set_camera, create_cylinder
+    draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule, set_camera, create_cylinder, GREEN
 
 from itertools import combinations, permutations
 from collections import defaultdict, Counter
@@ -27,7 +27,7 @@ DATA_DIR = os.path.join(ROOT_DIR, 'tests', 'test_data')
 
 #sys.path.append(os.path.join(DATA_DIR, 'external', 'pybullet_planning', 'src', 'pybullet_planning'))
 
-SCALE = 1e-2 # original units of millimeters
+SCALE = 1e-1 # original units of millimeters
 
 COORDINATES = ['x', 'y', 'z']
 
@@ -111,7 +111,7 @@ def visualize_solution(edges, solution, alpha=0.25, **kwargs):
     edge_points = defaultdict(list)
     for (edge, node), point in solution.items():
         edge_points[edge].append(point)
-        draw_point(point, size=2*edges[edge]['radius'], color=BLUE)
+        #draw_point(point, size=2*edges[edge]['radius'], color=BLUE)
 
         point2 = solution[edge, get_other(edge, node)]
         for l in enumerate_steps(get_distance(point, point2), edges[edge]['radius'], **kwargs):
@@ -125,7 +125,7 @@ def visualize_solution(edges, solution, alpha=0.25, **kwargs):
         point1, point2 = points
         print('{}: {:.3f}'.format(str_from_object(edge), get_distance(point1, point2)))
         bodies.append(create_element(point1, point2, edges[edge]['radius'], color=apply_alpha(RED, alpha)))
-        add_line(point1, point2, color=BLUE)
+        #add_line(point1, point2, color=BLUE)
     wait_if_gui()
     return bodies
 
@@ -162,6 +162,13 @@ def create_point_var(model, aabb, edge, node, hint_solution=None, hard=False):
                 # v.setAttr(GRB.Attr.VarHintVal, hint)
                 # v.getAttr(GRB.Attr.VarHintVal) # TODO: error
     return var
+
+def convex_combination(x1, x2, w=0.5):
+    #assert 0 <= w <= 1
+    return (1 - w) * x1 + (w * x2)
+
+def x_from_var(var):
+    return np.array([v.x for v in var])
 
 def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimize=True, diagnose=False, # 2 | INF
                  length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0, # 10 | INF
@@ -248,7 +255,8 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimiz
                 z_var.lb = z_var.ub = 1
                 #z_var.start = 1
 
-    epsilon = SCALE*1 # 0 | 1
+    contact_vars = {}
+    epsilon = SCALE*0 # 0 | 1
     for (edge1, node1), (edge2, node2) in combinations(x_vars, r=2):
         if edge1 == edge2:
             assert node1 != node2
@@ -261,9 +269,11 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimiz
             #l1_var = l2_var = 0
             # https://en.wikipedia.org/wiki/Linear_complementarity_problem
 
+            # TODO: distance from the element line
             l1_var = np.full(var1.shape, model.addVar(lb=0, ub=0.5))
             point1_var = create_point_var(model, aabb, edge1, node1, hint_solution)
             contact1_var = (1 - l1_var) * var1 + (l1_var * x_vars[edge1, other1])
+            #contact1_var = convex_combination(var1, x_vars[edge1, other1], w=l1_var)
             #model.addConstr(contact1_var == point1_var)
             diff1 = contact1_var - point1_var
             #model.addConstr(sum(diff1*diff1) < 1e-2) # TODO: doesn't work (as predicted)
@@ -281,6 +291,7 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimiz
             difference = point2_var - point1_var
             pair = EDGE({edge1, edge2})
             z_var = z_vars[pair, node1]
+            contact_vars[edge1, edge2, node1] = (z_var, l1_var, point1_var, l2_var, point2_var)
             model.addConstr(sum(difference * difference) <=
                             (distance + contact_tolerance) ** 2 + (1 - z_var) * max_distance ** 2)
 
@@ -342,9 +353,21 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimiz
     #print(model.ConstrVio, model.ConstrSVio, model.ConstrVioSum, model.ConstrSVioSum)
 
     for edge, neighbors in z_var_from_edge.items():
-        print(str_from_object(edge), neighbors)
+        print(str_from_object(edge), x_from_var(neighbors))
+    for (edge1, edge2, node), (z_var, l1_var, point1_var, l2_var, point2_var) in contact_vars.items():
+        if z_var.x != 1:
+            continue
+        distance = sum(edges[edge]['radius'] for edge in [edge1, edge2])
+        point1 = x_from_var(point1_var)
+        point2 = x_from_var(point2_var)
+        # 2. * edges[edge]['radius']
+        draw_point(point1, color=GREEN)
+        draw_point(point2, color=GREEN)
+        add_line(point1, point2, color=GREEN)
+        print(str_from_object(pair), x_from_var(l1_var), x_from_var(l2_var),
+              distance, get_distance(point1, point2))
 
-    solution = {(edge, node): np.array([v.x for v in var])
+    solution = {(edge, node): x_from_var(var)
                 for (edge, node), var in x_vars.items()}
     visualize_solution(edges, solution)
     return solution
