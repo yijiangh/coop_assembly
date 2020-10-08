@@ -5,6 +5,7 @@ using JuMP
 using Gurobi
 using Base.Iterators
 import DataStructures: DefaultDict
+using IterTools
 
 include("utils.jl")
 
@@ -31,6 +32,11 @@ end
 
 function get_other(edge, node)
     return find_unique(n -> n != node, edge)
+end
+
+function get_length(edge, nodes)
+    n1, n2 = edge
+    return norm(nodes[n1]["point"]-nodes[n2]["point"])
 end
 
 function enumerate_steps(edge, nodes, edges, fraction=0.1, spacing=1.5) # 1e-3 | 0.1
@@ -65,7 +71,7 @@ function visualize_solution(nodes, edges, solution)
     edge_points = Dict()
     for ((edge, node), point) in solution
         edge_points[edge] = []
-        append!(edge_points[edge], point)
+        push!(edge_points[edge], point)
     #     draw_point(point, size=2*edges[edge]["radius"], color=BLUE)
     #     body = create_sphere(edges[edge]["radius"], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
     #     set_point(body, point)
@@ -96,12 +102,15 @@ function solve(nodes, edges, aabb;
                min_tangents=2, # 2 | INF
                length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0,
                num_solutions=1, max_time=1*60, verbose=true)
+    println(['-' for i=1:20])
+    max_distance = norm(aabb[2] - aabb[1])
+
     # * Define the model
     # define name of the model, it could be anything, not necessarily "model"
     model = Model(with_optimizer(Gurobi.Optimizer))
 
     # https://www.gurobi.com/documentation/9.0/refman/parameters.html
-    # model.setParam(GRB.Param.NonConvex, 2) # PSDTol
+    set_optimizer_attribute(model, "NonConvex", 2)
     set_optimizer_attribute(model, "OutputFlag", verbose)
     set_optimizer_attribute(model, "TimeLimit", max_time)
     if num_solutions < Inf
@@ -147,10 +156,10 @@ function solve(nodes, edges, aabb;
     end
     @objective(model, Min, sum(values(objective)))
 
-    adjacent = DefaultDict([])
+    adjacent = DefaultDict(Set)
     for edge in keys(edges)
         for node in edge
-            append!(adjacent[node], edge)
+            push!(adjacent[node], edge)
         end
     end
 
@@ -158,12 +167,13 @@ function solve(nodes, edges, aabb;
     for (node, neighbors) in adjacent
         # num_tangents = min(len(neighbors) - 1, 2)
         # print(len(edges), num_tangents)
-        for pair in map(Tuple, partition(neighbors, 2))
+        for pair in map(Set, subsets(collect(neighbors), 2))
             var = @variable(model, binary=true)
             set_name(var, "z[$(Tuple(pair)), $(node)]")
             z_vars[pair, node] = var
         end
     end
+    @show adjacent
 
     z_var_from_edge = DefaultDict(Dict())
     for ((pair, node), var) in z_vars
@@ -173,7 +183,7 @@ function solve(nodes, edges, aabb;
     end
 
     # * Constraints
-    # contact degree constraint
+    # ! contact degree constraint (linear)
     for ((edge, node), neighbors) in z_var_from_edge
         num_tangents = min(length(neighbors), min_tangents)
         # degree = len(neighbors) + 1
@@ -192,8 +202,8 @@ function solve(nodes, edges, aabb;
         end
     end
 
-    # contact/collision constraint
-    for ((edge1, node1), (edge2, node2)) in partition(x_vars, 2)
+    # ! contact/collision constraint (MI-Quadratic)
+    for ((edge1, node1), (edge2, node2)) in subsets(collect(keys(x_vars)), 2)
         if edge1 == edge2
             @assert node1 != node2
             continue
@@ -203,10 +213,8 @@ function solve(nodes, edges, aabb;
         radius_distance = edges[edge1]["radius"] + edges[edge2]["radius"]
 
         if node1 == node2
-            pair = Set((edge1, edge2))
+            pair = Set([edge1, edge2])
             z_var = z_vars[pair, node1]
-            # model.addConstr(sum(difference * difference) <=
-                            # (distance + contact_tolerance) ** 2 + (1 - z_var) * max_distance ** 2)
             # ! contact constraint
             contact_con = @constraint(model, sum(difference .* difference) <= (radius_distance + contact_tolerance)^2 + (1 - z_var) * max_distance^2)
             set_name(contact_con, "ContactCon[$(Tuple(edge1)),$node1,$(Tuple(edge2))]")
@@ -219,7 +227,8 @@ function solve(nodes, edges, aabb;
                     point2 = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
                     difference = point2 - point1
                     # ! collision constraint
-                    collision_con = @constraint(model, sum(difference .* difference) >= (distance + buffer_tolerance)^2)  # Only neighbors
+                    # Only neighbors
+                    collision_con = @constraint(model, sum(difference .* difference) >= (radius_distance + buffer_tolerance)^2)
                     set_name(collision_con, "CollisionCon[$(Tuple(edge1)),$node1,$(Tuple(edge2))]")
                 end
             end
@@ -229,7 +238,7 @@ function solve(nodes, edges, aabb;
     ###################################
 
     status=optimize!(model) # time to optimize!
-    @printf("Objective: %.3f | # Solutions: %d | Status: %s", objective_value(model), result_count(model), termination_status(model))
+    @printf("Objective: %s | # Solutions: %d | Status: %s", objective_value(model), result_count(model), termination_status(model))
 
     if result_count(model) <= 0
         return
