@@ -29,7 +29,6 @@ model = Model(with_optimizer(Gurobi.Optimizer))
 # # -----------------
 
 status=optimize!(model) # time to optimize!
-
 termination_status(model)
 
 # Let us look at the important outputs
