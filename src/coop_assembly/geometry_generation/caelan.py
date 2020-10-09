@@ -10,7 +10,8 @@ import numpy as np
 sys.path.append(os.environ['PDDLSTREAM_PATH'])
 
 from pddlstream.utils import str_from_object, find_unique
-from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, disconnect, add_line, \
+# from examples.pybullet.utils.pybullet_tools.utils import connect, read_json, disconnect, add_line, \
+from pybullet_planning import connect, read_json, disconnect, add_line, \
     RED, draw_pose, Pose, aabb_from_points, get_aabb_center, get_aabb_extent, AABB, get_distance, wait_if_gui, \
     INF, STATIC_MASS, quat_from_euler, set_point, set_quat, Euler, SEPARATOR, \
     draw_point, BLUE, safe_zip, apply_alpha, create_sphere, create_capsule, set_camera, create_cylinder, GREEN

@@ -45,6 +45,27 @@ function enumerate_steps(edge, nodes, edges, fraction=0.1, spacing=1.5) # 1e-3 |
     return range(0., stop=fraction, length=num_steps)
 end
 
+##################################################
+
+function create_hint(nodes, edges, shrink=true)
+    hint_solution = Dict()
+    for edge in keys(edges)
+        for node in edge
+            node_point = nodes[node]["point"]
+            if shrink
+                other = get_other(edge, node)
+                other_point = nodes[other]["point"]
+                fraction = 2*edges[edge]["radius"] / norm(node_point - other_point)
+                point = fraction*other_point + (1 - fraction)*node_point
+            else
+                point = node_point
+            end
+            hint_solution[edge, node] = point
+        end
+    end
+    return hint_solution
+end
+
 #########################################
 
 function create_element(p1, p2, radius; color=PyPb.apply_alpha(PyPb.RED, alpha=1))
@@ -53,7 +74,7 @@ function create_element(p1, p2, radius; color=PyPb.apply_alpha(PyPb.RED, alpha=1
     # extents = (p2 - p1) / 2
     delta = p2 - p1
     x, y, z = delta
-    phi = atan2(y, x)
+    phi = atan(y, x)
     theta = acos(z / norm(delta))
     quat = PyPb.quat_from_euler(PyPb.Euler(pitch=theta, yaw=phi))
     # p1 is z=-height/2, p2 is z=+height/2
@@ -67,10 +88,10 @@ function create_element(p1, p2, radius; color=PyPb.apply_alpha(PyPb.RED, alpha=1
     return body
 end
 
-function visualize_solution(nodes, edges, solution)
-    edge_points = Dict()
+function visualize_solution(edges, solution, alpha=0.25)
+    edge_points = DefaultDict([])
     for ((edge, node), point) in solution
-        edge_points[edge] = []
+        @show edge, node, point
         push!(edge_points[edge], point)
     #     draw_point(point, size=2*edges[edge]["radius"], color=BLUE)
     #     body = create_sphere(edges[edge]["radius"], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
@@ -83,27 +104,35 @@ function visualize_solution(nodes, edges, solution)
     #         set_point(body, trailing)
     #     end
     end
+    @show edge_points
 
     # TODO: analyze collisions and proximity
-    #bodies = []
+    bodies = []
     for (edge, points) in edge_points
-        point1, point2 = points
-        println("$edge: $(norm(point1-point2))")
-        element = create_element(point1, point2, edges[edge]["radius"]; color=PyPb.apply_alpha(RED, 0.25))
-        #bodies.append(element)
-        PbPb.add_line(point1, point2, color=BLUE)
+        # point1, point2 = points
+        point1 = points[1]
+        point2 = points[2]
+        println("E#$edge: $point1 | $point2 | L: $(norm(point1-point2))")
+        element = create_element(point1, point2, edges[edge]["radius"]; color=PyPb.apply_alpha(PyPb.RED, 0.25))
+        push!(bodies, create_element(point1, point2, edges[edge]["radius"], color=PyPb.apply_alpha(PyPb.RED, alpha)))
+        # PbPb.add_line(point1, point2, color=BLUE)
     end
-    PyPb.wait_if_gui()
 end
 
 #########################################
 
 function solve(nodes, edges, aabb;
+               hint_solution=nothing,
                min_tangents=2, # 2 | INF
                length_tolerance=SCALE*10, contact_tolerance=SCALE*1, buffer_tolerance=SCALE*0,
                num_solutions=1, max_time=1*60, verbose=true)
-    println(['-' for i=1:20])
+    # println(String(['-' for i=1:20]...))
     max_distance = norm(aabb[2] - aabb[1])
+
+    if hint_solution === nothing
+        # TODO: diagnose initial infeasibility
+        hint_solution = create_hint(nodes, edges)
+    end
 
     # * Define the model
     # define name of the model, it could be anything, not necessarily "model"
@@ -125,17 +154,8 @@ function solve(nodes, edges, aabb;
             # var = np_var(model, lower=aabb.lower, upper=aabb.upper)
             vars = @variable(model, [i=1:3],
                 lower_bound=aabb[1][i], upper_bound=aabb[2][i],
-                base_name="x[($(Tuple(edge)),$node]")
-            # * create start values
-            # hint = hint_solution[edge, node]
-            # for v, hint in safe_zip(var, hint):
-                # VarHintVal versus Start: Variables hints and MIP starts are similar in concept,
-                # but they behave in very different ways
-                # v.VarHintVal = hint # case insensitive?
-                #v.setAttr(GRB.Attr.VarHintVal, hint)
-                #v.getAttr(GRB.Attr.VarHintVal) # TODO: error
-            # end
-            # set_start_value(x, val)
+                base_name="x[($(Tuple(edge)),$node]",
+                start=hint_solution[edge, node][i])
             difference = vars .- nodes[node]["point"]
             x_vars[edge, node] = vars
             objective[edge, node] = sum(difference.*difference)
@@ -194,15 +214,15 @@ function solve(nodes, edges, aabb;
 
         if length(neighbors) == num_tangents
             for z_var in values(neighbors)
-                #model.addConstr(z_var == 1)
-                #z_var.start = 1
-                # z_var.lb = z_var.ub = 1
                 fix(z_var, 1; force = true)
+                # set_lower_bound(z_var, 1)
+                # set_upper_bound(z_var, 1)
             end
         end
     end
 
     # ! contact/collision constraint (MI-Quadratic)
+    contact_vars = Dict()
     for ((edge1, node1), (edge2, node2)) in subsets(collect(keys(x_vars)), 2)
         if edge1 == edge2
             @assert node1 != node2
@@ -219,6 +239,7 @@ function solve(nodes, edges, aabb;
             contact_con = @constraint(model, sum(difference .* difference) <= (radius_distance + contact_tolerance)^2 + (1 - z_var) * max_distance^2)
             set_name(contact_con, "ContactCon[$(Tuple(edge1)),$node1,$(Tuple(edge2))]")
 
+            # ! collision constraint
             other1 = get_other(edge1, node1)
             for l1 in enumerate_steps(edge1, nodes, edges)
                 point1 = (1 - l1) * var1 + (l1 * x_vars[edge1, other1])
@@ -226,10 +247,11 @@ function solve(nodes, edges, aabb;
                 for l2 in enumerate_steps(edge2, nodes, edges)
                     point2 = (1 - l2) * var2 + (l2 * x_vars[edge2, other2])
                     difference = point2 - point1
-                    # ! collision constraint
                     # Only neighbors
                     collision_con = @constraint(model, sum(difference .* difference) >= (radius_distance + buffer_tolerance)^2)
                     set_name(collision_con, "CollisionCon[$(Tuple(edge1)),$node1,$(Tuple(edge2))]")
+
+            # contact_vars[edge1, edge2, node1] = (z_var, l1_var, point1_var, l2_var, point2_var)
                 end
             end
         end
@@ -240,23 +262,40 @@ function solve(nodes, edges, aabb;
     status=optimize!(model) # time to optimize!
     @printf("Objective: %s | # Solutions: %d | Status: %s", objective_value(model), result_count(model), termination_status(model))
 
-    if result_count(model) <= 0
+    if result_count(model) <= 0 || !has_values(model)
+        error("The model was not solved correctly.")
         return
     end
 
     for (edge, neighbors) in z_var_from_edge
-        println("Edge $(Tuple(edge)) : neighbors $(Tuple(neighbors))")
+        println("Edge $(Tuple(edge)) : neighbors $(value.(values(neighbors)))")
     end
 
-    solution = Dict((edge, node) => [v.x for v in var]
+    # * draw contact lines
+    # for ((edge1, edge2, node), (z_var, l1_var, point1_var, l2_var, point2_var)) in contact_vars
+    #     if value.(z_var) != 1
+    #         continue
+    #     end
+    #     distance = sum(edges[edge]["radius"] for edge in [edge1, edge2])
+    #     point1 = value.(point1_var)
+    #     point2 = value.(point2_var)
+    #     # 2. * edges[edge]['radius']
+    #     draw_point(point1, color=GREEN)
+    #     draw_point(point2, color=GREEN)
+    #     add_line(point1, point2, color=GREEN)
+    #     print(str_from_object(pair), value.(l1_var), value.(l2_var),
+    #           radius_distance, norm(point1-point2))
+
+    solution = Dict((edge, node) => value.(var)
                 for ((edge, node), var) in x_vars)
     println(solution)
-    # visualize_solution(nodes, edges, solution)
+    visualize_solution(edges, solution)
 end
 
 function main(viewer=true)
     # file_name = "cube_skeleton.json"
-    file_name = "2_tets.json"
+    # file_name = "2_tets.json"
+    file_name = "single_tet_point2triangle.json"
 
     file_path = joinpath(DATA_DIR, file_name)
     json_data = JSON.parsefile(file_path)
@@ -286,17 +325,15 @@ function main(viewer=true)
     aabb = PyPb.AABB(lower=center - scale*extent/2, upper=center + scale*extent/2)
     println("aabb: ", aabb)
 
-    # PyPb.connect(use_gui=true)
-    # handles = PyPb.draw_pose(PyPb.Pose(), length=1)
-    # append!(handles, [PyPb.add_line(nodes[n1]["point"], nodes[n2]["point"], color=PyPb.RED) for (n1, n2) in keys(edges)])
-    # catch
-    #     println("Errored, pybullet disconnected.")
-    #     PyPb.disconnect()
-    # end
-
-    solve(nodes, edges, aabb)
-    # PyPb.wait_if_gui("Finished.")
-    # PyPb.disconnect()
+    try
+        PyPb.connect(use_gui=true)
+        handles = PyPb.draw_pose(PyPb.Pose(), length=1)
+        append!(handles, [PyPb.add_line(nodes[n1]["point"], nodes[n2]["point"], color=PyPb.RED) for (n1, n2) in keys(edges)])
+        solve(nodes, edges, aabb)
+        PyPb.wait_for_user("Finished.")
+    finally
+        PyPb.disconnect()
+    end
 end
 
 main()
