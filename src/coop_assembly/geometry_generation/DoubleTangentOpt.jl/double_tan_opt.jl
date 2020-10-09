@@ -7,6 +7,9 @@ using Base.Iterators
 import DataStructures: DefaultDict
 using IterTools
 
+using ArgParse
+using Crayons.Box
+
 include("utils.jl")
 
 # set ENV["PYTHON"] = "... path of the python executable ..."
@@ -89,9 +92,8 @@ function create_element(p1, p2, radius; color=PyPb.apply_alpha(PyPb.RED, alpha=1
 end
 
 function visualize_solution(edges, solution, alpha=0.25)
-    edge_points = DefaultDict([])
+    edge_points = DefaultDict(Vector{Vector})
     for ((edge, node), point) in solution
-        @show edge, node, point
         push!(edge_points[edge], point)
     #     draw_point(point, size=2*edges[edge]["radius"], color=BLUE)
     #     body = create_sphere(edges[edge]["radius"], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
@@ -104,12 +106,11 @@ function visualize_solution(edges, solution, alpha=0.25)
     #         set_point(body, trailing)
     #     end
     end
-    @show edge_points
 
     # TODO: analyze collisions and proximity
     bodies = []
     for (edge, points) in edge_points
-        # point1, point2 = points
+        point1, point2 = points
         point1 = points[1]
         point2 = points[2]
         println("E#$edge: $point1 | $point2 | L: $(norm(point1-point2))")
@@ -330,13 +331,29 @@ function main(viewer=true)
         handles = PyPb.draw_pose(PyPb.Pose(), length=1)
         append!(handles, [PyPb.add_line(nodes[n1]["point"], nodes[n2]["point"], color=PyPb.RED) for (n1, n2) in keys(edges)])
         solve(nodes, edges, aabb)
+        println(GREEN_FG, "Solution found!")
         PyPb.wait_for_user("Finished.")
     finally
         PyPb.disconnect()
     end
 end
 
-main()
+#############################################
+
+parser = ArgParseSettings()
+@add_arg_table! parser begin
+    # "name"
+	#     help = "Name to greet"
+  	#     arg_type = String
+    "--viewer"
+        help = "Enable pybullet viewer"
+        arg_type = Bool
+        default = false
+end
+
+args = parse_args(parser)
+
+main(args["viewer"])
 
     # plotting
     # http://juliaplots.org/MakieReferenceImages/gallery//fluctuation_3d/index.html
