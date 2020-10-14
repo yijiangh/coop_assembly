@@ -1,6 +1,5 @@
 from collections import namedtuple
 import numpy as np
-import jsonpickle
 
 from pybullet_planning import point_from_pose
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \

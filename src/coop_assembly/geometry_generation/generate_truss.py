@@ -24,7 +24,7 @@ from coop_assembly.help_functions.parsing import export_structure_data, parse_sa
 from coop_assembly.help_functions.helpers_geometry import find_points_extreme, calculate_coord_sys, compute_local_coordinate_system, \
     bar_sec_verts, compute_contact_line_between_bars
 
-from coop_assembly.data_structure import OverallStructure, BarStructure
+from coop_assembly.data_structure import OverallStructure, BarStructure, GROUND_INDEX
 from coop_assembly.geometry_generation.tet_sequencing import SearchState, compute_candidate_nodes
 from coop_assembly.geometry_generation.utils import *
 from coop_assembly.geometry_generation.tangents import compute_tangent_from_two_lines, lines_tangent_to_cylinder, solve_one_one_tangent, \
@@ -34,8 +34,6 @@ from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.planning.visualization import draw_element, GROUND_COLOR, BACKGROUND_COLOR, SHADOWS, set_camera, \
     label_points, check_model
 from coop_assembly.planning.utils import load_world
-
-GROUND_INDEX = -1
 
 METHOD_OPTIONS = ['search', 'shrink', 'bar_network']
 
@@ -70,15 +68,7 @@ def from_bar_network(problem, debug=False, viewer=False):
         b_struct.edge[index_from_element[e[0]]][index_from_element[e[1]]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
 
     # * add grounded connector
-    grounded_bars = list(b_struct.get_grounded_bar_keys())
-    for ground_k in grounded_bars:
-        b_struct.connect_bars(ground_k, GROUND_INDEX)
-        # find the lower pt of the two
-        axis_endpts = b_struct.get_bar_axis_end_pts(ground_k)
-        if axis_endpts[0][2] > axis_endpts[1][2]:
-            axis_endpts = axis_endpts[::-1]
-        contact_pts = [axis_endpts[0], axis_endpts[0]-np.array([0,0,radius])]
-        b_struct.edge[ground_k][GROUND_INDEX]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
+    b_struct.generate_grounded_connection()
 
     element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 0.5))
     if debug:

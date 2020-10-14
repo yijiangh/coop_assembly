@@ -6,6 +6,7 @@ using Gurobi
 using Base.Iterators
 import DataStructures: DefaultDict
 using IterTools
+using Statistics
 
 using ArgParse
 using Crayons.Box
@@ -91,7 +92,16 @@ function create_element(p1, p2, radius; color=PyPb.apply_alpha(PyPb.RED, alpha=1
     return body
 end
 
+function center_viewer(nodes, pitch=-π/8, distance=2)
+    # TODO: be robust to SCALE
+    centroid = mean([nodes[node]["point"] for node in keys(nodes)]; dims=1)[1]
+    centroid[2] = min([nodes[node]["point"][3] for node in keys(nodes)]...)
+    PyPb.set_camera(yaw=deg2rad(0), pitch=deg2rad(pitch), distance=distance, target_position=centroid)
+    return PyPb.draw_pose(PyPb.Pose(point=centroid), length=1)
+end
+
 function visualize_solution(edges, solution, alpha=0.25)
+    bodies = []
     edge_points = DefaultDict(Vector{Vector})
     for ((edge, node), point) in solution
         push!(edge_points[edge], point)
@@ -99,16 +109,15 @@ function visualize_solution(edges, solution, alpha=0.25)
     #     body = create_sphere(edges[edge]["radius"], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
     #     set_point(body, point)
 
-    #     point2 = solution[edge, get_other(edge, node)]
-    #     for l in enumerate_steps(edge, nodes, edges)
-    #         trailing = (1 - l) * point + (l * point2)
-    #         body = create_sphere(edges[edge]["radius"], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
-    #         set_point(body, trailing)
-    #     end
+        # point2 = solution[edge, get_other(edge, node)]
+        # for l in enumerate_steps(edge, nodes, edges)
+        #     trailing = (1 - l) * point + (l * point2)
+        #     body = create_sphere(edges[edge]["radius"], color=apply_alpha(BLUE, 0.25), mass=STATIC_MASS)
+        #     set_point(body, trailing)
+        # end
     end
 
     # TODO: analyze collisions and proximity
-    bodies = []
     for (edge, points) in edge_points
         point1, point2 = points
         point1 = points[1]
@@ -328,8 +337,11 @@ function main(viewer=true)
 
     try
         PyPb.connect(use_gui=true)
+
         handles = PyPb.draw_pose(PyPb.Pose(), length=1)
         append!(handles, [PyPb.add_line(nodes[n1]["point"], nodes[n2]["point"], color=PyPb.RED) for (n1, n2) in keys(edges)])
+        center_viewer(nodes)
+
         solve(nodes, edges, aabb)
         println(GREEN_FG, "Solution found!")
         PyPb.wait_for_user("Finished.")

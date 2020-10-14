@@ -90,7 +90,7 @@ def Frame_to_plane_data(frame):
 
 SHRINK_RADIUS = 0.0001 # meter
 def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=apply_alpha(RED, 0)):
-    """inputs are in millimeter
+    """create bar's collision body in pybullet
     """
     p1, p2 = axis_end_pts
     p1 = np.array(p1) * scale

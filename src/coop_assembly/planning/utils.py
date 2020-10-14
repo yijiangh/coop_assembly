@@ -4,18 +4,17 @@ from collections import defaultdict, deque
 # from pddlstream.utils import get_connected_components
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize, pairwise_link_collision, \
-    BASE_LINK
+    BASE_LINK, is_connected, connect
 
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from .robot_setup import get_picknplace_robot_data, BUILT_PLATE_Z, EE_LINK_NAME, INITIAL_CONF
 from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 
-def wait_if_gui(enable=True):
-    if has_gui() and enable:
-        wait_for_user()
+def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z, viewer=False):
+    if not is_connected():
+        connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
 
-def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
     robot_data, ws_data = get_picknplace_robot_data()
     robot_urdf, _, _, _, joint_names, _ = robot_data
 

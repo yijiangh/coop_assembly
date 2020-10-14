@@ -3,12 +3,13 @@ import json
 import datetime
 import copy
 from termcolor import cprint
-from pybullet_planning import connect, LockRenderer, get_date
+from pybullet_planning import connect, LockRenderer, get_date, is_connected
 from .visualization import set_camera
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
+from coop_assembly.help_functions.shared_const import METER_SCALE
 
 PICKNPLACE_DIRECTORY = os.path.join('..', '..', '..', 'tests', 'test_data')
 PICKNPLACE_FILENAMES = {
@@ -28,12 +29,16 @@ def get_assembly_path(assembly_name, file_dir=PICKNPLACE_DIRECTORY):
     else:
         filename = '{}.json'.format(assembly_name)
     root_directory = os.path.dirname(__file__)
-    return os.path.abspath(os.path.join(root_directory, file_dir, filename))
+    model_path = os.path.abspath(os.path.join(root_directory, file_dir, filename))
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(model_path)
+    return model_path
 
-def load_structure(test_file_name, viewer, color=(1,0,0,0)):
+def load_structure(test_file_name, viewer=False, color=(1,0,0,0)):
     """connect pybullet env and load the bar system
     """
-    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
+    if not is_connected():
+        connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     with LockRenderer():
         b_struct_data, o_struct_data = parse_saved_structure_data(get_assembly_path(test_file_name))
         if 'data' in b_struct_data:
@@ -50,6 +55,35 @@ def load_structure(test_file_name, viewer, color=(1,0,0,0)):
         endpts_from_element = b_struct.get_axis_pts_from_element(scale=1e-3)
         set_camera([p[0] for e, p in endpts_from_element.items()], scale=1.)
     return b_struct, o_struct
+
+def unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE):
+    """extract geometric info from a BarStructure instance
+
+    Parameters
+    ----------
+    bar_struct : [type]
+        [description]
+    chosen_bars : [type], optional
+        [description], by default None
+    scale : [type], optional
+        [description], by default METER_SCALE
+
+    Returns
+    -------
+    element_from_index : dict
+        element index => coop_assembly.data_structure.utils.Element
+    grounded_elements : list
+        grounded element indices
+    contact_from_connectors : dict
+        ((elem 1, elem 2)) => (contact line pt 1, pt 2)
+    connectors : list
+        contact keys (element id pairs)
+    """
+    element_from_index = bar_struct.get_element_from_index(indices=chosen_bars, scale=scale)
+    grounded_elements = bar_struct.get_grounded_bar_keys()
+    contact_from_connectors = bar_struct.get_connectors(scale=scale)
+    connectors = list(contact_from_connectors.keys())
+    return element_from_index, grounded_elements, contact_from_connectors, connectors
 
 def save_plan(problem, algorithm, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None, suffix=None):
     here = os.path.dirname(__file__)

@@ -24,7 +24,6 @@ from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, get_gripper_mesh_path
-from coop_assembly.planning.utils import load_world
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, \
     display_trajectories, check_model, set_camera
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
@@ -32,9 +31,9 @@ from coop_assembly.planning.utils import get_element_neighbors, get_connector_fr
 
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose
-from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES, save_plan, parse_plan
+from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES, save_plan, parse_plan, unpack_structure
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
-from coop_assembly.planning.utils import recover_sequence, Command
+from coop_assembly.planning.utils import recover_sequence, Command, load_world
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
 from coop_assembly.planning.regression import regression
 
@@ -69,12 +68,9 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
     # the arm itself
     robots = [end_effector] if args.bar_only else [robot]
 
-    # TODO make chosen bars an argument
     chosen_bars = [int(b) for b in args.subset_bars] if args.subset_bars is not None else None
-    element_from_index = bar_struct.get_element_from_index(indices=chosen_bars, scale=METER_SCALE)
-    grounded_elements = bar_struct.get_grounded_bar_keys()
-    contact_from_connectors = bar_struct.get_connectors(scale=METER_SCALE)
-    connectors = list(contact_from_connectors.keys())
+    element_from_index, grounded_elements, contact_from_connectors, connectors = \
+        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE)
 
     bar_struct.set_body_color(RED, indices=chosen_bars)
     print('base: ', bar_struct.base_centroid(METER_SCALE))
@@ -104,7 +100,8 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
                 with LockRenderer(not args.debug):
                     plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles, element_from_index,
                         grounded_elements, connectors, collision=args.collisions,
-                        motions=True, stiffness=True, revisit=False, verbose=debug, lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
+                        motions=True, stiffness=True, revisit=False, verbose=debug,
+                        lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
             else:
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
         if plan is None:

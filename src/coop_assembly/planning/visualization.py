@@ -3,10 +3,11 @@ import numpy as np
 from termcolor import cprint
 from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, get_visual_data, \
     set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body, \
-    remove_handles, pairwise_collision, pairwise_collision_info, draw_collision_diagnosis, has_gui
+    remove_handles, pairwise_collision, pairwise_collision_info, draw_collision_diagnosis, has_gui, remove_debug
 
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from coop_assembly.data_structure.utils import MotionTrajectory
+from coop_assembly.planning.parsing import load_structure, unpack_structure
 
 BAR_LINE_WIDTH = 1.0
 CONNECTOR_LINE_WIDTH = 1.0
@@ -373,3 +374,77 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
     # if video_saver is not None:
     #     video_saver.restore()
     wait_if_gui('Simulation finished.')
+
+#############################
+
+def draw_reaction(point, reaction, max_length=0.05, max_force=1, **kwargs):
+    vector = max_length * np.array(reaction[:3]) / max_force
+    end = point + vector
+    return add_line(point, end, **kwargs)
+
+def draw_reactions(node_points, reaction_from_node):
+    # TODO: redundant
+    handles = []
+    for node in sorted(reaction_from_node):
+        reactions = reaction_from_node[node]
+        max_force = max(map(np.linalg.norm, reactions))
+        print('node={}, max force={:.3f}'.format(node, max_force))
+        print(list(map(np.array, reactions)))
+        start = node_points[node]
+        for reaction in reactions:
+           handles.append(draw_reaction(start, reaction, max_force=max_force, color=GREEN))
+        wait_for_user()
+        for handle in handles:
+            remove_debug(handle)
+
+##################################################
+
+def visualize_stiffness(extrusion_path, chosen_bars=None):
+    if not has_gui():
+        return
+    bar_struct, _ = load_structure(extrusion_path, color=apply_alpha(RED, 0))
+    element_from_index, grounded_elements, contact_from_connectors, connectors = \
+        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE)
+
+    # element_from_id, node_points, ground_nodes = load_extrusion(extrusion_path)
+    elements = list(element_from_index.values())
+    #draw_model(elements, node_points, ground_nodes)
+
+    reaction_from_node = compute_node_reactions(extrusion_path, elements)
+    #reaction_from_node = deformation.displacements # For visualizing displacements
+    #test_node_forces(node_points, reaction_from_node)
+    force_from_node = {node: sum(np.linalg.norm(force_from_reaction(reaction)) for reaction in reactions)
+                       for node, reactions in reaction_from_node.items()}
+    sorted_nodes = sorted(reaction_from_node, key=lambda n: force_from_node[n], reverse=True)
+    for i, node in enumerate(sorted_nodes):
+        print('{}) node={}, point={}, magnitude={:.3E}'.format(
+            i, node, node_points[node], force_from_node[node]))
+
+    #max_force = max(force_from_node.values())
+    max_force = max(np.linalg.norm(reaction[:3]) for reactions in reaction_from_node.values() for reaction in reactions)
+    print('Max force:',  max_force)
+    neighbors_from_node = get_node_neighbors(elements)
+    colors = sample_colors(len(sorted_nodes))
+    handles = []
+    for node, color in zip(sorted_nodes, colors):
+        #color = (0, 0, 0)
+        reactions = reaction_from_node[node]
+        #print(np.array(reactions))
+        start = node_points[node]
+        handles.extend(draw_point(start, color=color))
+        for reaction in reactions[:1]:
+            handles.append(draw_reaction(start, reaction, max_force=max_force, color=RED))
+        for reaction in reactions[1:]:
+            handles.append(draw_reaction(start, reaction, max_force=max_force, color=GREEN))
+        print('Node: {} | Ground: {} | Neighbors: {} | Reactions: {} | Magnitude: {:.3E}'.format(
+            node, (node in ground_nodes), len(neighbors_from_node[node]), len(reactions), force_from_node[node]))
+        print('Total:', np.sum(reactions, axis=0))
+        # wait_for_user()
+        #for handle in handles:
+        #    remove_debug(handle)
+        #handles = []
+        #remove_all_debug()
+
+    #draw_sequence(sequence, node_points)
+    wait_if_gui("Stiffness visualized.")
+
