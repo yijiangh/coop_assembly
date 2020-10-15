@@ -1,5 +1,6 @@
 import os
-from collections import namedtuple, defaultdict, combinations
+from collections import namedtuple, defaultdict
+from itertools import combinations
 from termcolor import cprint
 import numpy as np
 from numpy.linalg import norm
@@ -14,10 +15,14 @@ except ImportError as e:
 else:
     USE_CONMECH = True
 
-from pybullet_planning import HideOutput, INF, apply_alpha, RED, get_distance, angle_between, get_difference, get_angle
+from pybullet_planning import HideOutput, INF, apply_alpha, RED, get_distance, angle_between, get_difference, get_angle, has_gui
+from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, \
+    set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body, \
+    remove_handles, remove_debug, LockRenderer, draw_point
 
 from compas.geometry import is_colinear
 from coop_assembly.help_functions.shared_const import METER_SCALE, EPS
+from coop_assembly.data_structure import GROUND_INDEX
 from coop_assembly.planning.parsing import load_structure, unpack_structure
 
 TRANS_TOL = 0.0015
@@ -55,7 +60,25 @@ def solid_cir_crosssec(r):
 
 ####################################
 
-def conmech_model_from_bar_structure(bar_struct, chosen_bars=None):
+def find_nodes(new_pts, cm_nodes):
+    node_inds = []
+    for pt in new_pts:
+        # print('---\nPt: {}'.format(pt))
+        for n in cm_nodes:
+            if get_distance(pt, n.point) < EPS:
+                node_inds.append(n.node_ind)
+                # print('Found: #{} | {}'.format(n.node_ind, n.point))
+                break
+        else:
+            # unseen node
+            n_id = len(cm_nodes)
+            cm_nodes.append(Node(pt, n_id, False)) # grounded flag
+            node_inds.append(n_id)
+            # print('Not found: #{} | {}'.format(n_id, pt))
+    return cm_nodes, node_inds
+
+
+def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False):
     # nodes, elements, supports, joints, materials, crosssecs, model_name, unit = \
     #     read_frame_json(json_file_path, verbose=verbose)
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
@@ -73,43 +96,35 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None):
     # axis points should all be unique
     cm_nodes = []
     cm_elements = []
-    pts_from_element = defaultdict(set)
+    pts_from_element = defaultdict(list)
     for e_id, element in element_from_index.items():
         # Node(self, point, node_ind, is_grounded):
         # ! is_grounded is used to mark grounded nodes for construction purpose
         # structural supports are specified using the Support entries
         cm_nodes.append(Node(element.axis_endpoints[0], e_id*2, False))
         cm_nodes.append(Node(element.axis_endpoints[1], e_id*2+1, False))
-        pts_from_element[e_id].update(element.axis_endpoints)
+        pts_from_element[e_id].extend(element.axis_endpoints)
 
     supports = []
     for c_id, connector_endpts in contact_from_connectors.items():
-        connector_node_inds = []
+        cm_nodes, node_inds = find_nodes(connector_endpts, cm_nodes)
         for pt in connector_endpts:
-            for n in cm_nodes:
-                if get_distance(pt, n.point) < EPS:
-                    connector_node_inds.append(n.node_ind)
-                    break
-            else:
-                # unseen node
-                n_id = len(cm_nodes)
-                cm_nodes.append(Node(pt, n_id, False))
-                connector_node_inds.append(n_id)
             for e_id in c_id:
-                if is_colinear(pt, *element_from_index[e_id].axis_endpoints):
-                    pts_from_element[e_id].add(pt)
+                if e_id != GROUND_INDEX and is_colinear(pt, *element_from_index[e_id].axis_endpoints, tol=EPS):
+                    pts_from_element[e_id].append(pt)
 
-        assert len(connector_node_inds) == 2
-        assert connector_node_inds[0] != connector_node_inds[1], "#{}|{} - {}".format(c_id, connector_endpts, connector_node_inds)
+        assert len(node_inds) == 2
+        assert node_inds[0] != node_inds[1], "#{}|{} - {}".format(c_id, connector_endpts, node_inds)
 
         # * add connector element
+        # Element(self, end_node_inds, elem_ind, elem_tag='', bending_stiff=True)
         e_id = len(cm_elements)
-        cm_elements.append(Element(connector_node_inds, e_id, elem_tag='connector', bending_stiff=True))
+        cm_elements.append(Element(tuple(node_inds), e_id, elem_tag='connector', bending_stiff=True))
 
         if c_id in grounded_connectors:
             # TODO should only chosen one contact point as fixiety
             # Support(self, condition, node_ind)
-            supports.extend([Support([1 for _ in range(6)], connector_node_inds[i]) for i in range(2)])
+            supports.extend([Support([1 for _ in range(6)], node_inds[i]) for i in range(2)])
 
     for e_id, seg_pts in pts_from_element.items():
         sorted_pt_pairs = sorted(combinations(list(seg_pts), 2), key=lambda pt_pair: get_distance(*pt_pair))
@@ -118,25 +133,28 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None):
         if get_angle(get_difference(*farthest_pts), get_difference(*e_end_pts)) > np.pi/2:
             farthest_pts = farthest_pts[::-1]
         sorted_seg_pts = sorted(list(seg_pts), key=lambda pt: get_distance(pt, farthest_pts[0]))
+        cm_nodes, node_inds = find_nodes(list(sorted_seg_pts), cm_nodes)
+        assert len(sorted_seg_pts) == len(node_inds)
         for i in range(len(sorted_seg_pts)-1):
-            # Element(self, end_node_inds, elem_ind, elem_tag='', bending_stiff=True):
-            # TODO break elements into segments according to connectors
-            pt_pair = (sorted_seg_pts[i], sorted_seg_pts[i+1])
-            # check if already in the node list, if not add it
-            for pt in pt_pair:
-                for n in cm_nodes:
-                    if get_distance(pt, n.point) < EPS:
-                        connector_node_inds.append(n.node_ind)
-                        break
-            cm_elements.append(Element([e_id*2, e_id*2+1], e_id, elem_tag='bar', bending_stiff=True))
-
-    print(cm_nodes)
-    print(cm_elements)
-    input()
+            if node_inds[i] != node_inds[i+1]:
+                cm_elements.append(Element((node_inds[i], node_inds[i+1]), len(cm_elements), elem_tag='bar', bending_stiff=True))
 
     # TODO Add rotational stiffness later
     # Joint(self, c_conditions, elem_tags):
     joints = []
+
+    if debug and has_gui():
+        with LockRenderer():
+            for n in cm_nodes:
+                draw_point(n.point, size=0.002, color=GREEN if n.is_grounded else BLACK)
+            for e in cm_elements:
+                node_inds = e.end_node_inds
+                if 'bar' in e.elem_tag:
+                    add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=RED, width=3)
+                elif 'connector' in e.elem_tag:
+                    add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
+            for s in supports:
+                draw_point(cm_nodes[s.node_ind].point, size=0.02, color=RED)
 
     # TODO different material property and cross secs on Element and Connectors
     r = list(element_from_index.values())[0].radius
@@ -145,13 +163,13 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None):
 
     return cm_nodes, cm_elements, supports, joints, materials, crosssecs, model_name, unit
 
-def create_stiffness_checker(bar_struct, verbose=False):
+def create_stiffness_checker(bar_struct, verbose=False, **kwargs):
     if not USE_CONMECH:
         return None
 
     # * convert ball structure as
     nodes, elements, supports, joints, materials, crosssecs, model_name, unit = \
-        conmech_model_from_bar_structure(bar_struct)
+        conmech_model_from_bar_structure(bar_struct, **kwargs)
 
     with HideOutput():
         # checker = StiffnessChecker.from_json(json_file_path=extrusion_path, verbose=verbose)

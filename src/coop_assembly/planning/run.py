@@ -95,7 +95,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
 
         checker = None
         if args.stiffness and (checker is None):
-            checker = create_stiffness_checker(bar_struct, verbose=False)
+            checker = create_stiffness_checker(bar_struct, verbose=False, debug=args.debug)
             cprint('stiffness checker created.', 'green')
             input()
 
