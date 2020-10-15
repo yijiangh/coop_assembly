@@ -25,7 +25,7 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, get_gripper_mesh_path
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, \
-    display_trajectories, check_model, set_camera
+    display_trajectories, check_model, set_camera, visualize_stiffness
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 
@@ -36,6 +36,7 @@ from coop_assembly.planning.validator import validate_trajectories, validate_pdd
 from coop_assembly.planning.utils import recover_sequence, Command, load_world
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
 from coop_assembly.planning.regression import regression
+from coop_assembly.planning.stiffness import create_stiffness_checker
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
@@ -51,11 +52,12 @@ BOTTOM_BUFFER = 0.01
 # po, focused: 24 s
 # po, binding: 34 s
 
-def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False, saved_plan=None):
+def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, write=False, saved_plan=None):
     bar_struct, o_struct = load_structure(args.problem, viewer, apply_alpha(RED, 0))
     # transform the bar struct to the center
     bar_radius = bar_struct.node[0]['radius']*METER_SCALE
     bar_struct.transform(BUILD_PLATE_CENTER + np.array([0,0,bar_radius+BOTTOM_BUFFER]), scale=METER_SCALE)
+    bar_struct.generate_grounded_connection()
 
     fixed_obstacles, robot = load_world(built_plate_z=BUILD_PLATE_CENTER[2])
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
@@ -87,9 +89,17 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
 
     if saved_plan is None:
         if args.check_model:
-            check_model(bar_struct, chosen_bars)
+            check_model(bar_struct, chosen_bars, debug=args.debug)
         else:
             wait_if_gui('Please review structure\'s workspace position.')
+
+        checker = None
+        if args.stiffness and (checker is None):
+            checker = create_stiffness_checker(bar_struct, verbose=False)
+            cprint('stiffness checker created.', 'green')
+            input()
+
+        # visualize_stiffness
         with WorldSaver():
             if args.algorithm in STRIPSTREAM_ALGORITHM:
                 plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors,
@@ -202,6 +212,7 @@ def main():
     parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
     parser.add_argument('-wr', '--write', action='store_true', help='Export results')
     parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
+    parser.add_argument('--stiffness', action='store_true', help='Turn on stiffness checking.')
     parser.add_argument('--check_model', action='store_true', help='Inspect model.')
     parser.add_argument('--subset_bars', nargs='+', default=None, help='Plan for only subset of bar indices.')
     args = parser.parse_args()
@@ -210,11 +221,11 @@ def main():
     success_cnt = 0
     if int(args.n_trails) == 1:
         # one-shot run, expose assertion errors
-        run_pddlstream(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write, saved_plan=args.saved_plan)
+        run_planning(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write, saved_plan=args.saved_plan)
     else:
         for i in range(int(args.n_trails)):
             try:
-                run_pddlstream(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write, saved_plan=args.saved_plan)
+                run_planning(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write, saved_plan=args.saved_plan)
             except:
                 cprint('#{}: plan not found'.format(i), 'red')
                 continue

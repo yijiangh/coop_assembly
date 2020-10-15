@@ -3,11 +3,10 @@ import numpy as np
 from termcolor import cprint
 from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, get_visual_data, \
     set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body, \
-    remove_handles, pairwise_collision, pairwise_collision_info, draw_collision_diagnosis, has_gui, remove_debug
+    remove_handles, pairwise_collision, pairwise_collision_info, draw_collision_diagnosis, has_gui, remove_debug, LockRenderer, get_distance
 
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from coop_assembly.data_structure.utils import MotionTrajectory
-from coop_assembly.planning.parsing import load_structure, unpack_structure
 
 BAR_LINE_WIDTH = 1.0
 CONNECTOR_LINE_WIDTH = 1.0
@@ -177,9 +176,10 @@ def check_model(bar_struct, indices=None, debug=False):
     cprint('Visualize grounded elements.', 'yellow')
     grounded_elements = list(set(bar_struct.get_grounded_bar_keys()) & set(elements))
     remove_all_debug()
-    for bar in grounded_elements:
-        label_elements(element_bodies, [bar])
-    color_structure(element_bodies, set(grounded_elements), next_element=None, built_alpha=0.6)
+    with LockRenderer():
+        for bar in grounded_elements:
+            label_elements(element_bodies, [bar])
+        color_structure(element_bodies, set(grounded_elements), next_element=None, built_alpha=0.6)
     if debug:
         wait_if_gui('grounded element: {}'.format(grounded_elements))
 
@@ -190,12 +190,17 @@ def check_model(bar_struct, indices=None, debug=False):
         bar_connectors = connector_from_elements[bar]
         current_connectors = []
         remove_all_debug()
-        for c in list(bar_connectors):
-            if c[0] in elements and c[1] in elements:
-                current_connectors.append(c)
-                label_elements(element_bodies, c)
-                add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2)
-        color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
+        with LockRenderer():
+            for c in list(bar_connectors):
+                assert get_distance(contact_from_connectors[c][0], contact_from_connectors[c][1]) > 1e-6
+                if c[0] in elements and c[1] in elements:
+                    current_connectors.append(c)
+                    label_elements(element_bodies, c)
+                    add_line(*contact_from_connectors[c], color=RED, width=2)
+                else:
+                    print('Grounded connector - {}'.format(c))
+                    add_line(*contact_from_connectors[c], color=BLUE, width=3)
+            color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
         if debug:
             wait_if_gui('connector: {}'.format(current_connectors))
 
@@ -204,8 +209,9 @@ def check_model(bar_struct, indices=None, debug=False):
     element_neighbors = get_element_neighbors(connectors, elements)
     for element, connected_bars in element_neighbors.items():
         remove_all_debug()
-        color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
-        label_elements(element_bodies, list(connected_bars) + [element])
+        with LockRenderer():
+            color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
+            label_elements(element_bodies, list(connected_bars) + [element])
         if debug:
             wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
 
@@ -400,6 +406,8 @@ def draw_reactions(node_points, reaction_from_node):
 ##################################################
 
 def visualize_stiffness(extrusion_path, chosen_bars=None):
+    from coop_assembly.planning.parsing import load_structure, unpack_structure
+
     if not has_gui():
         return
     bar_struct, _ = load_structure(extrusion_path, color=apply_alpha(RED, 0))

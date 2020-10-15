@@ -44,6 +44,7 @@ def load_structure(test_file_name, viewer=False, color=(1,0,0,0)):
         if 'data' in b_struct_data:
             b_struct_data = b_struct_data['data']
         b_struct = BarStructure.from_data(b_struct_data)
+        b_struct.name = test_file_name
         b_struct.create_pb_bodies(color=color)
         o_struct = None
         if o_struct_data is not None:

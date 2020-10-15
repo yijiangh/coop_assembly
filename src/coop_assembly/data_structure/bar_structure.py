@@ -401,5 +401,3 @@ class BarStructure(Network):
             contact_pts = [axis_endpts[0], axis_endpts[0]-np.array([0,0,radius])]
             self.edge[ground_k][GROUND_INDEX]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
         return self.get_grounded_connector_keys()
-
-
