@@ -11,7 +11,7 @@ from coop_assembly.help_functions.parsing import export_structure_data, parse_sa
 from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 from coop_assembly.help_functions.shared_const import METER_SCALE
 
-PICKNPLACE_DIRECTORY = os.path.join('..', '..', '..', 'tests', 'test_data')
+PICKNPLACE_DIRECTORY = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'tests', 'test_data')
 PICKNPLACE_FILENAMES = {
     '12_bars' : '12_bars_point2triangle.json',
     'single_tet' : 'single_tet_point2triangle.json',
@@ -28,8 +28,7 @@ def get_assembly_path(assembly_name, file_dir=PICKNPLACE_DIRECTORY):
         filename = PICKNPLACE_FILENAMES[assembly_name]
     else:
         filename = '{}.json'.format(assembly_name)
-    root_directory = os.path.dirname(__file__)
-    model_path = os.path.abspath(os.path.join(root_directory, file_dir, filename))
+    model_path = os.path.abspath(os.path.join(file_dir, filename))
     if not os.path.exists(model_path):
         raise FileNotFoundError(model_path)
     return model_path

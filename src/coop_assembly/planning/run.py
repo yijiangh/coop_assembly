@@ -95,9 +95,8 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
 
         checker = None
         if args.stiffness and (checker is None):
-            checker = create_stiffness_checker(bar_struct, verbose=False, debug=args.debug)
+            checker = create_stiffness_checker(bar_struct, verbose=False, debug=args.debug, save_model=args.save_cm_model)
             cprint('stiffness checker created.', 'green')
-            input()
 
         # visualize_stiffness
         with WorldSaver():
@@ -214,6 +213,7 @@ def main():
     parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
     parser.add_argument('--stiffness', action='store_true', help='Turn on stiffness checking.')
     parser.add_argument('--check_model', action='store_true', help='Inspect model.')
+    parser.add_argument('--save_cm_model', action='store_true', help='Export conmech model.')
     parser.add_argument('--subset_bars', nargs='+', default=None, help='Plan for only subset of bar indices.')
     args = parser.parse_args()
     print('Arguments:', args)

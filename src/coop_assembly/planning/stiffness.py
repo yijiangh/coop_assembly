@@ -1,4 +1,5 @@
 import os
+import json
 from collections import namedtuple, defaultdict
 from itertools import combinations
 from termcolor import cprint
@@ -7,7 +8,7 @@ from numpy.linalg import norm
 
 try:
     from pyconmech.frame_analysis import StiffnessChecker
-    from pyconmech.frame_analysis import GravityLoad, Node, Element, Support, Material, CrossSec, Material, Joint
+    from pyconmech.frame_analysis import GravityLoad, Node, Element, Support, Material, CrossSec, Material, Joint, Model
 except ImportError as e:
     cprint('{}, Not using conmech'.format(e), 'yellow')
     USE_CONMECH = False
@@ -23,7 +24,7 @@ from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color,
 from compas.geometry import is_colinear
 from coop_assembly.help_functions.shared_const import METER_SCALE, EPS
 from coop_assembly.data_structure import GROUND_INDEX
-from coop_assembly.planning.parsing import load_structure, unpack_structure
+from coop_assembly.planning.parsing import load_structure, unpack_structure, PICKNPLACE_DIRECTORY
 
 TRANS_TOL = 0.0015
 ROT_TOL = INF # 5 * np.pi / 180
@@ -78,9 +79,7 @@ def find_nodes(new_pts, cm_nodes):
     return cm_nodes, node_inds
 
 
-def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False):
-    # nodes, elements, supports, joints, materials, crosssecs, model_name, unit = \
-    #     read_frame_json(json_file_path, verbose=verbose)
+def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, save_model=False):
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE)
     grounded_connectors = bar_struct.get_grounded_connector_keys()
@@ -161,21 +160,22 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False):
     crosssecs = [solid_cir_crosssec(r)]
     materials = [WoodMaterial]
 
-    return cm_nodes, cm_elements, supports, joints, materials, crosssecs, model_name, unit
+    model = Model(cm_nodes, cm_elements, supports, joints, materials, crosssecs, unit='meter', model_name=model_name)
+    if save_model is not None:
+        model_path = os.path.join(PICKNPLACE_DIRECTORY, model.model_name + '_conmech_model.json')
+        with open(model_path, 'w') as f:
+            json.dump(model.to_data(), f, indent=1)
+            cprint('Conmech model saved to: {}'.format(model_path), 'green')
+    return model
 
 def create_stiffness_checker(bar_struct, verbose=False, **kwargs):
     if not USE_CONMECH:
         return None
-
-    # * convert ball structure as
-    nodes, elements, supports, joints, materials, crosssecs, model_name, unit = \
-        conmech_model_from_bar_structure(bar_struct, **kwargs)
-
+    # * convert ball structure to a conmech model
+    model = conmech_model_from_bar_structure(bar_struct, **kwargs)
     with HideOutput():
-        # checker = StiffnessChecker.from_json(json_file_path=extrusion_path, verbose=verbose)
-        checker = StiffnessChecker(nodes=nodes, elements=elements, supports=supports, \
-                   materials=materials, joints=joints, crosssecs=crosssecs, verbose=verbose, \
-                   model_name=model_name, unit=unit, checker_engine="numpy")
+        # checker = StiffnessChecker.from_json(json_file_path=model_path, verbose=verbose)
+        checker = StiffnessChecker(model, verbose=verbose, checker_engine="numpy")
         checker.set_loads(gravity_load=GravityLoad([0,0,-1.0]))
     #checker.set_output_json(True)
     #checker.set_output_json_path(file_path=os.getcwd(), file_name="stiffness-results.json")
