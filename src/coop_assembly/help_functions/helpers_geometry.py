@@ -328,11 +328,11 @@ def find_points_extreme(pts_all, pts_init):
     [type]
         [description]
     """
-    vec_init = normalize_vector(Vector(*pts_init))
+    vec_init = normalize_vector(Vector(*pts_init[1])-Vector(*pts_init[0]))
     # * find the pair of points with maximal distance
     sorted_pt_pairs = sorted(combinations(pts_all, 2), key=lambda pt_pair: distance_point_point(*pt_pair))
     farthest_pts = sorted_pt_pairs[-1]
-    vec_new = normalize_vector(Vector(*farthest_pts))
+    vec_new = normalize_vector(Vector(*farthest_pts[1])-Vector(*farthest_pts[0]))
     if angle_vectors(vec_init, vec_new, deg=True) > 90:
         # angle can only be 0 or 180
         farthest_pts = farthest_pts[::-1]

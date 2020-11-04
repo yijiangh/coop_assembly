@@ -217,6 +217,7 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimiz
         #print('Edge: {} | Length: {:.3f}'.format(str_from_object(edge), length))
 
         difference = x_vars[edge, node2] - x_vars[edge, node1]
+        # * length approximation
         if length_tolerance < INF:
             # TODO: make length_tolerance a function of the radius
             model.addConstr(sum(difference * difference) >= (length - length_tolerance) ** 2)
@@ -426,7 +427,7 @@ def main():
     #file_name = skeletons[0]
     #file_name = 'cube_skeleton.json'
     #file_name = '2_tets.json'
-    file_name = 'single_tet_point2triangle.json'
+    file_name = 'truss_one_tet_skeleton.json'
 
     json_data = read_json(os.path.join(DATA_DIR, file_name))
     #json_data = json_data['bar_structure'] # bar_structure | overall_structure
