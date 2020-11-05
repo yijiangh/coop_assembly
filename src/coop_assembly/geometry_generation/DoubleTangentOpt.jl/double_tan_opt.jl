@@ -21,6 +21,8 @@ include("utils.jl")
 # and re-launch Julia
 using PyCall
 PyPb = pyimport("pybullet_planning")
+PyCoopDataStructures = pyimport("coop_assembly.data_structure")
+# PyCompasDataStructures = pyimport("compas.datastructures")
 
 # using Makie
 
@@ -52,6 +54,8 @@ function get_length(edge, nodes)
     n1, n2 = edge
     return norm(nodes[n1]["point"]-nodes[n2]["point"])
 end
+
+########################################
 
 """
 - edge: EDGE_ID((node_id1, node_id2))
@@ -263,13 +267,6 @@ function solve(nodes, edges, aabb;
             objective[edge, node] = sum(difference.*difference)
         end
 
-        # node1, node2 = edge
-        # length = norm(nodes[node1]["point"] - nodes[node2]["point"]) - 2*edges[edge]["radius"]
-        # steps = length / edges[edge]["radius"]
-
-        # @printf "Sphere approx: %.3f\n" steps
-        # @printf "Edge: %s | Length: %.3f\n" edge length
-
         # difference = x_vars[edge, node2] - x_vars[edge, node1]
         # if length_tolerance < Inf
         #     # TODO: make length_tolerance a function of the radius
@@ -308,8 +305,8 @@ function solve(nodes, edges, aabb;
     for ((pair, node), var) in z_vars
         # for edge in pair
         for (i, edge) in enumerate(pair)
-            z_var_from_edge[edge, node][i] = var
             # push!(z_var_from_edge[edge, node], var)
+            z_var_from_edge[edge, node][i] = var
         end
     end
 
@@ -412,8 +409,26 @@ function solve(nodes, edges, aabb;
 end
 
 function main(file_name, args)
+    sol_b_struct = nothing
+    if args["check_feasible_file"] !== nothing
+        saved_sol_path = joinpath(DATA_DIR, args["check_feasible_file"])
+        sol_data = JSON.parsefile(saved_sol_path)
+        println(GREEN_FG("Solution parsed from $(saved_sol_path)!"))
+        sol_data = sol_data["bar_structure"]["data"]
+        sol_b_struct = PyCoopDataStructures.BarStructure.from_data(sol_data)
+
+        for (v, v_data) in sol_b_struct.nodes(data=true)
+            @show values(v_data)
+        end
+
+        # if occursin("skeleton", file_name)
+        file_name = split(args["check_feasible_file"], ".json")[1] * "_skeleton.json"
+    end
+
     file_path = joinpath(DATA_DIR, file_name)
+    @assert Base.Filesystem.ispath(file_path)
     json_data = JSON.parsefile(file_path)
+
     try
         json_data = json_data["overall_structure"] # bar_structure | overall_structure
     catch
@@ -422,23 +437,20 @@ function main(file_name, args)
 
     # bar_structure: adjacency, attributes, edge, node
     # overall_structure: adjacency, edge, node
-
     neighbors_from_node = Dict(tryparse(Int,n) => Set(keys(neighbors)) for (n, neighbors) in json_data["adjacency"])
-    # println("neighnor from node", neighbors_from_node)
 
+    # * original graph info
     edges = Dict(EDGE_ID([tryparse(Int,n1), tryparse(Int,n2)]) => info for (n1, neighbors) in json_data["edge"] for (n2, info) in neighbors)
     for info in values(edges)
         # ! enforce uniform bar radius for now
         info["radius"] = 3.17
         info["radius"] *= SCALE
     end
-    # println("edges: ", edges)
-
     nodes = Dict(tryparse(Int, n) => Dict("point" => parse_point(info)) for (n, info) in json_data["node"]) # "fixed": info["fixed"]
 
+    # compute AABB for box domain for x vars
     points = [info["point"] for info in values(nodes)]
     aabb = PyPb.aabb_from_points(points)
-
     bb_scale = 2.
     center = PyPb.get_aabb_center(aabb)
     extent = PyPb.get_aabb_extent(aabb)
@@ -449,11 +461,30 @@ function main(file_name, args)
     try
         PyPb.connect(use_gui=viewer)
 
+        render_lock = PyPb.LockRenderer()
         handles = PyPb.draw_pose(PyPb.Pose(), length=1)
         append!(handles, [PyPb.add_line(nodes[n1]["point"], nodes[n2]["point"], color=PyPb.RED) for (n1, n2) in keys(edges)])
         center_viewer(nodes)
+        render_lock.restore()
 
-        x_sol, z_sol = solve(nodes, edges, aabb; optimize=args["optimize"], num_solutions=args["num_solutions"])
+        if args["check_feasible_file"] !== nothing
+            # parsed a saved solution
+            element_from_index = sol_b_struct.get_element_from_index(scale=SCALE) # |indices=chosen_bars,
+            grounded_elements = sol_b_struct.get_grounded_bar_keys()
+            contact_from_connectors = sol_b_struct.get_connectors(scale=SCALE)
+            sol_b_struct.set_body_color(PyPb.RED) #, indices=chosen_bars
+
+            # for (e_id, element) in element_from_index
+            #     @show element
+            # end
+
+            # TODO convert parsed solution to x_vars and z_vars
+
+            PyPb.wait_if_gui("Solution reconstructed.")
+        end
+
+        x_sol, z_sol = solve(nodes, edges, aabb; optimize=args["optimize"],
+            num_solutions=args["num_solutions"])
 
         visualize_solution(nodes, edges, x_sol, z_sol)
 
@@ -479,10 +510,10 @@ parser = ArgParseSettings()
         # file_name = "cube_skeleton.json"
         # file_name = "2_tets.json"
         # file_name = "single_tet_point2triangle.json"
-    "--saved_solution"
+    "--check_feasible_file"
 	    help = "json file name for a computed solution, for viz or feasiblity checking"
         arg_type = String
-        default = "truss_one_tet.json"
+        default = nothing
     "--viewer"
         help = "Enable pybullet viewer"
         arg_type = Bool
@@ -495,6 +526,10 @@ parser = ArgParseSettings()
         help = "Limits the number of feasible MIP solutions found. https://www.gurobi.com/documentation/9.0/refman/solutionlimit.html"
         arg_type = Int
         default = 1
+    "--write"
+        help = "export the newly found solution"
+        arg_type = Bool
+        default = false
 end
 
 args = parse_args(parser)
