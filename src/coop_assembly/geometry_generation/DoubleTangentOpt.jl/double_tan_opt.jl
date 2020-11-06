@@ -372,12 +372,12 @@ function solve(nodes, edges, aabb;
 
     if check_feasible
         for ((edge, node), x_var) in x_vars
-            xf_con = @constraint(model, x_vars[edge, node] == hint_x_solution[edge, node])
-            set_name(xf_con, "XFeasible[$(edge), $node]")
+            xf_con = @constraint(model, x_vars[edge, node] .== hint_x_solution[edge, node])
+            # set_name(xf_con, "XFeasible[$(edge), $node]")
         end
         for ((pair, node), z_var) in z_vars
-            zf_con = @constraint(model, z_vars[pair, node] == hint_z_solution[pair, node])
-            set_name(zf_con, "ZFeasible[$(edge)), $node]")
+            zf_con = @constraint(model, z_vars[pair, node] .== hint_z_solution[pair, node])
+            # set_name(zf_con, "ZFeasible[$(edge)), $node]")
         end
     end
 
@@ -386,11 +386,12 @@ function solve(nodes, edges, aabb;
     println("="^20)
     status=optimize!(model) # time to optimize!
     println("="^20)
-    @printf("Objective: %s | # Solutions: %d | Status: %s\n", objective_value(model), result_count(model), termination_status(model))
 
     if result_count(model) <= 0 || !has_values(model)
         error("The model was not solved correctly.")
         return
+    else
+        @printf("Objective: %s | # Solutions: %d | Status: %s\n", objective_value(model), result_count(model), termination_status(model))
     end
 
     # for (edge, neighbors) in z_var_from_edge
@@ -410,43 +411,47 @@ end
 
 function main(file_name, args)
     sol_b_struct = nothing
+    saved_x_vars = nothing
+    saved_z_vars = nothing
     if args["check_feasible_file"] !== nothing
         saved_sol_path = joinpath(DATA_DIR, args["check_feasible_file"])
         sol_data = JSON.parsefile(saved_sol_path)
         println(GREEN_FG("Solution parsed from $(saved_sol_path)!"))
-        sol_data = sol_data["bar_structure"]["data"]
-        sol_b_struct = PyCoopDataStructures.BarStructure.from_data(sol_data)
 
-        for (v, v_data) in sol_b_struct.nodes(data=true)
-            @show values(v_data)
+        graph_data = sol_data["overall_structure"]
+        sol_b_struct = PyCoopDataStructures.BarStructure.from_data(sol_data["bar_structure"]["data"])
+        #
+        saved_x_vars = Dict()
+        for data in sol_data["opt_data"]["x_vars"]
+            # (edge, node) => value.(var)
+            edge, node = data["key"]
+            saved_x_vars[EDGE_ID(edge), node] = data["value"]
         end
-
-        # if occursin("skeleton", file_name)
-        file_name = split(args["check_feasible_file"], ".json")[1] * "_skeleton.json"
-    end
-
-    file_path = joinpath(DATA_DIR, file_name)
-    @assert Base.Filesystem.ispath(file_path)
-    json_data = JSON.parsefile(file_path)
-
-    try
-        json_data = json_data["overall_structure"] # bar_structure | overall_structure
-    catch
-        println(YELLOW_FG("No overall_structure stored in the data."))
+        saved_z_vars = Dict()
+        for data in sol_data["opt_data"]["z_vars"]
+            # (edge_pair, node) => value.(var)
+            (e1, e2), node = data["key"]
+            saved_z_vars[EDGE_ID((EDGE_ID(e1), EDGE_ID(e2))), node] = data["value"]
+        end
+    else
+        file_path = joinpath(DATA_DIR, file_name)
+        @assert Base.Filesystem.ispath(file_path)
+        graph_data = JSON.parsefile(file_path)
+        println(GREEN_FG("Design graph parsed from $(file_path)!"))
     end
 
     # bar_structure: adjacency, attributes, edge, node
     # overall_structure: adjacency, edge, node
-    neighbors_from_node = Dict(tryparse(Int,n) => Set(keys(neighbors)) for (n, neighbors) in json_data["adjacency"])
+    neighbors_from_node = Dict(tryparse(Int,n) => Set(keys(neighbors)) for (n, neighbors) in graph_data["adjacency"])
 
     # * original graph info
-    edges = Dict(EDGE_ID([tryparse(Int,n1), tryparse(Int,n2)]) => info for (n1, neighbors) in json_data["edge"] for (n2, info) in neighbors)
+    edges = Dict(EDGE_ID([tryparse(Int,n1), tryparse(Int,n2)]) => info for (n1, neighbors) in graph_data["edge"] for (n2, info) in neighbors)
     for info in values(edges)
         # ! enforce uniform bar radius for now
         info["radius"] = 3.17
         info["radius"] *= SCALE
     end
-    nodes = Dict(tryparse(Int, n) => Dict("point" => parse_point(info)) for (n, info) in json_data["node"]) # "fixed": info["fixed"]
+    nodes = Dict(tryparse(Int, n) => Dict("point" => parse_point(info)) for (n, info) in graph_data["node"]) # "fixed": info["fixed"]
 
     # compute AABB for box domain for x vars
     points = [info["point"] for info in values(nodes)]
@@ -469,22 +474,21 @@ function main(file_name, args)
 
         if args["check_feasible_file"] !== nothing
             # parsed a saved solution
-            element_from_index = sol_b_struct.get_element_from_index(scale=SCALE) # |indices=chosen_bars,
-            grounded_elements = sol_b_struct.get_grounded_bar_keys()
-            contact_from_connectors = sol_b_struct.get_connectors(scale=SCALE)
-            sol_b_struct.set_body_color(PyPb.RED) #, indices=chosen_bars
-
-            # for (e_id, element) in element_from_index
-            #     @show element
-            # end
-
+            # sol_b_struct.get_element_bodies(color=PyPb.RED, regenerate=true, scale=SCALE)
+            element_from_index = sol_b_struct.get_element_from_index(scale=SCALE, color=PyPb.RED) # |indices=chosen_bars,
+            # contact_from_connectors = sol_b_struct.get_connectors(scale=SCALE)
+            # grounded_elements = sol_b_struct.get_grounded_bar_keys()
+            # sol_b_struct.set_body_color(PyPb.RED) #, indices=chosen_bars
             # TODO convert parsed solution to x_vars and z_vars
 
             PyPb.wait_if_gui("Solution reconstructed.")
+            # return
         end
 
-        x_sol, z_sol = solve(nodes, edges, aabb; optimize=args["optimize"],
-            num_solutions=args["num_solutions"])
+        x_sol, z_sol = solve(nodes, edges, aabb; optimize=args["optimize"], num_solutions=args["num_solutions"],
+            check_feasible=args["check_feasible_file"]!==nothing,
+            hint_x_solution=saved_x_vars,
+            hint_z_solution=saved_z_vars)
 
         visualize_solution(nodes, edges, x_sol, z_sol)
 

@@ -16,7 +16,8 @@ from compas.geometry import is_coplanar, subtract_vectors, angle_vectors
 from compas.datastructures import Network
 
 from pybullet_planning import connect, elapsed_time, randomize, wait_if_gui, RED, BLUE, GREEN, BLACK, apply_alpha, \
-    add_line, draw_circle, remove_handles, add_segments, BROWN, YELLOW, reset_simulation, disconnect, draw_pose, unit_pose
+    add_line, draw_circle, remove_handles, add_segments, BROWN, YELLOW, reset_simulation, disconnect, draw_pose, unit_pose, \
+    LockRenderer
 
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle, dropped_perpendicular_points
@@ -36,9 +37,13 @@ from coop_assembly.planning.visualization import draw_element, GROUND_COLOR, BAC
 from coop_assembly.planning.utils import load_world
 
 METHOD_OPTIONS = ['search', 'shrink', 'bar_network']
+EDGE = frozenset
+SCALE = 1e-3
 
 ########################################
 def from_bar_network(problem, debug=False, viewer=False):
+    """build a BarStructure from a graph that's already a tangent-contact bar system (not necessarily double-tangent)
+    """
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
 
     problem_path = get_assembly_path(problem)
@@ -77,9 +82,10 @@ def from_bar_network(problem, debug=False, viewer=False):
     return b_struct
 
 #######################################
-# directly turn a 3D line graph into truss by shrinking the edges to avoid collision
 
 def generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, radius, debug=False):
+    """Directly turn a 3D line graph into truss by shrinking the edges to avoid collision
+    """
     b_struct = BarStructure()
     centroid_pt = np.average(node_points, axis=0)
 
@@ -140,13 +146,13 @@ def add_successors(queue, all_elements, node_points, ground_nodes, heuristic_fn,
     #assert 0 <= num_remaining
     #bias_from_element = {}
     # TODO: print ground first
-    for directed in randomize(compute_printable_directed(all_elements, ground_nodes, printed)):
-        element = get_undirected(all_elements, directed)
+    for element in randomize(compute_printable(all_elements, ground_nodes, printed)):
+        # element = get_undirected(all_elements, directed)
         if not (incoming_from_element[element] <= printed):
             continue
-        bias = heuristic_fn(printed, directed)
+        bias = heuristic_fn(printed, element)
         priority = (num_remaining, bias, random.random())
-        heapq.heappush(queue, (priority, printed, directed))
+        heapq.heappush(queue, (priority, printed, element))
 
     # remaining = all_nodes - built_nodes
     # num_remaining = len(remaining) - 1
@@ -188,8 +194,8 @@ def generate_truss_progression(node_points, edges, ground_nodes, radius, heurist
     num_evaluated = 0
     max_time = 10
     while queue and elapsed_time(start_time) < max_time:
-        bias, printed, directed = heapq.heappop(queue)
-        element = get_undirected(all_elements, directed)
+        bias, printed, element = heapq.heappop(queue)
+        # element = get_undirected(all_elements, directed)
 
         num_remaining = len(all_elements) - len(printed)
         backtrack = num_remaining - min_remaining
@@ -232,6 +238,22 @@ def generate_truss_progression(node_points, edges, ground_nodes, radius, heurist
 ##########################################
 # forming bar structure
 def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debug=False):
+    """[summary]
+
+    Parameters
+    ----------
+    node_points : [type]
+        [description]
+    ground_nodes : [type]
+        [description]
+    edge_seq : [type]
+        list of edges indicating the enumerating sequence
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
     printed = set()
     # all_elements = set(edge_seq)
     node_neighbors = get_node_neighbors(edge_seq)
@@ -242,7 +264,10 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
     # corresponding edge (n1, n2) mapped into the node_points
     # each entry's value (node pt id : axis pt, node pt id : axis pt)
     # since axis pt usually deviates from the ideal node pt
+    # ! bar_from_elements[edge] = {node : [x,y,z]}
     bar_from_elements = {}
+    # ! connect_vars[set([edge1, edge2]), node] = 1 or 0
+    connect_vars = {}
 
     for _, element in enumerate(edge_seq):
         # temporal drawing cache for each iter
@@ -317,28 +342,21 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
                 tmp_extension_scores.append(abs(norm(extended_end_pts[0] - extended_end_pts[1]) - norm(contact_e_axis_pts[0]- contact_e_axis_pts[1])))
 
                 tmp_contact_elements[contact_e] = {}
-                if norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][contact_e[0]])) > \
-                   norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][contact_e[1]])):
-                    tmp_contact_elements[contact_e][contact_e[1]] = np.array(extended_end_pts[0])
-                    tmp_contact_elements[contact_e][contact_e[0]] = np.array(extended_end_pts[1])
+                c_n0, c_n1 = contact_e
+                if norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][c_n0])) > \
+                   norm(np.array(extended_end_pts[0]) - np.array(bar_from_elements[contact_e][c_n1])):
+                    tmp_contact_elements[contact_e][c_n1] = np.array(extended_end_pts[0])
+                    tmp_contact_elements[contact_e][c_n0] = np.array(extended_end_pts[1])
                 else:
-                    tmp_contact_elements[contact_e][contact_e[0]] = np.array(extended_end_pts[0])
-                    tmp_contact_elements[contact_e][contact_e[1]] = np.array(extended_end_pts[1])
+                    tmp_contact_elements[contact_e][c_n0] = np.array(extended_end_pts[0])
+                    tmp_contact_elements[contact_e][c_n1] = np.array(extended_end_pts[1])
 
-                # print('original: {}'.format(bar_from_elements[contact_e]))
-                # print('extended: {}'.format(extended_end_pts))
             tmp_score = score_fn(tmp_extension_scores)
             print('new extension score: {} | {}'.format(tmp_score, extension_score))
             if tmp_score < extension_score:
                 extension_score = tmp_score
                 chosen_new_axis_endpts = new_axis_endpts
                 chosen_contact_element_axis_pts = copy(tmp_contact_elements)
-
-            # for contact_e, end_pts in tmp_contact_elements.items():
-            #     # draw new axis pts
-            #     end_pts = list(end_pts.values())
-            #     add_line(end_pts[0]*1e-3, end_pts[1]*1e-3, color=apply_alpha(GREEN, 1))
-            # wait_if_gui('iter in extension score...')
 
         for contact_e, end_pts in chosen_contact_element_axis_pts.items():
             # draw new axis pts
@@ -354,20 +372,25 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
         visited_nodes |= set([n0, n1])
         printed = printed | {element}
 
-        # update all bar element drawing
-        for e in bar_from_elements.values():
-            # convert mil to meter
-            h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
-            circ_verts = bar_sec_verts(*list(e.values()), radius=radius)
-            for v in circ_verts:
-                # assert(abs(v.dot(list(e.values())[0] - list(e.values())[1])) < 1e-8)
-                if abs(v.dot(list(e.values())[0] - list(e.values())[1])) > 1e-8:
-                    cprint('circle dot: {}'.format(abs(v.dot(list(e.values())[0] - list(e.values())[1]))), 'red')
+        for contact_e in chosen_contact_element_axis_pts :
+            c_node = list(element&contact_e)[0]
+            connect_vars[EDGE({element, contact_e}), c_node] = 1
 
-            ch1 = add_segments([(list(e.values())[0] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
-            ch2 = add_segments([(list(e.values())[1] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
-            # handles.extend([h] + ch1 + ch2)
-            # handles.extend([h] + ch1 + ch2)
+        # update all bar element drawing
+        with LockRenderer():
+            for e in bar_from_elements.values():
+                # convert mil to meter
+                h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
+                circ_verts = bar_sec_verts(*list(e.values()), radius=radius)
+                for v in circ_verts:
+                    # assert(abs(v.dot(list(e.values())[0] - list(e.values())[1])) < 1e-8)
+                    if abs(v.dot(list(e.values())[0] - list(e.values())[1])) > 1e-8:
+                        cprint('circle dot: {}'.format(abs(v.dot(list(e.values())[0] - list(e.values())[1]))), 'red')
+
+                ch1 = add_segments([(list(e.values())[0] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
+                ch2 = add_segments([(list(e.values())[1] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
+                # handles.extend([h] + ch1 + ch2)
+                # handles.extend([h] + ch1 + ch2)
 
         if debug:
             wait_if_gui('A new bar is added.')
@@ -381,7 +404,8 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
     for e, pts in bar_from_elements.items():
         axis_endpts = list(pts.values())
         _ , _, vec_z = calculate_coord_sys(axis_endpts, centroid_pt)
-        is_grounded = e[0] in ground_nodes or e[1] in ground_nodes
+        n0, n1 = e
+        is_grounded = n0 in ground_nodes or n1 in ground_nodes
         bar_key = b_struct.add_bar(None, [p.tolist() for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
         index_from_element[e] = bar_key
 
@@ -407,7 +431,7 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
     if debug:
         wait_if_gui('Final bar assembly.')
 
-    return b_struct
+    return b_struct, (bar_from_elements, connect_vars)
 
 def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius):
     """[summary]
@@ -415,7 +439,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
     Parameters
     ----------
     bar_from_elements : dict
-        {element : [axis pt1, axis pt2]}
+        {[element] : { node id : axis pt1}}
         element = (n1, n2), n1/2 indexs into `node_points`
     node_points : list of points
         the original list of points we want the bar system to achieve. We are pertubing the bar axis to approximately spanning these points.
@@ -654,11 +678,11 @@ def get_search_heuristic_fn(node_points, edges, grounded_nodes, forward=True, pe
     all_elements = frozenset(edges)
     sign = +1 if forward else -1
 
-    def h_fn(printed, directed):
+    def h_fn(printed, element):
         # lower bias will be dequed first
         # iterate through all existing triangles and return the minimal cost one
         # Queue minimizes the statistic
-        element = get_undirected(all_elements, directed)
+        # element = get_undirected(all_elements, directed)
 
         if heuristic == 'random':
             pass
@@ -680,7 +704,7 @@ def retrace_sequence(visited, current_state, horizon=INF):
     return previous_tet_ids + [command]
 
 #############################################################
-def gen_truss(problem, viewer=False, radius=3.17, debug=False, method='search', **kwargs):
+def gen_truss(problem_data, viewer=False, radius=3.17, debug=False, method='search', **kwargs):
     """[summary]
 
     Parameters
@@ -697,52 +721,57 @@ def gen_truss(problem, viewer=False, radius=3.17, debug=False, method='search', 
     [type]
         [description]
     """
-    problem_path = get_assembly_path(problem)
-    with open(problem_path) as json_file:
-        data = json.load(json_file)
-        cprint('Parsed from : {}'.format(problem_path), 'green')
-
-    if 'data' in data:
-        data = data['data']
-    net = Network.from_data(data)
+    net = Network.from_data(problem_data)
 
     # TODO waiting for compas update to use ordered dict for nodes
     # node_points, edges = net.to_nodes_and_edges()
     node_points = [np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
-    edges = [e for e in net.edges()]
+    edges = [EDGE(e) for e in net.edges()]
     edge_attributes = {e[0] : e[1] for e in net.edges(True)}
     ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
 
     print('parsed edges from to_node_and_edges: {}'.format(edges))
-    # print('parsed edges from net.edges(): {}'.format(edges2))
     print('parsed node_points: {}'.format(node_points))
     print('parsed grounded_nodes: {}'.format(ground_nodes))
-    # print('parsed lines: {}'.format(net.to_lines()))
 
     # if not verbose:
     #     # used when rpc call is made to get around stdout error
     #     sys.stdout = open(os.devnull, 'w')
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     # fixed_obstacles, robot = load_world()
-    set_camera(node_points)
 
-    draw_pose(unit_pose(), length=0.01)
-
-    # draw the ideal truss that we want to achieve
-    label_points([pt*1e-3 for pt in node_points])
-    for e in edges:
-        p1 = node_points[e[0]] * 1e-3
-        p2 = node_points[e[1]] * 1e-3
-        add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
-    for v in ground_nodes:
-        draw_circle(node_points[v]*1e-3, 0.01)
+    with LockRenderer():
+        set_camera(node_points)
+        draw_pose(unit_pose(), length=0.01)
+        # draw the ideal truss that we want to achieve
+        label_points([pt*SCALE for pt in node_points])
+        for e in edges:
+            n1, n2 = e
+            p1 = node_points[n1] * SCALE
+            p2 = node_points[n2] * SCALE
+            add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
+        for v in ground_nodes:
+            draw_circle(node_points[v]*1e-3, 0.01)
 
     if debug:
         wait_if_gui('Ideal truss...')
 
+    opt_data = None
     if method == 'search':
-        b_struct = generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None,
+        b_struct, (x_vars, z_vars) = generate_truss_progression(node_points, edges, ground_nodes, radius, heuristic_fn=None,
             check_collision=False, viewer=False, verbose=True, debug=debug)
+        x_vars_data = []
+        for edge, pt_from_node in x_vars.items():
+            for v, pt in pt_from_node.items():
+                x_vars_data.append({'key' : (tuple(edge), v), 'value' : list(pt)})
+        z_vars_data = []
+        for ((e1, e2), n), val in z_vars.items():
+            z_vars_data.append({'key' : ((tuple(e1), tuple(e2)), n), 'value' : val})
+        opt_data = {
+            'x_vars' : x_vars_data,
+            'z_vars' : z_vars_data,
+            }
+
     elif method == 'shrink':
         b_struct = generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, radius, debug=debug)
     else:
@@ -750,7 +779,7 @@ def gen_truss(problem, viewer=False, radius=3.17, debug=False, method='search', 
 
     cprint('Done.', 'green')
 
-    return b_struct
+    return b_struct, opt_data
 
 #############################################################
 
@@ -777,14 +806,24 @@ def main():
     if 'raw_bar_graph' in export_file_name:
         export_file_name = export_file_name.split('_raw_bar_graph')[0] + '.json'
 
+    graph_data = None
+    opt_data = None
     if args.method != 'bar_network':
-        b_struct = gen_truss(args.problem, viewer=args.viewer, radius=args.radius,
+        problem_path = get_assembly_path(args.problem)
+        with open(problem_path) as json_file:
+            graph_data = json.load(json_file)
+            cprint('Design graph parsed from : {}'.format(problem_path), 'green')
+        if 'data' in graph_data:
+            graph_data = graph_data['data']
+
+        b_struct, opt_data = gen_truss(graph_data, viewer=args.viewer, radius=args.radius,
             method=args.method, debug=args.debug)
     else:
         b_struct = from_bar_network(args.problem, viewer=args.viewer, debug=args.debug)
 
     if args.write:
-        export_structure_data(b_struct.data, save_dir=FILE_DIR, file_name=export_file_name)
+        export_structure_data(b_struct.to_data(), overall_struct_data=graph_data, save_dir=FILE_DIR,
+            file_name=export_file_name, opt_data=opt_data, indent=0)
         # export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)
 
     check_model(b_struct, args.subset_bars, debug=args.debug)

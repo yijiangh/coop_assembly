@@ -236,6 +236,29 @@ def calculate_bar_z(points):
     return vec_z
 
 
+def convex_combination(x1, x2, w=0.5):
+    #assert 0 <= w <= 1
+    return (1 - w) * x1 + (w * x2)
+
+def closest_point_segments(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2):
+    from gurobipy import Model, GRB, quicksum, GurobiError
+    np_line1 = [np.array(line_point_1_1), np.array(line_point_1_2)]
+    np_line2 = [np.array(line_point_2_1), np.array(line_point_2_2)]
+
+    model = Model(name='qp_closest_points_between_segments')
+    model.setParam(GRB.Param.OutputFlag, False)
+    t1 = np.full(np_line1[0].shape, model.addVar(lb=0.0, ub=1.0, name="t1"))
+    t2 = np.full(np_line2[0].shape, model.addVar(lb=0.0, ub=1.0, name="t2"))
+    # difference = convex_combination(*np_line1, t1) - convex_combination(*np_line2, t2)
+    difference = ((1 - t1) * np_line1[0] + t1 * np_line1[1]) - \
+                 ((1 - t2) * np_line2[0] + t2 * np_line2[1])
+    model.setObjective(sum(difference*difference), sense=GRB.MINIMIZE)
+    try:
+        model.optimize()
+    except GurobiError as e:
+        raise e
+    return [convex_combination(*np_line1, t1[0].x), convex_combination(*np_line2, t2[0].x)]
+
 def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2):
     """compute the projected tangent point on axis defined by [L1_pt1, L1_pt2] and [L2_pt1, L2_pt2]
     This is probably one of the most used geometry helper functions in this repo...
@@ -280,14 +303,17 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
         # two vectors are parellel
         # treat two lines as segment in this case
         # cprint('parellel in drop', 'yellow')
-        contact_pt1 = closest_point_on_segment(line_point_1_1, [line_point_2_1, line_point_2_2])
-        dist1 = distance_point_point(contact_pt1, line_point_1_1)
-        contact_pt2 = closest_point_on_segment(line_point_1_2, [line_point_2_1, line_point_2_2])
-        dist2 = distance_point_point(contact_pt2, line_point_1_2)
-        if dist1 < dist2:
-            return [line_point_1_1, contact_pt1]
-        else:
-            return [line_point_1_2, contact_pt2]
+        try:
+           return closest_point_segments(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2)
+        except ImportError:
+           contact_pt1 = closest_point_on_segment(line_point_1_1, [line_point_2_1, line_point_2_2])
+           dist1 = distance_point_point(contact_pt1, line_point_1_1)
+           contact_pt2 = closest_point_on_segment(line_point_1_2, [line_point_2_1, line_point_2_2])
+           dist2 = distance_point_point(contact_pt2, line_point_1_2)
+           if dist1 < dist2:
+               return [line_point_1_1, contact_pt1]
+           else:
+               return [line_point_1_2, contact_pt2]
 
 def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
     """a convenient wrapper for ``dropped_perpendicular_points`` to operate directly on BarStructure and its bar vertices

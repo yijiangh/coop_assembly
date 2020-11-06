@@ -119,17 +119,6 @@ class BarStructure(Network):
                                   })
         return v_key
 
-    def create_pb_bodies(self, color=apply_alpha(RED, 0)):
-        """create pybullet bodies for all elements, useful when the BarStructure is reconstructed from json data
-
-        Parameters
-        ----------
-        color : tuple, optional
-            [description], by default (1,1,1,0)
-        """
-        for v in self.nodes():
-            self.get_bar_pb_body(v, color=color)
-
     def connect_bars(self, v_key1, v_key2, _endpoints=[], _connection_type=0, _connection_parameters=[], grounded=None):
         """create an edge connecting bar v_key1 and v_key2 or update edge attributes if edge exists already
 
@@ -273,7 +262,7 @@ class BarStructure(Network):
     ##################################
     # export dict info for planning
 
-    def get_element_bodies(self, indices=None, color=apply_alpha(RED, 0), scale=METER_SCALE):
+    def get_element_bodies(self, indices=None, color=apply_alpha(RED, 0), scale=METER_SCALE, regenerate=False):
         """[summary]
 
         Returns
@@ -282,14 +271,14 @@ class BarStructure(Network):
             bar vkey -> pb body
         """
         bar_keys = self.nodes() if indices is None else indices
-        return {v : self.get_bar_pb_body(v, color, scale=scale) for v in bar_keys if len(self.node[v])>0}
+        return {v : self.get_bar_pb_body(v, color=color, scale=scale, regenerate=regenerate) for v in bar_keys if len(self.node[v])>0}
 
     def set_body_color(self, color, indices=None):
         bar_keys = self.nodes() if indices is None else indices
         for k in bar_keys:
             set_color(self.node[k]['pb_body'], color)
 
-    def get_element_from_index(self, indices=None, scale=1.0):
+    def get_element_from_index(self, indices=None, scale=1.0, regenerate=True, color=apply_alpha(RED, 0.5)):
         """(re)generate Element for selected bars
 
         Parameters
@@ -309,7 +298,7 @@ class BarStructure(Network):
         for index in bar_keys:
             axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=scale)]
             radius=self.node[index]['radius']*scale
-            body = self.get_bar_pb_body(index, scale=scale)
+            body = self.get_bar_pb_body(index, scale=scale, regenerate=regenerate, color=color)
             # goal_pose = self.node[index]['goal_pose']
             goal_pose = get_pose(body)
             layer = self.node[index]['layer']
@@ -401,3 +390,8 @@ class BarStructure(Network):
             contact_pts = [axis_endpts[0], axis_endpts[0]-np.array([0,0,radius])]
             self.edge[ground_k][GROUND_INDEX]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
         return self.get_grounded_connector_keys()
+
+    #####################################
+
+    # def to_data(self):
+    #     # TODO get rid of pb_body data when export
