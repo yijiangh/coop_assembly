@@ -352,8 +352,14 @@ class BarStructure(Network):
         return np.append(centroid[:2], [min_z])
 
     def transform(self, tform, scale=1.0):
-        # def recenter_point(point):
-        #     return 1.0/scale * (scale*np.array(point) - old_base_centroid + new_base_centroid)
+        """[summary]
+
+        Parameters
+        ----------
+        tform : pb Pose
+        scale : float, optional
+            the scale to convert millimeter to the unit that tform is in, by default 1.0
+        """
         # convert to millimeter
         tform = ((1/scale * tform[0][0], 1/scale * tform[0][1], 1/scale * tform[0][2]), tform[1])
 

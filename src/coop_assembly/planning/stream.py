@@ -20,10 +20,10 @@ from pybullet_planning import link_from_name, set_pose, \
     get_bodies_in_region, pairwise_link_collision, BASE_LINK, get_client, clone_collision_shape, clone_visual_shape, get_movable_joints, \
     create_flying_body, SE3, euler_from_quat, create_shape, get_cylinder_geometry, wait_if_gui, set_joint_positions, dump_body, get_links, \
     get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, get_relative_pose, \
-    remove_handles
+    remove_handles, apply_alpha, pairwise_link_collision_info
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
-from .utils import Command, prune_dominated
+from .utils import Command, prune_dominated, get_index_from_bodies
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
 
@@ -32,6 +32,8 @@ ENABLE_SELF_COLLISIONS = False
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 100
 GRASP_MAX_ATTEMPTS = 100
+
+ALLOWABLE_BAR_COLLISION_DEPTH = 1e-3
 
 # pregrasp delta sample
 EPSILON = 0.05
@@ -196,7 +198,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
 
 ######################################
 
-def command_collision(command, bodies):
+def command_collision(command, bodies, index_from_bodies=None, debug=False):
     """check if a command's trajectories collide with the given bodies.
        Return a list of [True/False] corresponding to the id used in ``bodies``
        Critical in pddlstream formulation.
@@ -217,18 +219,14 @@ def command_collision(command, bodies):
         robot = trajectory.robot
         # for conf in randomize(trajectory.path):
         for i, conf in enumerate(trajectory.path):
-            # TODO ignore if penetration depth is smaller than 5e-4
-            if trajectory.tag == 'place_approach' and i==len(trajectory.path)-1:
-                # ! if issue if attachment contains gripper parts
-                # avoid failure between element in goal pose and other built elements
-                continue
             # TODO: bisect or refine
             # TODO from joint name
             joints = get_movable_joints(robot)
             set_joint_positions(robot, joints, conf)
             for attach in trajectory.attachments:
                 attach.assign()
-                # set_color(attach.child, (0,1,0,0.5))
+                if debug:
+                    set_color(attach.child, apply_alpha(GREEN,0.5))
 
             #for body, _ in get_bodies_in_region(tool_aabb):
             for i, body in enumerate(bodies):
@@ -237,11 +235,21 @@ def command_collision(command, bodies):
                 idx = idx_from_body[body]
                 for attach in trajectory.attachments:
                     if not collisions[idx]:
-                        collisions[idx] |= pairwise_collision(attach.child, body)
-                    # if collisions[idx]:
-                    #     print('colliding E{} - E{}'.format(attach.child, body))
-                    #     wait_if_gui()
+                        # collisions[idx] |= pairwise_collision(attach.child, body)
+                        # ignore if penetration depth is smaller than 5e-4
+                        # TODO only allow for neighboring elements
+                        msgs = pairwise_link_collision_info(attach.child, BASE_LINK, body, BASE_LINK)
+                        for msg in msgs:
+                            penetration_depth = get_distance(msg[5], msg[6])
+                            collisions[idx] |= penetration_depth > ALLOWABLE_BAR_COLLISION_DEPTH
+                    if debug:
+                        if collisions[idx]:
+                            body_name = index_from_bodies[body] if index_from_bodies else body
+                            set_color(body, apply_alpha(BLUE,0.5))
+                            print('Attach colliding E{} - E{}'.format(attach.child, body_name))
+                            # wait_if_gui()
 
+        # ! enable if end effector is a part of attachments
         # tool_link_name = TOOL_LINK_NAME if end_effector else get_link_name(robot, get_links(robot)[-1])
         # for tool_pose in randomize(trajectory.get_link_path(tool_link_name)): # TODO: bisect
         #     joints = get_movable_joints(robot)
@@ -252,16 +260,17 @@ def command_collision(command, bodies):
 
     # * checking robot bodies
     for trajectory in command.trajectories:
-        for robot_conf in randomize(trajectory.path):
-            set_joint_positions(trajectory.robot, trajectory.joints, robot_conf)
+        for conf in randomize(trajectory.path):
+            set_joint_positions(trajectory.robot, trajectory.joints, conf)
             for i, body in enumerate(bodies):
                 if not collisions[i]:
                     collisions[i] |= pairwise_collision(trajectory.robot, body)
-
-                # if collisions[idx]:
-                #     print('colliding R{} - E{}'.format(trajectory.robot, body))
-                #     dump_body(trajectory.robot)
-                #     wait_if_gui()
+                # if debug and collisions[idx]:
+                #     body_name = index_from_bodies[body] if index_from_bodies else body
+                    #   set_color(body, apply_alpha(BLUE,0.5))
+                    #   print('colliding R{} - E{}'.format(trajectory.robot, body_name))
+                    #   dump_body(trajectory.robot)
+            # wait_if_gui("check command collision")
 
     #for element, unsafe in zip(elements, collisions):
     #    command.safe_per_element[element] = unsafe
@@ -270,6 +279,8 @@ def command_collision(command, bodies):
 ######################################
 
 def check_path(joints, path, collision_fn=None, jump_threshold=None, diagnosis=False):
+    """return False if path is not valid
+    """
     joint_jump_threshold = jump_threshold or [JOINT_JUMP_THRESHOLD for jt in joints]
     for jt1, jt2 in zip(path[:-1], path[1:]):
         delta_j = np.abs(np.array(jt1) - np.array(jt2))

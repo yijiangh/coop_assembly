@@ -3,13 +3,13 @@ from termcolor import cprint
 
 from pybullet_planning import has_gui, wait_for_user, connect, reset_simulation, \
     disconnect, wait_for_duration, BLACK, RED, GREEN, BLUE, remove_all_debug, apply_alpha, pairwise_collision, \
-    set_color, refine_path, get_collision_fn, link_from_name, BASE_LINK, get_links, wait_if_gui, set_pose
+    set_color, refine_path, get_collision_fn, link_from_name, BASE_LINK, get_links, wait_if_gui, set_pose, pairwise_link_collision_info, \
+    draw_collision_diagnosis
 from coop_assembly.data_structure.utils import MotionTrajectory
-from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, command_collision, MAX_DISTANCE
+from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, command_collision, MAX_DISTANCE, ALLOWABLE_BAR_COLLISION_DEPTH
 from .robot_setup import get_disabled_collisions, EE_LINK_NAME
-from .utils import recover_sequence, Command
+from .utils import recover_sequence, Command, get_index_from_bodies
 from .visualization import label_elements, visualize_collision_digraph
-
 
 ##################################################
 
@@ -61,18 +61,22 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
             # for attach in trajectory.attachments:
             #     set_color(attach.child, GREEN)
             if collision_fn(conf, diagnosis=has_gui()):
-                if trajectory.tag == 'place_approach' and \
-                    len(path) >= 2 and t == len(path)-1:
-                # TODO ignore if penetration depth is smaller than 5e-4
-                        pass
-                else:
+                bar_in_collision = False
+                for at in attachments:
+                    for obstacle in obstacles:
+                        cr = pairwise_link_collision_info(at.child, BASE_LINK, obstacle, BASE_LINK)
+                        penetration_depth = draw_collision_diagnosis(cr)
+                        # print('depth #{}-#{}: {}'.format(at.child, obstacle, penetration_depth))
+                        if penetration_depth is not None and penetration_depth > ALLOWABLE_BAR_COLLISION_DEPTH:
+                            bar_in_collision = True
+                if bar_in_collision:
                     cprint('Collision on trajectory {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag), 'red')
+
                     valid = False
                     if not allow_failure:
                         return False
-                    # else:
-                    #     print('Traj {}-#{}/{} | Element: {} | {}'.format(i, t, len(path), trajectory.element, trajectory.tag))
-                    #     wait_if_gui('collision!')
+                else:
+                    cprint('Bar collision under tolerance {}, viewed as a valid solution.'.format(ALLOWABLE_BAR_COLLISION_DEPTH), 'yellow')
 
         if isinstance(trajectory, MotionTrajectory) \
             and 'retreat' in trajectory.tag:
@@ -92,7 +96,9 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
 
 def validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, allow_failure=False, watch=False, debug=False, **kwargs):
     print('Collided element should be included in the future (unprinted) set.')
+    label_elements({e:element_from_index[e].body for e in element_from_index}, body_index=True)
     element_seq = recover_sequence(trajectories, element_from_index)
+    index_from_bodies = get_index_from_bodies(element_from_index)
     collision_facts = []
     for traj in trajectories:
         if traj.element is not None and traj.tag=='place_approach':
@@ -100,7 +106,7 @@ def validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, ground
             command = Command([traj])
             elements_order = [e for e in element_from_index if (e != traj.element)]
             bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-            colliding = command_collision(command, bodies_order)
+            colliding = command_collision(command, bodies_order, index_from_bodies=index_from_bodies, debug=False)
             for element2, unsafe in zip(elements_order, colliding):
                 if unsafe:
                     command.set_unsafe(element2)

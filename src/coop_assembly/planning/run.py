@@ -55,13 +55,14 @@ BASE_YAW = np.pi + np.pi/6
 
 def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, write=False, saved_plan=None):
     bar_struct, o_struct = load_structure(args.problem, viewer, apply_alpha(RED, 0))
-    # transform the bar struct to the center
     bar_radius = bar_struct.node[0]['radius']*METER_SCALE
+    # transform model
     new_world_from_base = Pose(point=(BUILD_PLATE_CENTER + np.array([0,0,bar_radius+BOTTOM_BUFFER])))
     world_from_base = Pose(point=bar_struct.base_centroid(METER_SCALE))
     rotation = Pose(euler=Euler(yaw=BASE_YAW))
     tf = multiply(new_world_from_base, rotation, invert(world_from_base))
     bar_struct.transform(tf, scale=METER_SCALE)
+    #
     bar_struct.generate_grounded_connection()
 
     fixed_obstacles, robot = load_world(built_plate_z=BUILD_PLATE_CENTER[2])
