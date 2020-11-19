@@ -16,7 +16,7 @@ from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, Lo
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, RED, GREEN, refine_path, joints_from_names, \
     set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color, get_relative_pose, create_shape, get_mesh_geometry, \
-    create_flying_body, SE3, YELLOW, get_movable_joints, Attachment
+    create_flying_body, SE3, YELLOW, get_movable_joints, Attachment, Pose, invert, multiply, Euler
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -45,6 +45,7 @@ BUILD_PLATE_CENTER = np.array([650, 0, -14.23])*1e-3
 # BOTTOM_BUFFER = 0.005
 BOTTOM_BUFFER = 0.01
 # BOTTOM_BUFFER = 0.1
+BASE_YAW = np.pi + np.pi/6
 
 ########################################
 # two_tets
@@ -56,7 +57,11 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
     bar_struct, o_struct = load_structure(args.problem, viewer, apply_alpha(RED, 0))
     # transform the bar struct to the center
     bar_radius = bar_struct.node[0]['radius']*METER_SCALE
-    bar_struct.transform(BUILD_PLATE_CENTER + np.array([0,0,bar_radius+BOTTOM_BUFFER]), scale=METER_SCALE)
+    new_world_from_base = Pose(point=(BUILD_PLATE_CENTER + np.array([0,0,bar_radius+BOTTOM_BUFFER])))
+    world_from_base = Pose(point=bar_struct.base_centroid(METER_SCALE))
+    rotation = Pose(euler=Euler(yaw=BASE_YAW))
+    tf = multiply(new_world_from_base, rotation, invert(world_from_base))
+    bar_struct.transform(tf, scale=METER_SCALE)
     bar_struct.generate_grounded_connection()
 
     fixed_obstacles, robot = load_world(built_plate_z=BUILD_PLATE_CENTER[2])

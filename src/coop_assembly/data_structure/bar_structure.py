@@ -23,7 +23,7 @@ from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_
 from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
 from pybullet_planning import create_plane, set_point, Point, get_pose, apply_alpha, RED, set_color, has_body, dump_world, get_bodies, \
-    is_connected, remove_body
+    is_connected, remove_body, tform_point
 from .utils import Element, WorldPose
 
 GROUND_INDEX = -1
@@ -351,25 +351,26 @@ class BarStructure(Network):
         min_z = np.min(node_points, axis=0)[2]  # - 1e-2
         return np.append(centroid[:2], [min_z])
 
-    def transform(self, new_base_centroid, scale=1.0):
-        old_base_centroid = self.base_centroid(scale)
-        def recenter_point(point):
-            return 1.0/scale * (scale*np.array(point) - old_base_centroid + new_base_centroid)
+    def transform(self, tform, scale=1.0):
+        # def recenter_point(point):
+        #     return 1.0/scale * (scale*np.array(point) - old_base_centroid + new_base_centroid)
+        # convert to millimeter
+        tform = ((1/scale * tform[0][0], 1/scale * tform[0][1], 1/scale * tform[0][2]), tform[1])
 
         # update vertex end pts
         for bar_k, bar_vals in self.node.items():
-            if is_connected() and 'pb_body' in self.node[bar_k] and \
-                self.node[bar_k]['pb_body'] in get_bodies():
-                remove_body(self.node[bar_k]['pb_body'])
-            self.node[bar_k]["axis_endpoints"] = (list(recenter_point(bar_vals["axis_endpoints"][0])),
-                                                  list(recenter_point(bar_vals["axis_endpoints"][1]))
+            # if is_connected() and 'pb_body' in self.node[bar_k] and \
+            #     self.node[bar_k]['pb_body'] in get_bodies():
+            #     remove_body(self.node[bar_k]['pb_body'])
+            self.node[bar_k]["axis_endpoints"] = (list(tform_point(tform, np.array(bar_vals["axis_endpoints"][0]))),
+                                                  list(tform_point(tform, np.array(bar_vals["axis_endpoints"][1])))
                                                   )
             self.node[bar_k]['pb_body'] = self.get_bar_pb_body(bar_k, regenerate=True, scale=scale)
 
         # update connector end pts
         for b1, b2 in self.edges():
             contact_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
-            self.edge[b1][b2]["endpoints"] = {0:(list(recenter_point(contact_pts[0])), list(recenter_point(contact_pts[1])))}
+            self.edge[b1][b2]["endpoints"] = {0:(list(tform_point(tform, contact_pts[0])), list(tform_point(tform, contact_pts[1])))}
 
     # TODO: rotation, scaling: https://github.com/caelan/pb-construction/blob/master/extrusion/run.py#L75
 

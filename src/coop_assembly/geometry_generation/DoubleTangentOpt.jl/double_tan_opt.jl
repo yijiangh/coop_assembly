@@ -14,17 +14,21 @@ using Statistics
 using ArgParse
 using Crayons.Box
 
-include("utils.jl")
-
 # set ENV["PYTHON"] = "... path of the python executable ..."
 # run Pkg.build("PyCall")
-# and re-launch Julia
+# and relaunch Julia
+# OR
+# in the conda env, python -c "import julia; julia.install()"
+# then relaunch Julia
 using PyCall
 PyPb = pyimport("pybullet_planning")
 PyCoopDataStructures = pyimport("coop_assembly.data_structure")
 # PyCompasDataStructures = pyimport("compas.datastructures")
 
-# using Makie
+include("utils.jl")
+include("visualize.jl")
+
+#####################################
 
 const ROOT_DIR = abspath(joinpath(@__FILE__, [".." for i in 1:5]...))
 const DATA_DIR = joinpath(ROOT_DIR, "tests", "test_data")
@@ -37,8 +41,11 @@ const COORDINATES = ["x", "y", "z"]
 const EDGE_ID = Set
 
 const LENGTH_TOLERANCE = SCALE * 10.0
-const BUFFER_TOLERANCE = SCALE * 0.0
-const CONTACT_TOLERANCE = SCALE * 0.0
+const BUFFER_TOLERANCE = - SCALE * 0.1
+const CONTACT_TOLERANCE = SCALE * 0.1
+const MIN_TANGENTS = 2 # | Inf
+
+const OPT_OPTIONS = ["optimize", "check_feasible"]
 
 #########################################
 
@@ -68,27 +75,6 @@ function enumerate_steps(edge, nodes, edge_from_id, fraction=0.1, spacing=1.0) #
     step_size = spacing * edge_from_id[edge]["radius"]
     num_steps = ceil(Int, fraction * get_length(edge, nodes) / step_size)
     return range(0., stop=fraction, length=num_steps)
-end
-
-function convex_combination(x1, x2, w=0.5)
-    return w * x2 + (1-w) * x1
-end
-
-"""
-Compute closest line between two line segments, using an unconstrained quadratic optimization
-"""
-function closest_point_segments(line1, line2)
-    m = Model(optimizer_with_attributes(Ipopt.Optimizer, "print_level" => 0))
-    # m = Model(optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => false))
-    @variable(m, 0 <= γ1 <= 1)
-    @variable(m, 0 <= γ2 <= 1)
-    @objective(m, Min, sum((convex_combination(line1..., γ1) - convex_combination(line2..., γ2)).^2))
-
-    optimize!(m)
-    # distance = objective_value(m)
-    g1 = value.(γ1)
-    g2 = value.(γ2)
-    return convex_combination(line1..., g1), convex_combination(line2..., g2)
 end
 
 ##################################################
@@ -121,40 +107,9 @@ end
 #########################################
 
 """
-create a cylindrial element in the pybullet simulator
-"""
-function create_element(p1, p2, radius; color=PyPb.apply_alpha(PyPb.RED, alpha=1))
-    height = norm(p2 - p1)
-    center = (p1 + p2) / 2
-    # extents = (p2 - p1) / 2
-    delta = p2 - p1
-    x, y, z = delta
-    phi = atan(y, x)
-    theta = acos(z / norm(delta))
-    quat = PyPb.quat_from_euler(PyPb.Euler(pitch=theta, yaw=phi))
-    # p1 is z=-height/2, p2 is z=+height/2
-
-    # Visually, smallest diameter is 2e-3
-    # TODO: boxes
-    #body = create_cylinder(radius, height, color=color, mass=STATIC_MASS)
-    body = PyPb.create_capsule(radius, height, color=color, mass=PyPb.STATIC_MASS)
-    PyPb.set_point(body, center)
-    PyPb.set_quat(body, quat)
-    return body
-end
-
-function center_viewer(nodes, pitch=-π/8, distance=2)
-    # TODO: be robust to SCALE
-    centroid = mean([nodes[node]["point"] for node in keys(nodes)]; dims=1)[1]
-    centroid[2] = min([nodes[node]["point"][3] for node in keys(nodes)]...)
-    PyPb.set_camera(yaw=deg2rad(0), pitch=deg2rad(pitch), distance=distance, target_position=centroid)
-    return PyPb.draw_pose(PyPb.Pose(point=centroid), length=1)
-end
-
-"""
 validate and visualize solutions
 """
-function visualize_solution(nodes, edges, x_sol, z_sol, alpha=0.25)
+function visualize_solution(nodes, edges, x_sol, z_sol; alpha=0.25, min_tangents=MIN_TANGENTS)
     render_lock = PyPb.LockRenderer()
     bodies = []
     edge_points = DefaultDict(Vector{Vector})
@@ -181,7 +136,22 @@ function visualize_solution(nodes, edges, x_sol, z_sol, alpha=0.25)
         PyPb.add_line(point1, point2, color=PyPb.BLUE)
     end
 
-    # * draw contact lines
+    # * check contact number constraint
+    z_sol_from_edge = DefaultDict(Vector)
+    for ((pair, node), var) in z_sol
+        for (i, edge) in enumerate(pair)
+            push!(z_sol_from_edge[edge, node], var)
+        end
+    end
+    for ((edge, node), neighbors) in z_sol_from_edge
+        num_tangents = min(length(neighbors), min_tangents)
+        # @warn sum(values(neighbors)) == num_tangents "E#$edge-N#$node: #contact neighbors $(sum(values(neighbors))) != required $(num_tangents)"
+        if sum(values(neighbors)) != num_tangents
+            println(RED_FG("E#$(Tuple(edge))-N#$node: #contact neighbors $(sum(values(neighbors))) != required $(num_tangents)"))
+        end
+    end
+
+    # * draw contact lines and check contact/collision distance constraint
     for (((edge1, edge2), node), z_var) in z_sol
         contact_pt1, contact_pt2 = closest_point_segments(edge_points[edge1], edge_points[edge2])
         contact_distance = norm(contact_pt1-contact_pt2)
@@ -190,18 +160,24 @@ function visualize_solution(nodes, edges, x_sol, z_sol, alpha=0.25)
         var1, var2 = x_sol[edge1, node], x_sol[edge2, node]
         approx_distance = norm(var2 - var1)
 
-        println(BLUE_FG("(($edge1, $edge2), $node) : $z_var"))
-        println(BLUE_FG("Approx distance $(approx_distance) | Accurate $(contact_distance)"))
+        println(BLUE_FG("(($(Tuple(edge1)), $(Tuple(edge2)), $node) : z_var $z_var"))
+        println(BLUE_FG("End_pt distance $(approx_distance) | Accurate contact distance $(contact_distance)"))
         if z_var ≈ 0.0
             # ! collision constraint
             # collision_con = @constraint(model, sum(difference .* difference) >= (radius_distance + buffer_tolerance)^2)
             # @assert
-            @warn contact_distance ≥ (radius_distance + BUFFER_TOLERANCE) "contact_distance $(contact_distance) should be bigger than radius_distance $(radius_distance)!"
+            # @warn contact_distance ≥ (radius_distance + BUFFER_TOLERANCE) "contact_distance $(contact_distance) should be bigger than radius_distance $(radius_distance)!"
+            if !(contact_distance ≥ (radius_distance + BUFFER_TOLERANCE))
+                println(RED_FG("contact_distance $(contact_distance) should be bigger than radius_distance $(radius_distance)!"))
+            end
             continue
         else
             # ! contact constraint
             # contact_con = @constraint(model, sum(difference .* difference) <= (radius_distance + contact_tolerance)^2 + (1 - z_var) * max_distance^2)
-            @warn (radius_distance + BUFFER_TOLERANCE) ≤ contact_distance ≤ (radius_distance + CONTACT_TOLERANCE) "contact_distance $(contact_distance) should be with range [$(radius_distance + BUFFER_TOLERANCE), $(radius_distance + CONTACT_TOLERANCE)]!"
+            # @warn (radius_distance + BUFFER_TOLERANCE) ≤ contact_distance ≤ (radius_distance + CONTACT_TOLERANCE) "contact_distance $(contact_distance) should be with range [$(radius_distance + BUFFER_TOLERANCE), $(radius_distance + CONTACT_TOLERANCE)]!"
+            if !((radius_distance + BUFFER_TOLERANCE) ≤ contact_distance ≤ (radius_distance + CONTACT_TOLERANCE))
+                println(RED_FG("contact_distance $(contact_distance) should be with range [$(radius_distance + BUFFER_TOLERANCE), $(radius_distance + CONTACT_TOLERANCE)]!"))
+            end
 
             PyPb.draw_point(contact_pt1, color=PyPb.GREEN)
             PyPb.draw_point(contact_pt2, color=PyPb.GREEN)
@@ -221,24 +197,20 @@ end
 - buffer_tolerance : eps added to the collision constraint
 """
 function solve(nodes, edges, aabb;
-               optimize=true,
-               check_feasible=false,
+               opt_option="optimize",
                hint_x_solution=nothing,
                hint_z_solution=nothing,
-               min_tangents=2, # 2 | INF
+               diagnose=true,
+               min_tangents=MIN_TANGENTS,
                length_tolerance=LENGTH_TOLERANCE, contact_tolerance=CONTACT_TOLERANCE, buffer_tolerance=BUFFER_TOLERANCE,
                num_solutions=1, max_time=1*60, verbose=true)
     println("-"^20)
     max_distance = norm(aabb[2] - aabb[1])
 
-    @assert !check_feasible || (hint_x_solution!==nothing && hint_z_solution!==nothing)
-    if check_feasible
-        optimize = false
-        println(YELLOW_FG("Checking feasiblity."))
-    end
+    @assert opt_option in OPT_OPTIONS
+    optimize = opt_option=="optimize" ? true : false
 
     if hint_x_solution === nothing
-        # TODO: diagnose initial infeasibility
         hint_x_solution = create_x_hint(nodes, edges)
     end
 
@@ -276,8 +248,10 @@ function solve(nodes, edges, aabb;
     end
 
     if optimize
+        println(BLUE_FG("Optimizing model."))
         @objective(model, Min, sum(values(objective)))
     else
+        println(YELLOW_FG("Checking feasiblity."))
         # https://github.com/jump-dev/JuMP.jl/issues/693#issuecomment-272638604
         @objective(model, Min, 0)
     end
@@ -291,6 +265,7 @@ function solve(nodes, edges, aabb;
     end
     # @show adjacent_edge_from_node
 
+    # * create z_variables
     z_vars = Dict()
     for (node, neighbors) in adjacent_edge_from_node
         # num_tangents = min(len(neighbors) - 1, 2)
@@ -300,22 +275,18 @@ function solve(nodes, edges, aabb;
         end
     end
 
-    # z_var_from_edge = DefaultDict(Vector)
-    z_var_from_edge = DefaultDict(Dict)
-    for ((pair, node), var) in z_vars
-        # for edge in pair
-        for (i, edge) in enumerate(pair)
-            # push!(z_var_from_edge[edge, node], var)
-            z_var_from_edge[edge, node][i] = var
-        end
-    end
-
     # * Constraints
     # ! contact degree constraint (linear)
+    z_var_from_edge = DefaultDict(Vector)
+    for ((pair, node), var) in z_vars
+        for (i, edge) in enumerate(pair)
+            push!(z_var_from_edge[edge, node], var)
+        end
+    end
     for ((edge, node), neighbors) in z_var_from_edge
         num_tangents = min(length(neighbors), min_tangents)
         # degree = len(neighbors) + 1
-        println("E#$(edge)-N$(node) : Neighbors: $(length(neighbors)) | Tangents: $(num_tangents)")
+        println("E#$(Tuple(edge))-N$(node) : Neighbors: $(length(neighbors)) | Tangents: $(num_tangents)")
 
         ne_con = @constraint(model, sum(values(neighbors)) == num_tangents)
         set_name(ne_con, "NeCon[$(edge), $node]")
@@ -370,14 +341,16 @@ function solve(nodes, edges, aabb;
         end
     end
 
-    if check_feasible
-        for ((edge, node), x_var) in x_vars
-            xf_con = @constraint(model, x_vars[edge, node] .== hint_x_solution[edge, node])
-            # set_name(xf_con, "XFeasible[$(edge), $node]")
+    if !optimize
+        if hint_x_solution !== nothing
+            for ((edge, node), x_var) in x_vars
+                xf_con = @constraint(model, x_vars[edge, node] .== hint_x_solution[edge, node])
+            end
         end
-        for ((pair, node), z_var) in z_vars
-            zf_con = @constraint(model, z_vars[pair, node] .== hint_z_solution[pair, node])
-            # set_name(zf_con, "ZFeasible[$(edge)), $node]")
+        if hint_z_solution !== nothing
+            for ((pair, node), z_var) in z_vars
+                zf_con = @constraint(model, z_vars[pair, node] .== hint_z_solution[pair, node])
+            end
         end
     end
 
@@ -387,11 +360,25 @@ function solve(nodes, edges, aabb;
     status=optimize!(model) # time to optimize!
     println("="^20)
 
-    if result_count(model) <= 0 || !has_values(model)
-        error("The model was not solved correctly.")
-        return
+    @printf("Status: %s\n", termination_status(model))
+    if result_count(model) <= 0 || termination_status(model) == MOI.INFEASIBLE # !has_values(model)
+        @error "The model was not solved correctly."
+
+        if diagnose
+            compute_conflict!(model)
+            @show MOI.ConflictStatus()
+            if MOI.get(model, MOI.ConflictStatus()) != MOI.CONFLICT_FOUND
+                error("No conflict could be found for an infeasible model.")
+            end
+            @show MOI.ConstraintConflictStatus()
+            # Both constraints should participate in the conflict.
+            # MOI.get(model, MOI.ConstraintConflictStatus(), c1)
+            # MOI.get(model, MOI.ConstraintConflictStatus(), c2)
+        end
+
+        return nothing, nothing
     else
-        @printf("Objective: %s | # Solutions: %d | Status: %s\n", objective_value(model), result_count(model), termination_status(model))
+        @printf("Objective: %s | # Solutions: %d", objective_value(model), result_count(model))
     end
 
     # for (edge, neighbors) in z_var_from_edge
@@ -410,9 +397,11 @@ function solve(nodes, edges, aabb;
 end
 
 function main(file_name, args)
-    sol_b_struct = nothing
+    graph_data = nothing
     saved_x_vars = nothing
     saved_z_vars = nothing
+    sol_b_struct = nothing
+
     if args["check_feasible_file"] !== nothing
         saved_sol_path = joinpath(DATA_DIR, args["check_feasible_file"])
         sol_data = JSON.parsefile(saved_sol_path)
@@ -425,7 +414,7 @@ function main(file_name, args)
         for data in sol_data["opt_data"]["x_vars"]
             # (edge, node) => value.(var)
             edge, node = data["key"]
-            saved_x_vars[EDGE_ID(edge), node] = data["value"]
+            saved_x_vars[EDGE_ID(edge), node] = SCALE * data["value"]
         end
         saved_z_vars = Dict()
         for data in sol_data["opt_data"]["z_vars"]
@@ -474,33 +463,37 @@ function main(file_name, args)
 
         if args["check_feasible_file"] !== nothing
             # parsed a saved solution
+            # element_from_index = sol_b_struct.get_element_from_index(scale=SCALE, color=PyPb.apply_alpha(PyPb.RED, 0.3)) # |indices=chosen_bars,
+
             # sol_b_struct.get_element_bodies(color=PyPb.RED, regenerate=true, scale=SCALE)
-            element_from_index = sol_b_struct.get_element_from_index(scale=SCALE, color=PyPb.RED) # |indices=chosen_bars,
             # contact_from_connectors = sol_b_struct.get_connectors(scale=SCALE)
             # grounded_elements = sol_b_struct.get_grounded_bar_keys()
             # sol_b_struct.set_body_color(PyPb.RED) #, indices=chosen_bars
             # TODO convert parsed solution to x_vars and z_vars
 
+            visualize_solution(nodes, edges, saved_x_vars, saved_z_vars)
             PyPb.wait_if_gui("Solution reconstructed.")
             # return
         end
 
-        x_sol, z_sol = solve(nodes, edges, aabb; optimize=args["optimize"], num_solutions=args["num_solutions"],
-            check_feasible=args["check_feasible_file"]!==nothing,
+        x_sol, z_sol = solve(nodes, edges, aabb;
+            opt_option=args["opt_option"],
+            num_solutions=args["num_solutions"],
+            diagnose=args["diagnose"],
             hint_x_solution=saved_x_vars,
             hint_z_solution=saved_z_vars)
 
-        visualize_solution(nodes, edges, x_sol, z_sol)
+        if x_sol !== nothing && z_sol !== nothing
+            println(GREEN_FG("Solution found!"))
+            visualize_solution(nodes, edges, x_sol, z_sol)
+        else
+            println(RED_FG("No solution found!"))
+        end
 
-        println(GREEN_FG("Solution found!"))
         PyPb.wait_if_gui("Finished.")
     finally
         PyPb.disconnect()
     end
-
-    # plotting
-    # http://juliaplots.org/MakieReferenceImages/gallery//fluctuation_3d/index.html
-    # scene = Scene()
 end
 
 #############################################
@@ -520,20 +513,20 @@ parser = ArgParseSettings()
         default = nothing
     "--viewer"
         help = "Enable pybullet viewer"
-        arg_type = Bool
-        default = false
-    "--optimize"
-        # help = ""
-        arg_type = Bool
-        default = true
+        action = :store_true
+    "--opt_option"
+        arg_type = String
+        default = "optimize"
+    "--diagnose"
+        help = "Show diagnosis info if the optimization is terminated due to infeasiblibility"
+        action = :store_true
     "--num_solutions"
         help = "Limits the number of feasible MIP solutions found. https://www.gurobi.com/documentation/9.0/refman/solutionlimit.html"
         arg_type = Int
         default = 1
     "--write"
         help = "export the newly found solution"
-        arg_type = Bool
-        default = false
+        action = :store_false
 end
 
 args = parse_args(parser)

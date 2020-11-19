@@ -279,6 +279,7 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimiz
             #model.addConstr(contact1_var == point1_var)
             diff1 = contact1_var - point1_var
             #model.addConstr(sum(diff1*diff1) < 1e-2) # TODO: doesn't work (as predicted)
+            # * enforce point1 and contact 1 are the same points
             for x in diff1:
                 model.addConstr(x >= -epsilon)
                 model.addConstr(x <= epsilon)
@@ -290,6 +291,8 @@ def solve_gurobi(nodes, edges, aabb, hint_solution=None, min_tangents=2, optimiz
                 model.addConstr(x >= -epsilon)
                 model.addConstr(x <= epsilon)
 
+            # ! ideally
+            # difference = contact1_var - contact2_var
             difference = point2_var - point1_var
             pair = EDGE({edge1, edge2})
             z_var = z_vars[pair, node1]
