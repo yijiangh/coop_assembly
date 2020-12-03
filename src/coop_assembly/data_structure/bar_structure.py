@@ -278,7 +278,7 @@ class BarStructure(Network):
         for k in bar_keys:
             set_color(self.node[k]['pb_body'], color)
 
-    def get_element_from_index(self, indices=None, scale=1.0, regenerate=True, color=apply_alpha(RED, 0.5)):
+    def get_element_from_index(self, indices=None, scale=1.0, regenerate=True, color=apply_alpha(RED, 0.2)):
         """(re)generate Element for selected bars
 
         Parameters

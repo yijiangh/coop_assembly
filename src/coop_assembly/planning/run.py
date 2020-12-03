@@ -78,9 +78,9 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
 
     chosen_bars = [int(b) for b in args.subset_bars] if args.subset_bars is not None else None
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
-        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE)
+        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.1))
 
-    bar_struct.set_body_color(RED, indices=chosen_bars)
+    # bar_struct.set_body_color(RED, indices=chosen_bars)
     print('base: ', bar_struct.base_centroid(METER_SCALE))
     set_camera([bar_struct.base_centroid(METER_SCALE)], scale=1.)
 
@@ -97,7 +97,8 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
         if args.check_model:
             check_model(bar_struct, chosen_bars, debug=args.debug)
         else:
-            wait_if_gui('Please review structure\'s workspace position.')
+            # wait_if_gui('Please review structure\'s workspace position.')
+            pass
 
         checker = None
         if args.stiffness and (checker is None):

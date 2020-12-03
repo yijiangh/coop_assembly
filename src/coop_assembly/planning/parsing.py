@@ -3,7 +3,7 @@ import json
 import datetime
 import copy
 from termcolor import cprint
-from pybullet_planning import connect, LockRenderer, get_date, is_connected
+from pybullet_planning import connect, LockRenderer, get_date, is_connected, RED
 from .visualization import set_camera
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
@@ -56,7 +56,7 @@ def load_structure(test_file_name, viewer=False, color=(1,0,0,0)):
         set_camera([p[0] for e, p in endpts_from_element.items()], scale=1.)
     return b_struct, o_struct
 
-def unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE):
+def unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=RED):
     """extract geometric info from a BarStructure instance
 
     Parameters
@@ -79,7 +79,7 @@ def unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE):
     connectors : list
         contact keys (element id pairs)
     """
-    element_from_index = bar_struct.get_element_from_index(indices=chosen_bars, scale=scale)
+    element_from_index = bar_struct.get_element_from_index(indices=chosen_bars, scale=scale, color=color)
     grounded_elements = bar_struct.get_grounded_bar_keys()
     contact_from_connectors = bar_struct.get_connectors(scale=scale)
     connectors = list(contact_from_connectors.keys())
