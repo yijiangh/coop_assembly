@@ -18,7 +18,7 @@ import os, sys
 
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
-    set_joint_positions, get_relative_pose, WorldSaver, set_renderer
+    set_joint_positions, get_relative_pose, WorldSaver, set_renderer, apply_alpha, RED
 
 from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
 from coop_assembly.data_structure.utils import MotionTrajectory
@@ -30,6 +30,8 @@ from .utils import flatten_commands, Command, check_connected
 from .motion import compute_motion, EE_INITIAL_POINT, EE_INITIAL_EULER
 from .robot_setup import INITIAL_CONF # , TOOL_LINK_NAME, EE_LINK_NAME
 from .heuristics import get_heuristic_fn
+from .parsing import unpack_structure
+from .stiffness import create_stiffness_checker, test_stiffness
 
 PAUSE_UPON_BT = True
 
@@ -63,18 +65,22 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 
 ##################################################
 
-def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders=[],
+def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
-               collision=True, stiffness=True, motions=True, lazy=True, checker=None, verbose=False, **kwargs):
+               collision=True, stiffness=True, motions=True, lazy=True, checker=None, fem_element_from_bar_id=None, verbose=False, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = INITIAL_CONF if not bar_only else np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
 
-    # if checker is None:
-    #     checker = create_stiffness_checker(extrusion_path, verbose=False) # if stiffness else None
+    # element_from_index, grounded_elements, connectors
+    element_from_index, grounded_elements, _, connectors = \
+        unpack_structure(bar_struct, scale=METER_SCALE, color=apply_alpha(RED,0.1))
+    if stiffness and (checker is None or fem_element_from_bar_id is None):
+        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
+
     heuristic = 'z'
     heuristic_fn = get_heuristic_fn(robot, element_from_index, heuristic, checker=None, forward=False)
-    place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=verbose, bar_only=bar_only,\
+    place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
         precompute_collisions=False, allow_failure=True)
 
     # TODO: partial ordering
@@ -99,8 +105,8 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
                 heapq.heappush(queue, (visits, priority, printed, element, command))
 
     # * connectivity & stiffness constraint checking
-    if check_connected(connectors, grounded_elements, all_elements):
-    # and (not stiffness or test_stiffness(extrusion_path, element_from_id, final_printed, checker=checker)):
+    if check_connected(connectors, grounded_elements, all_elements) and \
+        (not stiffness or test_stiffness(bar_struct, final_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id)):
         final_command = Command([MotionTrajectory(robot, joints, [final_conf])])
             #if not bar_only \
             # else Command([MotionTrajectory(None, None, [final_conf])])
@@ -117,7 +123,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
 
     plan = None
     min_remaining = len(all_elements)
-    num_evaluated = max_backtrack = extrusion_failures = transit_failures = stiffness_failures = 0
+    num_evaluated = max_backtrack = place_failures = transit_failures = transfer_failures =stiffness_failures = 0
     while queue and (elapsed_time(start_time) < max_time): #  and check_memory(): #max_memory):
         visits, priority, printed, element, current_command = heapq.heappop(queue)
         num_remaining = len(printed)
@@ -154,10 +160,12 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
         # * constraint checking
         if next_printed in visited:
             continue
-        if not check_connected(connectors, grounded_elements, next_printed):
+        # if not check_connected(connectors, grounded_elements, next_printed) and \
+        if stiffness and not test_stiffness(bar_struct, next_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id):
             if verbose:
                 cprint('>'*5, 'red')
-                cprint('Connectivity failure', 'red')
+                cprint('Stiffness failure', 'red')
+            stiffness_failures += 1
             continue
 
         if revisit and visits < MAX_REVISIT:
@@ -169,7 +177,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
             if verbose:
                 cprint('<'*5, 'red')
                 cprint('Place planning failure.', 'red')
-            extrusion_failures += 1
+            place_failures += 1
             continue
 
         # TODO: use pick conf
@@ -198,7 +206,7 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
                                                collisions=collision, attachments=command.trajectories[0].attachments,
                                                max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
             if transfer_traj is None:
-                transit_failures += 1
+                transfer_failures += 1
                 if verbose:
                     cprint('%'*5, 'red')
                     cprint('Transfer planning failure.', 'yellow')
@@ -243,7 +251,8 @@ def regression(robot, tool_from_ee, obstacles, element_from_index, grounded_elem
         'min_remaining': min_remaining,
         'max_backtrack': max_backtrack,
         'stiffness_failures': stiffness_failures,
-        'extrusion_failures': extrusion_failures,
+        'place_failures': place_failures,
         'transit_failures': transit_failures,
+        'transfer_failures': transfer_failures,
     }
     return plan, data

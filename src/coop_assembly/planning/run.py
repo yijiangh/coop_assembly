@@ -78,7 +78,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
 
     chosen_bars = [int(b) for b in args.subset_bars] if args.subset_bars is not None else None
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
-        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.1))
+        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.2))
 
     # bar_struct.set_body_color(RED, indices=chosen_bars)
     print('base: ', bar_struct.base_centroid(METER_SCALE))
@@ -96,29 +96,30 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
     if saved_plan is None:
         if args.check_model:
             check_model(bar_struct, chosen_bars, debug=args.debug)
-        else:
-            # wait_if_gui('Please review structure\'s workspace position.')
-            pass
 
         checker = None
         if args.stiffness and (checker is None):
-            checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug, save_model=args.save_cm_model)
+            checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug,
+                save_model=args.save_cm_model)
             cprint('stiffness checker created.', 'green')
-            evaluate_stiffness(bar_struct, list(element_from_index.keys()), checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
-            wait_for_user()
+            # check full structure
+            evaluate_stiffness(bar_struct, list(bar_struct.nodes()), checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
+        wait_if_gui('Please review structure\'s workspace position.')
 
         # visualize_stiffness
         with WorldSaver():
             if args.algorithm in STRIPSTREAM_ALGORITHM:
-                plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors,
-                    partial_orders=partial_orders,
-                    collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
-                    debug=debug, teleops=args.teleops)
+                # plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors,
+                #     partial_orders=partial_orders,
+                #     collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
+                #     debug=debug, teleops=args.teleops)
+                raise NotImplementedError()
             elif args.algorithm == 'regression':
                 with LockRenderer(not args.debug):
-                    plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles, element_from_index,
-                        grounded_elements, connectors, collision=args.collisions,
-                        motions=True, stiffness=True, revisit=False, verbose=debug,
+                    plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles,
+                        bar_struct,
+                        collision=args.collisions,
+                        motions=True, stiffness=args.stiffness, revisit=False, verbose=debug,
                         lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
             else:
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
