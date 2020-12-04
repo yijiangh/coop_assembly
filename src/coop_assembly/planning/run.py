@@ -36,7 +36,7 @@ from coop_assembly.planning.validator import validate_trajectories, validate_pdd
 from coop_assembly.planning.utils import recover_sequence, Command, load_world
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
 from coop_assembly.planning.regression import regression
-from coop_assembly.planning.stiffness import create_stiffness_checker
+from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
@@ -89,9 +89,9 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
         for v in bar_struct.nodes():
             elements_from_layer[bar_struct.node[v]['layer']].add(v)
         partial_orders = compute_orders(elements_from_layer)
+        print('Partial orders: ', partial_orders)
     else:
         partial_orders = []
-    print('Partial orders: ', partial_orders)
 
     if saved_plan is None:
         if args.check_model:
@@ -102,8 +102,10 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
 
         checker = None
         if args.stiffness and (checker is None):
-            checker = create_stiffness_checker(bar_struct, verbose=False, debug=args.debug, save_model=args.save_cm_model)
+            checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug, save_model=args.save_cm_model)
             cprint('stiffness checker created.', 'green')
+            evaluate_stiffness(bar_struct, list(element_from_index.keys()), checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
+            wait_for_user()
 
         # visualize_stiffness
         with WorldSaver():

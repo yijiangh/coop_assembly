@@ -40,8 +40,8 @@ Reaction = namedtuple('Reaction', ['fx', 'fy', 'fz', 'mx', 'my', 'mz'])
 ####################################
 # E, G12, fy, density
 # element_tags = None is the fall-back material entry
-WoodMaterial = Material(1050*1e4, 360*1e4, 1.3*1e4, 6, elem_tags=None, family='Wood', name='Wood', type_name='ISO')
-SteelMaterial = Material(1050*1e4, 360*1e4, 1.3*1e4, 78.5, elem_tags=None, family='Wood', name='Wood', type_name='ISO')
+WOODMATERIAL = Material(1050*1e4, 360*1e4, 1.3*1e4, 6, elem_tags=None, family='Wood', name='Wood', type_name='ISO')
+STEELMATERIAL = Material(1050*1e4, 360*1e4, 1.3*1e4, 78.5, elem_tags=None, family='Steel', name='Steel', type_name='ISO')
 
 def A_solid_cir(radius):
     return np.pi * radius**2
@@ -54,11 +54,11 @@ def Iy_solid_cir(radius):
     # https://www.engineeringtoolbox.com/area-moment-inertia-d_1328.html
     return np.pi * radius**4 / 4
 
-def solid_cir_crosssec(r):
+def solid_cir_crosssec(r, elem_tags=None):
     A = A_solid_cir(r)
     Jx = Jx_solid_cir(r)
     Iy = Iy_solid_cir(r)
-    return CrossSec(A, Jx, Iy, Iy, elem_tags=None, family='Circular', name='solid_circle')
+    return CrossSec(A, Jx, Iy, Iy, elem_tags=elem_tags, family='Circular', name='solid_circle')
 
 ####################################
 
@@ -107,6 +107,7 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
         pts_from_element[e_id].extend(element.axis_endpoints)
 
     supports = []
+    connector_tags = set()
     for c_id, connector_endpts in contact_from_connectors.items():
         cm_nodes, node_inds = find_nodes(connector_endpts, cm_nodes)
         for pt in connector_endpts:
@@ -120,7 +121,9 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
         # * add connector element
         # Element(self, end_node_inds, elem_ind, elem_tag='', bending_stiff=True)
         e_id = len(cm_elements)
-        cm_elements.append(Element(tuple(node_inds), e_id, elem_tag='connector{}'.format(c_id), bending_stiff=True))
+        e_tag = 'connector'
+        cm_elements.append(Element(tuple(node_inds), e_id, elem_tag=e_tag, bending_stiff=True))
+        connector_tags.add(e_tag)
         for e in c_id:
             element_from_bar_id[e].add(e_id)
 
@@ -129,6 +132,7 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
             # Support(self, condition, node_ind)
             supports.extend([Support([1 for _ in range(6)], node_inds[i]) for i in range(2)])
 
+    bar_tags = set()
     for e_id, seg_pts in pts_from_element.items():
         sorted_pt_pairs = sorted(combinations(list(seg_pts), 2), key=lambda pt_pair: get_distance(*pt_pair))
         e_end_pts = element_from_index[e_id].axis_endpoints
@@ -140,10 +144,13 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
         cm_nodes, node_inds = find_nodes(list(sorted_seg_pts), cm_nodes)
         assert len(sorted_seg_pts) == len(node_inds)
         # print(node_inds)
+        # elem_tag = 'bar{}'.format(e_id)
+        elem_tag = 'bar{}'.format(e_id)
+        bar_tags.add(elem_tag)
         seg_id = 0
         for i in range(len(sorted_seg_pts)-1):
             if node_inds[i] != node_inds[i+1]:
-                new_element = Element((node_inds[i], node_inds[i+1]), len(cm_elements), elem_tag='bar{}'.format(e_id), bending_stiff=True)
+                new_element = Element((node_inds[i], node_inds[i+1]), len(cm_elements), elem_tag=elem_tag, bending_stiff=True)
                 cm_elements.append(new_element)
                 element_from_bar_id[e_id].add(new_element.elem_ind)
                 seg_id += 1
@@ -155,8 +162,10 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
 
     # TODO different material property and cross secs on Element and Connectors
     r = list(element_from_index.values())[0].radius # in meter
-    crosssecs = [solid_cir_crosssec(r)]
-    materials = [WoodMaterial]
+    crosssecs = [solid_cir_crosssec(r, elem_tags=list(bar_tags | connector_tags))]
+    wood = WOODMATERIAL
+    wood.elem_tags = list(bar_tags | connector_tags)
+    materials = [wood]
 
     model = Model(cm_nodes, cm_elements, supports, joints, materials, crosssecs, unit=unit, model_name=model_name)
     if save_model is not None:
@@ -178,7 +187,7 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
                         add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=(random.random(), random.random(), random.random(), 1), width=3)
                     elif 'connector' in e.elem_tag:
                         add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
-                input()
+                # input()
             for s in supports:
                 draw_point(cm_nodes[s.node_ind].point, size=0.02, color=RED)
     wait_if_gui()
@@ -189,7 +198,7 @@ def create_stiffness_checker(bar_struct, verbose=False, **kwargs):
     if not USE_CONMECH:
         return None
     # * convert ball structure to a conmech model
-    model = conmech_model_from_bar_structure(bar_struct, **kwargs)
+    model, element_from_bar_id = conmech_model_from_bar_structure(bar_struct, **kwargs)
     with HideOutput():
         # checker = StiffnessChecker.from_json(json_file_path=model_path, verbose=verbose)
         checker = StiffnessChecker(model, verbose=verbose, checker_engine="numpy")
@@ -197,7 +206,7 @@ def create_stiffness_checker(bar_struct, verbose=False, **kwargs):
     #checker.set_output_json(True)
     #checker.set_output_json_path(file_path=os.getcwd(), file_name="stiffness-results.json")
     checker.set_nodal_displacement_tol(trans_tol=TRANS_TOL, rot_tol=ROT_TOL)
-    return checker
+    return checker, element_from_bar_id
 
 def force_from_reaction(reaction):
     return reaction[:3]
@@ -205,29 +214,34 @@ def force_from_reaction(reaction):
 def torque_from_reaction(reaction):
     return reaction[3:]
 
-def evaluate_stiffness(extrusion_path, element_from_id, elements, checker=None, verbose=True):
+def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_id=None, verbose=True):
     # TODO: check each connected component individually
     if not elements:
         return Deformation(True, {}, {}, {})
 
-    if checker is None:
-        checker = create_stiffness_checker(extrusion_path, verbose=False)
+    if checker is None and fem_element_from_bar_id is not None:
+        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=verbose)
 
     #nodal_loads = checker.get_nodal_loads(existing_ids=[], dof_flattened=False) # per node
     #weight_loads = checker.get_self_weight_loads(existing_ids=[], dof_flattened=False) # get_nodal_loads = get_self_weight_loads?
     #for node in sorted(nodal_load):
     #    print(node, nodal_loads[node] - weight_loads[node])
 
-    is_stiff = checker.solve(exist_element_ids=elements, if_cond_num=True)
+    exist_element_ids = set()
+    for bar in elements:
+        exist_element_ids.update(fem_element_from_bar_id[bar])
+    print('fem elements len: ', len(exist_element_ids))
+
+    is_stiff = checker.solve(exist_element_ids=exist_element_ids, if_cond_num=True)
     #print("has stored results: {0}".format(checker.has_stored_result()))
     success, nodal_displacement, fixities_reaction, element_reaction = checker.get_solved_results()
     assert is_stiff == success, "full structure not stiff!"
+    assert success or checker.get_compliance() > 0.0
     displacements = {i: Displacement(*d) for i, d in nodal_displacement.items()}
     fixities = {i: Reaction(*d) for i, d in fixities_reaction.items()}
     reactions = {i: (Reaction(*d[0]), Reaction(*d[1])) for i, d in element_reaction.items()}
 
     #print("nodal displacement (m/rad):\n{0}".format(nodal_displacement)) # nodes x 7
-    # TODO: investigate if nodal displacement can be used to select an ordering
     #print("fixities reaction (kN, kN-m):\n{0}".format(fixities_reaction)) # ground x 7
     #print("element reaction (kN, kN-m):\n{0}".format(element_reaction)) # elements x 13
     trans_tol, rot_tol = checker.get_nodal_deformation_tol()

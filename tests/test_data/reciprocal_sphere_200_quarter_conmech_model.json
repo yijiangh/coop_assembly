@@ -1,7 +1,7 @@
 {
  "model_name": "reciprocal_sphere_200_quarter.json",
  "unit": "meter",
- "generate_time": "2020-12-03 18:23:26.395667",
+ "generate_time": "2020-12-03 19:58:41.081349",
  "node_num": 130,
  "element_num": 184,
  "nodes": [
@@ -1183,7 +1183,7 @@
     49
    ],
    "elem_ind": 0,
-   "elem_tag": "connector(0, 12)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1192,7 +1192,7 @@
     51
    ],
    "elem_ind": 1,
-   "elem_tag": "connector(0, 23)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1201,7 +1201,7 @@
     53
    ],
    "elem_ind": 2,
-   "elem_tag": "connector(0, 20)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1210,7 +1210,7 @@
     55
    ],
    "elem_ind": 3,
-   "elem_tag": "connector(0, 5)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1219,7 +1219,7 @@
     57
    ],
    "elem_ind": 4,
-   "elem_tag": "connector(1, 8)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1228,7 +1228,7 @@
     59
    ],
    "elem_ind": 5,
-   "elem_tag": "connector(1, 21)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1237,7 +1237,7 @@
     61
    ],
    "elem_ind": 6,
-   "elem_tag": "connector(1, 19)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1246,7 +1246,7 @@
     63
    ],
    "elem_ind": 7,
-   "elem_tag": "connector(1, 13)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1255,7 +1255,7 @@
     65
    ],
    "elem_ind": 8,
-   "elem_tag": "connector(2, 18)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1264,7 +1264,7 @@
     67
    ],
    "elem_ind": 9,
-   "elem_tag": "connector(2, 7)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1273,7 +1273,7 @@
     69
    ],
    "elem_ind": 10,
-   "elem_tag": "connector(2, 20)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1282,7 +1282,7 @@
     71
    ],
    "elem_ind": 11,
-   "elem_tag": "connector(2, 3)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1291,7 +1291,7 @@
     73
    ],
    "elem_ind": 12,
-   "elem_tag": "connector(3, 4)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1300,7 +1300,7 @@
     75
    ],
    "elem_ind": 13,
-   "elem_tag": "connector(3, 19)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1309,7 +1309,7 @@
     77
    ],
    "elem_ind": 14,
-   "elem_tag": "connector(3, 20)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1318,7 +1318,7 @@
     70
    ],
    "elem_ind": 15,
-   "elem_tag": "connector(3, 2)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1327,7 +1327,7 @@
     79
    ],
    "elem_ind": 16,
-   "elem_tag": "connector(4, 19)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1336,7 +1336,7 @@
     72
    ],
    "elem_ind": 17,
-   "elem_tag": "connector(4, 3)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1345,7 +1345,7 @@
     80
    ],
    "elem_ind": 18,
-   "elem_tag": "connector(4, -1)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1354,7 +1354,7 @@
     82
    ],
    "elem_ind": 19,
-   "elem_tag": "connector(5, 14)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1363,7 +1363,7 @@
     84
    ],
    "elem_ind": 20,
-   "elem_tag": "connector(5, 23)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1372,7 +1372,7 @@
     54
    ],
    "elem_ind": 21,
-   "elem_tag": "connector(5, 0)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1381,7 +1381,7 @@
     86
    ],
    "elem_ind": 22,
-   "elem_tag": "connector(5, 17)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1390,7 +1390,7 @@
     88
    ],
    "elem_ind": 23,
-   "elem_tag": "connector(6, 22)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1399,7 +1399,7 @@
     90
    ],
    "elem_ind": 24,
-   "elem_tag": "connector(6, 14)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1408,7 +1408,7 @@
     92
    ],
    "elem_ind": 25,
-   "elem_tag": "connector(6, 15)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1417,7 +1417,7 @@
     94
    ],
    "elem_ind": 26,
-   "elem_tag": "connector(6, 9)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1426,7 +1426,7 @@
     96
    ],
    "elem_ind": 27,
-   "elem_tag": "connector(7, 18)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1435,7 +1435,7 @@
     66
    ],
    "elem_ind": 28,
-   "elem_tag": "connector(7, 2)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1444,7 +1444,7 @@
     97
    ],
    "elem_ind": 29,
-   "elem_tag": "connector(7, -1)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1453,7 +1453,7 @@
     99
    ],
    "elem_ind": 30,
-   "elem_tag": "connector(8, 21)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1462,7 +1462,7 @@
     56
    ],
    "elem_ind": 31,
-   "elem_tag": "connector(8, 1)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1471,7 +1471,7 @@
     100
    ],
    "elem_ind": 32,
-   "elem_tag": "connector(8, -1)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1480,7 +1480,7 @@
     102
    ],
    "elem_ind": 33,
-   "elem_tag": "connector(9, 11)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1489,7 +1489,7 @@
     93
    ],
    "elem_ind": 34,
-   "elem_tag": "connector(9, 6)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1498,7 +1498,7 @@
     104
    ],
    "elem_ind": 35,
-   "elem_tag": "connector(9, 22)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1507,7 +1507,7 @@
     106
    ],
    "elem_ind": 36,
-   "elem_tag": "connector(9, 16)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1516,7 +1516,7 @@
     108
    ],
    "elem_ind": 37,
-   "elem_tag": "connector(10, 11)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1525,7 +1525,7 @@
     110
    ],
    "elem_ind": 38,
-   "elem_tag": "connector(10, 21)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1534,7 +1534,7 @@
     107
    ],
    "elem_ind": 39,
-   "elem_tag": "connector(11, 10)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1543,7 +1543,7 @@
     112
    ],
    "elem_ind": 40,
-   "elem_tag": "connector(11, 21)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1552,7 +1552,7 @@
     114
    ],
    "elem_ind": 41,
-   "elem_tag": "connector(11, 16)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1561,7 +1561,7 @@
     101
    ],
    "elem_ind": 42,
-   "elem_tag": "connector(11, 9)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1570,7 +1570,7 @@
     116
    ],
    "elem_ind": 43,
-   "elem_tag": "connector(12, 22)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1579,7 +1579,7 @@
     118
    ],
    "elem_ind": 44,
-   "elem_tag": "connector(12, 13)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1588,7 +1588,7 @@
     120
    ],
    "elem_ind": 45,
-   "elem_tag": "connector(12, 20)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1597,7 +1597,7 @@
     48
    ],
    "elem_ind": 46,
-   "elem_tag": "connector(12, 0)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1606,7 +1606,7 @@
     122
    ],
    "elem_ind": 47,
-   "elem_tag": "connector(13, 22)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1615,7 +1615,7 @@
     117
    ],
    "elem_ind": 48,
-   "elem_tag": "connector(13, 12)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1624,7 +1624,7 @@
     62
    ],
    "elem_ind": 49,
-   "elem_tag": "connector(13, 1)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1633,7 +1633,7 @@
     124
    ],
    "elem_ind": 50,
-   "elem_tag": "connector(13, 19)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1642,7 +1642,7 @@
     89
    ],
    "elem_ind": 51,
-   "elem_tag": "connector(14, 6)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1651,7 +1651,7 @@
     126
    ],
    "elem_ind": 52,
-   "elem_tag": "connector(14, 15)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1660,7 +1660,7 @@
     81
    ],
    "elem_ind": 53,
-   "elem_tag": "connector(14, 5)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1669,7 +1669,7 @@
     128
    ],
    "elem_ind": 54,
-   "elem_tag": "connector(14, 17)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1678,7 +1678,7 @@
     91
    ],
    "elem_ind": 55,
-   "elem_tag": "connector(15, 6)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1687,7 +1687,7 @@
     125
    ],
    "elem_ind": 56,
-   "elem_tag": "connector(15, 14)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1696,7 +1696,7 @@
     113
    ],
    "elem_ind": 57,
-   "elem_tag": "connector(16, 11)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1705,7 +1705,7 @@
     105
    ],
    "elem_ind": 58,
-   "elem_tag": "connector(16, 9)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1714,7 +1714,7 @@
     127
    ],
    "elem_ind": 59,
-   "elem_tag": "connector(17, 14)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1723,7 +1723,7 @@
     85
    ],
    "elem_ind": 60,
-   "elem_tag": "connector(17, 5)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1732,7 +1732,7 @@
     95
    ],
    "elem_ind": 61,
-   "elem_tag": "connector(18, 7)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1741,7 +1741,7 @@
     64
    ],
    "elem_ind": 62,
-   "elem_tag": "connector(18, 2)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1750,7 +1750,7 @@
     129
    ],
    "elem_ind": 63,
-   "elem_tag": "connector(18, -1)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1759,7 +1759,7 @@
     78
    ],
    "elem_ind": 64,
-   "elem_tag": "connector(19, 4)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1768,7 +1768,7 @@
     123
    ],
    "elem_ind": 65,
-   "elem_tag": "connector(19, 13)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1777,7 +1777,7 @@
     60
    ],
    "elem_ind": 66,
-   "elem_tag": "connector(19, 1)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1786,7 +1786,7 @@
     74
    ],
    "elem_ind": 67,
-   "elem_tag": "connector(19, 3)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1795,7 +1795,7 @@
     119
    ],
    "elem_ind": 68,
-   "elem_tag": "connector(20, 12)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1804,7 +1804,7 @@
     68
    ],
    "elem_ind": 69,
-   "elem_tag": "connector(20, 2)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1813,7 +1813,7 @@
     52
    ],
    "elem_ind": 70,
-   "elem_tag": "connector(20, 0)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1822,7 +1822,7 @@
     76
    ],
    "elem_ind": 71,
-   "elem_tag": "connector(20, 3)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1831,7 +1831,7 @@
     111
    ],
    "elem_ind": 72,
-   "elem_tag": "connector(21, 11)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1840,7 +1840,7 @@
     98
    ],
    "elem_ind": 73,
-   "elem_tag": "connector(21, 8)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1849,7 +1849,7 @@
     58
    ],
    "elem_ind": 74,
-   "elem_tag": "connector(21, 1)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1858,7 +1858,7 @@
     109
    ],
    "elem_ind": 75,
-   "elem_tag": "connector(21, 10)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1867,7 +1867,7 @@
     87
    ],
    "elem_ind": 76,
-   "elem_tag": "connector(22, 6)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1876,7 +1876,7 @@
     115
    ],
    "elem_ind": 77,
-   "elem_tag": "connector(22, 12)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1885,7 +1885,7 @@
     121
    ],
    "elem_ind": 78,
-   "elem_tag": "connector(22, 13)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1894,7 +1894,7 @@
     103
    ],
    "elem_ind": 79,
-   "elem_tag": "connector(22, 9)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1903,7 +1903,7 @@
     50
    ],
    "elem_ind": 80,
-   "elem_tag": "connector(23, 0)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -1912,7 +1912,7 @@
     83
    ],
    "elem_ind": 81,
-   "elem_tag": "connector(23, 5)",
+   "elem_tag": "connector",
    "bending_stiff": true
   },
   {
@@ -2934,7 +2934,31 @@
    "fy": 13000.0,
    "density": 6,
    "elem_tags": [
-    null
+    "bar13",
+    "bar17",
+    "bar11",
+    "bar5",
+    "bar20",
+    "bar9",
+    "bar0",
+    "bar23",
+    "bar16",
+    "bar18",
+    "bar2",
+    "bar21",
+    "bar4",
+    "bar7",
+    "bar1",
+    "bar6",
+    "bar10",
+    "bar12",
+    "bar3",
+    "bar14",
+    "bar19",
+    "bar22",
+    "bar8",
+    "connector",
+    "bar15"
    ],
    "family": "Wood",
    "name": "Wood",
@@ -2948,7 +2972,31 @@
    "Iy": 7.253316972589751e-11,
    "Iz": 7.253316972589751e-11,
    "elem_tags": [
-    null
+    "bar13",
+    "bar17",
+    "bar11",
+    "bar5",
+    "bar20",
+    "bar9",
+    "bar0",
+    "bar23",
+    "bar16",
+    "bar18",
+    "bar2",
+    "bar21",
+    "bar4",
+    "bar7",
+    "bar1",
+    "bar6",
+    "bar10",
+    "bar12",
+    "bar3",
+    "bar14",
+    "bar19",
+    "bar22",
+    "bar8",
+    "connector",
+    "bar15"
    ],
    "family": "Circular",
    "name": "solid_circle"
