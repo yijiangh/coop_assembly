@@ -10,3 +10,6 @@
 [submodule "external/pyplanners"]
 	path = external/pyplanners
 	url = https://github.com/caelan/pyplanners.git
+[submodule "external/conmech"]
+	path = external/conmech
+	url = https://github.com/yijiangh/conmech.git
