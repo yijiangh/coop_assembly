@@ -10,6 +10,7 @@ from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, comma
 from .robot_setup import get_disabled_collisions, EE_LINK_NAME
 from .utils import recover_sequence, Command, get_index_from_bodies
 from .visualization import label_elements, visualize_collision_digraph
+from .stiffness import evaluate_stiffness, create_stiffness_checker
 
 ##################################################
 
@@ -132,3 +133,22 @@ def validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, ground
     valid = validate_trajectories(element_from_index, fixed_obstacles, trajectories, \
         grounded_elements=grounded_elements, allow_failure=allow_failure, watch=watch, **kwargs)
     return valid
+
+def compute_plan_deformation(bar_struct, plan):
+    checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
+    trans_tol, rot_tol = checker.get_nodal_deformation_tol()
+    if plan is None:
+        return trans_tol, rot_tol
+
+    printed = []
+    translations = []
+    rotations = []
+    for element in plan:
+        printed.append(element)
+        deformation = evaluate_stiffness(bar_struct, printed,
+                                         checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
+        trans, rot, _, _ = checker.get_max_nodal_deformation()
+        translations.append([bool(deformation.success), trans])
+        rotations.append(rot)
+    # TODO: could return full history
+    return translations

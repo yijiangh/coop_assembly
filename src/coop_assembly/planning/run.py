@@ -31,12 +31,13 @@ from coop_assembly.planning.utils import get_element_neighbors, get_connector_fr
 
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose
-from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES, save_plan, parse_plan, unpack_structure
-from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
+from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES, save_plan, parse_plan, unpack_structure, Config
+from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan, compute_plan_deformation
 from coop_assembly.planning.utils import recover_sequence, Command, load_world
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness
+from coop_assembly.planning.heuristics import HEURISTICS
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
@@ -121,6 +122,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
                         collision=args.collisions,
                         motions=True, stiffness=args.stiffness, revisit=False, verbose=debug,
                         lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
+                print(data)
             else:
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
         if plan is None:
@@ -145,9 +147,20 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
             else:
                 # regression plan is flattened already
                 trajectories = plan
+
+            extra_data = {}
+            elem_plan = recover_sequence(trajectories, element_from_index)
+            if args.stiffness:
+                cprint('Computing stiffness history...', 'yellow')
+                stiffness_history = compute_plan_deformation(bar_struct, elem_plan)
+                extra_data = {'stiffness_history' : stiffness_history,
+                              'fem_element_from_bar_id' : { k : list(v) for k, v in fem_element_from_bar_id.items()},
+                              }
+                # print(extra_data)
             if write:
-                save_plan(args.problem, args.algorithm, trajectories, TCP_link_name=TOOL_LINK_NAME if not args.bar_only else None,
-                    element_from_index=element_from_index, suffix='bar-only' if args.bar_only else None)
+                suffix = ''
+                save_plan(Config(args), trajectories, TCP_link_name=TOOL_LINK_NAME if not args.bar_only else None,
+                    element_from_index=element_from_index, suffix=suffix, extra_data=extra_data, overwrite=False)
     else:
         # parse a saved plan
         robot = end_effector if "bar-only" in saved_plan else robot
@@ -196,15 +209,27 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
 def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--problem', default='single_tet', help='The name of the problem to solve')
-    parser.add_argument('-a', '--algorithm', default='regression', choices=ALGORITHMS, help='Planning algorithms')
-    parser.add_argument('-c', '--collisions', action='store_false', help='disable collision checking')
-    parser.add_argument('-b', '--bar_only', action='store_true', help='only planning motion for floating bars')
-    parser.add_argument('-po', '--partial_ordering', action='store_true', help='use partial ordering (if-any)')
-    parser.add_argument('-co', '--costs', action='store_true', help='turn on cost_effective planning')
-    parser.add_argument('-to', '--teleops', action='store_true', help='use teleop for trajectories (turn off in-between traj planning)')
+    parser.add_argument('-p', '--problem', default='single_tet',
+                        help='The name of the problem to solve')
+    parser.add_argument('-a', '--algorithm', default='regression', choices=ALGORITHMS,
+                        help='Planning algorithms')
+    parser.add_argument('--bias', default='z', choices=HEURISTICS,
+                        help='Which heuristic to use')
+    parser.add_argument('-c', '--collisions', action='store_false',
+                        help='Disable collision checking with obstacles')
+    parser.add_argument('-b', '--bar_only', action='store_true',
+                        help='Only planning motion for floating bars, diable arm planning')
+    parser.add_argument('--stiffness', action='store_false',
+                        help='Disable stiffness checking')
+    parser.add_argument('-po', '--partial_ordering', action='store_true',
+                        help='Use partial ordering (if-any)')
+    parser.add_argument('-co', '--costs', action='store_true',
+                        help='Turn on cost_effective planning')
+    parser.add_argument('-to', '--teleops', action='store_true',
+                        help='Use teleop for trajectories (turn off in-between traj planning)')
+    parser.add_argument('--subset_bars', nargs='+', default=None,
+                        help='Plan for only subset of bar indices.')
 
-    # parser.add_argument('-s', '--stiffness', action='store_false', help='disable stiffness')
     # parser.add_argument('-m', '--motion', action='store_true', help='enable transit motion')
     # parser.add_argument('--rfn', help='result file name')
     # parser.add_argument('--revisit', action='store_true', help='revisit in regression')
@@ -221,10 +246,8 @@ def main():
     parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
     parser.add_argument('-wr', '--write', action='store_true', help='Export results')
     parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
-    parser.add_argument('--stiffness', action='store_true', help='Turn on stiffness checking.')
     parser.add_argument('--check_model', action='store_true', help='Inspect model.')
     parser.add_argument('--save_cm_model', action='store_true', help='Export conmech model.')
-    parser.add_argument('--subset_bars', nargs='+', default=None, help='Plan for only subset of bar indices.')
     args = parser.parse_args()
     print('Arguments:', args)
 

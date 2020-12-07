@@ -66,7 +66,7 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 ##################################################
 
 def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
-               max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
+               heuristic='z', max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
                collision=True, stiffness=True, motions=True, lazy=True, checker=None, fem_element_from_bar_id=None, verbose=False, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
@@ -78,7 +78,6 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
     if stiffness and (checker is None or fem_element_from_bar_id is None):
         checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
 
-    heuristic = 'z'
     heuristic_fn = get_heuristic_fn(robot, element_from_index, heuristic, checker=None, forward=False)
     place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
         precompute_collisions=False, allow_failure=True)

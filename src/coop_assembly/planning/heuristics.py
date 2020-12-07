@@ -1,5 +1,14 @@
 from .utils import compute_z_distance
 
+DISTANCE_HEURISTICS = [
+    'z',
+    # 'dijkstra',
+    #'online-dijkstra',
+    # 'plan-stiffness', # TODO: recategorize
+]
+
+HEURISTICS = ['none'] + DISTANCE_HEURISTICS#  + STIFFNESS_HEURISTICS
+
 def get_heuristic_fn(robot, element_from_index, heuristic, forward, checker=None):
     sign = +1 if forward else -1
 

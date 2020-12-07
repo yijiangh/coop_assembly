@@ -8,8 +8,25 @@ from .visualization import set_camera
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
-from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 from coop_assembly.help_functions.shared_const import METER_SCALE
+from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
+
+# Configuration = namedtuple('Configuration', ['seed', 'problem', 'algorithm', 'bias', 'max_time',
+#                                              'cfree', 'disable', 'stiffness', 'motions', 'ee_only'])
+class Config(object):
+    def __init__(self, args):
+        self.problem = args.problem
+        self.args = args
+
+    def to_data(self):
+        data = {}
+        data['bar_only'] = bool(self.args.bar_only)
+        data['stiffness'] = bool(self.args.stiffness)
+        data['collision'] = bool(self.args.collisions)
+        data['teleops'] = bool(self.args.teleops)
+        data['partial_ordering'] = bool(self.args.partial_ordering)
+        data['chosen_bars'] = [int(b) for b in self.args.subset_bars] if self.args.subset_bars is not None else None
+        return data
 
 PICKNPLACE_DIRECTORY = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'tests', 'test_data')
 PICKNPLACE_FILENAMES = {
@@ -85,23 +102,26 @@ def unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=RED)
     connectors = list(contact_from_connectors.keys())
     return element_from_index, grounded_elements, contact_from_connectors, connectors
 
-def save_plan(problem, algorithm, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None, suffix=None):
+def save_plan(config, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None, suffix=None, extra_data=None):
     here = os.path.dirname(__file__)
-    plan_path = '{}_{}{}_solution{}.json'.format(problem, algorithm, '' if suffix is None else '_' + suffix, '' if overwrite else '_'+get_date())
+    plan_path = '{}_{}-{}{}_solution{}.json'.format(config.problem.split('.json')[0], config.args.algorithm, config.args.bias,
+        '' if suffix is None else '_' + suffix, '' if overwrite else '_'+get_date())
     save_path = os.path.join(here, RESULTS_DIRECTORY, plan_path)
+
+    from .logger import get_global_parameters
     with open(save_path, 'w') as f:
-        data = {'problem' : problem,
+        data = {'problem' : config.problem,
+                'config' : config.to_data(),
                 'write_time' : str(datetime.datetime.now()),
-                # 'plan' : [jsonpickle.encode(p, keys=True) for p in trajectories]}
-                # 'plan' : [p.to_data() for p in trajectories]}
+                'parameters' : get_global_parameters(),
                 }
         data['plan'] = []
         e_path = []
         e_id = trajectories[0].element
         for traj in trajectories:
-            print(traj)
+            # print(traj)
             if traj.element is not None and e_id != traj.element:
-                print('break')
+                # print('break')
                 # break subprocess if there is a discontinuity in the element id
                 data['plan'].append(copy.deepcopy(e_path))
                 e_path = []
@@ -123,8 +143,13 @@ def save_plan(problem, algorithm, trajectories, TCP_link_name=None, overwrite=Tr
                 }
             data['element_from_index'] = element_data
 
+        if extra_data is not None:
+            data.update(extra_data)
+
         json.dump(data, f)
-    cprint('Result saved to: {}'.format(save_path), 'green')
+    cprint('Result saved to: {}'.format(os.path.abspath(save_path)), 'green')
+
+##############################################
 
 def parse_plan(file_name):
     here = os.path.dirname(__file__)

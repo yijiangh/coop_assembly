@@ -39,9 +39,19 @@ Reaction = namedtuple('Reaction', ['fx', 'fy', 'fz', 'mx', 'my', 'mz'])
 
 ####################################
 # E, G12, fy, density
+# ! NOT USED NOW: fy is the material strength in the specified direction (local x direction)
 # element_tags = None is the fall-back material entry
-WOODMATERIAL = Material(1050*1e4, 360*1e4, 1.3*1e4, 6, elem_tags=None, family='Wood', name='Wood', type_name='ISO')
-STEELMATERIAL = Material(1050*1e4, 360*1e4, 1.3*1e4, 78.5, elem_tags=None, family='Steel', name='Steel', type_name='ISO')
+
+def wood_material(elem_tags=None):
+    return Material(1050*1e4, 360*1e4, 1.3*1e4, 6, elem_tags=elem_tags, family='Wood', name='Wood', type_name='ISO')
+# STEEL_MATERIAL = Material(1050*1e4, 360*1e4, 1.3*1e4, 78.5, elem_tags=None, family='Steel', name='Steel', type_name='ISO')
+
+CONNECTOR_STENGTH_RATIO = 0.1
+def connector_material(elem_tags=None):
+    return Material(1050*1e4*CONNECTOR_STENGTH_RATIO, 360*1e4*CONNECTOR_STENGTH_RATIO, 1.3*1e4, 6,
+        elem_tags=elem_tags, family='Connector', name='Glue', type_name='ISO')
+
+ROTATIONAL_STIFFNESS = 100 # kn/rad
 
 def A_solid_cir(radius):
     return np.pi * radius**2
@@ -121,7 +131,7 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
         # * add connector element
         # Element(self, end_node_inds, elem_ind, elem_tag='', bending_stiff=True)
         e_id = len(cm_elements)
-        e_tag = 'connector'
+        e_tag = 'connector{}'.format(e_id)
         cm_elements.append(Element(tuple(node_inds), e_id, elem_tag=e_tag, bending_stiff=True))
         connector_tags.add(e_tag)
         for e in c_id:
@@ -158,20 +168,22 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
         # input()
     # TODO Add rotational stiffness later
     # Joint(self, c_conditions, elem_tags):
+    node_c_conditions = [None, None, None] + [ROTATIONAL_STIFFNESS for _ in range(3)]
+    # joint = Joint(node_c_conditions+node_c_conditions, list(bar_tags | connector_tags))
     joints = []
 
     # TODO different material property and cross secs on Element and Connectors
     r = list(element_from_index.values())[0].radius # in meter
     crosssecs = [solid_cir_crosssec(r, elem_tags=list(bar_tags | connector_tags))]
-    wood = WOODMATERIAL
-    wood.elem_tags = list(bar_tags | connector_tags)
-    materials = [wood]
+    materials = [wood_material(list(bar_tags)), connector_material(list(connector_tags))]
 
     model = Model(cm_nodes, cm_elements, supports, joints, materials, crosssecs, unit=unit, model_name=model_name)
     if save_model:
         model_path = os.path.join(PICKNPLACE_DIRECTORY, model.model_name.split(".json")[0] + '_conmech_model.json')
+        model_data = model.to_data()
+        model_data['fem_element_from_bar_id'] = {bar : list(fem_es) for bar, fem_es in fem_element_from_bar_id.items()}
         with open(model_path, 'w') as f:
-            json.dump(model.to_data(), f, indent=1)
+            json.dump(model_data, f, indent=1)
         cprint('Conmech model saved to: {}'.format(model_path), 'green')
 
     if debug and has_gui():
