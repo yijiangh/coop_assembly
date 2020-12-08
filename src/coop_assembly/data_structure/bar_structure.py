@@ -400,5 +400,13 @@ class BarStructure(Network):
 
     #####################################
 
-    # def to_data(self):
-    #     # TODO get rid of pb_body data when export
+    def to_data(self):
+        for bar_k, bar_vals in self.node.items():
+            self.node[bar_k]["axis_endpoints"] = (list(bar_vals["axis_endpoints"][0]),
+                                                  list(bar_vals["axis_endpoints"][1])
+                                                  )
+        for v_key1 in self.edge.keys():
+            for v_key2 in self.edge[v_key1].keys():
+                for k, val in self.edge[v_key1][v_key2]["endpoints"].items():
+                    self.edge[v_key1][v_key2]["endpoints"][k] = [list(v) for v in val]
+        return self.data

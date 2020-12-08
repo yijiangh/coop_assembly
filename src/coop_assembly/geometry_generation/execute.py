@@ -14,6 +14,7 @@ author: stefanaparascho
 
 import pickle
 import time
+from termcolor import cprint
 
 from coop_assembly.data_structure import OverallStructure, BarStructure
 from coop_assembly.geometry_generation.generate_tetrahedra import generate_first_triangle, generate_structure_from_points
@@ -60,7 +61,7 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
     endpts_from_element = bar_struct.get_axis_pts_from_element(scale=scale)
 
     if write:
-        export_structure_data(bar_struct.data, o_struct.data, **kwargs)
+        export_structure_data(bar_struct.to_data(), o_struct.to_data(), **kwargs)
 
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     element_bodies = bar_struct.get_element_bodies(color=apply_alpha(RED, 0))
@@ -83,9 +84,9 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
             draw_collision_diagnosis(cr, focus_camera=True)
             # if not viewer:
             assert False, '{}-{} collision!'.format(b1_body, b2_body)
-        print('-'*10)
+        # print('-'*10)
 
-    print('No collision in connectors found.')
+    cprint('No collision in connectors found.', 'green')
     wait_if_gui('Done.')
 
     # contact_from_connectors = bar_struct.get_connectors(scale=scale)
@@ -108,4 +109,5 @@ def test_connect(viewer=False):
     dump_world()
     wait_if_gui()
     a = 10
+    print('Hey, welcome to pybullet!')
     return a

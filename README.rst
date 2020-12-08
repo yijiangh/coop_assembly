@@ -4,7 +4,17 @@ coop_assembly
 
 .. start-badges
 
-.. image:: https://img.shields.io/badge/License-MIT-blue.svg
+.. image:: https://img.shields.io/badge/compas-0.18.1-blue
+    :target: https://github.com/compas-dev/compas
+    :alt: compas version
+
+.. image:: https://img.shields.io/badge/compas-0.14.0-pink
+    :target: https://github.com/compas-dev/compas_fab
+    :alt: compas_fab version
+
+-----
+
+.. image:: https://img.shields.io/badge/License-MIT-blue
     :target: https://github.com/stefanaparascho/coop_assembly/blob/dev/LICENSE
     :alt: License MIT
 

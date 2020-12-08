@@ -11,6 +11,22 @@ Upon opening (if everything works as expected), you should get the following:
 
 <img src='./images/stable_overview.png' width=70%>
 
+### Recommended procedures for using RPC
+
+**Before** opening GH, please open a command prompt, activate the conda environment where you installed `compas`, and issue:
+
+```bash
+> compas_rpc start
+```
+
+This will create an RPC server and you will later see your python printout streamed to your command prompt. You can read more about this on [compas's rpc documentation](https://compas.dev/compas/latest/api/compas.rpc.html#rpc-command-line-utility-1).
+
+You should be able to see something like the following in the command prompt when computing in GH:
+
+<img src='./images/rpc_commandline_printout.png' width=70%>
+
+If you can't see these, it means that you have an RPC server runnning *prior* to the commandline `compas_rpc start`. You can kill these running servers by going to the task manager, and manually "end task" all the running `Python` applications.
+
 ## DEV
 
 My experimental work is contained in `DEV_double_tangent_bar_generation.gh`. The script includes my attempts to generate `arbitrary spatial truss` using a search routine. 

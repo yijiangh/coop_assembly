@@ -19,9 +19,8 @@ def read(*names, **kwargs):
     ).read()
 
 requirements = [
-    # 'compas=0.10',
-    'compas>0.15.0',
-    'compas_fab',
+    'compas=0.18.1',
+    'compas_fab=0.14.0',
     'numpy',
     'scipy>=1.2.0',
     'pybullet_planning>=0.5.0',

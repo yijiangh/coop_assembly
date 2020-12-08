@@ -257,7 +257,7 @@ def test_generate_from_points(save_dir, points_library, viewer, file_spec, radiu
         correct=False, check_collision=True, viewer=viewer)
 
     if write:
-        export_structure_data(b_struct.data, o_struct.data, save_dir=save_dir, file_name=file_spec+'_'+pt_search_method+'.json')
+        export_structure_data(b_struct.to_data(), o_struct.to_data(), save_dir=save_dir, file_name=file_spec+'_'+pt_search_method+'.json')
 
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     # _, _ = load_world()
@@ -283,7 +283,9 @@ def test_generate_from_points(save_dir, points_library, viewer, file_spec, radiu
             draw_collision_diagnosis(cr, focus_camera=True)
             if not viewer:
                 assert False, '{}-{} collision!'.format(b1_body, b2_body)
-        print('-'*10)
+        # print('-'*10)
+
+    cprint('No collision in connectors found.', 'green')
 
     if viewer:
         wait_for_user('Done.')

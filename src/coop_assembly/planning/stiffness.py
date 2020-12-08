@@ -244,7 +244,7 @@ def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_
         exist_element_ids.update(fem_element_from_bar_id[bar])
     # print('fem elements len: ', len(exist_element_ids))
 
-    is_stiff = checker.solve(exist_element_ids=exist_element_ids, if_cond_num=True)
+    is_stiff = checker.solve(exist_element_ids=list(exist_element_ids), if_cond_num=True)
     if not checker.has_stored_result():
         return Deformation(False, {}, {}, {})
 
