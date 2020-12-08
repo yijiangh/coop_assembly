@@ -387,6 +387,7 @@ def first_tangent(new_pt, contact_pt, max_len, b_v1_1, b_v1_2, b_struct, pt_mean
     for sol_i, sol_id in enumerate(sol_indices):
         new_bar_axis = compute_tangent_from_two_lines(b1_1["axis_endpoints"], b1_2["axis_endpoints"],
                                               new_pt, 2 * radius, 2 * radius, sol_id)
+        print('new_bar_axis: ', new_bar_axis)
 
         if new_bar_axis is None:
             print("First tangent bar: bar #{} no solutions.".format(sol_id))
@@ -397,7 +398,7 @@ def first_tangent(new_pt, contact_pt, max_len, b_v1_1, b_v1_2, b_struct, pt_mean
 
         # directional vector pointing from contact pt to the newly added point
         # pts_b1_1, 2 are the updated axis pts for bar1 and bar2 to cover all related contact pts
-        vec_sol_1, l1, pts_b1_1, pts_b1_2 = compute_new_bar_length(new_bar_axis[0], contact_pt, new_pt, b_v1_1, b_v1_2, b_struct)
+        vec_sol_1, l1, pts_b1_1, pts_b1_2 = compute_new_bar_length(new_bar_axis, contact_pt, new_pt, b_v1_1, b_v1_2, b_struct)
 
         # new central axis end point (contact end)
         new_pt_e = add_vectors(new_pt, scale_vector(vec_sol_1, l1))
@@ -476,12 +477,14 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
     ex = R[:,1]
     ey = R[:,2]
 
-    pt_b_1      = b2_1["axis_endpoints"][0]
-    pt_b_1_2    = b2_1["axis_endpoints"][1]
-    l_1         = Vector(*pt_b_1)-Vector(*pt_b_1_2)
-    pt_b_2      = b2_2["axis_endpoints"][0]
-    pt_b_2_2    = b2_2["axis_endpoints"][1]
-    l_2         = Vector(*pt_b_2)-Vector(*pt_b_2_2)
+    b1_line = b2_1["axis_endpoints"]
+    b2_line = b2_2["axis_endpoints"]
+    # pt_b_1      = b2_1["axis_endpoints"][0]
+    # pt_b_1_2    = b2_1["axis_endpoints"][1]
+    # l_1         = Vector(*pt_b_1)-Vector(*pt_b_1_2)
+    # pt_b_2      = b2_2["axis_endpoints"][0]
+    # pt_b_2_2    = b2_2["axis_endpoints"][1]
+    # l_2         = Vector(*pt_b_2)-Vector(*pt_b_2_2)
 
     if not check_collision:
         if b_v0_n:
@@ -493,7 +496,7 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
         if not sols_test:
             return None
 
-        ret_sst = solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind)
+        ret_sst = solve_second_tangent(new_point, ex, ey, radius, b1_line, b2_line, 2*radius, 2*radius, ind)
         if ret_sst:
             pt2, vec_l = ret_sst
         else:
@@ -517,12 +520,13 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
             sols_test = compute_tangent_from_two_lines(
                 b2_1["axis_endpoints"], b2_2["axis_endpoints"], new_point, 2 * radius, 2 * radius, ind)
 
-            if ind == 3 and sols_test == None:
+            if ind == 3 and sols_test is None:
                 return None
-            if sols_test == None:
+            if sols_test is None:
                 continue
 
-            ret_sst = solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind)
+            # ret_sst = solve_second_tangent(new_point, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, 2*radius, 2*radius, ind)
+            ret_sst = solve_second_tangent(new_point, ex, ey, radius, b1_line, b2_line, 2*radius, 2*radius, ind)
             if ret_sst:
                 pt2, vec_l = ret_sst
             else:
@@ -634,10 +638,13 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
             ind_2 = 0
 
         # solve from mid point to both contact points
-        ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2)
+        # ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2)
+        ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, [line_1, line_2], [line_3, line_4], ind_1, ind_2)
 
         if ret_stt:
-            pt3, vec_l1, vec_l2, ang_check = ret_stt
+            # pt3, vec_l1, vec_l2, ang_check = ret_stt
+            # ref_point
+            ang, pt3, vec_l1, vec_l2 = ret_stt
         else:
             return None
 
@@ -674,9 +681,12 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
                 ind_1 = i
                 ind_2 = j
 
-                ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2)
+                # ang, ref_point, vec_l1, vec_l2 = solve_third_tangent(pt_mid, ex, ey, radius, [line1, line2], [line3, line4], ind_1, ind_2, debug=True)
+                # ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2)
+                ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, [line_1, line_2], [line_3, line_4], ind_1, ind_2)
                 if ret_stt:
-                    pt3, vec_l1, vec_l2, ang_check  = ret_stt
+                    # pt3, vec_l1, vec_l2, ang_check  = ret_stt
+                    ang_check, pt3, vec_l1, vec_l2 = ret_stt
                 else:
                     # ? premature return?
                     return None
