@@ -1,0 +1,646 @@
+{
+ "model_name": "single_tet",
+ "unit": "meter",
+ "generate_time": "2020-10-15 17:56:41.035928",
+ "nodes": [
+  {
+   "point": [
+    0.7463604862927342,
+    -0.04178070113450352,
+    0.0023538536030506922
+   ],
+   "node_ind": 0,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6443101459378685,
+    0.09114214497054064,
+    0.009397757388736014
+   ],
+   "node_ind": 1,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.7375612099928821,
+    -0.03107787784782588,
+    0.009242040281771058
+   ],
+   "node_ind": 2,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.5717134789539964,
+    -0.049903334883434104,
+    0.0023667526512981384
+   ],
+   "node_ind": 3,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.5827956233948091,
+    -0.05368302042852766,
+    0.009509800435782954
+   ],
+   "node_ind": 4,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6460377955534152,
+    0.08815915493319625,
+    0.002945693888896243
+   ],
+   "node_ind": 5,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6387172979547889,
+    0.0034591204265174286,
+    0.09771647921830744
+   ],
+   "node_ind": 6,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6398484601345952,
+    0.08883670419042428,
+    0.005274118538901606
+   ],
+   "node_ind": 7,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6345018051635647,
+    0.004453699141928388,
+    0.08973779882526237
+   ],
+   "node_ind": 8,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.742037070368147,
+    -0.04491905712450246,
+    -0.0010600000000000004
+   ],
+   "node_ind": 9,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6439021373967226,
+    0.0007473043998765111,
+    0.09527535369940852
+   ],
+   "node_ind": 10,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.5722144888564766,
+    -0.05543413664368985,
+    0.005425317832281239
+   ],
+   "node_ind": 11,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.7377664223426513,
+    -0.030586741017551104,
+    0.0029470486809103713
+   ],
+   "node_ind": 12,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.7463604862927342,
+    -0.04178070113450352,
+    -0.000816146396949308
+   ],
+   "node_ind": 13,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.5856893618575235,
+    -0.048316925582040905,
+    0.0029461287708847828
+   ],
+   "node_ind": 14,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.5853796352302599,
+    -0.047887491157622995,
+    0.009241597614352701
+   ],
+   "node_ind": 15,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.5717134789539964,
+    -0.049903334883434104,
+    -0.0008032473487018614
+   ],
+   "node_ind": 16,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6465528966244962,
+    0.08822091214237057,
+    0.00924295418085891
+   ],
+   "node_ind": 17,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6460377955534152,
+    0.08815915493319625,
+    -0.00022430611110375677
+   ],
+   "node_ind": 18,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.639835651574658,
+    0.08786994282017335,
+    0.00632087694245148
+   ],
+   "node_ind": 19,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6452248037149115,
+    0.08633574300744049,
+    0.0030300769021220425
+   ],
+   "node_ind": 20,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6387757063792101,
+    0.007867657272571688,
+    0.09294314721211776
+   ],
+   "node_ind": 21,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.7263436431381226,
+    -0.03771372075285845,
+    0.012190803313682868
+   ],
+   "node_ind": 22,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.7258831839332316,
+    -0.03240345629541476,
+    0.008757922786684975
+   ],
+   "node_ind": 23,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6388842349741448,
+    0.002441590477102325,
+    0.08603747800911096
+   ],
+   "node_ind": 24,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.6391084022478188,
+    -0.0030095345274795075,
+    0.08926710424727716
+   ],
+   "node_ind": 25,
+   "is_grounded": false
+  },
+  {
+   "point": [
+    0.577574727116372,
+    -0.05123333056468009,
+    0.012143596499736264
+   ],
+   "node_ind": 26,
+   "is_grounded": false
+  }
+ ],
+ "elements": [
+  {
+   "end_node_inds": [
+    12,
+    2
+   ],
+   "elem_ind": 0,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    0,
+    13
+   ],
+   "elem_ind": 1,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    14,
+    15
+   ],
+   "elem_ind": 2,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    3,
+    16
+   ],
+   "elem_ind": 3,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    5,
+    17
+   ],
+   "elem_ind": 4,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    5,
+    18
+   ],
+   "elem_ind": 5,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    19,
+    1
+   ],
+   "elem_ind": 6,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    7,
+    20
+   ],
+   "elem_ind": 7,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    21,
+    8
+   ],
+   "elem_ind": 8,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    9,
+    0
+   ],
+   "elem_ind": 9,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    22,
+    23
+   ],
+   "elem_ind": 10,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    24,
+    25
+   ],
+   "elem_ind": 11,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    11,
+    3
+   ],
+   "elem_ind": 12,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    26,
+    4
+   ],
+   "elem_ind": 13,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    10,
+    6
+   ],
+   "elem_ind": 14,
+   "elem_tag": "connector",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    0,
+    12
+   ],
+   "elem_ind": 15,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    12,
+    17
+   ],
+   "elem_ind": 16,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    17,
+    1
+   ],
+   "elem_ind": 17,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    2,
+    23
+   ],
+   "elem_ind": 18,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    23,
+    14
+   ],
+   "elem_ind": 19,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    14,
+    3
+   ],
+   "elem_ind": 20,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    4,
+    15
+   ],
+   "elem_ind": 21,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    15,
+    20
+   ],
+   "elem_ind": 22,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    20,
+    5
+   ],
+   "elem_ind": 23,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    7,
+    19
+   ],
+   "elem_ind": 24,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    19,
+    21
+   ],
+   "elem_ind": 25,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    21,
+    6
+   ],
+   "elem_ind": 26,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    8,
+    24
+   ],
+   "elem_ind": 27,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    24,
+    22
+   ],
+   "elem_ind": 28,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    22,
+    9
+   ],
+   "elem_ind": 29,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    11,
+    26
+   ],
+   "elem_ind": 30,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    26,
+    25
+   ],
+   "elem_ind": 31,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  },
+  {
+   "end_node_inds": [
+    25,
+    10
+   ],
+   "elem_ind": 32,
+   "elem_tag": "bar",
+   "bending_stiff": true
+  }
+ ],
+ "supports": [
+  {
+   "condition": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "node_ind": 0
+  },
+  {
+   "condition": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "node_ind": 13
+  },
+  {
+   "condition": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "node_ind": 3
+  },
+  {
+   "condition": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "node_ind": 16
+  },
+  {
+   "condition": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "node_ind": 5
+  },
+  {
+   "condition": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "node_ind": 18
+  }
+ ],
+ "joints": [],
+ "materials": [
+  {
+   "E": 10500000.0,
+   "G12": 3600000.0,
+   "mu": 0.45833333333333326,
+   "fy": 13000.0,
+   "density": 6,
+   "elem_tags": [
+    null
+   ],
+   "family": "Wood",
+   "name": "Wood",
+   "type_name": "ISO"
+  }
+ ],
+ "cross_secs": [
+  {
+   "A": 3.1569550416658475e-05,
+   "Jx": 1.5861962759097967e-10,
+   "Iy": 7.930981379548983e-11,
+   "Iz": 7.930981379548983e-11,
+   "elem_tags": [
+    null
+   ],
+   "family": "Circular",
+   "name": "solid_circle"
+  }
+ ]
+}

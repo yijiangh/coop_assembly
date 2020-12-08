@@ -4,7 +4,7 @@ import datetime
 from collections import OrderedDict
 from termcolor import cprint
 
-def export_structure_data(bar_struct_data, overall_struct_data=None, radius=-1, save_dir='', file_name=None, indent=None):
+def export_structure_data(bar_struct_data, overall_struct_data=None, save_dir='', file_name=None, indent=None, opt_data=None):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     # else:
@@ -12,10 +12,9 @@ def export_structure_data(bar_struct_data, overall_struct_data=None, radius=-1, 
 
     data = OrderedDict()
     data['write_time'] = str(datetime.datetime.now())
-
-    data['radius'] = radius
     data['bar_structure'] = bar_struct_data
     data['overall_structure'] = overall_struct_data
+    data['opt_data'] = opt_data
 
     file_name = file_name or 'coop_assembly_data.json'
     full_save_path = os.path.join(save_dir, file_name)
@@ -28,4 +27,7 @@ def parse_saved_structure_data(file_path):
     with open(file_path, 'r')  as f:
         data = json.load(f)
     cprint('Parsed file name: {} | write_time: {} | '.format(file_path, data['write_time']), 'green')
-    return data['bar_structure'], data['overall_structure'], data['radius']
+    o_data = None
+    if 'overall_structure' in data:
+        o_data = data['overall_structure']
+    return data['bar_structure'], o_data

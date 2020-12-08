@@ -1,0 +1,3143 @@
+{
+"write_time": "2020-11-18 18:35:37.180626",
+"bar_structure": {
+"compas": "0.16.9",
+"datatype": "coop_assembly.data_structure/BarStructure",
+"data": {
+"attributes": {
+"name": "NetworkBar"
+},
+"node_attributes": {
+"x": 0.0,
+"y": 0.0,
+"z": 0.0
+},
+"edge_attributes": {},
+"node": {
+"0": {
+"bar_type": 16,
+"axis_endpoints": [
+[
+82.5695943167637,
+169.36123288104577,
+262.4638135023996
+],
+[
+-113.68243822798397,
+244.11339258832504,
+171.16429020613023
+]
+],
+"pb_body": 0,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.06793787854779818,
+-0.6954028817770075,
+-0.7154014793629225
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"1": {
+"bar_type": 15,
+"axis_endpoints": [
+[
+239.90820765872704,
+134.0776769241888,
+162.8270747444534
+],
+[
+157.47224691442614,
+282.41353396099873,
+9.076579650699829
+]
+],
+"pb_body": 1,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6683504900765624,
+-0.6811769654011558,
+-0.2988403657829573
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"2": {
+"bar_type": 18,
+"axis_endpoints": [
+[
+-61.06745583642898,
+251.27747318147195,
+190.5097400175661
+],
+[
+-29.897537554863092,
+323.32762058628566,
+-24.607857945394258
+]
+],
+"pb_body": 2,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.1532263481201189,
+-0.9435030340531936,
+-0.2938089702071575
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"3": {
+"bar_type": 10,
+"axis_endpoints": [
+[
+112.01136569765245,
+275.14834324973486,
+148.48987973529808
+],
+[
+-34.57063521886719,
+318.17894680691853,
+10.520059460042939
+]
+],
+"pb_body": 3,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.08188149447838274,
+-0.9728591243594695,
+-0.21642676593368249
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"4": {
+"bar_type": 20,
+"axis_endpoints": [
+[
+198.51310565713447,
+261.13017807577006,
+-37.03399430401352
+],
+[
+-10.375840744537218,
+317.4431933207165,
+38.017212237657226
+]
+],
+"pb_body": 4,
+"radius": 3.1,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.26603116772798674,
+-0.9638097612663682,
+-0.017267364736699296
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"5": {
+"bar_type": 17,
+"axis_endpoints": [
+[
+55.86027431141756,
+186.09615686843946,
+253.85823085351424
+],
+[
+-137.71648301900228,
+67.69586957126558,
+284.643644862368
+]
+],
+"pb_body": 5,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.12165163470021348,
+-0.4313307793341182,
+-0.8939544946885094
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"6": {
+"bar_type": 12,
+"axis_endpoints": [
+[
+194.24974452218123,
+4.380601010973043,
+253.8582317725539
+],
+[
+21.825864706727586,
+151.89532394925112,
+284.6436445111628
+]
+],
+"pb_body": 6,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.37262750395023475,
+-0.2489861421133486,
+-0.8939544979110118
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"7": {
+"bar_type": 22,
+"axis_endpoints": [
+[
+6.091250152231776,
+331.01994907481514,
+-36.29874399059351
+],
+[
+-194.13885701773668,
+247.9522602072345,
+37.49901378637354
+]
+],
+"pb_body": 7,
+"radius": 3.1,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.3748813437864977,
+-0.9267087926953034,
+-0.025976751568336343
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"8": {
+"bar_type": 19,
+"axis_endpoints": [
+[
+316.7009987960025,
+96.49767526506457,
+-36.298744762749244
+],
+[
+175.82440364117267,
+261.258485989206,
+37.499014495702525
+]
+],
+"pb_body": 8,
+"radius": 3.1,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7655076669965373,
+-0.6429021841185797,
+-0.025976786273107653
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"9": {
+"bar_type": 11,
+"axis_endpoints": [
+[
+186.58752100216608,
+-26.192847201118543,
+262.46381530407604
+],
+[
+197.03582430302026,
+183.5536019063956,
+171.1642906879915
+]
+],
+"pb_body": 9,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6403734909960285,
+-0.27950411766309036,
+-0.7154014538976958
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"10": {
+"bar_type": 5,
+"axis_endpoints": [
+[
+296.29506012230496,
+-21.50362256027838,
+148.48988499421625
+],
+[
+291.92326062783224,
+131.20133399515572,
+10.520060213891137
+]
+],
+"pb_body": 10,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.9505467832098948,
+-0.22275609480078662,
+-0.21642674316826963
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"11": {
+"bar_type": 4,
+"axis_endpoints": [
+[
+306.25026879979583,
+-5.884867237494771,
+129.54456626173337
+],
+[
+200.7043826515706,
+161.741639696197,
+185.53337091626824
+]
+],
+"pb_body": 11,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7847578205259542,
+-0.31603655322178464,
+-0.533175449688982
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"12": {
+"bar_type": 7,
+"axis_endpoints": [
+[
+76.38446974020218,
+292.3702485582252,
+137.2831328688449
+],
+[
+67.54256472658088,
+141.90401564124417,
+277.47977085126456
+]
+],
+"pb_body": 12,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.2307218398348677,
+-0.6560138998066779,
+-0.7186189504067143
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"13": {
+"bar_type": 6,
+"axis_endpoints": [
+[
+72.2789570165943,
+279.9579605379339,
+161.63439479659792
+],
+[
+234.98791255922154,
+154.48260685346835,
+149.18032039421442
+]
+],
+"pb_body": 13,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5520829744344478,
+-0.6661351794780328,
+-0.5014661623692889
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"14": {
+"bar_type": 1,
+"axis_endpoints": [
+[
+11.919285686719066,
+-15.660613706223465,
+333.97137604349496
+],
+[
+35.84538149533585,
+176.1663757083615,
+263.2371496043903
+]
+],
+"pb_body": 14,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.08667943387954312,
+-0.3351313242453295,
+-0.9381757144863077
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"15": {
+"bar_type": 0,
+"axis_endpoints": [
+[
+-11.210865613062008,
+-16.175310639917704,
+333.97137598462905
+],
+[
+178.6210203706317,
+20.347421516688076,
+263.2371500684536
+]
+],
+"pb_body": 15,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.34551423417630817,
+-0.0211242299636938,
+-0.9381757196229288
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"16": {
+"bar_type": 3,
+"axis_endpoints": [
+[
+301.6647531578907,
+17.701421459052547,
+137.2831323236776
+],
+[
+155.83054614483123,
+-20.38604020080693,
+277.4797717403477
+]
+],
+"pb_body": 16,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.695203227199971,
+0.016710081495031878,
+-0.7186189853233597
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"17": {
+"bar_type": 2,
+"axis_endpoints": [
+[
+18.577389161615013,
+6.496516862646822,
+333.97137575477325
+],
+[
+-156.4673551036878,
+88.5293916150866,
+263.23714928590493
+]
+],
+"pb_body": 17,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.2919434007109695,
+-0.1859983077059903,
+-0.9381757193147893
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"18": {
+"bar_type": 21,
+"axis_endpoints": [
+[
+-53.379743476200495,
+269.5985430489241,
+162.82707750690633
+],
+[
+-219.92963060963712,
+237.03559169387026,
+9.076579441943895
+]
+],
+"pb_body": 18,
+"radius": 3.1,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.44130613730734014,
+-0.8461343425730059,
+-0.2988403712576704
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"19": {
+"bar_type": 9,
+"axis_endpoints": [
+[
+93.64545070950305,
+270.10599540159535,
+166.10787059696395
+],
+[
+169.9419942633713,
+275.2124418334166,
+-25.01064095213504
+]
+],
+"pb_body": 19,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.4358491552511726,
+-0.8780923583294187,
+-0.1974571449968812
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"20": {
+"bar_type": 8,
+"axis_endpoints": [
+[
+100.2333710010061,
+289.44276724938567,
+129.5445654761617
+],
+[
+-91.80438644752329,
+240.8621322651542,
+185.53336788693528
+]
+],
+"pb_body": 20,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.05806501932438968,
+-0.8440097355288669,
+-0.5331754119080797
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"21": {
+"bar_type": 14,
+"axis_endpoints": [
+[
+220.10819902131092,
+135.72760023342425,
+190.50973937781202
+],
+[
+298.2640093674197,
+128.3479833925064,
+-24.607857121164283
+]
+],
+"pb_body": 21,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.849975142373716,
+-0.43728537265135287,
+-0.293809053999275
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"22": {
+"bar_type": 13,
+"axis_endpoints": [
+[
+219.70990141459598,
+185.42349715613472,
+146.14838260028418
+],
+[
+47.54260329833121,
+132.22760356067698,
+287.45282750563433
+]
+],
+"pb_body": 22,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.43627357694998864,
+-0.5264372950260997,
+-0.729745942407949
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"23": {
+"bar_type": 23,
+"axis_endpoints": [
+[
+-108.45413917015365,
+266.25554845349416,
+146.1483840845816
+],
+[
+-111.0644599053946,
+86.0762814514097,
+287.4528260824613
+]
+],
+"pb_body": 23,
+"radius": 3.1,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.3658556912227206,
+-0.5775988858377369,
+-0.7297459422833062
+],
+"bar_parameters": [],
+"exchange_values": {}
+}
+},
+"edge": {
+"0": {
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+68.6809475773699,
+174.65140147557702,
+256.0025972281283
+],
+[
+69.20114454441891,
+170.12873155911075,
+251.18144329310047
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-109.7067638992174,
+242.5990630880671,
+173.0138362530729
+],
+[
+-108.85545073741285,
+238.5547287603367,
+167.87257541221206
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-91.83810128939922,
+235.79291130535853,
+181.32661832755304
+],
+[
+-91.88238122382924,
+240.84240158401764,
+185.55610734285108
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+53.49479607656299,
+180.43578805036788,
+248.9377613905048
+],
+[
+52.25509805293735,
+183.891068248051,
+254.43157883817315
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"1": {
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+171.9171485020708,
+256.42127478830776,
+36.017622741951186
+],
+[
+176.7804408827002,
+260.14036220985554,
+36.99819740742168
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+237.26973186373885,
+138.8253691301962,
+157.90607963370783
+],
+[
+232.52652701908812,
+134.55503862831,
+156.3292880513192
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+159.66406304204213,
+278.46956435329935,
+13.164514233287122
+],
+[
+155.42305810824908,
+274.240704893973,
+11.358470124098943
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+231.24253380540281,
+149.67075240033276,
+146.66481214400562
+],
+[
+235.08656232837524,
+154.40653166366596,
+149.1727695402327
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"2": {
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-56.11480742509551,
+262.7256600152446,
+156.32929013068872
+],
+[
+-58.71040179405385,
+268.5563209827176,
+157.90608124872546
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-30.294070749537113,
+322.4110228952336,
+-21.87120436868912
+],
+[
+-28.523468763221278,
+316.65964761092584,
+-23.54097904632373
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-59.20717723215198,
+255.57755977269818,
+177.67112230676432
+],
+[
+-58.199384517583155,
+249.3633372057523,
+175.73579558622055
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-34.67179723626859,
+312.29178434549704,
+8.341451239120033
+],
+[
+-34.78539603390686,
+318.2419919791348,
+10.31791655799546
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"3": {
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-7.28597400622229,
+310.1692632680641,
+36.20165597422718
+],
+[
+-5.630224582737014,
+316.1638534615731,
+36.31217123447321
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+104.88717575589436,
+277.2397200295106,
+141.7842596746814
+],
+[
+103.62570148281057,
+270.7739629604934,
+141.1079088184258
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+91.85384438666098,
+281.06578401876044,
+129.51667992165923
+],
+[
+91.10319107777502,
+287.1330655319527,
+132.20647866702785
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-34.78539603390686,
+318.2419919791348,
+10.31791655799546
+],
+[
+-34.67179723626859,
+312.29178434549704,
+8.341451239120033
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"4": {
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+168.09161285565165,
+269.3313108662518,
+-26.103929411255905
+],
+[
+170.00994471551672,
+275.21698968483605,
+-25.180852978371234
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-5.630224582737014,
+316.1638534615731,
+36.31217123447321
+],
+[
+-7.28597400622229,
+310.1692632680641,
+36.20165597422718
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+198.51310565713447,
+261.13017807577006,
+-37.03399430401352
+],
+[
+198.51310565713447,
+261.13017807577006,
+-40.13399430401352
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": true
+}
+},
+"5": {
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+36.327288563317836,
+174.14890061598038,
+256.9646526232408
+],
+[
+35.883892942801914,
+176.47514045980714,
+263.1232957827158
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-109.39490363038226,
+85.01862661383008,
+280.1395320810229
+],
+[
+-111.02228766737518,
+88.98725052566635,
+285.1699171354171
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+52.25509805293735,
+183.891068248051,
+254.43157883817315
+],
+[
+53.49479607656299,
+180.43578805036788,
+248.9377613905048
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-124.16071747980385,
+75.98718799455442,
+282.48780828319207
+],
+[
+-123.23067654088531,
+72.95337245968074,
+276.6678338711619
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"6": {
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+47.05263749298112,
+130.31292827311836,
+280.1395316636898
+],
+[
+50.32413368153507,
+133.08703503178901,
+285.169916574892
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+33.900337645789534,
+141.56518561726458,
+282.4878083623182
+],
+[
+31.30240623731882,
+139.7431634257916,
+276.66783395750144
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+176.8512050266513,
+19.265666443677453,
+256.9646531104344
+],
+[
+178.92657368479126,
+20.406208489144184,
+263.1232962917754
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+191.03851928342183,
+7.127917692948904,
+254.43157981737028
+],
+[
+188.13544037238475,
+4.88115419981343,
+248.93776245361565
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"7": {
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-192.78002692074128,
+248.51598599910704,
+36.99819692233922
+],
+[
+-190.74580503382305,
+242.7414586202059,
+36.01762272303287
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-28.523468763221278,
+316.65964761092584,
+-23.54097904632373
+],
+[
+-30.294070749537113,
+322.4110228952336,
+-21.87120436868912
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6.091250152231776,
+331.01994907481514,
+-36.29874399059351
+],
+[
+6.091250152231776,
+331.01994907481514,
+-39.39874399059351
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": true
+}
+},
+"8": {
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+292.34700160272394,
+124.98064873221878,
+-23.54098028189066
+],
+[
+297.26973806769485,
+128.4418643361675,
+-21.87120515226337
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+176.7804408827002,
+260.14036220985554,
+36.99819740742168
+],
+[
+171.9171485020708,
+256.42127478830776,
+36.017622741951186
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+316.7009987960025,
+96.49767526506457,
+-36.298744762749244
+],
+[
+316.7009987960025,
+96.49767526506457,
+-39.398744762749246
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": true
+}
+},
+"9": {
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+195.8728487770131,
+160.20722882025055,
+181.32662131787595
+],
+[
+200.6615157354189,
+161.80972033562088,
+185.556110479904
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+188.13544037238475,
+4.88115419981343,
+248.93776245361565
+],
+[
+191.03851928342183,
+7.127917692948904,
+254.43157981737028
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+196.82416253943424,
+179.30455763139145,
+173.01383676627444
+],
+[
+193.24084237142694,
+177.24514235915433,
+167.87257608060574
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+187.32694150918607,
+-11.349209791392738,
+256.00259965609706
+],
+[
+183.1863768496276,
+-13.241528810216415,
+251.1814456355514
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"10": {
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+295.69386318350246,
+-0.5040884926328708,
+129.51668267560154
+],
+[
+301.2322257180344,
+2.084718921999447,
+132.206481795402
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+291.9168554082511,
+131.42506538519342,
+10.317917589462581
+],
+[
+286.29297591181484,
+129.47831061579225,
+8.341451870381121
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"11": {
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+301.2322257180344,
+2.084718921999447,
+132.206481795402
+],
+[
+295.69386318350246,
+-0.5040884926328708,
+129.51668267560154
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+219.17403037554084,
+132.40840232191402,
+175.7357981619574
+],
+[
+224.77268163811445,
+135.28717111726903,
+177.67112526845182
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+292.8431106230293,
+15.408194719677923,
+136.656646017047
+],
+[
+297.2387626732023,
+16.54548729007272,
+141.5380256354224
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+200.6615157354189,
+161.80972033562088,
+185.556110479904
+],
+[
+195.8728487770131,
+160.20722882025055,
+181.32662131787595
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"12": {
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+67.53295150826625,
+141.74042366148626,
+277.632197379917
+],
+[
+65.06005473647025,
+137.64010926276194,
+273.0755689977434
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+75.1508598276979,
+271.37741543712565,
+156.84316682628437
+],
+[
+78.43660549127513,
+275.2094012613502,
+161.16307585787294
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+76.11612265156378,
+287.80367885639555,
+141.53802585644388
+],
+[
+75.83942046307331,
+283.27172243688653,
+136.65664642749528
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+69.20114454441891,
+170.12873155911075,
+251.18144329310047
+],
+[
+68.6809475773699,
+174.65140147557702,
+256.0025972281283
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"13": {
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+204.23642531067486,
+178.19705899266756,
+151.5341017758238
+],
+[
+207.20252192422907,
+181.55899306152864,
+156.41367882926585
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+78.43660549127513,
+275.2094012613502,
+161.16307585787294
+],
+[
+75.1508598276979,
+271.37741543712565,
+156.84316682628437
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+235.08656232837524,
+154.40653166366596,
+149.1727695402327
+],
+[
+231.24253380540281,
+149.67075240033276,
+146.66481214400562
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+91.36038711131235,
+265.24304099367504,
+160.1738633260899
+],
+[
+95.32884745030262,
+270.2186633532481,
+161.89105729897926
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"14": {
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+31.30240623731882,
+139.7431634257916,
+276.66783395750144
+],
+[
+33.900337645789534,
+141.56518561726458,
+282.4878083623182
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+12.632428109275748,
+-9.943008751485934,
+331.86306811043517
+],
+[
+10.754327378629213,
+-11.949314273466372,
+325.78681354763074
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+35.883892942801914,
+176.47514045980714,
+263.1232957827158
+],
+[
+36.327288563317836,
+174.14890061598038,
+256.9646526232408
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+14.687742147111639,
+6.535429993108664,
+325.786813558976
+],
+[
+13.359997414071666,
+8.941592523484434,
+331.86306812750627
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"15": {
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+178.92657368479126,
+20.406208489144184,
+263.1232962917754
+],
+[
+176.8512050266513,
+19.265666443677453,
+256.9646531104344
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+10.754327378629213,
+-11.949314273466372,
+325.78681354763074
+],
+[
+12.632428109275748,
+-9.943008751485934,
+331.86306811043517
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"16": {
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+297.2387626732023,
+16.54548729007272,
+141.5380256354224
+],
+[
+292.8431106230293,
+15.408194719677923,
+136.656646017047
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+183.1863768496276,
+-13.241528810216415,
+251.1814456355514
+],
+[
+187.32694150918607,
+-11.349209791392738,
+256.00259965609706
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"17": {
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+13.359997414071666,
+8.941592523484434,
+331.86306812750627
+],
+[
+14.687742147111639,
+6.535429993108664,
+325.786813558976
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-123.23067654088531,
+72.95337245968074,
+276.6678338711619
+],
+[
+-124.16071747980385,
+75.98718799455442,
+282.48780828319207
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"18": {
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-190.74580503382305,
+242.7414586202059,
+36.01762272303287
+],
+[
+-192.78002692074128,
+248.51598599910704,
+36.99819692233922
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-58.71040179405385,
+268.5563209827176,
+157.90608124872546
+],
+[
+-56.11480742509551,
+262.7256600152446,
+156.32929013068872
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-219.92963060963712,
+237.03559169387026,
+9.076579441943895
+],
+[
+-219.92963060963712,
+237.03559169387026,
+5.976579441943896
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": true
+}
+},
+"19": {
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+170.00994471551672,
+275.21698968483605,
+-25.180852978371234
+],
+[
+168.09161285565165,
+269.3313108662518,
+-26.103929411255905
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+95.32884745030262,
+270.2186633532481,
+161.89105729897926
+],
+[
+91.36038711131235,
+265.24304099367504,
+160.1738633260899
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+155.42305810824908,
+274.240704893973,
+11.358470124098943
+],
+[
+159.66406304204213,
+278.46956435329935,
+13.164514233287122
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+103.62570148281057,
+270.7739629604934,
+141.1079088184258
+],
+[
+104.88717575589436,
+277.2397200295106,
+141.7842596746814
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"20": {
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+75.83942046307331,
+283.27172243688653,
+136.65664642749528
+],
+[
+76.11612265156378,
+287.80367885639555,
+141.53802585644388
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-58.199384517583155,
+249.3633372057523,
+175.73579558622055
+],
+[
+-59.20717723215198,
+255.57755977269818,
+177.67112230676432
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-91.88238122382924,
+240.84240158401764,
+185.55610734285108
+],
+[
+-91.83810128939922,
+235.79291130535853,
+181.32661832755304
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+91.10319107777502,
+287.1330655319527,
+132.20647866702785
+],
+[
+91.85384438666098,
+281.06578401876044,
+129.51667992165923
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"21": {
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+224.77268163811445,
+135.28717111726903,
+177.67112526845182
+],
+[
+219.17403037554084,
+132.40840232191402,
+175.7357981619574
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+297.26973806769485,
+128.4418643361675,
+-21.87120515226337
+],
+[
+292.34700160272394,
+124.98064873221878,
+-23.54098028189066
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+232.52652701908812,
+134.55503862831,
+156.3292880513192
+],
+[
+237.26973186373885,
+138.8253691301962,
+157.90607963370783
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+286.29297591181484,
+129.47831061579225,
+8.341451870381121
+],
+[
+291.9168554082511,
+131.42506538519342,
+10.317917589462581
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"22": {
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+50.32413368153507,
+133.08703503178901,
+285.169916574892
+],
+[
+47.05263749298112,
+130.31292827311836,
+280.1395316636898
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+65.06005473647025,
+137.64010926276194,
+273.0755689977434
+],
+[
+67.53295150826625,
+141.74042366148626,
+277.632197379917
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+207.20252192422907,
+181.55899306152864,
+156.41367882926585
+],
+[
+204.23642531067486,
+178.19705899266756,
+151.5341017758238
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+193.24084237142694,
+177.24514235915433,
+167.87257608060574
+],
+[
+196.82416253943424,
+179.30455763139145,
+173.01383676627444
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"23": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-108.85545073741285,
+238.5547287603367,
+167.87257541221206
+],
+[
+-109.7067638992174,
+242.5990630880671,
+173.0138362530729
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-111.02228766737518,
+88.98725052566635,
+285.1699171354171
+],
+[
+-109.39490363038226,
+85.01862661383008,
+280.1395320810229
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"-1": {}
+},
+"adjacency": {
+"0": {
+"12": null,
+"23": null,
+"20": null,
+"5": null
+},
+"1": {
+"8": null,
+"21": null,
+"19": null,
+"13": null
+},
+"2": {
+"18": null,
+"7": null,
+"20": null,
+"3": null
+},
+"3": {
+"2": null,
+"4": null,
+"19": null,
+"20": null
+},
+"4": {
+"3": null,
+"19": null,
+"-1": null
+},
+"5": {
+"0": null,
+"14": null,
+"23": null,
+"17": null
+},
+"6": {
+"22": null,
+"14": null,
+"15": null,
+"9": null
+},
+"7": {
+"2": null,
+"18": null,
+"-1": null
+},
+"8": {
+"1": null,
+"21": null,
+"-1": null
+},
+"9": {
+"6": null,
+"11": null,
+"22": null,
+"16": null
+},
+"10": {
+"11": null,
+"21": null
+},
+"11": {
+"9": null,
+"10": null,
+"21": null,
+"16": null
+},
+"12": {
+"0": null,
+"22": null,
+"13": null,
+"20": null
+},
+"13": {
+"1": null,
+"12": null,
+"22": null,
+"19": null
+},
+"14": {
+"5": null,
+"6": null,
+"15": null,
+"17": null
+},
+"15": {
+"6": null,
+"14": null
+},
+"16": {
+"9": null,
+"11": null
+},
+"17": {
+"5": null,
+"14": null
+},
+"18": {
+"2": null,
+"7": null,
+"-1": null
+},
+"19": {
+"1": null,
+"3": null,
+"4": null,
+"13": null
+},
+"20": {
+"0": null,
+"2": null,
+"3": null,
+"12": null
+},
+"21": {
+"1": null,
+"8": null,
+"10": null,
+"11": null
+},
+"22": {
+"6": null,
+"9": null,
+"12": null,
+"13": null
+},
+"23": {
+"0": null,
+"5": null
+},
+"-1": {
+"7": null
+}
+},
+"max_int_key": 23
+}
+},
+"overall_structure": null,
+"opt_data": null
+}

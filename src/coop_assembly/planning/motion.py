@@ -2,6 +2,8 @@ import time
 import numpy as np
 from termcolor import cprint
 from itertools import product
+import random, colorsys
+from scipy.spatial.qhull import QhullError
 
 from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     multiply, invert, inverse_kinematics, plan_direct_joint_motion, Attachment, set_joint_positions, plan_joint_motion, \
@@ -10,19 +12,20 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     wait_for_duration, enable_gravity, enable_real_time, trajectory_controller, simulate_controller, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color, \
     joints_from_names, INF, wait_for_user, check_initial_end, BASE_LINK, get_aabb, aabb_union, aabb_overlap, BodySaver, draw_aabb, \
-    step_simulation, SE3, get_links, remove_all_debug
-
+    step_simulation, SE3, get_links, remove_all_debug, apply_affine, vertices_from_link, get_aabb_vertices, AABB, convex_hull, \
+    create_mesh, apply_alpha, get_sample_fn, get_distance_fn, get_extend_fn, pairwise_collision, remove_body, birrt, RED
 from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
-from .utils import wait_if_gui, get_index_from_bodies
+from .utils import get_index_from_bodies
 from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
-from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE
+from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DIAGNOSIS = False
+DYNMAIC_RES_RATIO = 0.2
 
 ##################################################
 
-EE_INITIAL_POINT = np.array([0.4, 0, 0.2])
+EE_INITIAL_POINT = np.array([0.4, 0, 0.6])
 EE_INITIAL_EULER = np.array([0, np.pi/2, 0])
 EE_INITIAL_CONF = np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
 
@@ -35,12 +38,74 @@ EE_CUSTOM_LIMITS = {
     'y': (-2.0, 2.0),
     'z': (-0.3, 1.5),
 }
-# EE_RESOLUTION = [0.003]*3 + [np.pi/60]*3
-EE_RESOLUTION = [0.1]*3 + [np.pi/6]*3
+# EE_RESOLUTION = np.array([0.003]*3 + [np.pi/60]*3)
+EE_RESOLUTION = np.array([0.05]*3 + [np.pi/10]*3)
+# EE_RESOLUTION = np.array([0.01]*3 + [np.pi/6]*3)
+
+##################################################
+
+def get_pairs(iterator):
+    try:
+        last = next(iterator)
+    except StopIteration:
+        return
+    for current in iterator:
+        yield last, current
+        last = current
+
+# https://github.com/caelan/pb-construction/blob/24b05b62b6a1febec38b44d2457e2b8e14de1021/extrusion/motion.py#L30
+def create_bounding_mesh(bodies=None, node_points=None, buffer=0.):
+    """[summary]
+
+    Parameters
+    ----------
+    bodies : a list of int, optional
+        bodies, by default None
+    node_points : [type], optional
+        [description], by default None
+    buffer : float, optional
+        safety buffer distance on the boundary of the convex hull, by default 0.
+
+    Returns
+    -------
+    [type]
+        [description]
+
+    Raises
+    ------
+    e
+        [description]
+    """
+    # TODO: use bounding boxes instead of points
+    # TODO: connected components
+    assert bodies or node_points
+    printed_points = []
+    if node_points is not None:
+        printed_points.extend(node_points)
+    if bodies is not None:
+        for body in bodies:
+            printed_points.extend(apply_affine(get_pose(body), vertices_from_link(body, BASE_LINK)))
+
+    if buffer != 0.:
+        half_extents = buffer*np.ones(3)
+        for point in list(printed_points):
+            printed_points.extend(np.array(point) + np.array(corner)
+                                  for corner in get_aabb_vertices(AABB(-half_extents, half_extents)))
+
+    rgb = colorsys.hsv_to_rgb(h=random.random(), s=1, v=1)
+    #rgb = RED
+    try:
+        mesh = convex_hull(printed_points)
+        # handles = draw_mesh(mesh)
+        return create_mesh(mesh, under=True, color=apply_alpha(rgb, 0.2))
+    except QhullError as e:
+        raise e
+
+###############################################
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
-                   collisions=True, bar_only=False, **kwargs):
+                   collisions=True, bar_only=False, max_time=INF, buffer=0.05, smooth=100): #, **kwargs):
     # TODO: can also just plan to initial conf and then shortcut
     if not bar_only:
         joints = joints_from_names(robot, IK_JOINT_NAMES)
@@ -62,9 +127,9 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
     assert len(joints) == len(end_conf)
 
     element_obstacles = get_element_body_in_goal_pose(element_from_index, printed_elements)
-    obstacles = set(fixed_obstacles) | element_obstacles
-    if not collisions:
-        obstacles = []
+    hulls, obstacles = {}, []
+    if collisions:
+        obstacles = set(fixed_obstacles) | element_obstacles
 
     set_joint_positions(robot, joints, start_conf)
     extra_disabled_collisions = set()
@@ -74,11 +139,75 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         ee_link = link_from_name(robot, EE_LINK_NAME) if not bar_only else get_links(robot)[-1]
         extra_disabled_collisions.add(((robot, ee_link), (attach.child, BASE_LINK)))
 
-    path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=attachments,
-                             self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
-                             extra_disabled_collisions=extra_disabled_collisions,
-                             weights=weights, resolutions=resolutions, custom_limits=custom_limits,
-                             diagnosis=DIAGNOSIS, **kwargs)
+    # construct a bounding box around the built elements
+    bounding = None
+    if printed_elements:
+        node_points = []
+        for e in printed_elements:
+            node_points.extend(element_from_index[e].axis_endpoints)
+        bounding = create_bounding_mesh(bodies=None, node_points=node_points,
+                                        buffer=buffer)
+
+    sample_fn = get_sample_fn(robot, joints, custom_limits=custom_limits)
+    distance_fn = get_distance_fn(robot, joints, weights=weights)
+    extend_fn = get_extend_fn(robot, joints, resolutions=resolutions)
+    collision_fn = get_collision_fn(robot, joints, obstacles=obstacles, attachments=attachments, self_collisions=ENABLE_SELF_COLLISIONS,
+                                    disabled_collisions=disabled_collisions, extra_disabled_collisions=extra_disabled_collisions,
+                                    custom_limits=custom_limits, max_distance=MAX_DISTANCE)
+    fine_extend_fn = get_extend_fn(robot, joints, resolutions=DYNMAIC_RES_RATIO*resolutions) #, norm=INF)
+
+    def test_bounding(q):
+        set_joint_positions(robot, joints, q)
+        for attach in attachments:
+            attach.assign()
+            # set_color(attach.child, RED)
+        # attachment_collision =
+        # if len(attachments)>0:
+        #     wait_for_user('attach collision: {}'.format(attachment_collision))
+        collision = (bounding is not None) and (pairwise_collision(robot, bounding, max_distance=buffer) or \
+            any([pairwise_collision(attach.child, bounding, max_distance=buffer) for attach in attachments]))
+        return q, collision
+
+    def dynamic_extend_fn(q_start, q_end):
+        # TODO: retime trajectories to be move more slowly around the structure
+        for (q1, c1), (q2, c2) in get_pairs(map(test_bounding, extend_fn(q_start, q_end))):
+            # print(c1, c2, len(list(fine_extend_fn(q1, q2))))
+            # set_joint_positions(robot, joints, q2)
+            # wait_for_user()
+            if c1 and c2:
+                for q in fine_extend_fn(q1, q2):
+                    # set_joint_positions(robot, joints, q)
+                    # wait_for_user()
+                    yield q
+            else:
+                yield q2
+
+    def element_collision_fn(q):
+        if collision_fn(q):
+            return True
+        #for body in get_bodies_in_region(get_aabb(robot)): # Perform per link?
+        #    if (element_from_body.get(body, None) in printed_elements) and pairwise_collision(robot, body):
+        #        return True
+        for hull, bodies in hulls.items():
+            if pairwise_collision(robot, hull) and any(pairwise_collision(robot, body) for body in bodies):
+                return True
+        return False
+
+    path = None
+    if check_initial_end(start_conf, end_conf, collision_fn):
+        path = birrt(start_conf, end_conf, distance_fn, sample_fn, dynamic_extend_fn, element_collision_fn,
+                     restarts=50, iterations=100, smooth=smooth, max_time=max_time)
+
+    if bounding is not None:
+        remove_body(bounding)
+    for hull in hulls:
+        remove_body(hull)
+
+    # path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=attachments,
+    #                          self_collisions=ENABLE_SELF_COLLISIONS, disabled_collisions=disabled_collisions,
+    #                          extra_disabled_collisions=extra_disabled_collisions,
+    #                          weights=weights, resolutions=resolutions, custom_limits=custom_limits,
+    #                          diagnosis=DIAGNOSIS, **kwargs)
     if path is None:
         cprint('Failed to find a motion plan!', 'red')
         return None
@@ -88,98 +217,4 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         index_from_body = get_index_from_bodies(element_from_index)
         element = index_from_body[attachments[0].child]
 
-    return MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit2place')
-
-###################################
-
-def display_trajectories(trajectories, time_step=0.02, video=False, animate=True):
-    """[summary]
-
-    Parameters
-    ----------
-    trajectories : [type]
-        [description]
-    time_step : float, optional
-        [description], by default 0.02
-    video : bool, optional
-        [description], by default False
-    animate : bool, optional
-        if set to False, display sequence colormap only, skip trajectory animation, by default True
-    """
-    # node_points, ground_nodes,
-    if trajectories is None:
-        return
-    # set_extrusion_camera(node_points)
-    # planned_elements = recover_sequence(trajectories)
-    # colors = sample_colors(len(planned_elements))
-    # if not animate:
-    #     draw_ordered(planned_elements, node_points)
-    #     wait_for_user()
-    #     disconnect()
-    #     return
-
-    video_saver = None
-    if video:
-        # handles = draw_model(planned_elements, node_points, ground_nodes) # Allows user to adjust the camera
-        wait_if_gui()
-        # remove_all_debug()
-        # wait_for_duration(0.1)
-        # video_saver = VideoSaver('video.mp4') # has_gui()
-        # time_step = 0.001
-    else:
-        wait_if_gui('Ready to simulate trajectories.')
-
-    remove_all_debug()
-    #element_bodies = dict(zip(planned_elements, create_elements(node_points, planned_elements)))
-    #for body in element_bodies.values():
-    #    set_color(body, (1, 0, 0, 0))
-    # connected_nodes = set(ground_nodes)
-    # TODO: resolution depends on bar distance to convex hull of obstacles
-    # TODO: fine resolution still results in collision?
-    printed_elements = []
-    print('Trajectories:', len(trajectories))
-    for i, trajectory in enumerate(trajectories):
-        #wait_for_user()
-        #set_color(element_bodies[element], (1, 0, 0, 1))
-        last_point = None
-        handles = []
-
-        if isinstance(trajectory, MotionTrajectory):
-            for attach in trajectory.attachments:
-                set_color(attach.child, GREEN)
-
-        for conf in trajectory.iterate():
-            # TODO: the robot body could be different
-            # if isinstance(trajectory, PrintTrajectory):
-            #     current_point = point_from_pose(trajectory.end_effector.get_tool_pose())
-            #     if last_point is not None:
-            #         # color = BLUE if is_ground(trajectory.element, ground_nodes) else RED
-            #         color = colors[len(printed_elements)]
-            #         handles.append(add_line(last_point, current_point, color=color, width=LINE_WIDTH))
-            #     last_point = current_point
-
-            if time_step is None:
-                wait_for_user() #'{}'.format(conf))
-            else:
-                wait_for_duration(time_step)
-
-        if isinstance(trajectory, MotionTrajectory):
-            for attach in trajectory.attachments:
-                set_color(attach.child, BLUE)
-        #     if not trajectory.path:
-        #         color = colors[len(printed_elements)]
-        #         handles.append(draw_element(node_points, trajectory.element, color=color))
-        #         #wait_for_user()
-        #     is_connected = (trajectory.n1 in connected_nodes) # and (trajectory.n2 in connected_nodes)
-            is_connected = True
-            print('{}) {:9} | Connected: {} | Ground: {} | Length: {}'.format(
-                i, str(trajectory), is_connected, True, len(trajectory.path)))
-                # is_ground(trajectory.element, ground_nodes)
-        #     if not is_connected:
-        #         wait_for_user()
-        #     connected_nodes.add(trajectory.n2)
-        #     printed_elements.append(trajectory.element)
-
-    # if video_saver is not None:
-    #     video_saver.restore()
-    wait_if_gui('Simulation finished.')
+    return MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit')

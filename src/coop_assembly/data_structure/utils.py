@@ -19,6 +19,10 @@ class WorldPose(object):
     def __init__(self, index, value):
         self.index = index
         self.value = value
+    def to_data(self):
+        data = {'index' : self.index,
+                'value' : [list(self.value[i]) for i in range(2)]}
+        return data
     def __repr__(self):
         return '{}({},{})'.format(self.__class__.__name__, self.index,
                                   str(np.array(point_from_pose(self.value))))
@@ -84,12 +88,14 @@ class MotionTrajectory(Trajectory):
                 attachment.assign()
             yield conf
     def __repr__(self):
-        return 'm({},{},E{},{})'.format(len(self.joints), len(self.path),self.element,self.tag)
+        return 'm(#J{},#pt{},E{},{})'.format(len(self.joints), len(self.path),self.element,self.tag)
     def to_data(self):
         data = {}
         data['element'] = self.element
         data['tag'] = self.tag
-        data['path'] = self.path
+        data['path'] = [list(conf) for conf in self.path]
+        # data['attachments'] = [jsonpickle.encode(attach, keys=True) for attach in self.attachments]
+        data['attachments'] = [attach.to_data() for attach in self.attachments]
         return data
     @classmethod
     def from_data(cls, data, robot, joints, attachments):

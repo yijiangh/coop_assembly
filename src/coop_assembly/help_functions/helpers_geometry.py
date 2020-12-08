@@ -21,8 +21,8 @@ from itertools import combinations
 from copy import deepcopy
 from termcolor import cprint
 
-from compas.geometry import Plane
-from compas.geometry import normalize_vector, subtract_vectors, cross_vectors, vector_from_points, \
+from compas.geometry import Plane, Point, Vector
+from compas.geometry import normalize_vector, subtract_vectors, cross_vectors, \
     add_vectors, scale_vector, angle_vectors
 from compas.geometry import centroid_points, length_vector
 from compas.geometry import intersection_line_plane
@@ -89,12 +89,12 @@ def Frame_to_plane_data(frame):
 # pybullet body creation functions used in planning
 
 SHRINK_RADIUS = 0.0001 # meter
-def create_bar_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0)):
-    """inputs are in millimeter
+def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=apply_alpha(RED, 0)):
+    """create bar's collision body in pybullet
     """
     p1, p2 = axis_end_pts
-    p1 = np.array(p1) * METER_SCALE
-    p2 = np.array(p2) * METER_SCALE
+    p1 = np.array(p1) * scale
+    p2 = np.array(p2) * scale
     # height = max(np.linalg.norm(p2 - p1) - 2*shrink, 0)
     height = max(np.linalg.norm(p2 - p1), 0)
     center = (p1 + p2) / 2
@@ -105,7 +105,7 @@ def create_bar_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha
     theta = np.math.acos(z / np.linalg.norm(delta))
     quat = quat_from_euler(Euler(pitch=theta, yaw=phi))
     # p1 is z=-height/2, p2 is z=+height/2
-    diameter = 2*(bar_radius*METER_SCALE - SHRINK_RADIUS)
+    diameter = 2*(bar_radius*scale - SHRINK_RADIUS)
 
     if use_box:
         # Much smaller than cylinder
@@ -236,6 +236,29 @@ def calculate_bar_z(points):
     return vec_z
 
 
+def convex_combination(x1, x2, w=0.5):
+    #assert 0 <= w <= 1
+    return (1 - w) * x1 + (w * x2)
+
+def closest_point_segments(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2):
+    from gurobipy import Model, GRB, quicksum, GurobiError
+    np_line1 = [np.array(line_point_1_1), np.array(line_point_1_2)]
+    np_line2 = [np.array(line_point_2_1), np.array(line_point_2_2)]
+
+    model = Model(name='qp_closest_points_between_segments')
+    model.setParam(GRB.Param.OutputFlag, False)
+    t1 = np.full(np_line1[0].shape, model.addVar(lb=0.0, ub=1.0, name="t1"))
+    t2 = np.full(np_line2[0].shape, model.addVar(lb=0.0, ub=1.0, name="t2"))
+    # difference = convex_combination(*np_line1, t1) - convex_combination(*np_line2, t2)
+    difference = ((1 - t1) * np_line1[0] + t1 * np_line1[1]) - \
+                 ((1 - t2) * np_line2[0] + t2 * np_line2[1])
+    model.setObjective(sum(difference*difference), sense=GRB.MINIMIZE)
+    try:
+        model.optimize()
+    except GurobiError as e:
+        raise e
+    return [convex_combination(*np_line1, t1[0].x), convex_combination(*np_line2, t2[0].x)]
+
 def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2):
     """compute the projected tangent point on axis defined by [L1_pt1, L1_pt2] and [L2_pt1, L2_pt2]
     This is probably one of the most used geometry helper functions in this repo...
@@ -265,8 +288,8 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
     list of two points
        representing the contact line segment between the two axes
     """
-    line_unity_vector_1 = normalize_vector(vector_from_points(line_point_1_1, line_point_1_2))
-    line_unity_vector_2 = normalize_vector(vector_from_points(line_point_2_1, line_point_2_2))
+    line_unity_vector_1 = normalize_vector(Point(*line_point_1_1)-Point(*line_point_1_2))
+    line_unity_vector_2 = normalize_vector(Point(*line_point_2_1)-Point(*line_point_2_2))
     d_vector = cross_vectors(line_unity_vector_1, line_unity_vector_2)
     if norm_vector(d_vector) > 1e-12:
         normal_1 = cross_vectors(line_unity_vector_1, d_vector)
@@ -280,14 +303,17 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
         # two vectors are parellel
         # treat two lines as segment in this case
         # cprint('parellel in drop', 'yellow')
-        contact_pt1 = closest_point_on_segment(line_point_1_1, [line_point_2_1, line_point_2_2])
-        dist1 = distance_point_point(contact_pt1, line_point_1_1)
-        contact_pt2 = closest_point_on_segment(line_point_1_2, [line_point_2_1, line_point_2_2])
-        dist2 = distance_point_point(contact_pt2, line_point_1_2)
-        if dist1 < dist2:
-            return [line_point_1_1, contact_pt1]
-        else:
-            return [line_point_1_2, contact_pt2]
+        try:
+           return closest_point_segments(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2)
+        except ImportError:
+           contact_pt1 = closest_point_on_segment(line_point_1_1, [line_point_2_1, line_point_2_2])
+           dist1 = distance_point_point(contact_pt1, line_point_1_1)
+           contact_pt2 = closest_point_on_segment(line_point_1_2, [line_point_2_1, line_point_2_2])
+           dist2 = distance_point_point(contact_pt2, line_point_1_2)
+           if dist1 < dist2:
+               return [line_point_1_1, contact_pt1]
+           else:
+               return [line_point_1_2, contact_pt2]
 
 def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
     """a convenient wrapper for ``dropped_perpendicular_points`` to operate directly on BarStructure and its bar vertices
@@ -328,11 +354,11 @@ def find_points_extreme(pts_all, pts_init):
     [type]
         [description]
     """
-    vec_init = normalize_vector(vector_from_points(*pts_init))
+    vec_init = normalize_vector(Vector(*pts_init[1])-Vector(*pts_init[0]))
     # * find the pair of points with maximal distance
     sorted_pt_pairs = sorted(combinations(pts_all, 2), key=lambda pt_pair: distance_point_point(*pt_pair))
     farthest_pts = sorted_pt_pairs[-1]
-    vec_new = normalize_vector(vector_from_points(*farthest_pts))
+    vec_new = normalize_vector(Vector(*farthest_pts[1])-Vector(*farthest_pts[0]))
     if angle_vectors(vec_init, vec_new, deg=True) > 90:
         # angle can only be 0 or 180
         farthest_pts = farthest_pts[::-1]
@@ -431,8 +457,10 @@ def calc_correction_vector(b_struct, pt_new, bar_pair):
         return None if feasible (bigger than the angle threshold), otherwise return the line connecting pt_int and modified pt
     """
     pt_int = intersection_bars_base(b_struct, bar_pair)
-    vec_x   = normalize_vector(vector_from_points(*b_struct.get_bar_axis_end_pts(bar_pair[0])))
-    vec_y   = normalize_vector(vector_from_points(*b_struct.get_bar_axis_end_pts(bar_pair[1])))
+    pts_pair0 = b_struct.get_bar_axis_end_pts(bar_pair[0])
+    vec_x   = normalize_vector(Point(pts_pair0[1]) - Point(pts_pair0[0]))
+    pts_pair1 = b_struct.get_bar_axis_end_pts(bar_pair[1])
+    vec_y   = normalize_vector(Point(pts_pair1[1]) - Point(pts_pair1[0]))
     # contact vector
     vec_z   = normalize_vector(cross_vectors(vec_x, vec_y))
     # test plane
@@ -472,7 +500,7 @@ def correct_angle(pt_new, pt_int, pl_test):
         # dist_n = 0.3 * distance_point_point(pt_new, pt_int)
         dist_n = NODE_CORRECTION_SINE_ANGLE * distance_point_point(pt_new, pt_int)
         # modified point Pc
-        pt_m = add_vectors(pt_proj, scale_vector(normalize_vector(vector_from_points(pt_proj, pt_new)), dist_n))
+        pt_m = Vector(pt_proj) + scale_vector(normalize_vector(Point(*pt_new) - Point(*pt_proj))) + Vector(dist_n)
         lin_c = (pt_int, pt_m)
         return lin_c
     else:
@@ -495,15 +523,15 @@ def calc_correction_vector_tip(pt_new, base_pts):
         contact base points for the base bars
     """
     assert len(base_pts) == 3
-    vec_x   = normalize_vector(vector_from_points(base_pts[0], base_pts[1]))
-    vec_y   = normalize_vector(vector_from_points(base_pts[0], base_pts[2]))
+    vec_x   = normalize_vector(Point(*base_pts[1]) - Point(*base_pts[0]))
+    vec_y   = normalize_vector(Point(*base_pts[2]), Point(*base_pts[0]))
     vec_z   = normalize_vector(cross_vectors(vec_x, vec_y))
     pl_test = (base_pts[0], vec_z)
     dist_p  = distance_point_plane(pt_new, pl_test)
     pt_proj = project_point_plane(pt_new, pl_test)
 
     if dist_p < NODE_CORRECTION_TOP_DISTANCE:
-        vec_m = scale_vector(normalize_vector(vector_from_points(pt_proj, pt_new)), NODE_CORRECTION_TOP_DISTANCE)
+        vec_m = scale_vector(normalize_vector(Point(*pt_proj)-Point(*pt_new)), NODE_CORRECTION_TOP_DISTANCE)
         pt_n = add_vectors(pt_proj, vec_m)
     else:
         pt_n = None

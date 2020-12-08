@@ -4,18 +4,17 @@ from collections import defaultdict, deque
 # from pddlstream.utils import get_connected_components
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize, pairwise_link_collision, \
-    BASE_LINK
+    BASE_LINK, is_connected, connect
 
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from .robot_setup import get_picknplace_robot_data, BUILT_PLATE_Z, EE_LINK_NAME, INITIAL_CONF
 from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 
-def wait_if_gui(enable=True):
-    if has_gui() and enable:
-        wait_for_user()
+def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z, viewer=False):
+    if not is_connected():
+        connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
 
-def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z):
     robot_data, ws_data = get_picknplace_robot_data()
     robot_urdf, _, _, _, joint_names, _ = robot_data
 
@@ -173,6 +172,10 @@ def get_element_neighbors(connectors, elements):
         for c in connector_from_elements[e]:
             element_neighbors[e].update(c)
         element_neighbors[e].remove(e)
+        #     print('e: ', e)
+        #     print('neighbors: ', element_neighbors[e])
+        #     print('connector: ', connector_from_elements[e])
+        #     input('floating element!!!')
     return element_neighbors
 
 ##################################################
@@ -216,3 +219,13 @@ def get_connected_structures(connectors, elements):
     edges = {(e1, e2) for e1, neighbors in get_element_neighbors(connectors, elements).items()
              for e2 in neighbors}
     return get_connected_components(elements, edges)
+
+######################################################
+
+def get_midpoint(element_from_index, element):
+    return np.average([element_from_index[element].axis_endpoints[i] for i in range(2)], axis=0)
+
+def compute_z_distance(element_from_index, element):
+    # Distance to a ground plane
+    # Opposing gravitational force
+    return get_midpoint(element_from_index, element)[2]

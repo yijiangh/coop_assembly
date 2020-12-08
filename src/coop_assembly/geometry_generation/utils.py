@@ -25,13 +25,13 @@ def get_directions(element):
 def compute_printed_nodes(ground_nodes, printed):
     return nodes_from_elements(printed) | set(ground_nodes)
 
-def compute_printable_directed(all_elements, ground_nodes, printed):
+def compute_printable(all_elements, ground_nodes, printed):
     nodes = compute_printed_nodes(ground_nodes, printed)
     for element in set(all_elements) - printed:
-        for directed in get_directions(element):
-            node1, node2 = directed
-            if node1 in nodes:
-                yield directed
+        # for directed in get_directions(element):
+        node1, node2 = element
+        if node1 in nodes or node2 in nodes:
+            yield element
 
 ##################################################
 
@@ -79,7 +79,7 @@ def check_connected(ground_nodes, printed_elements):
         node1 = queue.popleft()
         for element in node_neighbors[node1]:
             visited_elements.add(element)
-            node2 = get_other_node(node1, element)
+            node2 = get_other_node(node1, list(element))
             if node2 not in visited_nodes:
                 queue.append(node2)
                 visited_nodes.add(node2)
