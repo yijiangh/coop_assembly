@@ -51,14 +51,15 @@ Now, we install all the depedency packages:
 
 ::
 
-    pip install ./external/compas_fab
     pip install ./external/pybullet_planning
     pip install -e .
 
-This will install the two main depedencies `compas_fab` and `pybullet_planning`. Notice
-that we are using a customized version of `compas_fab` here, which might be in conflict
-with the `compas_fab` version used in your other projects. So the conda environment helps
-you isolate them here ✨ The last line install `coop_assembly` in a `debug` mode,
+.. Notice that we are using a customized version of `compas_fab` here, which might be in conflict
+.. with the `compas_fab` version used in your other projects. So the conda environment helps
+.. you isolate them here ✨
+
+This will install the main depedency `pybullet_planning`.
+The last line install `coop_assembly` in a `debug` mode,
 which means your changes will be directly reflected in your execution (from python
 or from GHPython invokes).
 
