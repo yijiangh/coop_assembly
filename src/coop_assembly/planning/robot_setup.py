@@ -3,7 +3,7 @@ Might consider exposed as arguments in the future.
 """
 
 import os
-import pytest
+# import pytest
 import numpy as np
 from termcolor import cprint
 
