@@ -130,94 +130,96 @@ def test_closest_pt_segment():
     assert norm(cl_pt - pt) < 1e-12
 
 @pytest.mark.gen_truss
-@pytest.mark.parametrize('radius', [(3.17), ])
+@pytest.mark.parametrize('radius', [(1.5), ])
 # @pytest.mark.parametrize('truss_problem', [(''), ])
 def test_gen_truss(viewer, save_dir, truss_problem, radius, write):
+    # ! see generate_truss main call for an updated version
+    pass
 
-    export_file_name = truss_problem
-    if 'skeleton' in export_file_name:
-        export_file_name = export_file_name.split('_skeleton')[0] + '.json'
+    # export_file_name = truss_problem
+    # if 'skeleton' in export_file_name:
+    #     export_file_name = export_file_name.split('_skeleton')[0] + '.json'
 
-    bar_struct = gen_truss(truss_problem, viewer=viewer, radius=radius, write=write, save_dir=save_dir, file_name=export_file_name, debug=False)
-    reset_simulation()
-    disconnect()
+    # bar_struct = gen_truss(truss_problem, viewer=viewer, radius=radius, write=write, save_dir=save_dir, file_name=export_file_name, debug=False)
+    # reset_simulation()
+    # disconnect()
 
-    connect(use_gui=viewer, shadows=True, color=BACKGROUND_COLOR)
-    draw_pose(unit_pose())
+    # connect(use_gui=viewer, shadows=True, color=BACKGROUND_COLOR)
+    # draw_pose(unit_pose())
 
-    # built plate
-    new_base = np.array([650, 0, 23])*1e-3
-    # floor = create_plane(color=BLUE)
-    # set_point(floor, Point(z=new_base[2]))
+    # # built plate
+    # new_base = np.array([650, 0, 23])*1e-3
+    # # floor = create_plane(color=BLUE)
+    # # set_point(floor, Point(z=new_base[2]))
 
-    bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
-    # focus camera
-    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
-    set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
-    wait_if_gui('before tf')
+    # bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
+    # # focus camera
+    # endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
+    # set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
+    # wait_if_gui('before tf')
 
-    bar_struct.transform(new_base, scale=1e-3)
-    element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
-    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
-    set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
-    print('new base_centroid:', bar_struct.base_centroid())
-    wait_if_gui('after tf')
+    # bar_struct.transform(new_base, scale=1e-3)
+    # element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
+    # endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
+    # set_camera([np.array(p[0]) for e, p in endpts_from_element.items()])
+    # print('new base_centroid:', bar_struct.base_centroid())
+    # wait_if_gui('after tf')
 
-    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
-    handles = []
-    handles.extend(label_elements(element_bodies))
-    wait_if_gui('reconstructed truss axes labeled.')
-    remove_handles(handles)
+    # endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
+    # handles = []
+    # handles.extend(label_elements(element_bodies))
+    # wait_if_gui('reconstructed truss axes labeled.')
+    # remove_handles(handles)
 
-    elements = list(element_bodies.keys())
-    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
-    connectors = list(contact_from_connectors.keys())
+    # elements = list(element_bodies.keys())
+    # contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
+    # connectors = list(contact_from_connectors.keys())
 
-    # TODO: sometimes there are excessive connectors
-    # * connectors from bar
-    print('Visualize connectors.')
-    connector_from_elements = get_connector_from_elements(connectors, elements)
-    for bar in bar_struct.vertices():
-        handles = []
-        bar_connectors = connector_from_elements[bar]
-        for c in list(bar_connectors):
-            handles.append(add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2))
-        color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
-        wait_if_gui('connector: {}'.format(bar_connectors))
-        remove_handles(handles)
+    # # TODO: sometimes there are excessive connectors
+    # # * connectors from bar
+    # print('Visualize connectors.')
+    # connector_from_elements = get_connector_from_elements(connectors, elements)
+    # for bar in bar_struct.vertices():
+    #     handles = []
+    #     bar_connectors = connector_from_elements[bar]
+    #     for c in list(bar_connectors):
+    #         handles.append(add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2))
+    #     color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
+    #     wait_if_gui('connector: {}'.format(bar_connectors))
+    #     remove_handles(handles)
 
-    # * neighbor elements from elements
-    print('Visualize neighnor elements.')
-    element_neighbors = get_element_neighbors(connectors, elements)
-    for element, connected_bars in element_neighbors.items():
-        color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
-        wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
+    # # * neighbor elements from elements
+    # print('Visualize neighnor elements.')
+    # element_neighbors = get_element_neighbors(connectors, elements)
+    # for element, connected_bars in element_neighbors.items():
+    #     color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
+    #     wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
 
-    # TODO: some sanity check here
-    # mutual collision checks
-    is_collided = False
-    for bar1, bar2 in connectors:
-        b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
-        b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
-        if b1_body is None or b2_body is None:
-            continue
+    # # TODO: some sanity check here
+    # # mutual collision checks
+    # is_collided = False
+    # for bar1, bar2 in connectors:
+    #     b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
+    #     b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
+    #     if b1_body is None or b2_body is None:
+    #         continue
 
-        assert len(get_bodies()) == len(element_bodies)
-        # dump_world()
+    #     assert len(get_bodies()) == len(element_bodies)
+    #     # dump_world()
 
-        if pairwise_collision(b1_body, b2_body):
-            cr = pairwise_collision_info(b1_body, b2_body)
-            draw_collision_diagnosis(cr, focus_camera=True)
-            is_collided = True
-            if not viewer:
-                assert False, '{}-{} collision!'.format(b1_body, b2_body)
-        print('-'*10)
+    #     if pairwise_collision(b1_body, b2_body):
+    #         cr = pairwise_collision_info(b1_body, b2_body)
+    #         draw_collision_diagnosis(cr, focus_camera=True)
+    #         is_collided = True
+    #         if not viewer:
+    #             assert False, '{}-{} collision!'.format(b1_body, b2_body)
+    #     print('-'*10)
 
-    cprint('Valid: {}'.format(not is_collided), 'red' if is_collided else 'green')
-    wait_if_gui('Done.')
+    # cprint('Valid: {}'.format(not is_collided), 'red' if is_collided else 'green')
+    # wait_if_gui('Done.')
 
 @pytest.mark.gen_from_pts
-@pytest.mark.parametrize('radius', [(3.17), ])
+@pytest.mark.parametrize('radius', [(1.5), ])
 @pytest.mark.parametrize('pt_search_method', [('point2triangle'), ]) #('point2point'), ('point2triangle')
 def test_generate_from_points(save_dir, points_library, viewer, file_spec, radius, pt_search_method, write):
     points, base_tri_pts = points_library[file_spec]

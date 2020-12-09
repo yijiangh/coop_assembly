@@ -599,7 +599,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         ey = R[:,2]
         for ind in range(4):
             new_point, axis_vector = solve_second_tangent(contact_pt1, ex, ey, radius,
-                bar_from_elements[contact_bars[1][0]], bar_from_elements[contact_bars[1][1]], 2*radius, 2*radius, ind)
+                list(bar_from_elements[contact_bars[1][0]].values()), list(bar_from_elements[contact_bars[1][1]].values()), 2*radius, 2*radius, ind)
             if axis_vector is not None:
                 break
         assert(axis_vector is not None)

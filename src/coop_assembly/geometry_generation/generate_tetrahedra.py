@@ -149,7 +149,7 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
 
 
 def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_ids,
-    correct=True, check_collision=False, viewer=False, verbose=True):
+    correct=False, check_collision=True, viewer=False, verbose=True):
     """generate double-tangent tet design from a given list of points and tet sequence indices.
 
     There are three types of parameters to be resolved at each step of the generation process:
@@ -462,3 +462,81 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     find_bar_ends(b_struct, b_v3_2)
 
     return o_struct, b_struct, (b_v0, b_v1, b_v2)
+
+##########################################
+
+def main():
+# def main(points, tet_node_ids, radius, check_collision=False, correct=True, viewer=False, verbose=False, scale=1.0, write=False, \
+#         return_network=False, allowable_bar_collision_depth=1e-3, **kwargs):
+    """Main entry point for the design system, for direct, xfunc or rpc call
+
+    Parameters
+    ----------
+    points : list of float lists
+        [[x,y,z], ...]
+    tet_node_ids : list
+        [[(base triangle vertex ids), new vertex id], ...]
+    radius : float
+        rod radius in millimeter
+    check_col : bool, optional
+        [description], by default False
+    correct : bool, optional
+        [description], by default True
+    viewer : bool, optional
+        enable pybullet viewer if True, by default True
+
+    Returns
+    -------
+    (Overall_Structure.data, Bar_Structure.data)
+        Serialized version of the overall structure and bar structure
+    """
+    # # TODO
+    pass
+    # bar_struct = BarStructure()
+    # o_struct = OverallStructure(bar_struct)
+    # generate_structure_from_points(o_struct, bar_struct, radius, points, tet_node_ids,
+    #     correct=correct, check_collision=check_collision, viewer=viewer, verbose=verbose)
+
+    # endpts_from_element = bar_struct.get_axis_pts_from_element(scale=scale)
+
+    # if write:
+    #     export_structure_data(bar_struct.to_data(), o_struct.to_data(), **kwargs)
+
+    # connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
+    # element_bodies = bar_struct.get_element_bodies(color=apply_alpha(RED, 0))
+    # set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
+
+    # handles = []
+    # handles.extend(label_elements(element_bodies))
+
+    # # * checking mutual collision between bars
+    # # TODO move this complete assembly collision sanity check to bar structure class
+    # contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
+    # connectors = list(contact_from_connectors.keys())
+    # for bar1, bar2 in connectors:
+    #     b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.1))
+    #     b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.1))
+    #     assert len(get_bodies()) == len(element_bodies)
+
+    #     if pairwise_collision(b1_body, b2_body):
+    #         cr = pairwise_collision_info(b1_body, b2_body)
+    #         # draw_collision_diagnosis(cr, focus_camera=True)
+    #         penetration_depth = draw_collision_diagnosis(cr)
+    #         if penetration_depth is not None and penetration_depth > allowable_bar_collision_depth:
+    #             assert False, 'Bar {}-{} collision! penetration distance {}'.format(b1_body, b2_body, penetration_depth)
+    #             # pass
+    #     # print('-'*10)
+
+    # cprint('No collision in connectors found.', 'green')
+    # wait_if_gui('Done.')
+
+    # # contact_from_connectors = bar_struct.get_connectors(scale=scale)
+    # # connectors = list(contact_from_connectors.keys())
+    # if return_network:
+    #     return bar_struct, o_struct
+    #     # return (bar_struct.data, o_struct.data)
+    # else:
+    #     return endpts_from_element
+
+if __name__ == '__main__':
+    main()

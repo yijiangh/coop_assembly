@@ -458,9 +458,9 @@ def calc_correction_vector(b_struct, pt_new, bar_pair):
     """
     pt_int = intersection_bars_base(b_struct, bar_pair)
     pts_pair0 = b_struct.get_bar_axis_end_pts(bar_pair[0])
-    vec_x   = normalize_vector(Point(pts_pair0[1]) - Point(pts_pair0[0]))
+    vec_x   = normalize_vector(Point(*pts_pair0[1]) - Point(*pts_pair0[0]))
     pts_pair1 = b_struct.get_bar_axis_end_pts(bar_pair[1])
-    vec_y   = normalize_vector(Point(pts_pair1[1]) - Point(pts_pair1[0]))
+    vec_y   = normalize_vector(Point(*pts_pair1[1]) - Point(*pts_pair1[0]))
     # contact vector
     vec_z   = normalize_vector(cross_vectors(vec_x, vec_y))
     # test plane
@@ -500,7 +500,7 @@ def correct_angle(pt_new, pt_int, pl_test):
         # dist_n = 0.3 * distance_point_point(pt_new, pt_int)
         dist_n = NODE_CORRECTION_SINE_ANGLE * distance_point_point(pt_new, pt_int)
         # modified point Pc
-        pt_m = Vector(pt_proj) + scale_vector(normalize_vector(Point(*pt_new) - Point(*pt_proj))) + Vector(dist_n)
+        pt_m = Vector(*pt_proj) + scale_vector(normalize_vector(Point(*pt_new) - Point(*pt_proj)), dist_n)
         lin_c = (pt_int, pt_m)
         return lin_c
     else:
@@ -524,7 +524,7 @@ def calc_correction_vector_tip(pt_new, base_pts):
     """
     assert len(base_pts) == 3
     vec_x   = normalize_vector(Point(*base_pts[1]) - Point(*base_pts[0]))
-    vec_y   = normalize_vector(Point(*base_pts[2]), Point(*base_pts[0]))
+    vec_y   = normalize_vector(Point(*base_pts[2]) - Point(*base_pts[0]))
     vec_z   = normalize_vector(cross_vectors(vec_x, vec_y))
     pl_test = (base_pts[0], vec_z)
     dist_p  = distance_point_plane(pt_new, pl_test)

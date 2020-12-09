@@ -843,9 +843,9 @@ def solve_second_tangent(new_point, ex, ey, radius, line1, line2, diameter_1, di
         local y axis vector for parameterizing the contact point
     radius : float
         radius of the new bar
-    line1 : list or dict of two points
+    line1 : list of two points
         line axis for contact bar 1
-    line2 : list or dict of two points
+    line2 : list of two points
         line axis for contact bar 2
     diameter_1 : [type]
         [description]
@@ -862,8 +862,8 @@ def solve_second_tangent(new_point, ex, ey, radius, line1, line2, diameter_1, di
         [description]
     """
     assert len(line1) == 2 and len(line2) == 2
-    assert len(line1[0]) == 3 and len(line1[1]) == 3
-    assert len(line2[0]) == 3 and len(line2[1]) == 3
+    assert len(line1[0]) == 3 and len(line1[1]) == 3, '{}'.format(line1)
+    assert len(line2[0]) == 3 and len(line2[1]) == 3, '{}'.format(line2)
 
     # try twice?
     # for i in range(2):
@@ -940,8 +940,8 @@ def check_colisions(b_struct, pts, radius, bar_nb=None, bar_checking=None):
     ----------
     b_struct : [type]
         [description]
-    pts : [type]
-        [description]
+    pts : a list of two points
+        axis points of the new bar
     radius : [type]
         [description]
     bar_nb : int, optional
@@ -959,6 +959,7 @@ def check_colisions(b_struct, pts, radius, bar_nb=None, bar_checking=None):
     # print "bar_checking", bar_checking
     for b in b_struct.vertex:
         if not bar_nb:
+            # check everything
             bar_nb = 1e14
         if bar_checking != None and b < 3:
             continue

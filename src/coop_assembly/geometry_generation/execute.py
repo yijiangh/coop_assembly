@@ -30,7 +30,7 @@ from pybullet_planning import connect, wait_if_gui, dump_world, apply_alpha, dra
 
 
 def execute_from_points(points, tet_node_ids, radius, check_collision=False, correct=True, viewer=False, verbose=False, scale=1.0, write=False, \
-        return_network=False, **kwargs):
+        return_network=False, allowable_bar_collision_depth=1e-3, **kwargs):
     """Main entry point for the design system, for direct, xfunc or rpc call
 
     Parameters
@@ -81,9 +81,11 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
 
         if pairwise_collision(b1_body, b2_body):
             cr = pairwise_collision_info(b1_body, b2_body)
-            draw_collision_diagnosis(cr, focus_camera=True)
-            # if not viewer:
-            assert False, '{}-{} collision!'.format(b1_body, b2_body)
+            # draw_collision_diagnosis(cr, focus_camera=True)
+            penetration_depth = draw_collision_diagnosis(cr)
+            if penetration_depth is not None and penetration_depth > allowable_bar_collision_depth:
+                assert False, 'Bar {}-{} collision! penetration distance {}'.format(b1_body, b2_body, penetration_depth)
+                # pass
         # print('-'*10)
 
     cprint('No collision in connectors found.', 'green')
