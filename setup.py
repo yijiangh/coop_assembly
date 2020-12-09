@@ -19,12 +19,13 @@ def read(*names, **kwargs):
     ).read()
 
 requirements = [
-    'compas=0.18.1',
-    'compas_fab=0.14.0',
+    'compas==0.18.1',
+    'compas_fab==0.14.0',
     'numpy',
     'scipy>=1.2.0',
     'pybullet_planning>=0.5.0',
-    'ikfast_pybind',
+    'cmake',
+    # 'ikfast_pybind',
     'termcolor',
     'matplotlib',
     'networkx',
