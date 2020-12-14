@@ -138,6 +138,7 @@ PT2TRI_SEARCH_HEURISTIC = {
 
 # TODO: minimize number of crossings
 def get_pt2tri_search_heuristic_fn(points, penalty_cost=2.0, heuristic='tet_surface_area'):
+    assert heuristic in PT2TRI_SEARCH_HEURISTIC
     assert penalty_cost >= 1.0, 'penalty cost should be bigger than 1.0, heuristic is computed by score *= penalty_cost'
     def h_fn(built_nodes, node_id, built_triangles):
         # return (bias, chosen triangle node ids)
@@ -177,11 +178,12 @@ def add_successors(queue, all_nodes, grounded_nodes, heuristic_fn, built_nodes, 
         priority = (num_remaining, bias, random.random())
         heapq.heappush(queue, (priority, built_nodes, built_triangles, node_id, tri_node_ids))
 
-def point2triangle_tet_sequencing(points, base_triangle_node_ids, heuristic_fn=None, verbose=False):
+def point2triangle_tet_sequencing(points, base_triangle_node_ids, heuristic_fn=None, verbose=False, **kwargs):
     all_nodes = frozenset(range(len(points)))
     ground_nodes = frozenset(base_triangle_node_ids)
     assert len(ground_nodes) == 3, 'the grounded nodes need to form a triangle.'
-    heuristic_fn = heuristic_fn or get_pt2tri_search_heuristic_fn(points)
+    if heuristic_fn is None:
+        heuristic_fn = get_pt2tri_search_heuristic_fn(points, **kwargs)
 
     initial_built_nodes = frozenset(ground_nodes)
     initial_built_triangles = set([frozenset(ground_nodes)])

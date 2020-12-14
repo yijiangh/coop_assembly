@@ -13,23 +13,41 @@ from compas_fab.robots import RobotSemantics
 from pybullet_planning import Pose, link_from_name, has_link, joint_from_name
 import coop_assembly
 
+# ! set robot here
+# ROBOT_NAME  = 'kuka'
+ROBOT_NAME  = 'abb_track'
 BUILT_PLATE_Z = -0.025 # meter
 
-ROBOT_URDF = 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf'
-ROBOT_SRDF = 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf'
+ROBOT_URDFs = {
+    'kuka' : 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf',
+    'abb_track' : 'abb_irb4600_40_255/urdf/abb_irb4600_40_255_track.urdf',
+    }
+ROBOT_SRDFs = {
+    'kuka' : 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf',
+    'abb_track' : 'abb_irb4600_40_255/srdf/abb_irb4600_40_255_track.srdf',
+    }
 
 WS_URDF = 'kuka_kr6_r900/urdf/mit_3-412_workspace.urdf'
 WS_SRDF = 'kuka_kr6_r900/srdf/mit_3-412_workspace.srdf'
 
 try:
     import ikfast_kuka_kr6_r900
-    IK_MODULE = ikfast_kuka_kr6_r900
+    import ikfast_abb_irb4600_40_255
+    IK_MODULEs = {
+        'kuka' : ikfast_kuka_kr6_r900,
+        'abb_track' : ikfast_abb_irb4600_40_255,
+    }
+    IK_MODULE = IK_MODULEs[ROBOT_NAME]
 except ImportError as e:
     IK_MODULE = None
     cprint('{}, Using pybullet ik fn instead'.format(e), 'red')
 
 CUSTOM_LIMITS = {
-    'robot_joint_a1': (-np.pi/2, np.pi/2),
+    'kuka' : {
+        'robot_joint_a1': (-np.pi/2, np.pi/2),
+    },
+    'abb' : {
+    },
 }
 
 # joint resolution used in transit motions
@@ -47,14 +65,11 @@ JOINT_WEIGHTS = np.reciprocal([6.28318530718, 5.23598775598, 6.28318530718,
 
 #########################################
 
-def get_picknplace_robot_data():
+def get_picknplace_robot_data(robot_name=ROBOT_NAME):
     MODEL_DIR = coop_assembly.get_data('models')
 
-    robot_urdf = os.path.join(MODEL_DIR, ROBOT_URDF)
-    robot_srdf = os.path.join(MODEL_DIR, ROBOT_SRDF)
-
-    workspace_urdf = os.path.join(MODEL_DIR, WS_URDF)
-    workspace_srdf = os.path.join(MODEL_DIR, WS_SRDF)
+    robot_urdf = os.path.join(MODEL_DIR, ROBOT_URDFs[robot_name])
+    robot_srdf = os.path.join(MODEL_DIR, ROBOT_SRDFs[robot_name])
 
     move_group = 'manipulator_gripper'
     robot_model = RobotModel.from_urdf_file(robot_urdf)
@@ -63,28 +78,31 @@ def get_picknplace_robot_data():
 
     base_link_name = robot.get_base_link_name(group=move_group)
     ik_joint_names = robot.get_configurable_joint_names(group=move_group)
-    # disabled_self_collision_link_names = robot_semantics.get_disabled_collisions()
-    disabled_self_collision_link_names = []
+    disabled_self_collision_link_names = robot_semantics.disabled_collisions
+    # disabled_self_collision_link_names = []
     # * the bare arm flange attach link
     ee_link_name = robot.get_end_effector_link_name(group='manipulator')
     # * the TCP link
     tool_link_name = robot.get_end_effector_link_name(group=move_group)
     # tool_link_name = None # set to None since end effector is not included in the robot URDF, but attached later
 
-    workspace_model = RobotModel.from_urdf_file(workspace_urdf)
+    # TODO
+    workspace_urdf = None
+    # workspace_urdf = os.path.join(MODEL_DIR, WS_URDF)
+    # workspace_srdf = os.path.join(MODEL_DIR, WS_SRDF)
+    # workspace_model = RobotModel.from_urdf_file(workspace_urdf)
     # workspace_semantics = RobotSemantics.from_srdf_file(workspace_srdf, workspace_model)
     # workspace_semantics = RobotSemantics.from_srdf_file(workspace_srdf, workspace_model)
-    # workspace_robot_disabled_link_names = workspace_semantics.get_disabled_collisions()
-    workspace_robot_disabled_link_names = []
+    # workspace_robot_disabled_link_names = workspace_semantics.disabled_collisions
     workspace_robot_disabled_link_names = []
 
     return (robot_urdf, base_link_name, tool_link_name, ee_link_name, ik_joint_names, disabled_self_collision_link_names), \
            (workspace_urdf, workspace_robot_disabled_link_names)
 
-def get_picknplace_end_effector_urdf():
-    return coop_assembly.get_data('models/kuka_kr6_r900/urdf/mit_arch_grasp_end_effector.urdf')
+# def get_picknplace_end_effector_urdf():
+#     return coop_assembly.get_data('models/kuka_kr6_r900/urdf/mit_arch_grasp_end_effector.urdf')
 
-def get_gripper_mesh_path():
+def get_gripper_mesh_path(robot_name='kuka_kr6r900'):
     return coop_assembly.get_data("models/kuka_kr6_r900/meshes/mit_arch_grasp_end_effector/collision/mit_arch_grasp_end_effector_collision.stl")
 
 # def get_picknplace_tcp_def():
@@ -97,7 +115,7 @@ def get_gripper_mesh_path():
 # TOOL_LINK: TCP link
 # EE_LINK: attach link for EE geometry (i.e. the flange link)
 (ROBOT_URDF, BASE_LINK_NAME, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, DISABLED_SELF_COLLISION_LINK_NAMES), \
-(WORKSPACE_URDF, WORKSPACE_ROBOT_DISABLED_LINK_NAMES) = get_picknplace_robot_data()
+(WORKSPACE_URDF, WORKSPACE_ROBOT_DISABLED_LINK_NAMES) = get_picknplace_robot_data(ROBOT_NAME)
 
 #################################
 

@@ -25,7 +25,7 @@ def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z, viewer=False):
         # 1/velocity = weight
         # print([get_max_velocity(robot, joint) for joint in get_movable_joints(robot)])
         set_static(robot)
-        set_joint_positions(robot, joints_from_names(robot, joint_names), INITIAL_CONF)
+        # set_joint_positions(robot, joints_from_names(robot, joint_names), INITIAL_CONF)
         if use_floor:
             floor = create_plane(color=GROUND_COLOR)
             obstacles.append(floor)

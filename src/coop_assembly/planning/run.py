@@ -42,11 +42,12 @@ from coop_assembly.planning.heuristics import HEURISTICS
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
 # BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
-BUILD_PLATE_CENTER = np.array([650, 0, -14.23])*1e-3
+BUILD_PLATE_CENTER = np.array([500, 0, -14.23])*1e-3
 # BOTTOM_BUFFER = 0.005
 BOTTOM_BUFFER = 0.01
 # BOTTOM_BUFFER = 0.1
-BASE_YAW = np.pi + np.pi/6
+# BASE_YAW = np.pi + np.pi/6
+BASE_YAW = 0
 
 ########################################
 # two_tets
@@ -121,7 +122,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
                         bar_struct,
                         collision=args.collisions,
                         motions=True, stiffness=args.stiffness, revisit=False, verbose=debug,
-                        lazy=False, bar_only=args.bar_only, partial_orders=partial_orders)
+                        lazy=False, bar_only=args.bar_only, partial_orders=partial_orders, chosen_bars=chosen_bars)
                 print(data)
             else:
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))

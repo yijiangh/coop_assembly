@@ -30,7 +30,7 @@ from coop_assembly.help_functions import dropped_perpendicular_points, find_poin
     calculate_coord_sys
 # from coop_assembly.assembly_info_generation.fabrication_planes import calculate_gripping_plane
 from coop_assembly.help_functions.shared_const import TOL
-from coop_assembly.help_functions.helpers_geometry import compute_contact_line_between_bars, compute_local_coordinate_system
+from coop_assembly.help_functions.helpers_geometry import compute_contact_line_between_bars, compute_local_coordinate_system, closest_point_segments
 
 
 def compute_tangent_from_two_lines(line1, line2, ref_point, radius1, radius2, nb):
@@ -493,7 +493,7 @@ def second_tangent(pt_mean_2, b_v2_1, b_v2_2, b_struct, b_v_old, new_point, radi
             ind = 0
 
         sols_test = compute_tangent_from_two_lines(b2_1["axis_endpoints"], b2_2["axis_endpoints"], new_point, 2 * radius, 2 * radius, ind)
-        if not sols_test:
+        if sols_test is None:
             return None
 
         ret_sst = solve_second_tangent(new_point, ex, ey, radius, b1_line, b2_line, 2*radius, 2*radius, ind)
@@ -639,13 +639,9 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
 
         # solve from mid point to both contact points
         # ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2)
-        ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, [line_1, line_2], [line_3, line_4], ind_1, ind_2)
+        ang, pt3, vec_l1, vec_l2 = solve_third_tangent(pt_mid, ex, ey, radius, [line_1, line_2], [line_3, line_4], ind_1, ind_2)
 
-        if ret_stt:
-            # pt3, vec_l1, vec_l2, ang_check = ret_stt
-            # ref_point
-            ang, pt3, vec_l1, vec_l2 = ret_stt
-        else:
+        if ang is None:
             return None
 
         # pts_3.append(pt3)
@@ -683,11 +679,8 @@ def third_tangent(b_struct, b_v0, b_v1, pt_mean_3, max_len, b_v3_1, b_v3_2, pt_m
 
                 # ang, ref_point, vec_l1, vec_l2 = solve_third_tangent(pt_mid, ex, ey, radius, [line1, line2], [line3, line4], ind_1, ind_2, debug=True)
                 # ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, pt_b_1, l_1, pt_b_2, l_2, pt_b_3, l_3, pt_b_4, l_4, ind_1, ind_2)
-                ret_stt = solve_third_tangent(pt_mid, ex, ey, radius, [line_1, line_2], [line_3, line_4], ind_1, ind_2)
-                if ret_stt:
-                    # pt3, vec_l1, vec_l2, ang_check  = ret_stt
-                    ang_check, pt3, vec_l1, vec_l2 = ret_stt
-                else:
+                ang_check, pt3, vec_l1, vec_l2 = solve_third_tangent(pt_mid, ex, ey, radius, [line_1, line_2], [line_3, line_4], ind_1, ind_2)
+                if ang_check is None:
                     # ? premature return?
                     return None
 
@@ -926,7 +919,7 @@ def solve_third_tangent(pt_mid, ex, ey, radius, line_pair1, line_pair2, ind_1, i
 
     res_opt = scipy.optimize.fmin(fn, [0.0, 0.0], full_output=True, disp=0 if not debug else 3)
     if res_opt[1] > 0.1:
-        return None
+        return None, None, None, None
 
     # ang, ref_point, vec_l1, vec_l2
     return compute_third_tan_pts(list(map(float, res_opt[0])))
@@ -964,13 +957,18 @@ def check_colisions(b_struct, pts, radius, bar_nb=None, bar_checking=None):
         if bar_checking != None and b < 3:
             continue
         if b < bar_nb and b != bar_checking:
-            pts_b = b_struct.vertex[b]["axis_endpoints"]
-            dpp = dropped_perpendicular_points(pts[0], pts[1], pts_b[0], pts_b[1])
-            dist = distance_point_point(*dpp)
+            # pts_b = b_struct.vertex[b]["axis_endpoints"]
+            pts_b = b_struct.get_bar_axis_end_pts(b)
+            # dpp = dropped_perpendicular_points(pts[0], pts[1], pts_b[0], pts_b[1])
+            # dist = distance_point_point(*dpp)
 
-            if 2*radius - dist > TOL and \
-               is_point_on_segment(dpp[0], pts, tol=tol) and \
-               is_point_on_segment(dpp[1], pts_b, tol=tol):
-                # print("COLLISION: ", len(b_struct.vertex))
+            # if 2*radius - tol > dist and \
+            #    is_point_on_segment(dpp[0], pts, tol=1e-6) and \
+            #    is_point_on_segment(dpp[1], pts_b, tol=1e-6):
+            #     # print("COLLISION: ", len(b_struct.vertex))
+            #     return False
+            dpp = closest_point_segments(*pts, *pts_b)
+            dist = distance_point_point(*dpp)
+            if 2*radius - tol > dist:
                 return False
     return True

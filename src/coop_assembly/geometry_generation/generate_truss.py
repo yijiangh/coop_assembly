@@ -533,7 +533,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
             axis_vector = compute_tangent_from_two_lines(bar_from_elements[contact_e[0]].values(),
                                                          bar_from_elements[contact_e[1]].values(),
                                                          new_point, 2*radius, 2*radius, tangent_side)
-            if axis_vector is not None:
+            if axis_vector.any():
                 break
 
         assert(axis_vector is not None)
@@ -791,7 +791,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--problem', default='truss_one_tet_skeleton.json', help='The name of the problem to solve')
     parser.add_argument('-m', '--method', default='search', choices=METHOD_OPTIONS, help='Computing method')
-    parser.add_argument('-r', '--radius', default=3.17, help='Radius of bars in millimeter')
+    parser.add_argument('-r', '--radius', default=1.5, help='Radius of bars in millimeter')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     parser.add_argument('-w', '--write', action='store_true', help='Export results')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug verbose mode')

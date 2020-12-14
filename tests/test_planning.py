@@ -12,7 +12,7 @@ from pybullet_planning import connect, has_gui, LockRenderer, remove_handles, ad
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
     set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color, create_shape, get_mesh_geometry, create_flying_body, \
-    SE3, YELLOW, get_movable_joints, get_relative_pose, multiply
+    SE3, YELLOW, get_movable_joints, get_relative_pose, multiply, plan_joint_motion
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -29,28 +29,28 @@ from coop_assembly.planning.utils import get_element_neighbors, get_connector_fr
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose, se3_conf_from_pose
 from coop_assembly.planning.regression import regression
-from coop_assembly.planning.parsing import load_structure
+from coop_assembly.planning.parsing import load_structure, RESULTS_DIRECTORY
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
-from coop_assembly.planning.robot_setup import get_gripper_mesh_path
+from coop_assembly.planning.robot_setup import get_gripper_mesh_path, get_disabled_collisions, ROBOT_NAME
 
 @pytest.fixture
 def results_dir():
     here = os.path.dirname(__file__)
     return os.path.join(here, 'results')
 
-@pytest.mark.skip(reason='not ready to be auto tested...')
-@pytest.mark.pddlstream
-def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug_mode):
-    from coop_assembly.planning.run import run_pddlstream
-    Arguments = namedtuple('Arguments', ['problem', 'algorithm', 'collisions', 'bar_only', 'partial_ordering', 'costs', 'teleops'])
-    partial_ordering = True
-    costs = False
-    teleops = True
-    step_sim = False
+# @pytest.mark.skip(reason='not ready to be auto tested...')
+# @pytest.mark.pddlstream
+# def test_solve_pddlstream(viewer, file_spec, collision, bar_only, write, algorithm, watch, debug_mode):
+#     from coop_assembly.planning.run import run_pddlstream
+#     Arguments = namedtuple('Arguments', ['problem', 'algorithm', 'collisions', 'bar_only', 'partial_ordering', 'costs', 'teleops'])
+#     partial_ordering = True
+#     costs = False
+#     teleops = True
+#     step_sim = False
 
-    args = Arguments(file_spec, algorithm, collision, bar_only, partial_ordering, costs, teleops)
-    run_pddlstream(args, viewer=viewer, watch=watch, debug=debug_mode, step_sim=step_sim, write=write)
+#     args = Arguments(file_spec, algorithm, collision, bar_only, partial_ordering, costs, teleops)
+#     run_pddlstream(args, viewer=viewer, watch=watch, debug=debug_mode, step_sim=step_sim, write=write)
 
 @pytest.mark.skip(reason='not ready to be auto tested...')
 @pytest.mark.pddlstream_parse
@@ -318,11 +318,36 @@ def test_connector_debug(viewer, file_spec):
     assert check_connected(connectors, grounded_elements, printed_elements)
 
 # https://github.com/yijiangh/assembly_instances/blob/master/tests/conftest.py#L25
-# def test_load_robot(viewer):
-#     robot_data, ws_data = get_picknplace_robot_data()
-#     robot_urdf, _, tool_link_name, ee_link_name, joint_names, _ = robot_data
-#     assert ee_link_name == 'eef_base_link'
-#     assert tool_link_name == 'eef_tcp_frame'
-#     connect(use_gui=viewer)
-#     load_world()
-#     wait_if_gui()
+@pytest.mark.load_robot
+def test_load_robot(viewer, write):
+    robot_data, ws_data = get_picknplace_robot_data()
+    robot_urdf, _, tool_link_name, ee_link_name, joint_names, _ = robot_data
+    assert ee_link_name == 'eef_base_link'
+    assert tool_link_name == 'eef_tcp_frame'
+    connect(use_gui=viewer)
+    obstacles, robot = load_world()
+    disabled_collisions = get_disabled_collisions(robot)
+    joints = joints_from_names(robot, joint_names)
+
+    if ROBOT_NAME == 'abb_track':
+        start_conf = [0.5, 0,0,0,0,0,0]
+        end_conf = [1.5, 0.506, 0.471, -0.244, -1.239, 0.576, 0.000]
+
+    set_joint_positions(robot, joints, start_conf)
+    path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=[],
+                             self_collisions=True, disabled_collisions=disabled_collisions,
+                             diagnosis=True,
+                        )
+                            #  extra_disabled_collisions=extra_disabled_collisions,
+                            #  weights=weights, resolutions=resolutions, custom_limits=custom_limits,
+                            #  diagnosis=DIAGNOSIS, **kwargs)
+    for conf in path:
+        set_joint_positions(robot, joints, conf)
+        wait_if_gui()
+
+    if write:
+        save_path = os.path.join(RESULTS_DIRECTORY, '{}_test_traj.json'.format(ROBOT_NAME))
+        with open(save_path, 'w') as f:
+            data = {'robot':ROBOT_NAME, 'traj' : [list(conf) for conf in path]}
+            json.dump(data, f)
+            cprint('Result saved to: {}'.format(save_path), 'green')

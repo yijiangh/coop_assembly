@@ -15,6 +15,7 @@ author: stefanaparascho
 import pickle
 import time
 from termcolor import cprint
+from itertools import combinations
 
 from coop_assembly.data_structure import OverallStructure, BarStructure
 from coop_assembly.geometry_generation.generate_tetrahedra import generate_first_triangle, generate_structure_from_points
@@ -29,8 +30,8 @@ from pybullet_planning import connect, wait_if_gui, dump_world, apply_alpha, dra
     pairwise_collision_info, get_bodies, RED, TAN
 
 
-def execute_from_points(points, tet_node_ids, radius, check_collision=False, correct=True, viewer=False, verbose=False, scale=1.0, write=False, \
-        return_network=False, allowable_bar_collision_depth=1e-3, **kwargs):
+def execute_from_points(points, tet_node_ids, radius, check_collision=True, correct=True, viewer=False, verbose=False, scale=1.0, write=False, \
+        return_network=False, allowable_bar_collision_depth=1e-3, verify=False, **kwargs):
     """Main entry point for the design system, for direct, xfunc or rpc call
 
     Parameters
@@ -63,33 +64,40 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=False, cor
     if write:
         export_structure_data(bar_struct.to_data(), o_struct.to_data(), **kwargs)
 
-    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
-    element_bodies = bar_struct.get_element_bodies(color=apply_alpha(RED, 0))
-    set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
+    if verify:
+        connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
+        element_bodies = bar_struct.get_element_bodies(color=apply_alpha(RED, 0))
+        set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
 
-    handles = []
-    handles.extend(label_elements(element_bodies))
+        handles = []
+        handles.extend(label_elements(element_bodies))
 
-    # * checking mutual collision between bars
-    # TODO move this complete assembly collision sanity check to bar structure class
-    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
-    connectors = list(contact_from_connectors.keys())
-    for bar1, bar2 in connectors:
-        b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.1))
-        b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.1))
-        assert len(get_bodies()) == len(element_bodies)
+        # * checking mutual collision between bars
+        # TODO move this complete assembly collision sanity check to bar structure class
+        contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
+        connectors = list(contact_from_connectors.keys())
+        check_cnt = 0
+        # for bar1, bar2 in connectors:
+        for bar1, bar2 in combinations(list(bar_struct.node.keys()), 2):
+            if bar1 == -1 or bar2 == -1 or bar1 == bar2:
+                continue
+            b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.1))
+            b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.1))
+            assert len(get_bodies()) == len(element_bodies)
 
-        if pairwise_collision(b1_body, b2_body):
-            cr = pairwise_collision_info(b1_body, b2_body)
-            # draw_collision_diagnosis(cr, focus_camera=True)
-            penetration_depth = draw_collision_diagnosis(cr)
-            if penetration_depth is not None and penetration_depth > allowable_bar_collision_depth:
-                assert False, 'Bar {}-{} collision! penetration distance {}'.format(b1_body, b2_body, penetration_depth)
-                # pass
-        # print('-'*10)
+            if pairwise_collision(b1_body, b2_body):
+                cr = pairwise_collision_info(b1_body, b2_body)
+                # draw_collision_diagnosis(cr, focus_camera=True)
+                penetration_depth = draw_collision_diagnosis(cr)
+                if penetration_depth is not None and penetration_depth > allowable_bar_collision_depth:
+                    assert False, 'Bar {}-{} collision! penetration distance {}'.format(b1_body, b2_body, penetration_depth)
+                    # pass
+            check_cnt += 1
 
-    cprint('No collision in connectors found.', 'green')
-    wait_if_gui('Done.')
+        cprint('No collision in connectors found. ({} pairs checked)'.format(check_cnt), 'green')
+        wait_if_gui('Done.')
+    else:
+        cprint('No pybullet collision checking performed.', 'yellow')
 
     # contact_from_connectors = bar_struct.get_connectors(scale=scale)
     # connectors = list(contact_from_connectors.keys())

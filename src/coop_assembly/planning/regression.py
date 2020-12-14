@@ -67,14 +67,15 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 
 def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                heuristic='z', max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
-               collision=True, stiffness=True, motions=True, lazy=True, checker=None, fem_element_from_bar_id=None, verbose=False, **kwargs):
+               collision=True, stiffness=True, motions=True, lazy=True, checker=None, fem_element_from_bar_id=None,
+               verbose=False, chosen_bars=None, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = INITIAL_CONF if not bar_only else np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
 
     # element_from_index, grounded_elements, connectors
     element_from_index, grounded_elements, _, connectors = \
-        unpack_structure(bar_struct, scale=METER_SCALE, color=apply_alpha(RED,0.1))
+        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.1))
     if stiffness and (checker is None or fem_element_from_bar_id is None):
         checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
 

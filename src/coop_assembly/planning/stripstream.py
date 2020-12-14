@@ -19,8 +19,7 @@ except KeyError:
 from pddlstream.algorithms.downward import set_cost_scale
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused
-from pddlstream.algorithms.disabled import process_stream_plan
-from pddlstream.language.constants import And, PDDLProblem, print_solution, DurativeAction, Equal
+from pddlstream.language.constants import And, PDDLProblem, Equal
 from pddlstream.language.generator import from_test, from_gen_fn, from_fn, empty_gen
 from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput
 from pddlstream.language.function import FunctionInfo
@@ -236,7 +235,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
         pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
 
     # print(solution)
-    print_solution(solution)
+    # print_solution(solution)
     plan, _, facts = solution
     print('-'*10)
     # if debug:

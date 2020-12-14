@@ -36,7 +36,9 @@ PICKNPLACE_FILENAMES = {
     '1_tets.json' : 'single_tet_point2triangle.json',
 }
 
-RESULTS_DIRECTORY = os.path.join('..', '..', '..', 'tests', 'results')
+
+HERE = os.path.dirname(__file__)
+RESULTS_DIRECTORY = os.path.abspath(os.path.join(HERE, '..', '..', '..', 'tests', 'results'))
 
 def get_assembly_path(assembly_name, file_dir=PICKNPLACE_DIRECTORY):
     if assembly_name.endswith('.json'):
@@ -103,10 +105,9 @@ def unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=RED)
     return element_from_index, grounded_elements, contact_from_connectors, connectors
 
 def save_plan(config, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None, suffix=None, extra_data=None):
-    here = os.path.dirname(__file__)
     plan_path = '{}_{}-{}{}_solution{}.json'.format(config.problem.split('.json')[0], config.args.algorithm, config.args.bias,
         '' if suffix is None else '_' + suffix, '' if overwrite else '_'+get_date())
-    save_path = os.path.join(here, RESULTS_DIRECTORY, plan_path)
+    save_path = os.path.join(RESULTS_DIRECTORY, plan_path)
 
     from .logger import get_global_parameters
     with open(save_path, 'w') as f:
@@ -152,8 +153,7 @@ def save_plan(config, trajectories, TCP_link_name=None, overwrite=True, element_
 ##############################################
 
 def parse_plan(file_name):
-    here = os.path.dirname(__file__)
-    save_path = os.path.join(here, RESULTS_DIRECTORY, file_name)
+    save_path = os.path.join(RESULTS_DIRECTORY, file_name)
     with open(save_path) as json_file:
         data = json.load(json_file)
     cprint('Saved path parsed: file name:{} | write_time: {}'.format(

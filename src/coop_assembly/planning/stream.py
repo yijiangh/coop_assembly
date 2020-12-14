@@ -22,7 +22,7 @@ from pybullet_planning import link_from_name, set_pose, \
     get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, get_relative_pose, \
     remove_handles, apply_alpha, pairwise_link_collision_info
 
-from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME
+from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME, ROBOT_NAME
 from .utils import Command, prune_dominated, get_index_from_bodies
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
