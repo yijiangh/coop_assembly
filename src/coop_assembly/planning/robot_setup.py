@@ -20,15 +20,15 @@ BUILT_PLATE_Z = -0.025 # meter
 
 ROBOT_URDFs = {
     'kuka' : 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf',
-    'abb_track' : 'abb_irb4600_40_255/urdf/abb_irb4600_40_255_track.urdf',
+    'abb_track' : 'abb_irb4600_40_255/urdf/ECL_robot1_with_track.urdf',
     }
 ROBOT_SRDFs = {
     'kuka' : 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf',
-    'abb_track' : 'abb_irb4600_40_255/srdf/abb_irb4600_40_255_track.srdf',
+    'abb_track' : 'abb_irb4600_40_255/srdf/ECL_robot1_with_track.srdf',
     }
 
-WS_URDF = 'kuka_kr6_r900/urdf/mit_3-412_workspace.urdf'
-WS_SRDF = 'kuka_kr6_r900/srdf/mit_3-412_workspace.srdf'
+# WS_URDF = 'kuka_kr6_r900/urdf/mit_3-412_workspace.urdf'
+# WS_SRDF = 'kuka_kr6_r900/srdf/mit_3-412_workspace.srdf'
 
 try:
     import ikfast_kuka_kr6_r900

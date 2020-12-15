@@ -325,7 +325,7 @@ def test_load_robot(viewer, write):
     assert ee_link_name == 'eef_base_link'
     assert tool_link_name == 'eef_tcp_frame'
     connect(use_gui=viewer)
-    obstacles, robot = load_world()
+    obstacles, robot = load_world(use_floor=False)
     disabled_collisions = get_disabled_collisions(robot)
     joints = joints_from_names(robot, joint_names)
 
