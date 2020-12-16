@@ -12,7 +12,7 @@ from pybullet_planning import connect, has_gui, LockRenderer, remove_handles, ad
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
     set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color, create_shape, get_mesh_geometry, create_flying_body, \
-    SE3, YELLOW, get_movable_joints, get_relative_pose, multiply, plan_joint_motion
+    SE3, YELLOW, get_movable_joints, get_relative_pose, multiply, plan_joint_motion, Pose, Euler, invert
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -29,10 +29,11 @@ from coop_assembly.planning.utils import get_element_neighbors, get_connector_fr
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose, se3_conf_from_pose
 from coop_assembly.planning.regression import regression
-from coop_assembly.planning.parsing import load_structure, RESULTS_DIRECTORY
+from coop_assembly.planning.parsing import load_structure, RESULTS_DIRECTORY, unpack_structure
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
 from coop_assembly.planning.robot_setup import get_gripper_mesh_path, get_disabled_collisions, ROBOT_NAME
+from coop_assembly.planning.run import BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
 
 @pytest.fixture
 def results_dir():
@@ -146,11 +147,23 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
 @pytest.mark.stream
 def test_stream(viewer, file_spec, collision, bar_only):
     bar_struct, _ = load_structure(file_spec, viewer)
-    element_bodies = bar_struct.get_element_bodies()
-    element_from_index = bar_struct.get_element_from_index()
 
-    obstacles, robot = load_world()
-    # draw_pose(get_link_pose(robot, link_from_name(robot, TOOL_LINK_NAME)))
+    # * transform model
+    bar_radius = bar_struct.node[0]['radius']*METER_SCALE
+    new_world_from_base = Pose(point=(BUILD_PLATE_CENTER + np.array([0,0,bar_radius+BOTTOM_BUFFER])))
+    world_from_base = Pose(point=bar_struct.base_centroid(METER_SCALE))
+    rotation = Pose(euler=Euler(yaw=BASE_YAW))
+    tf = multiply(new_world_from_base, rotation, invert(world_from_base))
+    bar_struct.transform(tf, scale=METER_SCALE)
+    bar_struct.generate_grounded_connection()
+
+    element_from_index = bar_struct.get_element_from_index(scale=METER_SCALE)
+    element_bodies = bar_struct.get_element_bodies(scale=METER_SCALE, color=apply_alpha(RED,0.2))
+    # element_from_index, grounded_elements, contact_from_connectors, connectors = \
+    #     unpack_structure(bar_struct, scale=METER_SCALE, color=apply_alpha(RED,0.2)) #chosen_bars=chosen_bars,
+
+    obstacles, robot = load_world(use_floor=ROBOT_NAME=='kuka')
+    draw_pose(get_link_pose(robot, link_from_name(robot, TOOL_LINK_NAME)))
 
     # printed = set([0,1,2,3])
     # chosen = 4
@@ -159,7 +172,7 @@ def test_stream(viewer, file_spec, collision, bar_only):
 
     # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
-    # wait_if_gui()
+    wait_if_gui("Structure colored")
 
     n_attempts = 5
     tool_pose = unit_pose()
@@ -329,9 +342,11 @@ def test_load_robot(viewer, write):
     disabled_collisions = get_disabled_collisions(robot)
     joints = joints_from_names(robot, joint_names)
 
+    draw_pose(unit_pose(), length=1.0)
+
     if ROBOT_NAME == 'abb_track':
         start_conf = [0.5, 0,0,0,0,0,0]
-        end_conf = [1.5, 0.506, 0.471, -0.244, -1.239, 0.576, 0.000]
+        end_conf = [3.6, 0.506, 0.471, -0.244, -1.239, 0.576, 0.000]
 
     set_joint_positions(robot, joints, start_conf)
     path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=[],

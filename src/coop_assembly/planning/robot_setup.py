@@ -27,6 +27,12 @@ ROBOT_SRDFs = {
     'abb_track' : 'abb_irb4600_40_255/srdf/ECL_robot1_with_track.srdf',
     }
 
+EE_MESH_PATHs = {
+    'kuka' : "models/kuka_kr6_r900/meshes/mit_arch_grasp_end_effector/collision/mit_arch_grasp_end_effector_collision.stl",
+    'abb_track' : "models/abb_irb4600_40_255/meshes/collision/princeton_gripper_collision_m.stl",
+    }
+EE_MESH_PATH = EE_MESH_PATHs[ROBOT_NAME]
+
 # WS_URDF = 'kuka_kr6_r900/urdf/mit_3-412_workspace.urdf'
 # WS_SRDF = 'kuka_kr6_r900/srdf/mit_3-412_workspace.srdf'
 
@@ -99,16 +105,8 @@ def get_picknplace_robot_data(robot_name=ROBOT_NAME):
     return (robot_urdf, base_link_name, tool_link_name, ee_link_name, ik_joint_names, disabled_self_collision_link_names), \
            (workspace_urdf, workspace_robot_disabled_link_names)
 
-# def get_picknplace_end_effector_urdf():
-#     return coop_assembly.get_data('models/kuka_kr6_r900/urdf/mit_arch_grasp_end_effector.urdf')
-
-def get_gripper_mesh_path(robot_name='kuka_kr6r900'):
-    return coop_assembly.get_data("models/kuka_kr6_r900/meshes/mit_arch_grasp_end_effector/collision/mit_arch_grasp_end_effector_collision.stl")
-
-# def get_picknplace_tcp_def():
-#     # TODO: should be derived from the end effector URDF
-#     # in meter
-#     return Pose(point=[-0.002851003, 0.001035, 0.188155183])
+def get_gripper_mesh_path():
+    return coop_assembly.get_data(EE_MESH_PATH)
 
 #################################
 

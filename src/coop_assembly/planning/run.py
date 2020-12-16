@@ -38,11 +38,17 @@ from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream,
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness
 from coop_assembly.planning.heuristics import HEURISTICS
+from coop_assembly.planning.robot_setup import ROBOT_NAME
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
 # BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
-BUILD_PLATE_CENTER = np.array([500, 0, -14.23])*1e-3
+BUILD_PLATE_CENTERs = {
+    'kuka' : np.array([500, 0, -14.23])*1e-3,
+    'abb_track' : np.array([1.63,-1.26,0.00]),
+}
+BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
+
 # BOTTOM_BUFFER = 0.005
 BOTTOM_BUFFER = 0.01
 # BOTTOM_BUFFER = 0.1
