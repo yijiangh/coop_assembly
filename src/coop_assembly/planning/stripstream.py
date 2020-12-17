@@ -33,7 +33,7 @@ from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF
 from .utils import flatten_commands, recover_sequence, Command, get_index_from_bodies
 from .visualization import draw_ordered, display_trajectories
 from .motion import compute_motion, EE_INITIAL_CONF
-from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions, INITIAL_CONF
+from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, CONTROL_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions, INITIAL_CONF
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions import METER_SCALE
 
@@ -319,7 +319,7 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
                 return
         else:
             path = [init_q.positions, q2.positions]
-            joints = joints_from_names(robot, IK_JOINT_NAMES) if not bar_only else get_movable_joints(robot)
+            joints = joints_from_names(robot, CONTROL_JOINT_NAMES) if not bar_only else get_movable_joints(robot)
             element=None
             if len(attachments) > 0:
                 index_from_body = get_index_from_bodies(element_from_index)

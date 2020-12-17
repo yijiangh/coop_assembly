@@ -17,7 +17,7 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
 from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import get_index_from_bodies
-from .robot_setup import IK_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
+from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DIAGNOSIS = False
@@ -108,7 +108,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
                    collisions=True, bar_only=False, max_time=INF, buffer=0.05, smooth=100): #, **kwargs):
     # TODO: can also just plan to initial conf and then shortcut
     if not bar_only:
-        joints = joints_from_names(robot, IK_JOINT_NAMES)
+        joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
         weights = JOINT_WEIGHTS
         resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
         disabled_collisions = get_disabled_collisions(robot)

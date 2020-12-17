@@ -4,7 +4,7 @@ import numpy as np
 from collections import defaultdict
 from numpy.linalg import norm
 import json
-from termcolor import cprint
+from termcolor import cprint, colored
 from itertools import islice
 from collections import namedtuple
 
@@ -19,7 +19,7 @@ from coop_assembly.help_functions.parsing import export_structure_data, parse_sa
 from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
-from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES
+from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME
 from coop_assembly.planning.utils import load_world
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera, draw_partial_ordered
 from coop_assembly.planning.visualization import display_trajectories
@@ -32,7 +32,7 @@ from coop_assembly.planning.regression import regression
 from coop_assembly.planning.parsing import load_structure, RESULTS_DIRECTORY, unpack_structure
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
-from coop_assembly.planning.robot_setup import get_gripper_mesh_path, get_disabled_collisions, ROBOT_NAME
+from coop_assembly.planning.robot_setup import get_gripper_mesh_path, get_disabled_collisions, ROBOT_NAME, INITIAL_CONF
 from coop_assembly.planning.run import BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
 
 @pytest.fixture
@@ -167,12 +167,14 @@ def test_stream(viewer, file_spec, collision, bar_only):
 
     # printed = set([0,1,2,3])
     # chosen = 4
-    printed = set([0,1,2,4,3])
+    #
+    # printed = set()
+    printed = set([0,1,2,4])
     chosen = 5
 
     # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
-    wait_if_gui("Structure colored")
+    # wait_if_gui("Structure colored")
 
     n_attempts = 5
     tool_pose = unit_pose()
@@ -231,110 +233,11 @@ def test_stream(viewer, file_spec, collision, bar_only):
         wait_if_gui()
         remove_handles(handles)
 
-
-@pytest.mark.color_structure
-def test_color_structure(viewer, file_spec):
-    bar_struct, _ = load_structure(file_spec, viewer)
-    element_bodies = bar_struct.get_element_bodies()
-    printed = set([0,1,2,3])
-    color_structure(element_bodies, printed, 4)
-    wait_if_gui()
-
-
-@pytest.mark.draw
-def test_draw_ordered(viewer, file_spec):
-    bar_struct, _ = load_structure(file_spec, viewer)
-    endpts_from_element = bar_struct.get_axis_pts_from_element()
-    h = draw_ordered(list(bar_struct.vertices()), endpts_from_element)
-    wait_if_gui()
-    remove_handles(h)
-
-    elements_from_layer = defaultdict(set)
-    for v in bar_struct.vertices():
-        elements_from_layer[bar_struct.vertex[v]['layer']].add(v)
-    draw_partial_ordered(elements_from_layer, endpts_from_element)
-    wait_if_gui()
-
-
-@pytest.mark.connector
-def test_connector(viewer):
-    # visual test
-    file_spec = '12_bars'
-    bar_struct, _ = load_structure(file_spec, viewer)
-    element_bodies = bar_struct.get_element_bodies(apply_alpha(RED, 0.3))
-    handles = []
-    handles.extend(label_elements(element_bodies))
-    wait_if_gui()
-    remove_handles(handles)
-
-    elements = list(element_bodies.keys())
-    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
-    connectors = list(contact_from_connectors.keys())
-
-    # * connectors from bar
-    connector_from_elements = get_connector_from_elements(connectors, elements)
-    for bar in bar_struct.vertices():
-        handles = []
-        bar_connectors = connector_from_elements[bar]
-        for c in list(bar_connectors):
-            handles.append(add_line(*contact_from_connectors[c], color=(1,0,0,1), width=2))
-        color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
-        remove_handles(handles)
-
-    # * neighbor elements from elements
-    element_neighbors = get_element_neighbors(connectors, elements)
-    for element, connected_bars in element_neighbors.items():
-        color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
-        wait_if_gui()
-
-    grounded_elements = bar_struct.get_grounded_bar_keys()
-
-    printed_elements = set([2])
-    assert check_connected(connectors, grounded_elements, printed_elements)
-
-    printed_elements = set([0,1])
-    assert check_connected(connectors, grounded_elements, printed_elements)
-
-    printed_elements = set([9,10,11])
-    assert not check_connected(connectors, grounded_elements, printed_elements)
-
-    printed_elements = set([1,9,10,11])
-    assert not check_connected(connectors, grounded_elements, printed_elements)
-
-    printed_elements = set([2,7,9,11,10])
-    grounded_elements = bar_struct.get_grounded_bar_keys()
-    assert check_connected(connectors, grounded_elements, printed_elements)
-
-@pytest.mark.connector_db
-def test_connector_debug(viewer, file_spec):
-    # visual test
-    bar_struct, _ = load_structure(file_spec, viewer)
-    element_bodies = bar_struct.get_element_bodies(color=(1,0,0,0.3))
-    handles = []
-    handles.extend(label_elements(element_bodies))
-    wait_if_gui()
-    remove_handles(handles)
-
-    # elements = list(element_bodies.keys())
-    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
-    connectors = list(contact_from_connectors.keys())
-
-    grounded_elements = bar_struct.get_grounded_bar_keys()
-
-    printed_elements = set([0])
-    assert check_connected(connectors, grounded_elements, printed_elements)
-
-    printed_elements = set([0,1])
-    assert check_connected(connectors, grounded_elements, printed_elements)
-
-    printed_elements = set([0,3])
-    assert check_connected(connectors, grounded_elements, printed_elements)
-
 # https://github.com/yijiangh/assembly_instances/blob/master/tests/conftest.py#L25
 @pytest.mark.load_robot
 def test_load_robot(viewer, write):
     robot_data, ws_data = get_picknplace_robot_data()
-    robot_urdf, _, tool_link_name, ee_link_name, joint_names, _ = robot_data
+    robot_urdf, _, tool_link_name, ee_link_name, joint_names, _, _, _ = robot_data
     assert ee_link_name == 'eef_base_link'
     assert tool_link_name == 'eef_tcp_frame'
     connect(use_gui=viewer)
@@ -342,27 +245,27 @@ def test_load_robot(viewer, write):
     disabled_collisions = get_disabled_collisions(robot)
     joints = joints_from_names(robot, joint_names)
 
-    draw_pose(unit_pose(), length=1.0)
-
     if ROBOT_NAME == 'abb_track':
-        start_conf = [0.5, 0,0,0,0,0,0]
+        draw_pose(unit_pose(), length=1.0)
+        start_conf = INITIAL_CONF
         end_conf = [3.6, 0.506, 0.471, -0.244, -1.239, 0.576, 0.000]
 
-    set_joint_positions(robot, joints, start_conf)
-    path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=[],
-                             self_collisions=True, disabled_collisions=disabled_collisions,
-                             diagnosis=True,
-                        )
-                            #  extra_disabled_collisions=extra_disabled_collisions,
-                            #  weights=weights, resolutions=resolutions, custom_limits=custom_limits,
-                            #  diagnosis=DIAGNOSIS, **kwargs)
-    for conf in path:
-        set_joint_positions(robot, joints, conf)
-        wait_if_gui()
+        set_joint_positions(robot, joints, start_conf)
+        path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=[],
+                                 self_collisions=True, disabled_collisions=disabled_collisions,
+                                 diagnosis=True,
+                            )
+                                #  extra_disabled_collisions=extra_disabled_collisions,
+                                #  weights=weights, resolutions=resolutions, custom_limits=custom_limits,
+                                #  diagnosis=DIAGNOSIS, **kwargs)
+        for conf in path:
+            set_joint_positions(robot, joints, conf)
+            wait_if_gui()
 
-    if write:
-        save_path = os.path.join(RESULTS_DIRECTORY, '{}_test_traj.json'.format(ROBOT_NAME))
-        with open(save_path, 'w') as f:
-            data = {'robot':ROBOT_NAME, 'traj' : [list(conf) for conf in path]}
-            json.dump(data, f)
-            cprint('Result saved to: {}'.format(save_path), 'green')
+        if write:
+            save_path = os.path.join(RESULTS_DIRECTORY, '{}_test_traj.json'.format(ROBOT_NAME))
+            with open(save_path, 'w') as f:
+                data = {'robot':ROBOT_NAME, 'traj' : [list(conf) for conf in path]}
+                json.dump(data, f)
+                cprint('Result saved to: {}'.format(save_path), 'green')
+    wait_if_gui(colored('Done.', 'green'))

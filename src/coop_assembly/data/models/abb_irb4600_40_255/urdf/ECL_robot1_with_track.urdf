@@ -11,19 +11,19 @@
     <inertial>
       <origin xyz="0.0 0.0 0.0"/>
       <mass value="120.00000"/>
-      <inertia ixx="-4.98000" ixy="-0.00000" ixz="2.70000" iyy="-5.95200" iyz="-0.00000" izz="0.82800"/>
+      <inertia ixx="-4.98000" ixy="0.00000" ixz="2.70000" iyy="-5.95200" iyz="0.00000" izz="0.82800"/>
     </inertial>
     <visual>
       <geometry>
         <mesh filename="package://abb_irb4600_40_255/meshes/visual/base_link.stl"/>
       </geometry>
       <material name="">
-        <color rgba="0.5 0.47 0.38 1.0"/>
+        <color rgba="0.7725490 0.7803922 0.7686275 1"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://abb_irb4600_40_255/meshes/collision/base_link.stl"/>
+        <mesh filename="package://abb_irb4600_40_255/meshes/collision_pybullet/base_link.obj"/>
       </geometry>
     </collision>
   </link>
@@ -31,20 +31,19 @@
     <inertial>
       <origin xyz="0.18000 0.00000 0.50000"/>
       <mass value="120.00000"/>
-      <inertia ixx="-4.98000" ixy="-0.00000" ixz="2.70000" iyy="-5.95200" iyz="-0.00000" izz="0.82800"/>
+      <inertia ixx="-4.98000" ixy="0.00000" ixz="2.70000" iyy="-5.95200" iyz="0.00000" izz="0.82800"/>
     </inertial>
     <visual>
       <geometry>
         <mesh filename="package://abb_irb4600_40_255/meshes/visual/link_1.stl"/>
       </geometry>
       <material name="">
-        <!-- <color rgba="0.7725490 0.7803922 0.7686275 1"/> -->
-        <color rgba="0.964705882353 0.470588235294 0.156862745098 1.0"/>
+        <color rgba="0.7725490 0.7803922 0.7686275 1"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://abb_irb4600_40_255/meshes/collision/link_1.stl"/>
+        <mesh filename="package://abb_irb4600_40_255/meshes/collision_pybullet/link_1.obj"/>
       </geometry>
     </collision>
   </link>
@@ -59,13 +58,12 @@
         <mesh filename="package://abb_irb4600_40_255/meshes/visual/link_2.stl"/>
       </geometry>
       <material name="">
-        <!-- <color rgba="0.7725490 0.7803922 0.7686275 1"/> -->
-        <color rgba="0.964705882353 0.470588235294 0.156862745098 1.0"/>
+        <color rgba="0.7725490 0.7803922 0.7686275 1"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://abb_irb4600_40_255/meshes/collision/link_2.stl"/>
+        <mesh filename="package://abb_irb4600_40_255/meshes/collision_pybullet/link_2.obj"/>
       </geometry>
     </collision>
   </link>
@@ -73,20 +71,19 @@
     <inertial>
       <origin xyz="0.07000 -0.26600 0.08800"/>
       <mass value="120.00000"/>
-      <inertia ixx="1.34500" ixy="-0.55860" ixz="0.18480" iyy="4.65068" iyz="-0.70224" izz="2.76032"/>
+      <inertia ixx="1.34500" ixy="0.55860" ixz="0.18480" iyy="4.65068" iyz="-0.70224" izz="2.76032"/>
     </inertial>
     <visual>
       <geometry>
         <mesh filename="package://abb_irb4600_40_255/meshes/visual/link_3.stl"/>
       </geometry>
       <material name="">
-        <!-- <color rgba="0.7725490 0.7803922 0.7686275 1"/> -->
-        <color rgba="0.964705882353 0.470588235294 0.156862745098 1.0"/>
+        <color rgba="0.7725490 0.7803922 0.7686275 1"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://abb_irb4600_40_255/meshes/collision/link_3.stl"/>
+        <mesh filename="package://abb_irb4600_40_255/meshes/collision_pybullet/link_3.obj"/>
       </geometry>
     </collision>
   </link>
@@ -94,20 +91,19 @@
     <inertial>
       <origin xyz="0.00000 0.00000 1.00000"/>
       <mass value="40.00000"/>
-      <inertia ixx="-8.00000" ixy="-0.00000" ixz="-0.00000" iyy="-8.00000" iyz="-0.00000" izz="0.48200"/>
+      <inertia ixx="-8.00000" ixy="0.00000" ixz="0.00000" iyy="-8.00000" iyz="0.00000" izz="0.48200"/>
     </inertial>
     <visual>
       <geometry>
         <mesh filename="package://abb_irb4600_40_255/meshes/visual/link_4.stl"/>
       </geometry>
       <material name="">
-        <!-- <color rgba="0.7725490 0.7803922 0.7686275 1"/> -->
-        <color rgba="0.964705882353 0.470588235294 0.156862745098 1.0"/>
+        <color rgba="0.7725490 0.7803922 0.7686275 1"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://abb_irb4600_40_255/meshes/collision/link_4.stl"/>
+        <mesh filename="package://abb_irb4600_40_255/meshes/collision_pybullet/link_4.obj"/>
       </geometry>
     </collision>
   </link>
@@ -115,20 +111,19 @@
     <inertial>
       <origin xyz="0.14000 0.00000 0.00000"/>
       <mass value="10.00000"/>
-      <inertia ixx="0.04000" ixy="-0.00000" ixz="-0.00000" iyy="-0.00900" iyz="-0.00000" izz="-0.00400"/>
+      <inertia ixx="0.04000" ixy="0.00000" ixz="0.00000" iyy="-0.00900" iyz="0.00000" izz="-0.00400"/>
     </inertial>
     <visual>
       <geometry>
         <mesh filename="package://abb_irb4600_40_255/meshes/visual/link_5.stl"/>
       </geometry>
       <material name="">
-        <!-- <color rgba="0.7725490 0.7803922 0.7686275 1"/> -->
-        <color rgba="0.964705882353 0.470588235294 0.156862745098 1.0"/>
+        <color rgba="0.7725490 0.7803922 0.7686275 1"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://abb_irb4600_40_255/meshes/collision/link_5.stl"/>
+        <mesh filename="package://abb_irb4600_40_255/meshes/collision_pybullet/link_5.obj"/>
       </geometry>
     </collision>
   </link>
@@ -143,13 +138,12 @@
         <mesh filename="package://abb_irb4600_40_255/meshes/visual/link_6.stl"/>
       </geometry>
       <material name="">
-        <!-- <color rgba="0.1882353 0.1960784 0.2039216 1"/> -->
-        <color rgba="0.505882352941 0.470588235294 0.388235294118 1.0"/>
+        <color rgba="0.1882353 0.1960784 0.2039216 1"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://abb_irb4600_40_255/meshes/collision/link_6.stl"/>
+        <mesh filename="package://abb_irb4600_40_255/meshes/collision_pybullet/link_6.obj"/>
       </geometry>
     </collision>
   </link>

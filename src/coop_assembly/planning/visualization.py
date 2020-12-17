@@ -336,6 +336,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
     printed_elements = []
     print('Trajectories:', len(trajectories))
     for i, trajectory in enumerate(trajectories):
+        # print(trajectory)
         #wait_for_user()
         #set_color(element_bodies[element], (1, 0, 0, 1))
         last_point = None

@@ -22,7 +22,8 @@ from pybullet_planning import link_from_name, set_pose, \
     get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, get_relative_pose, \
     remove_handles, apply_alpha, pairwise_link_collision_info
 
-from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, IK_JOINT_NAMES, BASE_LINK_NAME, TOOL_LINK_NAME, ROBOT_NAME
+from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, CONTROL_JOINT_NAMES, BASE_LINK_NAME, \
+    TOOL_LINK_NAME, ROBOT_NAME, GANTRY_JOINT_LIMITS, IK_BASE_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTSs
 from .utils import Command, prune_dominated, get_index_from_bodies
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
@@ -32,6 +33,7 @@ ENABLE_SELF_COLLISIONS = False
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 100
 GRASP_MAX_ATTEMPTS = 100
+GANTRY_MAX_ATTEMPTS = 20
 
 ALLOWABLE_BAR_COLLISION_DEPTH = 1e-3
 
@@ -51,6 +53,8 @@ RETREAT_DISTANCE = 0.025
 MAX_DISTANCE = 0.0
 
 JOINT_JUMP_THRESHOLD = np.pi/3
+# tolerance for joint values from pybullet's built-in IK
+PB_IK_TOL = 1e-3
 
 ###########################################
 
@@ -293,7 +297,7 @@ def check_path(joints, path, collision_fn=None, jump_threshold=None, diagnosis=F
     return True
 
 def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, element_from_index, collision_fn,
-    bar_only=False, verbose=False, diagnosis=False, retreat_vector=np.array([0, 0, -1]), teleops=False):
+    bar_only=False, verbose=False, diagnosis=False, retreat_vector=np.array([0, 0, -1]), teleops=False, gantry_sample_fn=None):
     """Give the grasp and EE workspace poses, compute cartesian planning for pre-detach ~ detach ~ post-detach process.
     """
     body = element_from_index[index].body
@@ -328,43 +332,54 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         return command
 
     tool_link = link_from_name(robot, TOOL_LINK_NAME)
-    robot_base_link = link_from_name(robot, BASE_LINK_NAME)
+    ik_base_link = link_from_name(robot, IK_BASE_LINK_NAME)
     ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
+    control_joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
 
     # tool_pose = get_link_pose(robot, tool_link)
     # draw_pose(tool_pose)
 
+    # * attach IK
     if IK_MODULE:
-    # try:
-        assert IK_MODULE.get_dof() == len(ik_joints)
         # free_dof safe_guard?
-        attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, robot_base_link, ik_tool_link_from_tcp=ee_from_tool)
+        if gantry_sample_fn and GANTRY_JOINT_LIMITS:
+            gantry_joints = joints_from_names(robot, list(GANTRY_JOINT_LIMITS.keys()))
+            for _ in range(GANTRY_MAX_ATTEMPTS):
+                gantry_vals = gantry_sample_fn()
+                set_joint_positions(robot, gantry_joints, gantry_vals)
+                attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, ik_base_link, ik_tool_link_from_tcp=ee_from_tool)
+                if attach_conf is not None:
+                    attach_conf = np.hstack([gantry_vals, attach_conf])
+                    break
+        else:
+            assert IK_MODULE.get_dof() == len(CONTROL_JOINT_NAMES), 'IKFast module dof {} | control joints dof {}'.format(
+                    IK_MODULE.get_dof(), len(CONTROL_JOINT_NAMES))
+            attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, ik_base_link, ik_tool_link_from_tcp=ee_from_tool)
         # assert attach_conf is not None
     else:
-    # except:
         # joint conf sample fn, used when ikfast is not used
-        sample_fn = get_sample_fn(robot, ik_joints)
-        set_joint_positions(robot, ik_joints, sample_fn())  # Random seed
+        sample_fn = get_sample_fn(robot, control_joints)
+        set_joint_positions(robot, control_joints, sample_fn())  # Random seed
         attach_conf = inverse_kinematics(robot, tool_link, attach_pose)
 
     if (attach_conf is None):
         if verbose : print('attach ik failure.')
-        # ?
         # handles = draw_pose(attach_pose)
         # wait_if_gui()
         # remove_handles(handles)
-
         return None
+
     if collision_fn(attach_conf, diagnosis):
         if verbose : print('attach collision failure.')
         return None
 
-    set_joint_positions(robot, ik_joints, attach_conf)
+    set_joint_positions(robot, control_joints, attach_conf)
     set_pose(body, pregrasp_poses[-1])
     attachment = create_attachment(robot, tool_link, body)
     # set_color(body, GREEN)
     # wait_if_gui()
 
+    # ! we might have the gantry move between the approach and attach
     approach_conf = inverse_kinematics(robot, tool_link, pre_attach_pose)
     if (approach_conf is None):
         if verbose : print('approach ik failure.')
@@ -376,19 +391,24 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
     if teleops:
         path = [approach_conf, attach_conf]
     else:
-        set_joint_positions(robot, ik_joints, approach_conf)
-        path = plan_cartesian_motion(robot, ik_joints[0], tool_link, pre_attach_poses)
-        if path is not None:
-            if not check_path(ik_joints, [approach_conf] + path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
-                path = None
+        set_joint_positions(robot, control_joints, approach_conf)
+        # Cartesian planning only from the robot's base
+        approach_path = plan_cartesian_motion(robot, ik_joints[0], tool_link, pre_attach_poses)
+        if approach_path is not None:
+            # ! pay attention to the jump_threshold
+            if not check_path(control_joints, [approach_conf] + approach_path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
+                approach_path = None
 
-    if path is None:
+    if approach_path is None:
         if verbose : print('direct approach motion failure.')
         return None
-    approach_traj = MotionTrajectory(robot, ik_joints, path, attachments=[attachment], tag='place_approach', element=index)
+    if get_distance(approach_path[-1], attach_conf)>PB_IK_TOL:
+        attach_conf = approach_path[-1]
+    approach_traj = MotionTrajectory(robot, control_joints, approach_path, attachments=[attachment], tag='place_approach', element=index)
 
     # * retreat motion
-    set_joint_positions(robot, ik_joints, attach_conf)
+    # ! we might have the gantry move between the approach and attach
+    set_joint_positions(robot, control_joints, attach_conf)
     post_attach_conf = inverse_kinematics(robot, tool_link, post_attach_pose)
     if (post_attach_conf is None):
         if verbose : print('post-attach ik failure.')
@@ -398,19 +418,23 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         return None
 
     if teleops:
-        path = [attach_conf, post_attach_conf][1:]
+        retreat_path = [attach_conf, post_attach_conf][1:]
     else:
         # detach to post-detach
-        set_joint_positions(robot, ik_joints, attach_conf)
-        path = plan_cartesian_motion(robot, ik_joints[0], tool_link, post_attach_poses)
-        if path is not None:
-            if not check_path(ik_joints, [attach_conf] + path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
-                path = None
-    if path is None:
+        set_joint_positions(robot, control_joints, attach_conf)
+        # Cartesian planning only from the robot's base
+        retreat_path = plan_cartesian_motion(robot, ik_joints[0], tool_link, post_attach_poses)
+        if retreat_path is not None:
+            if not check_path(control_joints, [attach_conf] + retreat_path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
+                retreat_path = None
+    if retreat_path is None:
         if verbose : print('direct retreat motion failure.')
         return None
+    if get_distance(approach_path[-1], retreat_path[0])>PB_IK_TOL:
+        if verbose: print('approach end and retreat start diff!')
+        return None
 
-    retreat_traj = MotionTrajectory(robot, ik_joints, path, attachments=[], tag='place_retreat', element=index)
+    retreat_traj = MotionTrajectory(robot, control_joints, retreat_path, attachments=[], tag='place_retreat', element=index)
     return Command([approach_traj, retreat_traj])
 
 ######################################
@@ -429,10 +453,11 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
     if not collisions:
         precompute_collisions = False
     if not bar_only:
-        ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
+        control_joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
         disabled_collisions = get_disabled_collisions(robot)
     else:
-        ik_joints = get_movable_joints(robot)
+        # this is the bar robot
+        control_joints = get_movable_joints(robot)
         disabled_collisions = {}
         # ee_body_link = get_links(end_effector)[-1]
 
@@ -442,6 +467,11 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
 
     retreat_distance = RETREAT_DISTANCE
     retreat_vector = retreat_distance*np.array([0, 0, -1])
+
+    gantry_sample_fn = None
+    if GANTRY_JOINT_LIMITS is not None:
+        gantry_joints = joints_from_names(robot, list(GANTRY_JOINT_LIMITS.keys()))
+        gantry_sample_fn = get_sample_fn(robot, gantry_joints, custom_limits=GANTRY_JOINT_LIMITS)
 
     def gen_fn(element, printed=[], diagnosis=False):
         # assert implies(bar_only, element_from_index[element].element_robot is not None)
@@ -453,7 +483,7 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
         elements_order = [e for e in element_from_index if (e != element) and (element_from_index[e].body not in obstacles)]
 
         # attachment is assumed to be empty here, since pregrasp sampler guarantees that
-        collision_fn = get_collision_fn(robot, ik_joints, obstacles=obstacles, attachments=[],
+        collision_fn = get_collision_fn(robot, control_joints, obstacles=obstacles, attachments=[],
                                         self_collisions=ENABLE_SELF_COLLISIONS,
                                         disabled_collisions=disabled_collisions,
                                         custom_limits={} if bar_only else get_custom_limits(robot),
@@ -473,7 +503,8 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
                     continue
 
                 command = compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, element, element_from_index, collision_fn,
-                    bar_only=bar_only, verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector, teleops=teleops)
+                    bar_only=bar_only, verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector, teleops=teleops, \
+                    gantry_sample_fn=gantry_sample_fn)
                 if command is None:
                     continue
 

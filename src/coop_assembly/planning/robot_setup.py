@@ -48,13 +48,14 @@ except ImportError as e:
     IK_MODULE = None
     cprint('{}, Using pybullet ik fn instead'.format(e), 'red')
 
-CUSTOM_LIMITS = {
+CUSTOM_LIMITSs = {
     'kuka' : {
         'robot_joint_a1': (-np.pi/2, np.pi/2),
     },
-    'abb' : {
+    'abb_track' : {
     },
 }
+CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 
 # joint resolution used in transit motions
 # 0.003 captures pregrasp collision
@@ -63,11 +64,28 @@ RESOLUTION = 0.01
 
 # INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
 # INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
-INITIAL_CONF = np.radians([5., -90., 100, 5, 10, -5])
+INITIAL_CONFs = {
+    'kuka': np.radians([5., -90., 100, 5, 10, -5]),
+    'abb_track' : np.hstack([0.5, np.radians([0,0,0,0,0,0])]),
+    }
+INITIAL_CONF = INITIAL_CONFs[ROBOT_NAME]
 
 # TODO: compute joint weight as np.reciprocal(joint velocity bound) from URDF
-JOINT_WEIGHTS = np.reciprocal([6.28318530718, 5.23598775598, 6.28318530718,
-                               6.6497044501, 6.77187749774, 10.7337748998]) # sec / radian
+JOINT_WEIGHTSs = {
+    'kuka' : np.reciprocal([6.28318530718, 5.23598775598, 6.28318530718,
+                            6.6497044501, 6.77187749774, 10.7337748998]), # sec / radian
+    'abb_track' : np.reciprocal([1, 2.618, 2.618, 2.618,
+                                    6.2832, 6.2832, 7.854]),
+    }
+JOINT_WEIGHTS = JOINT_WEIGHTSs[ROBOT_NAME]
+
+GANTRY_JOINT_LIMITSs = {
+    'kuka' : None,
+    'abb_track' : {
+        'linear_axis_actuation_joint' : (0.0, 3.0),
+        },
+}
+GANTRY_JOINT_LIMITS = GANTRY_JOINT_LIMITSs[ROBOT_NAME]
 
 #########################################
 
@@ -83,9 +101,16 @@ def get_picknplace_robot_data(robot_name=ROBOT_NAME):
     robot = RobotClass(robot_model, semantics=robot_semantics)
 
     base_link_name = robot.get_base_link_name(group=move_group)
-    ik_joint_names = robot.get_configurable_joint_names(group=move_group)
+    control_joint_names = robot.get_configurable_joint_names(group=move_group)
     disabled_self_collision_link_names = robot_semantics.disabled_collisions
-    # disabled_self_collision_link_names = []
+
+    ik_base_link_name = base_link_name
+    ik_joint_names = control_joint_names
+    if len(control_joint_names) > 6:
+        ik_group = 'bare_arm'
+        ik_base_link_name = robot.get_base_link_name(group=ik_group)
+        ik_joint_names = robot.get_configurable_joint_names(group=ik_group)
+
     # * the bare arm flange attach link
     ee_link_name = robot.get_end_effector_link_name(group='manipulator')
     # * the TCP link
@@ -102,7 +127,7 @@ def get_picknplace_robot_data(robot_name=ROBOT_NAME):
     # workspace_robot_disabled_link_names = workspace_semantics.disabled_collisions
     workspace_robot_disabled_link_names = []
 
-    return (robot_urdf, base_link_name, tool_link_name, ee_link_name, ik_joint_names, disabled_self_collision_link_names), \
+    return (robot_urdf, base_link_name, tool_link_name, ee_link_name, control_joint_names, disabled_self_collision_link_names, ik_base_link_name, ik_joint_names), \
            (workspace_urdf, workspace_robot_disabled_link_names)
 
 def get_gripper_mesh_path():
@@ -112,7 +137,7 @@ def get_gripper_mesh_path():
 
 # TOOL_LINK: TCP link
 # EE_LINK: attach link for EE geometry (i.e. the flange link)
-(ROBOT_URDF, BASE_LINK_NAME, TOOL_LINK_NAME, EE_LINK_NAME, IK_JOINT_NAMES, DISABLED_SELF_COLLISION_LINK_NAMES), \
+(ROBOT_URDF, BASE_LINK_NAME, TOOL_LINK_NAME, EE_LINK_NAME, CONTROL_JOINT_NAMES, DISABLED_SELF_COLLISION_LINK_NAMES, IK_BASE_LINK_NAME, IK_JOINT_NAMES), \
 (WORKSPACE_URDF, WORKSPACE_ROBOT_DISABLED_LINK_NAMES) = get_picknplace_robot_data(ROBOT_NAME)
 
 #################################
