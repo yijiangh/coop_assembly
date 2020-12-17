@@ -33,7 +33,7 @@ from coop_assembly.planning.parsing import load_structure, RESULTS_DIRECTORY, un
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
 from coop_assembly.planning.robot_setup import get_gripper_mesh_path, get_disabled_collisions, ROBOT_NAME, INITIAL_CONF
-from coop_assembly.planning.run import BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
+from coop_assembly.planning.robot_setup import BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
 
 @pytest.fixture
 def results_dir():
@@ -145,7 +145,7 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
     disconnect()
 
 @pytest.mark.stream
-def test_stream(viewer, file_spec, collision, bar_only):
+def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
     bar_struct, _ = load_structure(file_spec, viewer)
 
     # * transform model
@@ -162,15 +162,15 @@ def test_stream(viewer, file_spec, collision, bar_only):
     # element_from_index, grounded_elements, contact_from_connectors, connectors = \
     #     unpack_structure(bar_struct, scale=METER_SCALE, color=apply_alpha(RED,0.2)) #chosen_bars=chosen_bars,
 
-    obstacles, robot = load_world(use_floor=ROBOT_NAME=='kuka')
+    obstacles, robot = load_world(use_floor=True)
     draw_pose(get_link_pose(robot, link_from_name(robot, TOOL_LINK_NAME)))
 
     # printed = set([0,1,2,3])
     # chosen = 4
     #
-    # printed = set()
-    printed = set([0,1,2,4])
-    chosen = 5
+    printed = set()
+    # printed = set([0,1,2,4])
+    chosen = 0
 
     # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
@@ -185,7 +185,7 @@ def test_stream(viewer, file_spec, collision, bar_only):
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
 
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, reverse_grasp=True, safety_margin_length=0.005)
-    pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, obstacles, collision=collision, teleops=False) # max_attempts=max_attempts,
+    # pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, obstacles, collision=collision, teleops=False) # max_attempts=max_attempts,
     pick_gen = get_place_gen_fn(end_effector if bar_only else robot, tool_from_ee, element_from_index, obstacles,
         collisions=collision, verbose=True, bar_only=bar_only) #max_attempts=n_attempts,
 
@@ -210,7 +210,7 @@ def test_stream(viewer, file_spec, collision, bar_only):
         handles.extend(draw_pose(p, length=0.05))
 
         # * sample pick trajectory
-        command, = next(pick_gen(chosen, printed=printed, diagnosis=False))
+        command, = next(pick_gen(chosen, printed=printed, diagnosis=debug_mode))
 
         if not command:
             cprint('no command found', 'red')

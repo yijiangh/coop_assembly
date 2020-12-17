@@ -20,7 +20,7 @@ from pybullet_planning import link_from_name, set_pose, \
     get_bodies_in_region, pairwise_link_collision, BASE_LINK, get_client, clone_collision_shape, clone_visual_shape, get_movable_joints, \
     create_flying_body, SE3, euler_from_quat, create_shape, get_cylinder_geometry, wait_if_gui, set_joint_positions, dump_body, get_links, \
     get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, get_relative_pose, \
-    remove_handles, apply_alpha, pairwise_link_collision_info
+    remove_handles, apply_alpha, pairwise_link_collision_info, joint_from_name
 
 from .robot_setup import EE_LINK_NAME, get_disabled_collisions, IK_MODULE, get_custom_limits, CONTROL_JOINT_NAMES, BASE_LINK_NAME, \
     TOOL_LINK_NAME, ROBOT_NAME, GANTRY_JOINT_LIMITS, IK_BASE_LINK_NAME, IK_JOINT_NAMES, JOINT_WEIGHTSs
@@ -49,7 +49,7 @@ ORI_STEP_SIZE = np.pi/30
 
 RETREAT_DISTANCEs = {
     'kuka': 0.025,
-    'abb_track': 0.05,
+    'abb_track': 0.07,
 }
 RETREAT_DISTANCE = RETREAT_DISTANCEs[ROBOT_NAME]
 
@@ -193,7 +193,7 @@ def get_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRA
             for p in offset_path: # [:-1]
                 # TODO: if colliding at the world_from_bar pose, use local velocity + normal check
                 # TODO: normal can be derived from
-                if ee_collision_fn(p):
+                if ee_collision_fn(p, diagnosis=diagnosis):
                 # if element_robot_collision_fnpose2conf(p)):
                     is_colliding = True
                     break
@@ -339,6 +339,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
     ik_base_link = link_from_name(robot, IK_BASE_LINK_NAME)
     ik_joints = joints_from_names(robot, IK_JOINT_NAMES)
     control_joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
+    custom_limits = get_custom_limits(robot)
 
     # tool_pose = get_link_pose(robot, tool_link)
     # draw_pose(tool_pose)
@@ -397,7 +398,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
     else:
         set_joint_positions(robot, control_joints, approach_conf)
         # Cartesian planning only from the robot's base
-        approach_path = plan_cartesian_motion(robot, ik_joints[0], tool_link, pre_attach_poses)
+        approach_path = plan_cartesian_motion(robot, ik_joints[0], tool_link, pre_attach_poses, custom_limits=custom_limits)
         if approach_path is not None:
             # ! pay attention to the jump_threshold
             if not check_path(control_joints, [approach_conf] + approach_path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
@@ -427,7 +428,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         # detach to post-detach
         set_joint_positions(robot, control_joints, attach_conf)
         # Cartesian planning only from the robot's base
-        retreat_path = plan_cartesian_motion(robot, ik_joints[0], tool_link, post_attach_poses)
+        retreat_path = plan_cartesian_motion(robot, ik_joints[0], tool_link, post_attach_poses, custom_limits=custom_limits)
         if retreat_path is not None:
             if not check_path(control_joints, [attach_conf] + retreat_path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
                 retreat_path = None
@@ -473,9 +474,10 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
     retreat_vector = retreat_distance*np.array([0, 0, -1])
 
     gantry_sample_fn = None
-    if GANTRY_JOINT_LIMITS is not None:
+    if not bar_only and GANTRY_JOINT_LIMITS is not None:
         gantry_joints = joints_from_names(robot, list(GANTRY_JOINT_LIMITS.keys()))
-        gantry_sample_fn = get_sample_fn(robot, gantry_joints, custom_limits=GANTRY_JOINT_LIMITS)
+        gantry_limits = {joint_from_name(robot, jn) : v for jn, v in GANTRY_JOINT_LIMITS.items()}
+        gantry_sample_fn = get_sample_fn(robot, gantry_joints, custom_limits=gantry_limits)
 
     def gen_fn(element, printed=[], diagnosis=False):
         # assert implies(bar_only, element_from_index[element].element_robot is not None)
@@ -501,7 +503,7 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
             # * ik iterations, usually 1 is enough
             for _ in range(max_attempts):
                 # ! when used in pddlstream, the pregrasp sampler assumes no elements assembled at all time
-                pregrasp_poses, = next(pregrasp_gen_fn(element, element_goal_pose, printed))
+                pregrasp_poses, = next(pregrasp_gen_fn(element, element_goal_pose, printed, diagnosis=diagnosis))
                 if not pregrasp_poses:
                     if verbose : print('pregrasp failure.')
                     continue

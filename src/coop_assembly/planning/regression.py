@@ -34,7 +34,6 @@ from .parsing import unpack_structure
 from .stiffness import create_stiffness_checker, test_stiffness
 
 PAUSE_UPON_BT = True
-
 MAX_REVISIT = 5
 
 Node = namedtuple('Node', ['action', 'state'])
@@ -68,7 +67,7 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                heuristic='z', max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
                collision=True, stiffness=True, motions=True, lazy=True, checker=None, fem_element_from_bar_id=None,
-               verbose=False, chosen_bars=None, **kwargs):
+               verbose=False, chosen_bars=None, debug=False, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = INITIAL_CONF if not bar_only else np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
@@ -190,7 +189,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                 transit_traj = compute_motion(command.end_robot, obstacles, element_from_index, printed,
                                               command.end_conf, transfer_start_conf,
                                               collisions=collision, attachments=[],
-                                              max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
+                                              max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
             if transit_traj is None:
                 transit_failures += 1
                 if verbose:
@@ -204,7 +203,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                 transfer_traj = compute_motion(command.start_robot, obstacles, element_from_index, next_printed,
                                                transfer_start_conf, command.start_conf,
                                                collisions=collision, attachments=command.trajectories[0].attachments,
-                                               max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
+                                               max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
             if transfer_traj is None:
                 transfer_failures += 1
                 if verbose:
@@ -229,7 +228,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                 transit_traj = compute_motion(plan[0].robot, obstacles, element_from_index, frozenset(),
                                              initial_conf, plan[0].start_conf,
                                              collisions=collision, attachments=command.trajectories[0].attachments,
-                                             max_time=max_time - elapsed_time(start_time), bar_only=bar_only)
+                                             max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
                 if transit_traj is None:
                     plan = None
                     transit_failures += 1

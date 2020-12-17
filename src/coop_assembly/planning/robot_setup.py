@@ -33,6 +33,20 @@ EE_MESH_PATHs = {
     }
 EE_MESH_PATH = EE_MESH_PATHs[ROBOT_NAME]
 
+import coop_assembly
+def obj_files_from_dir(dir_path):
+    cms = []
+    for filename in sorted(os.listdir(dir_path)):
+        if filename.endswith('.obj'):
+            cms.append(os.path.join(dir_path, filename))
+    return cms
+
+WS_MESH_PATHs = {
+    'kuka' : [],
+    'abb_track' : obj_files_from_dir(coop_assembly.get_data("models/abb_irb4600_40_255/meshes/collision/ECL_env_collision")),
+}
+WS_MESH_PATH = WS_MESH_PATHs[ROBOT_NAME]
+
 # WS_URDF = 'kuka_kr6_r900/urdf/mit_3-412_workspace.urdf'
 # WS_SRDF = 'kuka_kr6_r900/srdf/mit_3-412_workspace.srdf'
 
@@ -66,7 +80,7 @@ RESOLUTION = 0.01
 # INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
 INITIAL_CONFs = {
     'kuka': np.radians([5., -90., 100, 5, 10, -5]),
-    'abb_track' : np.hstack([0.5, np.radians([0,0,0,0,0,0])]),
+    'abb_track' : np.hstack([0., np.radians([0,0,0,0,0,0])]),
     }
 INITIAL_CONF = INITIAL_CONFs[ROBOT_NAME]
 
@@ -82,10 +96,27 @@ JOINT_WEIGHTS = JOINT_WEIGHTSs[ROBOT_NAME]
 GANTRY_JOINT_LIMITSs = {
     'kuka' : None,
     'abb_track' : {
-        'linear_axis_actuation_joint' : (0.0, 3.0),
+        'linear_axis_actuation_joint' : (0.0, 0.1), #3
         },
 }
 GANTRY_JOINT_LIMITS = GANTRY_JOINT_LIMITSs[ROBOT_NAME]
+
+########################################
+
+# BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
+BUILD_PLATE_CENTERs = {
+    'kuka' : np.array([500, 0, -14.23])*1e-3,
+    # 'abb_track' : np.array([1.63,-1.26,30.7*1e-3]),
+    'abb_track' : np.array([1.63, -0.5, 30.7*1e-3]),
+}
+BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
+
+# BOTTOM_BUFFER = 0.005
+# BOTTOM_BUFFER = 0.01
+BOTTOM_BUFFER = 0.03
+# BOTTOM_BUFFER = 0.1
+# BASE_YAW = np.pi + np.pi/6
+BASE_YAW = 0
 
 #########################################
 
@@ -172,5 +203,9 @@ def get_custom_limits(robot):
     [type]
         {joint index : (lower limit, upper limit)}
     """
-    return {joint_from_name(robot, joint): limits
-            for joint, limits in CUSTOM_LIMITS.items()}
+    limits = {joint_from_name(robot, joint): limits
+              for joint, limits in CUSTOM_LIMITS.items()}
+    if GANTRY_JOINT_LIMITS:
+        gantry_limits = {joint_from_name(robot, jn) : v for jn, v in GANTRY_JOINT_LIMITS.items()}
+        limits.update(gantry_limits)
+    return limits

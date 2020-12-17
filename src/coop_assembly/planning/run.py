@@ -38,23 +38,9 @@ from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream,
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness
 from coop_assembly.planning.heuristics import HEURISTICS
-from coop_assembly.planning.robot_setup import ROBOT_NAME
+from coop_assembly.planning.robot_setup import ROBOT_NAME, BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
-
-# BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
-BUILD_PLATE_CENTERs = {
-    'kuka' : np.array([500, 0, -14.23])*1e-3,
-    'abb_track' : np.array([1.63,-1.26,30.7*1e-3]),
-}
-BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
-
-# BOTTOM_BUFFER = 0.005
-# BOTTOM_BUFFER = 0.01
-BOTTOM_BUFFER = 0.01
-# BOTTOM_BUFFER = 0.1
-# BASE_YAW = np.pi + np.pi/6
-BASE_YAW = 0
 
 ########################################
 # two_tets
@@ -62,7 +48,7 @@ BASE_YAW = 0
 # po, focused: 24 s
 # po, binding: 34 s
 
-def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, write=False, saved_plan=None):
+def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, saved_plan=None):
     bar_struct, o_struct = load_structure(args.problem, viewer, apply_alpha(RED, 0))
     bar_radius = bar_struct.node[0]['radius']*METER_SCALE
     # transform model
@@ -121,15 +107,16 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
                 # plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors,
                 #     partial_orders=partial_orders,
                 #     collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
-                #     debug=debug, teleops=args.teleops)
+                #     debug=args.debug, teleops=args.teleops)
                 raise NotImplementedError()
             elif args.algorithm == 'regression':
                 with LockRenderer(not args.debug):
                     plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles,
                         bar_struct,
                         collision=args.collisions,
-                        motions=True, stiffness=args.stiffness, revisit=False, verbose=debug,
-                        lazy=False, bar_only=args.bar_only, partial_orders=partial_orders, chosen_bars=chosen_bars)
+                        motions=True, stiffness=args.stiffness, revisit=False,
+                        lazy=False, bar_only=args.bar_only, partial_orders=partial_orders, chosen_bars=chosen_bars,
+                        debug=args.debug, verbose=args.debug)
                 print(data)
             else:
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
@@ -202,8 +189,8 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
         display_trajectories(trajectories, time_step=time_step, element_from_index=element_from_index)
     # verify
     if args.collisions:
-        valid = validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui() or debug, \
-            bar_only=args.bar_only, refine_num=1, debug=debug)
+        valid = validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui() or args.debug, \
+            bar_only=args.bar_only, refine_num=1, debug=args.debug)
         cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
         assert valid
     else:
@@ -262,11 +249,11 @@ def main():
     success_cnt = 0
     if int(args.n_trails) == 1:
         # one-shot run, expose assertion errors
-        run_planning(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write, saved_plan=args.saved_plan)
+        run_planning(args, viewer=args.viewer, watch=args.watch, step_sim=args.step_sim, write=args.write, saved_plan=args.saved_plan)
     else:
         for i in range(int(args.n_trails)):
             try:
-                run_planning(args, viewer=args.viewer, watch=args.watch, debug=args.debug, step_sim=args.step_sim, write=args.write, saved_plan=args.saved_plan)
+                run_planning(args, viewer=args.viewer, watch=args.watch, step_sim=args.step_sim, write=args.write, saved_plan=args.saved_plan)
             except:
                 cprint('#{}: plan not found'.format(i), 'red')
                 continue

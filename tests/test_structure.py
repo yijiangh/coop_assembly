@@ -33,7 +33,6 @@ from coop_assembly.planning.parsing import load_structure, RESULTS_DIRECTORY, un
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.utils import recover_sequence, Command
 from coop_assembly.planning.robot_setup import get_gripper_mesh_path, get_disabled_collisions, ROBOT_NAME
-from coop_assembly.planning.run import BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
 
 @pytest.mark.color_structure
 def test_color_structure(viewer, file_spec):

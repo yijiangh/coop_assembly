@@ -17,7 +17,8 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
 from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import get_index_from_bodies
-from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME
+from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME, \
+    BUILD_PLATE_CENTER
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DIAGNOSIS = False
@@ -25,7 +26,7 @@ DYNMAIC_RES_RATIO = 0.5
 
 ##################################################
 
-EE_INITIAL_POINT = np.array([0.4, 0, 0.6])
+EE_INITIAL_POINT = np.array(BUILD_PLATE_CENTER) + np.array([0.4, 0, 0.6])
 EE_INITIAL_EULER = np.array([0, np.pi/2, 0])
 EE_INITIAL_CONF = np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
 
@@ -105,7 +106,7 @@ def create_bounding_mesh(bodies=None, node_points=None, buffer=0.):
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
-                   collisions=True, bar_only=False, max_time=INF, buffer=0.05, smooth=100): #, **kwargs):
+                   collisions=True, bar_only=False, max_time=INF, buffer=0.05, smooth=100, debug=False): #, **kwargs):
     # TODO: can also just plan to initial conf and then shortcut
     if not bar_only:
         joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
@@ -194,7 +195,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         return False
 
     path = None
-    if check_initial_end(start_conf, end_conf, collision_fn):
+    if check_initial_end(start_conf, end_conf, collision_fn, diagnosis=debug):
         path = birrt(start_conf, end_conf, distance_fn, sample_fn, dynamic_extend_fn, element_collision_fn,
                      restarts=50, iterations=100, smooth=smooth, max_time=max_time)
 
