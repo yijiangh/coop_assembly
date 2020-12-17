@@ -4,11 +4,11 @@ from collections import defaultdict, deque
 # from pddlstream.utils import get_connected_components
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize, pairwise_link_collision, \
-    BASE_LINK, is_connected, connect
+    BASE_LINK, is_connected, connect, create_box
 
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
-from .robot_setup import get_picknplace_robot_data, BUILT_PLATE_Z, EE_LINK_NAME, INITIAL_CONF
+from .robot_setup import get_picknplace_robot_data, BUILT_PLATE_Z, EE_LINK_NAME, INITIAL_CONF, ROBOT_NAME
 from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 
 def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z, viewer=False):
@@ -27,11 +27,15 @@ def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z, viewer=False):
         set_static(robot)
         # set_joint_positions(robot, joints_from_names(robot, joint_names), INITIAL_CONF)
         if use_floor:
-            floor = create_plane(color=GROUND_COLOR)
-            obstacles.append(floor)
-            set_point(floor, Point(x=1.2, z=built_plate_z))
-        else:
-            floor = None
+            if ROBOT_NAME == 'kuka':
+                floor = create_plane(color=GROUND_COLOR)
+                obstacles.append(floor)
+                set_point(floor, Point(x=1.2, z=built_plate_z))
+            elif ROBOT_NAME == 'abb_track':
+                h = 0.2
+                build_platform = create_box(2, 6, 0.2, color=GROUND_COLOR)
+                set_point(build_platform, Point(x=1.7, y=-1.5, z=built_plate_z-h/2))
+                obstacles.append(build_platform)
     return obstacles, robot
 
 ##################################################

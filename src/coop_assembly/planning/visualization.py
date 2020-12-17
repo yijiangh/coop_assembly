@@ -13,7 +13,7 @@ CONNECTOR_LINE_WIDTH = 1.0
 
 GROUND_COLOR = 0.8*np.ones(3)
 BACKGROUND_COLOR = [0.9, 0.9, 1.0] # 229, 229, 255
-SHADOWS = True
+SHADOWS = False
 
 ###########################################
 

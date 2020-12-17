@@ -25,7 +25,7 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, get_gripper_mesh_path
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, \
-    display_trajectories, check_model, set_camera, visualize_stiffness
+    display_trajectories, check_model, set_camera, visualize_stiffness, GROUND_COLOR
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
     flatten_commands
 
@@ -45,13 +45,13 @@ ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 # BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
 BUILD_PLATE_CENTERs = {
     'kuka' : np.array([500, 0, -14.23])*1e-3,
-    'abb_track' : np.array([1.63,-1.26,0.00]),
+    'abb_track' : np.array([1.63,-1.26,30.7*1e-3]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
 # BOTTOM_BUFFER = 0.005
 # BOTTOM_BUFFER = 0.01
-BOTTOM_BUFFER = 0.05
+BOTTOM_BUFFER = 0.01
 # BOTTOM_BUFFER = 0.1
 # BASE_YAW = np.pi + np.pi/6
 BASE_YAW = 0
@@ -74,7 +74,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
     #
     bar_struct.generate_grounded_connection()
 
-    fixed_obstacles, robot = load_world(use_floor=ROBOT_NAME=='kuka', built_plate_z=BUILD_PLATE_CENTER[2])
+    fixed_obstacles, robot = load_world(use_floor=True, built_plate_z=BUILD_PLATE_CENTER[2])
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
     # end effector robot
     ee_mesh_path = get_gripper_mesh_path()
