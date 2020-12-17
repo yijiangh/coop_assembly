@@ -47,7 +47,11 @@ ANGLE = np.pi/3
 POS_STEP_SIZE = 0.002 # | 0.005
 ORI_STEP_SIZE = np.pi/30
 
-RETREAT_DISTANCE = 0.025
+RETREAT_DISTANCEs = {
+    'kuka': 0.025,
+    'abb_track': 0.05,
+}
+RETREAT_DISTANCE = RETREAT_DISTANCEs[ROBOT_NAME]
 
 # collision checking safe margin
 MAX_DISTANCE = 0.0

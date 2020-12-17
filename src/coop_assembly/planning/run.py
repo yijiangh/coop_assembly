@@ -50,7 +50,8 @@ BUILD_PLATE_CENTERs = {
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
 # BOTTOM_BUFFER = 0.005
-BOTTOM_BUFFER = 0.01
+# BOTTOM_BUFFER = 0.01
+BOTTOM_BUFFER = 0.05
 # BOTTOM_BUFFER = 0.1
 # BASE_YAW = np.pi + np.pi/6
 BASE_YAW = 0
@@ -73,7 +74,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
     #
     bar_struct.generate_grounded_connection()
 
-    fixed_obstacles, robot = load_world(built_plate_z=BUILD_PLATE_CENTER[2])
+    fixed_obstacles, robot = load_world(use_floor=ROBOT_NAME=='kuka', built_plate_z=BUILD_PLATE_CENTER[2])
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
     # end effector robot
     ee_mesh_path = get_gripper_mesh_path()

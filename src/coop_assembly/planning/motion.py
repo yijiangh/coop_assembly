@@ -21,7 +21,7 @@ from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DIAGNOSIS = False
-DYNMAIC_RES_RATIO = 0.2
+DYNMAIC_RES_RATIO = 0.5
 
 ##################################################
 
@@ -112,7 +112,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         weights = JOINT_WEIGHTS
         resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
         disabled_collisions = get_disabled_collisions(robot)
-        custom_limits = {}
+        custom_limits = get_custom_limits(robot)
     else:
         joints = get_movable_joints(robot)
         weights = np.ones(len(joints))
