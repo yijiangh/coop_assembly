@@ -17,6 +17,26 @@ import coop_assembly
 # ROBOT_NAME  = 'kuka'
 ROBOT_NAME  = 'abb_track'
 BUILT_PLATE_Z = -0.025 # meter
+INCLUDE_ENV_COLLISION_OBJS = False
+
+########################################
+
+# BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
+BUILD_PLATE_CENTERs = {
+    'kuka' : np.array([500, 0, -14.23])*1e-3,
+    # 'abb_track' : np.array([1.63, -0.5, 30.7*1e-3]),
+    'abb_track' : np.array([1.3, -1., 30.7*1e-3]),
+}
+BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
+
+# BOTTOM_BUFFER = 0.005
+# BOTTOM_BUFFER = 0.01
+BOTTOM_BUFFER = 0.03
+# BOTTOM_BUFFER = 0.1
+# BASE_YAW = np.pi + np.pi/6
+BASE_YAW = 0
+
+########################################
 
 ROBOT_URDFs = {
     'kuka' : 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf',
@@ -74,7 +94,8 @@ CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 # joint resolution used in transit motions
 # 0.003 captures pregrasp collision
 # RESOLUTION = 0.003
-RESOLUTION = 0.01
+# RESOLUTION = 0.01
+RESOLUTION = 0.1
 
 # INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
 # INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
@@ -96,27 +117,10 @@ JOINT_WEIGHTS = JOINT_WEIGHTSs[ROBOT_NAME]
 GANTRY_JOINT_LIMITSs = {
     'kuka' : None,
     'abb_track' : {
-        'linear_axis_actuation_joint' : (0.0, 0.1), #3
+        'linear_axis_actuation_joint' : (0.0, 3.5), #3
         },
 }
 GANTRY_JOINT_LIMITS = GANTRY_JOINT_LIMITSs[ROBOT_NAME]
-
-########################################
-
-# BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
-BUILD_PLATE_CENTERs = {
-    'kuka' : np.array([500, 0, -14.23])*1e-3,
-    # 'abb_track' : np.array([1.63,-1.26,30.7*1e-3]),
-    'abb_track' : np.array([1.63, -0.5, 30.7*1e-3]),
-}
-BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
-
-# BOTTOM_BUFFER = 0.005
-# BOTTOM_BUFFER = 0.01
-BOTTOM_BUFFER = 0.03
-# BOTTOM_BUFFER = 0.1
-# BASE_YAW = np.pi + np.pi/6
-BASE_YAW = 0
 
 #########################################
 

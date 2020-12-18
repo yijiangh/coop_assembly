@@ -29,7 +29,7 @@ from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
 
 # TODO: fix self collision
-ENABLE_SELF_COLLISIONS = False
+ENABLE_SELF_COLLISIONS = True
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 100
 GRASP_MAX_ATTEMPTS = 100
@@ -394,7 +394,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         return None
 
     if teleops:
-        path = [approach_conf, attach_conf]
+        approach_path = [approach_conf, attach_conf]
     else:
         set_joint_positions(robot, control_joints, approach_conf)
         # Cartesian planning only from the robot's base
@@ -423,7 +423,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         return None
 
     if teleops:
-        retreat_path = [attach_conf, post_attach_conf][1:]
+        retreat_path = [attach_conf, post_attach_conf]
     else:
         # detach to post-detach
         set_joint_positions(robot, control_joints, attach_conf)

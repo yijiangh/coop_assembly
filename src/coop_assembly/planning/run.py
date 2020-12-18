@@ -74,6 +74,8 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
     chosen_bars = [int(b) for b in args.subset_bars] if args.subset_bars is not None else None
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.2))
+    if args.subset_bars is not None:
+        label_elements({k : element_from_index[k] for k in chosen_bars})
 
     # bar_struct.set_body_color(RED, indices=chosen_bars)
     print('base: ', bar_struct.base_centroid(METER_SCALE))
@@ -114,9 +116,9 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                     plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles,
                         bar_struct,
                         collision=args.collisions,
-                        motions=True, stiffness=args.stiffness, revisit=False,
+                        motions=args.motions, stiffness=args.stiffness, revisit=False,
                         lazy=False, bar_only=args.bar_only, partial_orders=partial_orders, chosen_bars=chosen_bars,
-                        debug=args.debug, verbose=args.debug)
+                        debug=args.debug, verbose=args.debug, teleops=args.teleops)
                 print(data)
             else:
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
@@ -212,6 +214,8 @@ def create_parser():
                         help='Which heuristic to use')
     parser.add_argument('-c', '--collisions', action='store_false',
                         help='Disable collision checking with obstacles')
+    parser.add_argument('-m', '--motions', action='store_false',
+                        help='Disable transfer/transit planning')
     parser.add_argument('-b', '--bar_only', action='store_true',
                         help='Only planning motion for floating bars, diable arm planning')
     parser.add_argument('--stiffness', action='store_false',

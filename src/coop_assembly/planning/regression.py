@@ -67,7 +67,7 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                heuristic='z', max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
                collision=True, stiffness=True, motions=True, lazy=True, checker=None, fem_element_from_bar_id=None,
-               verbose=False, chosen_bars=None, debug=False, **kwargs):
+               verbose=False, chosen_bars=None, debug=False, teleops=False, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
     initial_conf = INITIAL_CONF if not bar_only else np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
@@ -80,7 +80,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
 
     heuristic_fn = get_heuristic_fn(robot, element_from_index, heuristic, checker=None, forward=False)
     place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
-        precompute_collisions=False, allow_failure=True)
+        precompute_collisions=False, allow_failure=True, teleops=teleops)
 
     # TODO: partial ordering
 
@@ -111,7 +111,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
             # else Command([MotionTrajectory(None, None, [final_conf])])
         add_successors(final_printed, final_command)
     else:
-        cprint('The initial state not connected to the ground!', 'yellow')
+        cprint('The completed state not connected to the ground or not stiff!', 'yellow')
 
     # * preview the precomputed heuristic on elements
     # if has_gui():

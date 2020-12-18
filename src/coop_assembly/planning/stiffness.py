@@ -27,7 +27,8 @@ from coop_assembly.help_functions.shared_const import METER_SCALE, EPS
 from coop_assembly.data_structure import GROUND_INDEX
 from coop_assembly.planning.parsing import load_structure, unpack_structure, PICKNPLACE_DIRECTORY
 
-TRANS_TOL = 0.0015
+# TRANS_TOL = 0.0015
+TRANS_TOL = 0.002
 ROT_TOL = INF # 5 * np.pi / 180
 
 ####################################
