@@ -23,7 +23,7 @@ from coop_assembly.help_functions.parsing import export_structure_data, parse_sa
 from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
-from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME, get_gripper_mesh_path
+from coop_assembly.planning import get_picknplace_robot_data, TOOL_LINK_NAME, EE_LINK_NAME, get_gripper_mesh_path
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, \
     display_trajectories, check_model, set_camera, visualize_stiffness, GROUND_COLOR
 from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
@@ -156,8 +156,8 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 # print(extra_data)
             if write:
                 suffix = ''
-                save_plan(Config(args), trajectories, TCP_link_name=TOOL_LINK_NAME if not args.bar_only else None,
-                    element_from_index=element_from_index, suffix=suffix, extra_data=extra_data, overwrite=False)
+                save_plan(Config(args), trajectories, save_link_names=[TOOL_LINK_NAME, EE_LINK_NAME] if not args.bar_only else None,
+                    element_from_index=element_from_index, bar_struct=bar_struct, suffix=suffix, extra_data=extra_data, overwrite=False)
     else:
         # parse a saved plan
         robot = end_effector if "bar-only" in saved_plan else robot

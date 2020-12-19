@@ -19,7 +19,7 @@ from coop_assembly.help_functions.parsing import export_structure_data, parse_sa
 from coop_assembly.help_functions import contact_to_ground
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
-from coop_assembly.planning import get_picknplace_robot_data, BUILT_PLATE_Z, TOOL_LINK_NAME, EE_LINK_NAME
+from coop_assembly.planning import get_picknplace_robot_data, TOOL_LINK_NAME, EE_LINK_NAME
 from coop_assembly.planning.utils import load_world
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera, draw_partial_ordered
 from coop_assembly.planning.visualization import display_trajectories
@@ -164,6 +164,7 @@ def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
 
     obstacles, robot = load_world(use_floor=True)
     draw_pose(get_link_pose(robot, link_from_name(robot, TOOL_LINK_NAME)))
+    draw_pose(get_link_pose(robot, link_from_name(robot, EE_LINK_NAME)))
 
     # printed = set([0,1,2,3])
     # chosen = 4

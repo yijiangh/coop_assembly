@@ -9,10 +9,10 @@ from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_p
 import coop_assembly
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
-from .robot_setup import get_picknplace_robot_data, BUILT_PLATE_Z, EE_LINK_NAME, INITIAL_CONF, ROBOT_NAME, WS_MESH_PATH, INCLUDE_ENV_COLLISION_OBJS
+from .robot_setup import get_picknplace_robot_data, EE_LINK_NAME, INITIAL_CONF, ROBOT_NAME, WS_MESH_PATH, INCLUDE_ENV_COLLISION_OBJS
 from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 
-def load_world(use_floor=True, built_plate_z=BUILT_PLATE_Z, viewer=False):
+def load_world(use_floor=True, built_plate_z=0.0, viewer=False):
     if not is_connected():
         connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
 

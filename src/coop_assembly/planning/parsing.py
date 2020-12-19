@@ -3,6 +3,7 @@ import json
 import datetime
 import copy
 from termcolor import cprint
+from collections import OrderedDict
 from pybullet_planning import connect, LockRenderer, get_date, is_connected, RED
 from .visualization import set_camera
 
@@ -104,18 +105,20 @@ def unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=RED)
     connectors = list(contact_from_connectors.keys())
     return element_from_index, grounded_elements, contact_from_connectors, connectors
 
-def save_plan(config, trajectories, TCP_link_name=None, overwrite=True, element_from_index=None, suffix=None, extra_data=None):
-    plan_path = '{}_{}-{}{}_solution{}.json'.format(config.problem.split('.json')[0], config.args.algorithm, config.args.bias,
+def save_plan(config, trajectories, save_link_names=None, overwrite=True, element_from_index=None, bar_struct=None,
+    suffix=None, extra_data=None):
+    plan_path = '{}_{}-{}{}solution{}.json'.format(config.problem.split('.json')[0], config.args.algorithm, config.args.bias,
         '' if suffix is None else '_' + suffix, '' if overwrite else '_'+get_date())
     save_path = os.path.join(RESULTS_DIRECTORY, plan_path)
 
+    config_data = config.to_data()
     from .logger import get_global_parameters
     with open(save_path, 'w') as f:
-        data = {'problem' : config.problem,
-                'config' : config.to_data(),
-                'write_time' : str(datetime.datetime.now()),
-                'parameters' : get_global_parameters(),
-                }
+        data = OrderedDict()
+        data['problem'] = config.problem,
+        data['config'] = config_data,
+        data['write_time'] = str(datetime.datetime.now()),
+        data['parameters'] = get_global_parameters(),
         data['plan'] = []
         e_path = []
         e_id = trajectories[0].element
@@ -128,8 +131,9 @@ def save_plan(config, trajectories, TCP_link_name=None, overwrite=True, element_
                 e_path = []
                 e_id = traj.element
             tdata = traj.to_data()
-            if TCP_link_name is not None:
-                tdata.update({'link_path' : {TCP_link_name : traj.get_link_path(TCP_link_name)}})
+            if save_link_names is not None:
+                link_path_data = {link_name : traj.get_link_path(link_name) for link_name in save_link_names}
+                tdata.update({'link_path' : link_path_data})
             e_path.append(tdata)
         else:
             data['plan'].append(e_path)
@@ -143,6 +147,14 @@ def save_plan(config, trajectories, TCP_link_name=None, overwrite=True, element_
                     'goal_pose' : element.goal_pose.to_data(),
                 }
             data['element_from_index'] = element_data
+
+        if bar_struct:
+            from .stiffness import conmech_model_from_bar_structure
+            chosen_bars = config_data['chosen_bars'] if config_data['chosen_bars'] and len(config_data['chosen_bars']) > 0 else None
+            model, fem_element_from_bar_id = conmech_model_from_bar_structure(bar_struct, chosen_bars=chosen_bars)
+            model_data = model.to_data()
+            model_data['fem_element_from_bar_id'] = {bar : list(fem_es) for bar, fem_es in fem_element_from_bar_id.items()}
+            data['conmech_model'] = model_data
 
         if extra_data is not None:
             data.update(extra_data)

@@ -218,6 +218,7 @@
        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
        <geometry>
          <mesh filename="package://abb_irb4600_40_255/meshes/visual/princeton_gripper_visual_m.stl"/>
+         <!-- <mesh filename="package://abb_irb4600_40_255/meshes/visual/princeton_gripper_visual_detailed_m.stl"/> -->
        </geometry>
        <material name="grey">
          <color rgba="0.5 0.5 0.5 1.0"/>
