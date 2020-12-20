@@ -215,7 +215,7 @@
    <!-- ! end effector-->
    <link name="eef_base_link">
      <visual>
-       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+       <origin rpy="0 0 -1.57079632679" xyz="0.0 0.0 0.0"/>
        <geometry>
          <mesh filename="package://abb_irb4600_40_255/meshes/visual/princeton_gripper_visual_m.stl"/>
          <!-- <mesh filename="package://abb_irb4600_40_255/meshes/visual/princeton_gripper_visual_detailed_m.stl"/> -->
@@ -225,7 +225,7 @@
        </material>
      </visual>
      <collision>
-       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+       <origin rpy="0 0 -1.57079632679" xyz="0.0 0.0 0.0"/>
        <geometry>
          <mesh filename="package://abb_irb4600_40_255/meshes/collision/princeton_gripper_collision_m.stl"/>
        </geometry>

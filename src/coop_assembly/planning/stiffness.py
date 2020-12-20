@@ -252,7 +252,7 @@ def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_
     #print("has stored results: {0}".format(checker.has_stored_result()))
     success, nodal_displacement, fixities_reaction, element_reaction = checker.get_solved_results()
     assert is_stiff == success, "full structure not stiff!"
-    assert success or checker.get_compliance() > 0.0
+    assert success or checker.get_compliance() > 0.0, 'success {} | compliance {}'.format(success, checker.get_compliance())
     displacements = {i: Displacement(*d) for i, d in nodal_displacement.items()}
     fixities = {i: Reaction(*d) for i, d in fixities_reaction.items()}
     reactions = {i: (Reaction(*d[0]), Reaction(*d[1])) for i, d in element_reaction.items()}

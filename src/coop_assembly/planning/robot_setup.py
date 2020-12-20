@@ -94,8 +94,8 @@ CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 # joint resolution used in transit motions
 # 0.003 captures pregrasp collision
 # RESOLUTION = 0.005
+# RESOLUTION = 0.01
 RESOLUTION = 0.01
-# RESOLUTION = 0.1
 
 # INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
 # INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]

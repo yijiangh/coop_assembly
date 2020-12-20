@@ -131,8 +131,8 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
 
         # if verbose:
         print('#'*10)
-        print('Iteration: {} | Best: {} | Printed: {} | Element: {} | Time: {:.3f} | BT : {} | Visit: {}'.format(
-            num_evaluated, min_remaining, len(printed), element, elapsed_time(start_time), backtrack, visits))
+        print('Iteration: {} | Best: {}/{} | Printed: {} | Element: {} | Time: {:.3f} | BT : {} | Visit: {}'.format(
+            num_evaluated, min_remaining, len(all_elements), len(printed), element, elapsed_time(start_time), backtrack, visits))
         next_printed = printed - {element}
 
         if backtrack > max_backtrack:

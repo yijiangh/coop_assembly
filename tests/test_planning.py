@@ -252,6 +252,11 @@ def test_load_robot(viewer, write):
         end_conf = [3.6, 0.506, 0.471, -0.244, -1.239, 0.576, 0.000]
 
         set_joint_positions(robot, joints, start_conf)
+
+        draw_pose(get_link_pose(robot, link_from_name(robot, TOOL_LINK_NAME)))
+        draw_pose(get_link_pose(robot, link_from_name(robot, EE_LINK_NAME)))
+        wait_if_gui()
+
         path = plan_joint_motion(robot, joints, end_conf, obstacles=obstacles, attachments=[],
                                  self_collisions=True, disabled_collisions=disabled_collisions,
                                  diagnosis=True,
