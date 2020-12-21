@@ -34,7 +34,7 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 
 from pybullet_planning import connect, reset_simulation, disconnect
 
-def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids):
+def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids, verbose=False):
     """[summary]
 
     Parameters
@@ -71,12 +71,6 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     end_pts_1 = (pt_1, add_vectors(pt_2, c_1))
     end_pts_2 = (pt_2, add_vectors(pt_0, c_2))
 
-    # local coordinate system for each bar
-    # pt_int = centroid_points((end_pts_0[0], end_pts_0[1], end_pts_1[0], end_pts_1[1], end_pts_2[0], end_pts_2[1]))
-    # _, _, vec_z_0 = calculate_coord_sys(end_pts_0, pt_int)
-    # _, _, vec_z_1 = calculate_coord_sys(end_pts_1, pt_int)
-    # _, _, vec_z_2 = calculate_coord_sys(end_pts_2, pt_int)
-
     # ? overwriting the local frame's z axis above ???
     vec_z_0 = calculate_bar_z(end_pts_0)
     vec_z_1 = calculate_bar_z(end_pts_1)
@@ -88,10 +82,11 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     crosec_values = (25.0, 2.0) # ? what does this cross section value mean?
     # these are vertex keys in the Bar_Structure network
     # * each bar is a vertex in the Bar_Structure
-    # add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False, pb_scale=METER_SCALE):
-    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius=radius, grounded=True)
-    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius=radius, grounded=True)
-    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius=radius, grounded=True)
+    # add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17,
+    #   grounded=False, pb_scale=METER_SCALE)
+    b_v0_key = b_struct.add_bar(bar_type, end_pts_0, crosec_type, crosec_values, vec_z_0, radius=radius) # , grounded=base_tri_ids[0] in grounded_nodes
+    b_v1_key = b_struct.add_bar(bar_type, end_pts_1, crosec_type, crosec_values, vec_z_1, radius=radius) # , grounded=base_tri_ids[1] in grounded_nodes
+    b_v2_key = b_struct.add_bar(bar_type, end_pts_2, crosec_type, crosec_values, vec_z_2, radius=radius) # , grounded=base_tri_ids[2] in grounded_nodes
 
     pt_m = [0,0,-1e13]
 
@@ -132,8 +127,9 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
     o_v0_key = o_struct.add_node(pt_0, v_key=base_tri_ids[0], t_key=tet_id)
     o_v1_key = o_struct.add_node(pt_1, v_key=base_tri_ids[1], t_key=tet_id)
     o_v2_key = o_struct.add_node(pt_2, v_key=base_tri_ids[2], t_key=tet_id)
-    print('vertex key: {} added to the OverallStructure as the base triangle, original ids in the list: {}'.format(\
-        [o_v0_key, o_v1_key, o_v2_key], base_tri_ids))
+    if verbose:
+        print('vertex key: {} added to the OverallStructure as the base triangle, original ids in the list: {}'.format(\
+            [o_v0_key, o_v1_key, o_v2_key], base_tri_ids))
 
     # ? shouldn't these be assigned to tet #0 as well?
     # o_vi and o_vj's connection is "realized" by bar # b_v_key
@@ -150,7 +146,7 @@ def generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_i
 
 
 def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_ids,
-    correct=False, check_collision=True, viewer=False, verbose=True):
+    grounded_nodes=None, grounded_limit_distance=40, correct=False, check_collision=True, viewer=False, verbose=True):
     """generate double-tangent tet design from a given list of points and tet sequence indices.
 
     There are three types of parameters to be resolved at each step of the generation process:
@@ -203,20 +199,22 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
     # parameters: connection side of the bar, existing bars of the node that the new bar is connecting to
     # the process iterates through over all four possible connection sides, and consequently runs through
     # all possible bar pairs that a new bar connect to in a side
-    if not verbose:
-        # used when rpc call is made to get around stdout error
-        sys.stdout = open(os.devnull, 'w')
-    connect(use_gui=viewer)
 
-    print('='*20)
-    print('Generating the first triangle.')
+    connect(use_gui=viewer)
     base_tri_ids = tet_node_ids[0][0]
     base_tri_pts = [points[node_id] for node_id in base_tri_ids]
-    b_struct, o_struct = generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids)
+    grounded_nodes = grounded_nodes or base_tri_pts
 
-    for tet_id, (tri_node_ids, new_vertex_id) in enumerate(tet_node_ids):
+    if verbose:
         print('='*20)
-        print('Generating tet #{}: ({}) -> {}'.format(tet_id, tri_node_ids, new_vertex_id))
+        print('Generating the first triangle.')
+    b_struct, o_struct = generate_first_triangle(o_struct, b_struct, radius, base_tri_pts, base_tri_ids, verbose=verbose)
+
+    # if the first triangle is set as base, we don't add other subsequence connected bars as grounded bars
+    for tet_id, (tri_node_ids, new_vertex_id) in enumerate(tet_node_ids):
+        if verbose:
+            print('='*20)
+            print('Generating tet #{}: ({}) -> {}'.format(tet_id, tri_node_ids, new_vertex_id))
 
         # TODO: safe guarding base triangle has been added already
         vertex_pt = points[new_vertex_id]
@@ -238,7 +236,7 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
 
         success = add_tetra(o_struct, b_struct, connected_edges_from_vert,
                             vertex_pt, new_vertex_id, radius,
-                            correct=correct, check_collision=check_collision)
+                            correct=correct, check_collision=check_collision, verbose=verbose)
         if success is None:
             raise RuntimeError('Tet generation fails at #{} ({}) -> {}'.format(tet_id, tri_node_ids, new_vertex_id))
             # break
@@ -248,13 +246,24 @@ def generate_structure_from_points(o_struct, b_struct, radius, points, tet_node_
             b_struct.node[new_bars[0]].update({"layer":tet_id+1})
             b_struct.node[new_bars[1]].update({"layer":tet_id+1})
             b_struct.node[new_bars[2]].update({"layer":tet_id+1})
+
+    # tag grounded elements
+    bar_endpts = b_struct.get_axis_pts_from_element(scale=1.0)
+    for b, endpts in bar_endpts.items():
+        pt0, pt1 = endpts
+        for g_pt in grounded_nodes:
+            if distance_point_point(pt0, g_pt) < grounded_limit_distance or \
+               distance_point_point(pt1, g_pt) < grounded_limit_distance:
+                b_struct.node[b].update({"grounded":True})
+                break
+
     reset_simulation()
     disconnect()
     return b_struct, o_struct
 
 def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     new_vertex_pt, new_vertex_id, radius,
-    bool_add=True, b_vert_ids=None, o_v_key=None, correct=True, check_collision=False):
+    bool_add=True, b_vert_ids=None, o_v_key=None, correct=True, check_collision=False, grounded_nodes=None, verbose=False):
     """adds a new point and tetrahedron to the structure
         input: nodes, bars from o_struct as vertex_key_integer and edge_vertex_key_tuples
 
@@ -344,8 +353,9 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
         # change new target vertex point position using the SP heuristic
         pt_new = correct_point(b_struct, o_struct, pt_new, [(b_v1_1, b_v1_2), (b_v2_1, b_v2_2), (b_v3_1, b_v3_2)], o_v_key=o_v_key)
 
-    print('------')
-    print('Finding first tangent bar...')
+    if verbose:
+        print('------')
+        print('Finding first tangent bar...')
     # enumerating all pairs of touch bars at vertex tri_node_ids[0]
     for j, bar_jnd_1 in enumerate(comb_bars_1):
         bars1 = bar_jnd_1
@@ -359,20 +369,22 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
 
         ret_ft = first_tangent(pt_new, contact_pt1, max_len,
                                b_v1_1, b_v1_2, b_struct, pt_mean, radius,
-                               b_v0_n=None if bool_add else b_v0, check_collision=check_collision)
+                               b_v0_n=None if bool_add else b_v0, check_collision=check_collision, verbose=verbose)
 
         if ret_ft is not None:
-            print('Bar chosen: #B{}-(oe{}) + #B{}-(oe{})'.format(b_v1_1, bars1[0], b_v1_2, bars1[1]))
             # unboxing results
             b_struct, b_v0, _ = ret_ft
+            if verbose:
+                print('Bar chosen #{}: #B{}-(o{}) + #B{}-(o{})'.format(b_v0, b_v1_1, bars1[0], b_v1_2, bars1[1]))
             break
         else:
             if j == len(comb_bars_1)-1:
                 # print("no point found for first tangent calculation - 430, add_tetra")
                 raise RuntimeError("no point found for first tangent calculation - 430, add_tetra")
 
-    print('------')
-    print('Finding second tangent bar...')
+    if verbose:
+        print('------')
+        print('Finding second tangent bar...')
     for j, bar_jnd_2 in enumerate(comb_bars_2):
         bars2 = bar_jnd_2
         b_v2_1 = o_struct.get_bar_vertex_key(bars2[0])
@@ -384,19 +396,20 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
 
         # b_v0 is the last added, first bar in the tet
         ret_st = second_tangent(contact_pt2, b_v2_1, b_v2_2,
-                                b_struct, b_v0, pt_new, radius, max_len, pt_mean, b_v0_n=None, check_collision=check_collision)
+                                b_struct, b_v0, pt_new, radius, max_len, pt_mean, b_v0_n=None, check_collision=check_collision, verbose=verbose)
 
         if ret_st:
             b_struct, b_v1, _, _ = ret_st
-            print('Bar chosen: #B{}-(oe{}) + #B{}-(oe{})'.format(b_v2_1, bars2[0], b_v2_2, bars2[1]))
+            if verbose:
+                print('Bar chosen #{}: #B{}-(o{}) + #B{}-(o{})'.format(b_v1, b_v2_1, bars2[0], b_v2_2, bars2[1]))
             break
         else:
             if j == len(comb_bars_2) - 1:
-                # print("no point found for second tangent calculation - 430, add_tetra")
                 raise RuntimeError("no point found for second tangent calculation - 430, add_tetra")
 
-    print('------')
-    print('Finding third tangent bar...')
+    if verbose:
+        print('------')
+        print('Finding third tangent bar...')
     for j, bar_jnd_3 in enumerate(comb_bars_3):
         bars3 = bar_jnd_3
         b_v3_1 = o_struct.get_bar_vertex_key(bars3[0])
@@ -408,17 +421,17 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
 
         # b_v0, b_v1 are the two latest added vars in the tet
         ret_tt = third_tangent(b_struct, b_v0, b_v1, contact_pt3,
-                               max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v0_n=b_v2 if not bool_add else None, check_collision=check_collision)
+                               max_len, b_v3_1, b_v3_2, pt_mean, radius, b_v0_n=b_v2 if not bool_add else None, check_collision=check_collision, verbose=verbose)
 
         if ret_tt:
             b_struct, b_v2, _, _ = ret_tt
-            print('Bar chosen: #B{}-(oe{}) + #B{}-(oe{})'.format(b_v3_1, bars3[0], b_v3_2, bars3[1]))
+            if verbose:
+                print('Bar chosen #{}: #B{}-(o{}) + #B{}-(o{})'.format(b_v2, b_v3_1, bars3[0], b_v3_2, bars3[1]))
             break
         else:
             # print("tangent 3 not found")
             if j == len(comb_bars_3) - 1:
-                # print("no point found for third tangent calculation - 430, add_tetra")
-                raise RuntimeError("no point found for third tangent calculation - 430, add_tetra")
+                raise RuntimeError("no point found for third tangent calculation - add_tetra")
 
     # * BarStructure update
     if bool_add:
@@ -438,6 +451,10 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     dpp_3 = compute_contact_line_between_bars(b_struct, b_v0, b_v1)
     key = list(b_struct.edge[b_v0][b_v1]["endpoints"].keys())[0]
     b_struct.edge[b_v0][b_v1]["endpoints"].update({key:(dpp_3[0], dpp_3[1])})
+    # grounded status update
+    # if new_vertex_id in grounded_nodes:
+    #     for new_bar_key in [b_v0, b_v1, b_v2]:
+    #         b_struct.vertex[new_bar_key].update({'grounded' : True})
 
     # * OverallStructure update
     if bool_add:
@@ -465,79 +482,4 @@ def add_tetra(o_struct, b_struct, connected_edges_from_vert,
     return o_struct, b_struct, (b_v0, b_v1, b_v2)
 
 ##########################################
-
-def main():
-# def main(points, tet_node_ids, radius, check_collision=False, correct=True, viewer=False, verbose=False, scale=1.0, write=False, \
-#         return_network=False, allowable_bar_collision_depth=1e-3, **kwargs):
-    """Main entry point for the design system, for direct, xfunc or rpc call
-
-    Parameters
-    ----------
-    points : list of float lists
-        [[x,y,z], ...]
-    tet_node_ids : list
-        [[(base triangle vertex ids), new vertex id], ...]
-    radius : float
-        rod radius in millimeter
-    check_col : bool, optional
-        [description], by default False
-    correct : bool, optional
-        [description], by default True
-    viewer : bool, optional
-        enable pybullet viewer if True, by default True
-
-    Returns
-    -------
-    (Overall_Structure.data, Bar_Structure.data)
-        Serialized version of the overall structure and bar structure
-    """
-    # # TODO
-    pass
-    # bar_struct = BarStructure()
-    # o_struct = OverallStructure(bar_struct)
-    # generate_structure_from_points(o_struct, bar_struct, radius, points, tet_node_ids,
-    #     correct=correct, check_collision=check_collision, viewer=viewer, verbose=verbose)
-
-    # endpts_from_element = bar_struct.get_axis_pts_from_element(scale=scale)
-
-    # if write:
-    #     export_structure_data(bar_struct.to_data(), o_struct.to_data(), **kwargs)
-
-    # connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
-    # element_bodies = bar_struct.get_element_bodies(color=apply_alpha(RED, 0))
-    # set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
-
-    # handles = []
-    # handles.extend(label_elements(element_bodies))
-
-    # # * checking mutual collision between bars
-    # # TODO move this complete assembly collision sanity check to bar structure class
-    # contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
-    # connectors = list(contact_from_connectors.keys())
-    # for bar1, bar2 in connectors:
-    #     b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.1))
-    #     b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.1))
-    #     assert len(get_bodies()) == len(element_bodies)
-
-    #     if pairwise_collision(b1_body, b2_body):
-    #         cr = pairwise_collision_info(b1_body, b2_body)
-    #         # draw_collision_diagnosis(cr, focus_camera=True)
-    #         penetration_depth = draw_collision_diagnosis(cr)
-    #         if penetration_depth is not None and penetration_depth > allowable_bar_collision_depth:
-    #             assert False, 'Bar {}-{} collision! penetration distance {}'.format(b1_body, b2_body, penetration_depth)
-    #             # pass
-    #     # print('-'*10)
-
-    # cprint('No collision in connectors found.', 'green')
-    # wait_if_gui('Done.')
-
-    # # contact_from_connectors = bar_struct.get_connectors(scale=scale)
-    # # connectors = list(contact_from_connectors.keys())
-    # if return_network:
-    #     return bar_struct, o_struct
-    #     # return (bar_struct.data, o_struct.data)
-    # else:
-    #     return endpts_from_element
-
-if __name__ == '__main__':
-    main()
+# TODO main

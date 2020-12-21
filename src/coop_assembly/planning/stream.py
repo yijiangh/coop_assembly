@@ -289,10 +289,10 @@ def command_collision(command, bodies, index_from_bodies=None, debug=False):
 def check_path(joints, path, collision_fn=None, jump_threshold=None, diagnosis=False):
     """return False if path is not valid
     """
-    joint_jump_threshold = jump_threshold or [JOINT_JUMP_THRESHOLD for jt in joints]
+    joint_jump_thresholds = jump_threshold or [JOINT_JUMP_THRESHOLD for jt in joints]
     for jt1, jt2 in zip(path[:-1], path[1:]):
         delta_j = np.abs(np.array(jt1) - np.array(jt2))
-        if any(delta_j > np.array(joint_jump_threshold)):
+        if any(delta_j > np.array(joint_jump_thresholds)):
             return False
     if collision_fn is not None:
         for q in path:

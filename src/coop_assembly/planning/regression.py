@@ -33,7 +33,7 @@ from .heuristics import get_heuristic_fn
 from .parsing import unpack_structure
 from .stiffness import create_stiffness_checker, test_stiffness
 
-PAUSE_UPON_BT = True
+PAUSE_UPON_BT = False
 MAX_REVISIT = 5
 
 Node = namedtuple('Node', ['action', 'state'])
@@ -103,15 +103,24 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                 priority = (num_remaining, bias, random.random())
                 heapq.heappush(queue, (visits, priority, printed, element, command))
 
+    # print('connectors: ', connectors)
+    # print('grounded_elements: ', grounded_elements)
+    # print('all_elements: ', all_elements)
     # * connectivity & stiffness constraint checking
-    if check_connected(connectors, grounded_elements, all_elements) and \
-        (not stiffness or test_stiffness(bar_struct, final_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id)):
-        final_command = Command([MotionTrajectory(robot, joints, [final_conf])])
-            #if not bar_only \
-            # else Command([MotionTrajectory(None, None, [final_conf])])
-        add_successors(final_printed, final_command)
+    if check_connected(connectors, grounded_elements, all_elements):
+        if (not stiffness or test_stiffness(bar_struct, final_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id)):
+            final_command = Command([MotionTrajectory(robot, joints, [final_conf])])
+                #if not bar_only \
+                # else Command([MotionTrajectory(None, None, [final_conf])])
+            add_successors(final_printed, final_command)
+        else:
+            cprint('The completed state not stiff!', 'yellow')
     else:
-        cprint('The completed state not connected to the ground or not stiff!', 'yellow')
+        cprint('The completed state not connected to the ground!', 'yellow')
+        if debug:
+            print('connectors: ', connectors)
+            print('grounded_elements: ', grounded_elements)
+            print('all_elements: ', all_elements)
 
     # * preview the precomputed heuristic on elements
     # if has_gui():

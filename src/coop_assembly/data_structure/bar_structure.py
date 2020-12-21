@@ -25,6 +25,7 @@ from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 from pybullet_planning import create_plane, set_point, Point, get_pose, apply_alpha, RED, set_color, has_body, dump_world, get_bodies, \
     is_connected, remove_body, tform_point
 from .utils import Element, WorldPose
+from copy import copy
 
 GROUND_INDEX = -1
 
@@ -99,7 +100,8 @@ class BarStructure(Network):
 
     #####################################
 
-    def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir, _bar_parameters=[], radius=3.17, grounded=False, pb_scale=METER_SCALE):
+    def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir,
+            _bar_parameters=[], radius=3.17, grounded=False, pb_scale=METER_SCALE):
         v_key = self.add_node()
         bar_body = create_bar_body(_axis_endpoints, radius, scale=pb_scale)
         self.node[v_key].update({"bar_type":_bar_type,
@@ -323,20 +325,25 @@ class BarStructure(Network):
         """
         return {v : self.get_bar_axis_end_pts(v, scale=scale) for v in self.nodes()}
 
-    def get_connectors(self, scale=1.0):
+    def get_connectors(self, scale=1.0, indices=None):
+        bar_keys = list(self.nodes()) if indices is None else copy(indices)
+        bar_keys.append(GROUND_INDEX)
         connectors = {}
         for b1, b2 in self.edges():
             # TODO frozenset
-            connectors[(b1, b2)] = self.get_connector_end_pts(b1, b2, scale)
+            if b1 in bar_keys and b2 in bar_keys:
+                connectors[(b1, b2)] = self.get_connector_end_pts(b1, b2, scale)
             # connectors[(b2, b1)] = self.get_connector_end_pts(b1, b2, scale)
         return connectors
 
-    def get_grounded_bar_keys(self):
-        # return frozenset(filter(lambda e: is_ground(e, ground_nodes), elements))
-        return frozenset([bv for bv, attr in self.nodes(True) if attr['grounded']])
+    def get_grounded_bar_keys(self, indices=None):
+        bar_keys = self.nodes() if indices is None else indices
+        return frozenset([bv for bv, attr in self.nodes(True) if attr['grounded'] and bv in bar_keys])
 
-    def get_grounded_connector_keys(self):
-        return frozenset([c for c, attr in self.edges(True) if attr['grounded']])
+    def get_grounded_connector_keys(self, indices=None):
+        bar_keys = list(self.nodes()) if indices is None else copy(indices)
+        bar_keys.append(GROUND_INDEX)
+        return frozenset([c for c, attr in self.edges(True) if attr['grounded'] and all([cb in bar_keys for cb in c])])
 
     ##################################
     # mutual collision check

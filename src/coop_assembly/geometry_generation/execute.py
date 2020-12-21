@@ -27,11 +27,11 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning.visualization import set_camera, SHADOWS, BACKGROUND_COLOR, label_elements
 
 from pybullet_planning import connect, wait_if_gui, dump_world, apply_alpha, draw_collision_diagnosis, pairwise_collision, \
-    pairwise_collision_info, get_bodies, RED, TAN
+    pairwise_collision_info, get_bodies, RED, TAN, get_distance
 
 
 def execute_from_points(points, tet_node_ids, radius, check_collision=True, correct=True, viewer=False, verbose=False, scale=1.0, write=False, \
-        return_network=False, allowable_bar_collision_depth=1e-3, verify=False, **kwargs):
+        return_network=False, allowable_bar_collision_depth=1e-3, verify=False, grounded_nodes=None, grounded_limit_distance=40, **kwargs):
     """Main entry point for the design system, for direct, xfunc or rpc call
 
     Parameters
@@ -56,10 +56,17 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=True, corr
     """
     bar_struct = BarStructure()
     o_struct = OverallStructure(bar_struct)
-    generate_structure_from_points(o_struct, bar_struct, radius, points, tet_node_ids,
-        correct=correct, check_collision=check_collision, viewer=viewer, verbose=verbose)
+    try:
+        generate_structure_from_points(o_struct, bar_struct, radius, points, tet_node_ids,
+            grounded_nodes=grounded_nodes, grounded_limit_distance=grounded_limit_distance,
+            correct=correct, check_collision=check_collision, viewer=viewer, verbose=verbose)
+    except RuntimeError as err_msg:
+        cprint('No solution found!', 'red')
+        cprint(err_msg, 'yellow')
+        return
 
     endpts_from_element = bar_struct.get_axis_pts_from_element(scale=scale)
+    cprint('Solution found!', 'green')
 
     if write:
         export_structure_data(bar_struct.to_data(), o_struct.to_data(), **kwargs)
@@ -83,13 +90,13 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=True, corr
                 continue
             b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.1))
             b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.1))
-            assert len(get_bodies()) == len(element_bodies)
+            # assert len(get_bodies()) == len(element_bodies)
 
             if pairwise_collision(b1_body, b2_body):
-                cr = pairwise_collision_info(b1_body, b2_body)
-                # draw_collision_diagnosis(cr, focus_camera=True)
-                penetration_depth = draw_collision_diagnosis(cr)
-                if penetration_depth is not None and penetration_depth > allowable_bar_collision_depth:
+                cr, = pairwise_collision_info(b1_body, b2_body)
+                penetration_depth = get_distance(cr[5], cr[6])
+                cprint('b#{} - b#{}, depth {}'.format(bar1, bar2, penetration_depth), 'red')
+                if penetration_depth > allowable_bar_collision_depth:
                     assert False, 'Bar {}-{} collision! penetration distance {}'.format(b1_body, b2_body, penetration_depth)
                     # pass
             check_cnt += 1
@@ -99,13 +106,19 @@ def execute_from_points(points, tet_node_ids, radius, check_collision=True, corr
     else:
         cprint('No pybullet collision checking performed.', 'yellow')
 
-    # contact_from_connectors = bar_struct.get_connectors(scale=scale)
-    # connectors = list(contact_from_connectors.keys())
+    bar_struct.generate_grounded_connection()
+    grounded_elements = bar_struct.get_grounded_bar_keys()
+    contact_from_connectors = bar_struct.get_connectors(scale=scale)
+
     if return_network:
         return bar_struct, o_struct
         # return (bar_struct.data, o_struct.data)
     else:
-        return endpts_from_element
+        # rpc can not transmit tuple-indexed dict and frozenset
+        connector_data = [{'connection': list(c), 'endpoints' : [list(pt) for pt in pts]} for c, pts in contact_from_connectors.items()]
+        return endpts_from_element, list(grounded_elements), connector_data
+        # return contact_from_connectors
+        # return res
 
 def test_connect(viewer=False):
     """Just checking if we can sprawn the pybullet GUI.

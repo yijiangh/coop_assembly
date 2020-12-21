@@ -8,6 +8,7 @@ INF = 1e23
 
 # tolerance
 TOL = 1e-3 # mm
+COLLISION_TOL = 1e-3 # mm
 
 # vertex correction, deciding how low a new vertex can go for a three-bar group
 NODE_CORRECTION_TOP_DISTANCE = 80 # millimter

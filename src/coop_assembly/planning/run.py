@@ -16,7 +16,7 @@ from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, Lo
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, RED, GREEN, refine_path, joints_from_names, \
     set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color, get_relative_pose, create_shape, get_mesh_geometry, \
-    create_flying_body, SE3, YELLOW, get_movable_joints, Attachment, Pose, invert, multiply, Euler
+    create_flying_body, SE3, YELLOW, get_movable_joints, Attachment, Pose, invert, multiply, Euler, BLUE
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
@@ -74,6 +74,12 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
     chosen_bars = [int(b) for b in args.subset_bars] if args.subset_bars is not None else None
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.2))
+    # color grounded elements
+    for grounded_e in grounded_elements:
+        try:
+            set_color(element_from_index[grounded_e].body, apply_alpha(BLUE,0.2))
+        except KeyError:
+            pass
     if args.subset_bars is not None:
         label_elements({k : element_from_index[k] for k in chosen_bars})
 
