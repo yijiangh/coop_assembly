@@ -95,7 +95,7 @@ CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 # 0.003 captures pregrasp collision
 # RESOLUTION = 0.005
 # RESOLUTION = 0.01
-RESOLUTION = 0.1
+RESOLUTION = 0.2
 
 # INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
 # INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
@@ -109,8 +109,8 @@ INITIAL_CONF = INITIAL_CONFs[ROBOT_NAME]
 JOINT_WEIGHTSs = {
     'kuka' : np.reciprocal([6.28318530718, 5.23598775598, 6.28318530718,
                             6.6497044501, 6.77187749774, 10.7337748998]), # sec / radian
-    'abb_track' : np.reciprocal([1, 2.618, 2.618, 2.618,
-                                    6.2832, 6.2832, 7.854]),
+    'abb_track' : np.reciprocal([0.1, 2.618, 2.618, 2.618,
+                                 6.2832, 6.2832, 7.854]),
     }
 JOINT_WEIGHTS = JOINT_WEIGHTSs[ROBOT_NAME]
 

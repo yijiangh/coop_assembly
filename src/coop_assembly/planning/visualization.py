@@ -304,6 +304,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
         if set to False, display sequence colormap only, skip trajectory animation, by default True
     """
     # node_points, ground_nodes,
+    from coop_assembly.planning.motion import CONVEX_BUFFER
     if trajectories is None:
         return
     # set_extrusion_camera(node_points)
@@ -349,7 +350,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
                 node_points.extend(element_from_index[e].axis_endpoints)
             from coop_assembly.planning.motion import create_bounding_mesh
             bounding = create_bounding_mesh(bodies=None, node_points=node_points,
-                                            buffer=0.1)
+                                            buffer=CONVEX_BUFFER)
 
         if isinstance(trajectory, MotionTrajectory):
             for attach in trajectory.attachments:

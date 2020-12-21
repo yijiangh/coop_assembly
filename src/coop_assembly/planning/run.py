@@ -158,6 +158,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 stiffness_history = compute_plan_deformation(bar_struct, elem_plan)
                 extra_data = {'stiffness_history' : stiffness_history,
                               'fem_element_from_bar_id' : { k : list(v) for k, v in fem_element_from_bar_id.items()},
+                              'planning_data' : data,
                               }
                 # print(extra_data)
             if write:

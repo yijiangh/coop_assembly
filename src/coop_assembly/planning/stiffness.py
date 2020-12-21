@@ -272,8 +272,8 @@ def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_
         print('Stiff: {} | Compliance: {:.5f}'.format(is_stiff, checker.get_compliance()))
         print('Max translation deformation: {0:.5f} / {1:.5} = {2:.5}, at node #{3}'.format(
             max_trans, trans_tol, max_trans / trans_tol, max_trans_vid))
-        print('Max rotation deformation: {0:.5f} / {1:.5} = {2:.5}, at node #{3}'.format(
-            max_rot, rot_tol, max_rot / rot_tol, max_rot_vid))
+        # print('Max rotation deformation: {0:.5f} / {1:.5} = {2:.5}, at node #{3}'.format(
+        #     max_rot, rot_tol, max_rot / rot_tol, max_rot_vid))
 
     #disc = 10
     #time_step = 1.0

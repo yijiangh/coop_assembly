@@ -18,11 +18,12 @@ from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import get_index_from_bodies
 from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME, \
-    BUILD_PLATE_CENTER
+    BUILD_PLATE_CENTER, ROBOT_NAME
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DIAGNOSIS = False
-DYNMAIC_RES_RATIO = 0.25
+DYNMAIC_RES_RATIO = 0.3
+CONVEX_BUFFER = 0.2
 
 ##################################################
 
@@ -106,12 +107,16 @@ def create_bounding_mesh(bodies=None, node_points=None, buffer=0.):
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
-                   collisions=True, bar_only=False, max_time=INF, buffer=0.05, smooth=100, debug=False): #, **kwargs):
+                   collisions=True, bar_only=False, max_time=INF, buffer=CONVEX_BUFFER, smooth=100, debug=False): #, **kwargs):
     # TODO: can also just plan to initial conf and then shortcut
     if not bar_only:
         joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
         weights = JOINT_WEIGHTS
-        resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
+        if ROBOT_NAME == 'kuka':
+            resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
+        elif ROBOT_NAME == 'abb_track':
+            resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
+            # resolutions = RESOLUTION * np.ones(weights.shape)
         disabled_collisions = get_disabled_collisions(robot)
         custom_limits = get_custom_limits(robot)
     else:
