@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import print_function
 
 import os
@@ -165,12 +164,13 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 # print(extra_data)
             if write:
                 suffix = ''
-                save_plan(Config(args), trajectories, save_link_names=[TOOL_LINK_NAME, EE_LINK_NAME] if not args.bar_only else None,
+                save_plan(Config(args), trajectories, save_link_names=[TOOL_LINK_NAME] if not args.bar_only else None,
                     element_from_index=element_from_index, bar_struct=bar_struct, suffix=suffix, extra_data=extra_data, overwrite=False)
     else:
         # parse a saved plan
         robot = end_effector if "bar-only" in saved_plan else robot
-        e_trajs = parse_plan(saved_plan)
+        parsed_data = parse_plan(saved_plan)
+        e_trajs = parsed_data['plan']
         trajectories = []
         joints = get_movable_joints(robot)
         for trajs in e_trajs:

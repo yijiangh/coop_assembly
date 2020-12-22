@@ -123,7 +123,7 @@ def save_plan(config, trajectories, save_link_names=None, overwrite=True, elemen
         e_path = []
         e_id = trajectories[0].element
         for traj in trajectories:
-            print(traj)
+            # print(traj)
             if traj.element is not None and e_id != traj.element:
                 print('break')
                 # break subprocess if there is a discontinuity in the element id
@@ -170,4 +170,5 @@ def parse_plan(file_name):
         data = json.load(json_file)
     cprint('Saved path parsed: file name:{} | write_time: {}'.format(
         data['problem'], data['write_time']), 'green')
-    return data['plan']
+    # return data['plan']
+    return data
