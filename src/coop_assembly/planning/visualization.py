@@ -289,7 +289,7 @@ def visualize_collision_digraph(collision_facts):
 
 ###################################
 
-def display_trajectories(trajectories, time_step=0.02, video=False, animate=True, element_from_index=None):
+def display_trajectories(trajectories, time_step=0.02, video=False, animate=True, element_from_index=None, chosen_seq=None):
     """[summary]
 
     Parameters
@@ -334,6 +334,8 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
     # connected_nodes = set(ground_nodes)
     # TODO: resolution depends on bar distance to convex hull of obstacles
     # TODO: fine resolution still results in collision?
+    if element_from_index is not None:
+        chosen_seq = chosen_seq or list(range(len(element_from_index)))
     printed_elements = []
     print('Trajectories:', len(trajectories))
     for i, trajectory in enumerate(trajectories):
@@ -344,24 +346,25 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
         handles = []
 
         bounding = None
-        if printed_elements and 'tran' in trajectory.tag and element_from_index is not None:
-            node_points = []
-            for e in printed_elements:
-                node_points.extend(element_from_index[e].axis_endpoints)
-            from coop_assembly.planning.motion import create_bounding_mesh
-            bounding = create_bounding_mesh(bodies=None, node_points=node_points,
-                                            buffer=CONVEX_BUFFER)
+        if len(printed_elements)+1 in chosen_seq:
+            if printed_elements and 'tran' in trajectory.tag and element_from_index is not None:
+                node_points = []
+                for e in printed_elements:
+                    node_points.extend(element_from_index[e].axis_endpoints)
+                from coop_assembly.planning.motion import create_bounding_mesh
+                bounding = create_bounding_mesh(bodies=None, node_points=node_points,
+                                                buffer=CONVEX_BUFFER)
 
-        if isinstance(trajectory, MotionTrajectory):
-            for attach in trajectory.attachments:
-                set_color(attach.child, GREEN)
+            if isinstance(trajectory, MotionTrajectory):
+                for attach in trajectory.attachments:
+                    set_color(attach.child, GREEN)
 
-        for conf in trajectory.iterate():
-            # TODO: the robot body could be different
-            if time_step is None:
-                wait_for_user('step sim.') #'{}'.format(conf))
-            else:
-                wait_for_duration(time_step)
+            for conf in trajectory.iterate():
+                # TODO: the robot body could be different
+                if time_step is None:
+                    wait_for_user('step sim.') #'{}'.format(conf))
+                else:
+                    wait_for_duration(time_step)
 
         if isinstance(trajectory, MotionTrajectory):
             for attach in trajectory.attachments:

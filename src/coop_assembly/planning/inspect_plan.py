@@ -79,6 +79,10 @@ def inspect_plan(args):
     # if args.subset_bars is not None:
     #     label_elements({k : element_from_index[k] for k in chosen_bars})
 
+    print('base: ', bar_struct.base_centroid(METER_SCALE))
+    set_camera([bar_struct.base_centroid(METER_SCALE)], scale=1.)
+    wait_if_gui('Please review structure\'s workspace position.')
+
     parsed_data = parse_plan(args.saved_plan)
     e_trajs = parsed_data['plan']
     commands = []
@@ -104,55 +108,62 @@ def inspect_plan(args):
     # sequence is kept anyways
     element_sequence = recover_sequence(old_trajectories, element_from_index)
 
-    initial_conf = INITIAL_CONF
-    start_time = time.time()
-    printed_elements = []
-    new_commands = []
+    chosen_seq = [int(b) for b in args.subset_seq] if args.subset_seq is not None else range(len(commands))
+    cprint('Planning for seq #{}'.format(chosen_seq), 'yellow')
     if args.replan_place or args.replan_motion:
-        place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, collisions=args.collisions, verbose=False,
-            bar_only=args.bar_only, precompute_collisions=False, allow_failure=True, teleops=args.teleops)
+        initial_conf = INITIAL_CONF
+        start_time = time.time()
+        printed_elements = []
+        new_commands = copy.deepcopy(commands)
 
-        for i, command in enumerate(commands):
-            element = element_sequence[i]
-            attachments = []
+        with LockRenderer(not args.debug):
+            place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, collisions=args.collisions, verbose=False,
+                bar_only=args.bar_only, precompute_collisions=False, allow_failure=True, teleops=args.teleops)
 
-            if args.replan_place:
-                command, = next(place_gen_fn(element, printed=printed_elements))
-                if command is None:
-                    cprint('#{} Place planning failure.'.format(i), 'red')
-                    # continue
-                    return
+            for i in chosen_seq:
+                command = commands[i]
+                cprint('#{}/{}'.format(i, len(element_sequence)), 'cyan')
+                print('Old command: {}'.format(command))
+                element = element_sequence[i]
+                attachments = []
 
-            traj_from_tag = {traj.tag : traj for traj in command.trajectories}
-            approach_attachments = traj_from_tag['place_approach'].attachments
+                if args.replan_place:
+                    command, = next(place_gen_fn(element, printed=printed_elements))
+                    if command is None:
+                        cprint('#{} Place planning failure.'.format(i), 'red')
+                        # continue
+                        return
 
-            if args.replan_place or args.replan_motion:
-                transfer_traj = compute_motion(robot, fixed_obstacles, element_from_index,
-                                                printed_elements + [element], initial_conf, traj_from_tag['place_approach'].start_conf,
-                                                attachments=approach_attachments,
-                                                collisions=args.collisions, debug=args.debug)
-                if transfer_traj is None:
-                    cprint('#{} transfer planning failure.'.format(i), 'red')
-                    return
-                transfer_traj.tag = 'transfer'
-                traj_from_tag['transfer'] = transfer_traj
+                traj_from_tag = {traj.tag : traj for traj in command.trajectories}
+                approach_attachments = traj_from_tag['place_approach'].attachments
 
-                transit_traj = compute_motion(robot, fixed_obstacles, element_from_index,
-                                             printed_elements, traj_from_tag['place_retreat'].end_conf, initial_conf,
-                                             attachments=[],
-                                             collisions=args.collisions, debug=args.debug)
+                if args.replan_place or args.replan_motion:
+                    transfer_traj = compute_motion(robot, fixed_obstacles, element_from_index,
+                                                    printed_elements + [element], initial_conf, traj_from_tag['place_approach'].start_conf,
+                                                    attachments=approach_attachments,
+                                                    collisions=args.collisions, debug=args.debug)
+                    if transfer_traj is None:
+                        cprint('#{} transfer planning failure.'.format(i), 'red')
+                        return
+                    transfer_traj.tag = 'transfer'
+                    traj_from_tag['transfer'] = transfer_traj
 
-                if transit_traj is None:
-                    cprint('#{} transit planning failure.'.format(i), 'red')
-                    return
-                transit_traj.tag = 'transit'
-                traj_from_tag['transit'] = transit_traj
+                    transit_traj = compute_motion(robot, fixed_obstacles, element_from_index,
+                                                 printed_elements, traj_from_tag['place_retreat'].end_conf, initial_conf,
+                                                 attachments=[],
+                                                 collisions=args.collisions, debug=args.debug)
 
-            command.trajectories = [traj_from_tag['transfer'], traj_from_tag['place_approach'], traj_from_tag['place_retreat'], traj_from_tag['transit']]
-            print('{}) {} | Time: {:.3f}'.format(i, command, elapsed_time(start_time)))
+                    if transit_traj is None:
+                        cprint('#{} transit planning failure.'.format(i), 'red')
+                        return
+                    transit_traj.tag = 'transit'
+                    traj_from_tag['transit'] = transit_traj
 
-            printed_elements.append(element)
-            new_commands.append(command)
+                command.trajectories = [traj_from_tag['transfer'], traj_from_tag['place_approach'], traj_from_tag['place_retreat'], traj_from_tag['transit']]
+                print('{} | Time: {:.3f}'.format(command, elapsed_time(start_time)))
+
+                printed_elements.append(element)
+                new_commands[i] = command
 
     new_trajectories = flatten_commands(new_commands)
 
@@ -188,18 +199,19 @@ def inspect_plan(args):
 
     if args.watch and has_gui():
         #label_nodes(node_points)
-        elements = recover_sequence(new_trajectories, element_from_index)
-        endpts_from_element = bar_struct.get_axis_pts_from_element()
-        draw_ordered(elements, endpts_from_element)
+        # elements = recover_sequence(new_trajectories, element_from_index)
+        # endpts_from_element = bar_struct.get_axis_pts_from_element()
+        # draw_ordered(elements, endpts_from_element)
         for e in element_from_index:
            set_color(element_from_index[e].body, (1, 0, 0, 0))
         if args.step_sim:
             time_step = None
         else:
             time_step = 0.01 if args.bar_only else 0.05
-        display_trajectories(new_trajectories, time_step=time_step, element_from_index=element_from_index)
+        display_trajectories(new_trajectories, time_step=time_step, element_from_index=element_from_index, chosen_seq=chosen_seq)
+
     # verify
-    if args.collisions:
+    if args.collisions and (args.replan_place or args.replan_motion):
         valid = validate_pddl_plan(new_trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui() or args.debug, \
             bar_only=args.bar_only, refine_num=1, debug=args.debug)
         cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
@@ -229,8 +241,8 @@ def create_parser():
                         help='Only planning motion for floating bars, diable arm planning')
     parser.add_argument('-to', '--teleops', action='store_true',
                         help='Use teleop for trajectories (turn off in-between traj planning)')
-    # parser.add_argument('--subset_bars', nargs='+', default=None,
-    #                     help='Plan for only subset of bar indices.')
+    parser.add_argument('--subset_seq', nargs='+', default=None,
+                        help='Plan for only subset of bar indices.')
 
     parser.add_argument('--saved_plan', default=None, help='Parse a saved plan.')
 

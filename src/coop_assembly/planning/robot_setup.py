@@ -100,7 +100,7 @@ CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 # 0.003 captures pregrasp collision
 # RESOLUTION = 0.005
 # RESOLUTION = 0.01
-RESOLUTION_RATIO = 10
+RESOLUTION_RATIO = 5
 
 INITIAL_CONFs = {
     'kuka': np.radians([5., -90., 100, 5, 10, -5]),
