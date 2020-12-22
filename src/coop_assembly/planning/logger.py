@@ -4,7 +4,7 @@ import datetime
 from .stiffness import TRANS_TOL, ROT_TOL
 from .stream import ENABLE_SELF_COLLISIONS, IK_MAX_ATTEMPTS, PREGRASP_MAX_ATTEMPTS, GRASP_MAX_ATTEMPTS, \
     ALLOWABLE_BAR_COLLISION_DEPTH, EPSILON, ANGLE, POS_STEP_SIZE, ORI_STEP_SIZE, RETREAT_DISTANCE, MAX_DISTANCE, JOINT_JUMP_THRESHOLD
-from .robot_setup import RESOLUTION
+from .robot_setup import JOINT_RESOLUTIONS, JOINT_WEIGHTS
 
 #################################################
 # Logging
@@ -25,7 +25,8 @@ def get_global_parameters():
     return {
         'trans_tol': TRANS_TOL,
         'rot_tol': ROT_TOL,
-        'joint_resolution': RESOLUTION,
+        'joint_resolution': list(JOINT_RESOLUTIONS),
+        'joint_weight' : list(JOINT_WEIGHTS),
         'joint_jump_threshold': JOINT_JUMP_THRESHOLD,
         'enable_self_collisions': ENABLE_SELF_COLLISIONS,
         'pos_step_size': POS_STEP_SIZE,

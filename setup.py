@@ -29,6 +29,7 @@ requirements = [
     'termcolor',
     'matplotlib',
     'networkx',
+    'plyer',
 ]
 keywords_list = ['robotic assembly', 'double-tangent frame structure', 'digital fabrication', 'architecture']
 

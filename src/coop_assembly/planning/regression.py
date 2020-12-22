@@ -26,14 +26,14 @@ from coop_assembly.geometry_generation.utils import outgoing_from_edges
 
 from .visualization import draw_element, color_structure, label_elements
 from .stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
-from .utils import flatten_commands, Command, check_connected
+from .utils import flatten_commands, Command, check_connected, notify
 from .motion import compute_motion, EE_INITIAL_POINT, EE_INITIAL_EULER
 from .robot_setup import INITIAL_CONF # , TOOL_LINK_NAME, EE_LINK_NAME
 from .heuristics import get_heuristic_fn
 from .parsing import unpack_structure
 from .stiffness import create_stiffness_checker, test_stiffness
 
-PAUSE_UPON_BT = False
+PAUSE_UPON_BT = True
 MAX_REVISIT = 5
 
 Node = namedtuple('Node', ['action', 'state'])
@@ -131,7 +131,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
 
     plan = None
     min_remaining = len(all_elements)
-    num_evaluated = max_backtrack = place_failures = transit_failures = transfer_failures =stiffness_failures = 0
+    num_evaluated = max_backtrack = place_failures = transit_failures = transfer_failures = stiffness_failures = 0
     while queue and (elapsed_time(start_time) < max_time): #  and check_memory(): #max_memory):
         visits, priority, printed, element, current_command = heapq.heappop(queue)
         num_remaining = len(printed)
@@ -140,21 +140,22 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
 
         # if verbose:
         print('#'*10)
-        print('Iteration: {} | Best: {}/{} | Printed: {} | Element: {} | Time: {:.3f} | BT : {} | Visit: {}'.format(
-            num_evaluated, min_remaining, len(all_elements), len(printed), element, elapsed_time(start_time), backtrack, visits))
+        print('Iteration: {} | Best: {}/{} | Printed: {} | Element: {} | Time: {:.3f} | BT : {} | Max BT: {}'.format(
+            num_evaluated, min_remaining, len(all_elements), len(printed), element, elapsed_time(start_time), backtrack, max_backtrack))
         next_printed = printed - {element}
 
         if backtrack > max_backtrack:
             max_backtrack = backtrack
             # * debug visualize
             # draw_action(axis_pts_from_element, next_printed, element)
+            notify('BT increased. Remaining: {} | place_failures {}, transit_failures {}, transfer_failures {}, stiffness_failures {}'.format(list(printed | {element}), place_failures, transit_failures, transfer_failures, stiffness_failures))
             if PAUSE_UPON_BT:
                 remove_all_debug()
                 set_renderer(enable=True)
                 color_structure(element_from_index, printed, next_element=element, built_alpha=0.6)
                 label_elements({k : element_from_index[k] for k in list(printed | {element})})
                 # print('Blues are the remaining ones, green is the current one, blacks are the already removed ones.')
-                wait_for_user('BT increased. Remaining: {}'.format(list(printed | {element})))
+                wait_for_user('BT increased. Remaining: {} | place_failures {}, transit_failures {}, transfer_failures {}, stiffness_failures {}'.format(list(printed | {element}), place_failures, transit_failures, transfer_failures, stiffness_failures))
                 set_renderer(enable=False)
 
         if backtrack_limit < backtrack:
@@ -168,7 +169,8 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
         # * constraint checking
         if next_printed in visited:
             continue
-        # if not check_connected(connectors, grounded_elements, next_printed) and \
+        if not check_connected(connectors, grounded_elements, next_printed):
+            continue
         if stiffness and not test_stiffness(bar_struct, next_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id):
             if verbose:
                 cprint('>'*5, 'red')

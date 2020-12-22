@@ -33,7 +33,7 @@ from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn
     get_element_body_in_goal_pose
 from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES, save_plan, parse_plan, unpack_structure, Config
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan, compute_plan_deformation
-from coop_assembly.planning.utils import recover_sequence, Command, load_world
+from coop_assembly.planning.utils import recover_sequence, Command, load_world, notify
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness
@@ -130,9 +130,11 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
         if plan is None:
             cprint('No plan found.', 'red')
+            notify('plan not found!')
             assert False, 'No plan found.'
         else:
             cprint('plan found.', 'green')
+            notify('plan found!')
             if args.algorithm in STRIPSTREAM_ALGORITHM:
                 commands = []
                 place_actions = [action for action in reversed(plan) if action.name == 'place']

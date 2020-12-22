@@ -33,7 +33,7 @@ ENABLE_SELF_COLLISIONS = True
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 100
 GRASP_MAX_ATTEMPTS = 100
-GANTRY_MAX_ATTEMPTS = 20
+GANTRY_MAX_ATTEMPTS = 30
 
 ALLOWABLE_BAR_COLLISION_DEPTH = 1e-3
 
@@ -42,10 +42,9 @@ EPSILON = 0.05
 ANGLE = np.pi/3
 
 # pregrasp interpolation
-# POS_STEP_SIZE = 0.001
-# ORI_STEP_SIZE = np.pi/180
+# POS_STEP_SIZE = 0.01
+# ORI_STEP_SIZE = np.pi/18
 POS_STEP_SIZE = 0.002 # | 0.005
-# ORI_STEP_SIZE = np.pi/30
 ORI_STEP_SIZE = np.pi/90
 
 RETREAT_DISTANCEs = {
@@ -482,7 +481,7 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
 
     def gen_fn(element, printed=[], diagnosis=False):
         # assert implies(bar_only, element_from_index[element].element_robot is not None)
-        cprint('new stream fn - printed: {}'.format(printed), 'yellow')
+        # cprint('new stream fn - printed: {}'.format(printed), 'yellow')
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
         if not collisions:

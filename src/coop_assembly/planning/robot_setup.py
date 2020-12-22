@@ -24,7 +24,7 @@ INCLUDE_ENV_COLLISION_OBJS = True
 BUILD_PLATE_CENTERs = {
     'kuka' : np.array([500, 0, -14.23])*1e-3,
     # 'abb_track' : np.array([1.63, -0.5, 30.7*1e-3]),
-    'abb_track' : np.array([1.3, -1., 30.7*1e-3]),
+    'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
@@ -32,8 +32,10 @@ BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 # BOTTOM_BUFFER = 0.01
 BOTTOM_BUFFER = 0.03
 # BOTTOM_BUFFER = 0.1
+BASE_YAW = np.pi#-np.pi/18
+# BASE_YAW = -np.pi/18
 # BASE_YAW = np.pi + np.pi/6
-BASE_YAW = 0
+# BASE_YAW = -np.pi/3
 
 ########################################
 
@@ -86,16 +88,19 @@ CUSTOM_LIMITSs = {
         'robot_joint_a1': (-np.pi/2, np.pi/2),
     },
     'abb_track' : {
-        'joint_2': (-0.62, 1.83),
+        # 'joint_2': (-0.62, 1.83),
     },
 }
 CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 
-# joint resolution used in transit motions
+## Choosing joint resolutions:
+## - http://lavalle.pl/planning/node217.html
+## - http://openrave.org/docs/latest_stable/openravepy/databases.linkstatistics/
+## joint resolution used in transit motions
 # 0.003 captures pregrasp collision
 # RESOLUTION = 0.005
 # RESOLUTION = 0.01
-RESOLUTION = 0.2
+RESOLUTION_RATIO = 10
 
 # INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
 # INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
@@ -111,13 +116,20 @@ JOINT_WEIGHTSs = {
                             6.6497044501, 6.77187749774, 10.7337748998]), # sec / radian
     'abb_track' : np.reciprocal([0.1, 2.618, 2.618, 2.618,
                                  6.2832, 6.2832, 7.854]),
+    # 'abb_track' : [0.01, 0.01079, 0.00725, 0.012249, 0.009173, 0.037541, 0.01313],
     }
-JOINT_WEIGHTS = JOINT_WEIGHTSs[ROBOT_NAME]
+JOINT_WEIGHTS = np.array(JOINT_WEIGHTSs[ROBOT_NAME])
+
+JOINT_RESOLUTIONSs = {
+    'kuka' : np.divide(np.ones(JOINT_WEIGHTS.shape), JOINT_WEIGHTS),
+    'abb_track' : np.array([0.01, 0.01079, 0.00725, 0.012249, 0.009173, 0.037541, 0.01313]),
+    }
+JOINT_RESOLUTIONS = RESOLUTION_RATIO * np.array(JOINT_RESOLUTIONSs[ROBOT_NAME])
 
 GANTRY_JOINT_LIMITSs = {
     'kuka' : None,
     'abb_track' : {
-        'linear_axis_actuation_joint' : (0.0, 3.5), #3
+        'linear_axis_actuation_joint' : (0.0, 3.3), #3
         },
 }
 GANTRY_JOINT_LIMITS = GANTRY_JOINT_LIMITSs[ROBOT_NAME]

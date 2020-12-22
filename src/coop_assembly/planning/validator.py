@@ -44,7 +44,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
 
         disabled_collisions = {} if bar_only else get_disabled_collisions(trajectory.robot)
         collision_fn = get_collision_fn(robot, joints, obstacles=obstacles, attachments=attachments,
-                                        self_collisions=ENABLE_SELF_COLLISIONS,
+                                        self_collisions=True, # ENABLE_SELF_COLLISIONS,
                                         disabled_collisions=disabled_collisions,
                                         extra_disabled_collisions=extra_disabled_collisions,
                                         custom_limits={}, #get_custom_limits(robot),

@@ -6,6 +6,8 @@ from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_p
     create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize, pairwise_link_collision, \
     BASE_LINK, is_connected, connect, create_box, create_obj
 
+from plyer import notification
+
 import coop_assembly
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions.shared_const import METER_SCALE
@@ -238,3 +240,13 @@ def compute_z_distance(element_from_index, element):
     # Distance to a ground plane
     # Opposing gravitational force
     return get_midpoint(element_from_index, element)[2]
+
+######################################################
+
+def notify(msg=''):
+    notification.notify(
+        title='coop_assembly',
+        message=msg,
+        app_icon=None,  # e.g. 'C:\\icon_32x32.ico'
+        timeout=3,  # seconds
+    )

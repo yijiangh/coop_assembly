@@ -33,7 +33,7 @@ from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF
 from .utils import flatten_commands, recover_sequence, Command, get_index_from_bodies
 from .visualization import draw_ordered, display_trajectories
 from .motion import compute_motion, EE_INITIAL_CONF
-from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, CONTROL_JOINT_NAMES, JOINT_WEIGHTS, RESOLUTION, get_disabled_collisions, INITIAL_CONF
+from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, CONTROL_JOINT_NAMES, JOINT_WEIGHTS, get_disabled_collisions, INITIAL_CONF
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.help_functions import METER_SCALE
 

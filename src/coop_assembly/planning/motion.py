@@ -17,13 +17,14 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
 from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import get_index_from_bodies
-from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, RESOLUTION, JOINT_WEIGHTS, EE_LINK_NAME, \
-    BUILD_PLATE_CENTER, ROBOT_NAME
+from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, JOINT_WEIGHTS, EE_LINK_NAME, \
+    BUILD_PLATE_CENTER, ROBOT_NAME, JOINT_RESOLUTIONS
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DIAGNOSIS = False
-DYNMAIC_RES_RATIO = 0.3
-CONVEX_BUFFER = 0.2
+# DYNMAIC_RES_RATIO = 0.05
+DYNMAIC_RES_RATIO = 0.1
+CONVEX_BUFFER = 0.3
 
 ##################################################
 
@@ -107,16 +108,17 @@ def create_bounding_mesh(bodies=None, node_points=None, buffer=0.):
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
-                   collisions=True, bar_only=False, max_time=INF, buffer=CONVEX_BUFFER, smooth=100, debug=False): #, **kwargs):
+                   collisions=True, bar_only=False, max_time=INF, buffer=CONVEX_BUFFER, max_distance=MAX_DISTANCE, smooth=100, debug=False): #, **kwargs):
     # TODO: can also just plan to initial conf and then shortcut
     if not bar_only:
         joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
         weights = JOINT_WEIGHTS
-        if ROBOT_NAME == 'kuka':
-            resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
-        elif ROBOT_NAME == 'abb_track':
-            resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
-            # resolutions = RESOLUTION * np.ones(weights.shape)
+        resolutions = JOINT_RESOLUTIONS
+        # if ROBOT_NAME == 'kuka':
+        #     resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
+        # elif ROBOT_NAME == 'abb_track':
+        #     # resolutions = np.divide(RESOLUTION * np.ones(weights.shape), weights)
+        #     resolutions = np.hstack([GANTRY_RESOLUTION, RESOLUTION*np.ones(6)])
         disabled_collisions = get_disabled_collisions(robot)
         custom_limits = get_custom_limits(robot)
     else:
@@ -159,7 +161,7 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
     extend_fn = get_extend_fn(robot, joints, resolutions=resolutions)
     collision_fn = get_collision_fn(robot, joints, obstacles=obstacles, attachments=attachments, self_collisions=ENABLE_SELF_COLLISIONS,
                                     disabled_collisions=disabled_collisions, extra_disabled_collisions=extra_disabled_collisions,
-                                    custom_limits=custom_limits, max_distance=MAX_DISTANCE)
+                                    custom_limits=custom_limits, max_distance=max_distance)
     fine_extend_fn = get_extend_fn(robot, joints, resolutions=DYNMAIC_RES_RATIO*resolutions) #, norm=INF)
 
     def test_bounding(q):
@@ -170,8 +172,8 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         # attachment_collision =
         # if len(attachments)>0:
         #     wait_for_user('attach collision: {}'.format(attachment_collision))
-        collision = (bounding is not None) and (pairwise_collision(robot, bounding, max_distance=buffer) or \
-            any([pairwise_collision(attach.child, bounding, max_distance=buffer) for attach in attachments]))
+        collision = (bounding is not None) and (pairwise_collision(robot, bounding, max_distance=max_distance) or \
+            any([pairwise_collision(attach.child, bounding, max_distance=max_distance) for attach in attachments]))
         return q, collision
 
     def dynamic_extend_fn(q_start, q_end):
