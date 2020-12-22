@@ -123,7 +123,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                         bar_struct,
                         collision=args.collisions,
                         motions=args.motions, stiffness=args.stiffness, revisit=False,
-                        lazy=False, bar_only=args.bar_only, partial_orders=partial_orders, chosen_bars=chosen_bars,
+                        lazy=args.lazy, bar_only=args.bar_only, partial_orders=partial_orders, chosen_bars=chosen_bars,
                         debug=args.debug, verbose=args.debug, teleops=args.teleops)
                 print(data)
             else:
@@ -225,6 +225,8 @@ def create_parser():
                         help='Disable collision checking with obstacles')
     parser.add_argument('-m', '--motions', action='store_false',
                         help='Disable transfer/transit planning')
+    parser.add_argument('-l', '--lazy', action='store_true',
+                        help='lazily plan transit/transfer motions.')
     parser.add_argument('-b', '--bar_only', action='store_true',
                         help='Only planning motion for floating bars, diable arm planning')
     parser.add_argument('--stiffness', action='store_false',

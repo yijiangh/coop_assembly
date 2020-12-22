@@ -102,8 +102,6 @@ CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 # RESOLUTION = 0.01
 RESOLUTION_RATIO = 10
 
-# INITIAL_CONF = [0.08, -1.57, 1.74, 0.08, 0.17, -0.08]
-# INITIAL_CONF = [0, -np.pi/4, np.pi/4, 0, 0, 0]
 INITIAL_CONFs = {
     'kuka': np.radians([5., -90., 100, 5, 10, -5]),
     'abb_track' : np.hstack([0., np.radians([0,0,0,0,0,0])]),

@@ -13,7 +13,7 @@ from pybullet_planning import get_movable_joints, link_from_name, set_pose, \
     add_fixed_constraint, remove_fixed_constraint, Pose, Euler, get_collision_fn, LockRenderer, user_input, GREEN, BLUE, set_color, \
     joints_from_names, INF, wait_for_user, check_initial_end, BASE_LINK, get_aabb, aabb_union, aabb_overlap, BodySaver, draw_aabb, \
     step_simulation, SE3, get_links, remove_all_debug, apply_affine, vertices_from_link, get_aabb_vertices, AABB, convex_hull, \
-    create_mesh, apply_alpha, get_sample_fn, get_distance_fn, get_extend_fn, pairwise_collision, remove_body, birrt, RED
+    create_mesh, apply_alpha, get_sample_fn, get_distance_fn, get_extend_fn, pairwise_collision, remove_body, birrt, RED, elapsed_time
 from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import get_index_from_bodies
@@ -23,7 +23,7 @@ from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_S
 
 DIAGNOSIS = False
 # DYNMAIC_RES_RATIO = 0.05
-DYNMAIC_RES_RATIO = 0.1
+DYNMAIC_RES_RATIO = 0.5
 CONVEX_BUFFER = 0.3
 
 ##################################################
@@ -108,7 +108,8 @@ def create_bounding_mesh(bodies=None, node_points=None, buffer=0.):
 
 def compute_motion(robot, fixed_obstacles, element_from_index,
                    printed_elements, start_conf, end_conf, attachments=[],
-                   collisions=True, bar_only=False, max_time=INF, buffer=CONVEX_BUFFER, max_distance=MAX_DISTANCE, smooth=100, debug=False): #, **kwargs):
+                   collisions=True, bar_only=False, max_time=INF,
+                   buffer=CONVEX_BUFFER, max_distance=MAX_DISTANCE, smooth=100, debug=False): #, **kwargs):
     # TODO: can also just plan to initial conf and then shortcut
     if not bar_only:
         joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
@@ -226,3 +227,53 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         element = index_from_body[attachments[0].child]
 
     return MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit')
+
+def compute_motions(robot, fixed_obstacles, element_from_index, initial_conf, print_trajectories, **kwargs):
+    # TODO: reoptimize for the sequence that have the smallest movements given this
+    # TODO: sample trajectories
+    # TODO: more appropriate distance based on displacement/volume
+    cprint('Transfer/Transition planning.', 'green')
+    if print_trajectories is None:
+        return None
+    #if any(isinstance(print_traj, MotionTrajectory) for print_traj in print_trajectories):
+    #    return print_trajectories
+    start_time = time.time()
+    printed_elements = []
+    all_trajectories = []
+    # current_conf = initial_conf
+    for i, print_traj in enumerate(print_trajectories):
+        # if not np.allclose(current_conf, print_traj.start_conf, rtol=0, atol=1e-8):
+        if 'place_retreat' == print_traj.tag:
+            printed_elements.append(print_traj.element)
+
+        if print_traj.tag == 'place_approach':
+            attachments = print_traj.attachments
+            tag = 'transfer'
+            motion_traj = compute_motion(robot, fixed_obstacles, element_from_index,
+                                         printed_elements, initial_conf, print_traj.start_conf,
+                                         attachments=attachments, **kwargs)
+        elif print_traj.tag == 'place_retreat':
+            attachments = []
+            tag = 'transit'
+            motion_traj = compute_motion(robot, fixed_obstacles, element_from_index,
+                                         printed_elements, print_traj.end_conf, initial_conf,
+                                         attachments=attachments, **kwargs)
+        else:
+            raise ValueError(print_traj.tag)
+        motion_traj.tag = tag
+        if motion_traj is None:
+            return None
+        print('{}) {} | Time: {:.3f}'.format(i, motion_traj, elapsed_time(start_time)))
+
+        if print_traj.tag == 'place_approach':
+            all_trajectories.append(motion_traj)
+            all_trajectories.append(print_traj)
+        elif print_traj.tag == 'place_retreat':
+            all_trajectories.append(print_traj)
+            all_trajectories.append(motion_traj)
+
+    motion_traj = compute_motion(robot, fixed_obstacles, element_from_index,
+                                 printed_elements, all_trajectories[-1].end_conf, initial_conf, **kwargs)
+    if motion_traj is None:
+        return None
+    return all_trajectories + [motion_traj]

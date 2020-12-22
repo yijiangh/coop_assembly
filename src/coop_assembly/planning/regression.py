@@ -27,7 +27,7 @@ from coop_assembly.geometry_generation.utils import outgoing_from_edges
 from .visualization import draw_element, color_structure, label_elements
 from .stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
 from .utils import flatten_commands, Command, check_connected, notify
-from .motion import compute_motion, EE_INITIAL_POINT, EE_INITIAL_EULER
+from .motion import compute_motion, EE_INITIAL_POINT, EE_INITIAL_EULER, compute_motions
 from .robot_setup import INITIAL_CONF # , TOOL_LINK_NAME, EE_LINK_NAME
 from .heuristics import get_heuristic_fn
 from .parsing import unpack_structure
@@ -246,9 +246,11 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                 else:
                     plan.insert(0, transit_traj)
             # TODO: lazy
-            # if motions and lazy:
-            #     plan = compute_motions(robot, obstacles, element_bodies, initial_conf, plan,
-            #                            collisions=collisions, max_time=max_time - elapsed_time(start_time))
+            if motions and lazy:
+                with WorldSaver():
+                    plan = compute_motions(robot, obstacles, element_from_index, initial_conf, plan,
+                                           collisions=collision, max_time=max_time - elapsed_time(start_time),
+                                           bar_only=bar_only, debug=debug)
             break
             # if plan is not None:
             #     break
