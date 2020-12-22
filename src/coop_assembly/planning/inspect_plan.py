@@ -48,7 +48,8 @@ def inspect_plan(args):
         return
     assert not args.bar_only, 'not implemented.'
 
-    bar_struct, o_struct = load_structure(args.problem, args.viewer, apply_alpha(RED, 0))
+    parsed_data = parse_plan(args.saved_plan)
+    bar_struct, o_struct = load_structure(parsed_data['problem'][0], args.viewer, apply_alpha(RED, 0))
     bar_radius = bar_struct.node[0]['radius']*METER_SCALE
     # transform model
     new_world_from_base = Pose(point=(BUILD_PLATE_CENTER + np.array([0,0,bar_radius+BOTTOM_BUFFER])))
@@ -81,9 +82,8 @@ def inspect_plan(args):
 
     print('base: ', bar_struct.base_centroid(METER_SCALE))
     set_camera([bar_struct.base_centroid(METER_SCALE)], scale=1.)
-    wait_if_gui('Please review structure\'s workspace position.')
+    # wait_if_gui('Please review structure\'s workspace position.')
 
-    parsed_data = parse_plan(args.saved_plan)
     e_trajs = parsed_data['plan']
     commands = []
     for bar_trajs in e_trajs:
@@ -119,57 +119,59 @@ def inspect_plan(args):
         with LockRenderer(not args.debug):
             place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, collisions=args.collisions, verbose=False,
                 bar_only=args.bar_only, precompute_collisions=False, allow_failure=True, teleops=args.teleops)
-
-            for i in chosen_seq:
-                command = commands[i]
-                cprint('#{}/{}'.format(i, len(element_sequence)), 'cyan')
-                print('Old command: {}'.format(command))
+            for i, command in enumerate(commands):
                 element = element_sequence[i]
-                attachments = []
+                if i in chosen_seq:
+                    cprint('#{}/{}'.format(i, len(element_sequence)), 'cyan')
+                    print('Old command: {}'.format(command))
+                    attachments = []
 
-                if args.replan_place:
-                    command, = next(place_gen_fn(element, printed=printed_elements))
-                    if command is None:
-                        cprint('#{} Place planning failure.'.format(i), 'red')
-                        # continue
-                        return
+                    if args.replan_place:
+                        command, = next(place_gen_fn(element, printed=printed_elements))
+                        if command is None:
+                            cprint('#{} Place planning failure.'.format(i), 'red')
+                            # continue
+                            return
 
-                traj_from_tag = {traj.tag : traj for traj in command.trajectories}
-                approach_attachments = traj_from_tag['place_approach'].attachments
+                    traj_from_tag = {traj.tag : traj for traj in command.trajectories}
+                    approach_attachments = traj_from_tag['place_approach'].attachments
 
-                if args.replan_place or args.replan_motion:
-                    transfer_traj = compute_motion(robot, fixed_obstacles, element_from_index,
-                                                    printed_elements + [element], initial_conf, traj_from_tag['place_approach'].start_conf,
-                                                    attachments=approach_attachments,
-                                                    collisions=args.collisions, debug=args.debug)
-                    if transfer_traj is None:
-                        cprint('#{} transfer planning failure.'.format(i), 'red')
-                        return
-                    transfer_traj.tag = 'transfer'
-                    traj_from_tag['transfer'] = transfer_traj
+                    if args.replan_place or args.replan_motion:
+                        transfer_traj = compute_motion(robot, fixed_obstacles, element_from_index,
+                                                        printed_elements + [element], initial_conf, traj_from_tag['place_approach'].start_conf,
+                                                        attachments=approach_attachments,
+                                                        collisions=args.collisions, debug=args.debug)
+                        if transfer_traj is None:
+                            cprint('#{} transfer planning failure.'.format(i), 'red')
+                            return
+                        transfer_traj.tag = 'transfer'
+                        traj_from_tag['transfer'] = transfer_traj
 
-                    transit_traj = compute_motion(robot, fixed_obstacles, element_from_index,
-                                                 printed_elements, traj_from_tag['place_retreat'].end_conf, initial_conf,
-                                                 attachments=[],
-                                                 collisions=args.collisions, debug=args.debug)
+                        transit_traj = compute_motion(robot, fixed_obstacles, element_from_index,
+                                                     printed_elements, traj_from_tag['place_retreat'].end_conf, initial_conf,
+                                                     attachments=[],
+                                                     collisions=args.collisions, debug=args.debug)
 
-                    if transit_traj is None:
-                        cprint('#{} transit planning failure.'.format(i), 'red')
-                        return
-                    transit_traj.tag = 'transit'
-                    traj_from_tag['transit'] = transit_traj
+                        if transit_traj is None:
+                            cprint('#{} transit planning failure.'.format(i), 'red')
+                            return
+                        transit_traj.tag = 'transit'
+                        traj_from_tag['transit'] = transit_traj
 
-                command.trajectories = [traj_from_tag['transfer'], traj_from_tag['place_approach'], traj_from_tag['place_retreat'], traj_from_tag['transit']]
-                print('{} | Time: {:.3f}'.format(command, elapsed_time(start_time)))
-
+                    command.trajectories = [traj_from_tag['transfer'], traj_from_tag['place_approach'], traj_from_tag['place_retreat'], traj_from_tag['transit']]
+                    print('{} | Time: {:.3f}'.format(command, elapsed_time(start_time)))
+                    new_commands[i] = command
                 printed_elements.append(element)
-                new_commands[i] = command
 
     new_trajectories = flatten_commands(new_commands)
 
     if args.write:
         save_link_names = [TOOL_LINK_NAME]
-        recomputed_plan_path = args.saved_plan.split('.json')[0] + \
+        if 'replan' not in args.saved_plan:
+            file_name = args.saved_plan.split('.json')[0]
+        else:
+            file_name = args.saved_plan.split('_replan')[0]
+        recomputed_plan_path = file_name + \
             '_replan_rPlace{}_rTrans{}.json'.format(int(args.replan_place), int(args.replan_motion))
         save_path = os.path.join(RESULTS_DIRECTORY, recomputed_plan_path)
         recompute_data = parsed_data
@@ -210,14 +212,14 @@ def inspect_plan(args):
             time_step = 0.01 if args.bar_only else 0.05
         display_trajectories(new_trajectories, time_step=time_step, element_from_index=element_from_index, chosen_seq=chosen_seq)
 
-    # verify
-    if args.collisions and (args.replan_place or args.replan_motion):
-        valid = validate_pddl_plan(new_trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui() or args.debug, \
-            bar_only=args.bar_only, refine_num=1, debug=args.debug)
-        cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
-        assert valid
-    else:
-        cprint('Collision disabled, no verfication performed.', 'yellow')
+    # # verify
+    # if args.collisions and (args.replan_place or args.replan_motion):
+    #     valid = validate_pddl_plan(new_trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui() or args.debug, \
+    #         bar_only=args.bar_only, refine_num=1, debug=args.debug)
+    #     cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
+    #     assert valid
+    # else:
+    #     cprint('Collision disabled, no verfication performed.', 'yellow')
     reset_simulation()
     disconnect()
 
@@ -227,8 +229,8 @@ def inspect_plan(args):
 def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--problem', default='single_tet',
-                        help='The name of the problem to solve')
+    # parser.add_argument('-p', '--problem', default='single_tet',
+    #                     help='The name of the problem to solve')
     parser.add_argument('-c', '--collisions', action='store_false',
                         help='Disable collision checking with obstacles')
     #

@@ -168,7 +168,7 @@ def parse_plan(file_name):
     save_path = os.path.join(RESULTS_DIRECTORY, file_name)
     with open(save_path) as json_file:
         data = json.load(json_file)
-    cprint('Saved path parsed: file name:{} | write_time: {}'.format(
+    cprint('Saved path parsed: problem:{} | write_time: {}'.format(
         data['problem'], data['write_time']), 'green')
     # return data['plan']
     return data

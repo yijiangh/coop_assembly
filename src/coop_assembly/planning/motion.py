@@ -21,8 +21,8 @@ from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE
     BUILD_PLATE_CENTER, ROBOT_NAME, JOINT_RESOLUTIONS
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
-# DYNMAIC_RES_RATIO = 0.05
 DYNMAIC_RES_RATIO = 0.1
+# DYNMAIC_RES_RATIO = 0.1
 CONVEX_BUFFER = 0.3
 
 ##################################################

@@ -30,6 +30,7 @@ from coop_assembly.help_functions.shared_const import METER_SCALE
 
 # TODO: fix self collision
 ENABLE_SELF_COLLISIONS = True
+assert ENABLE_SELF_COLLISIONS
 IK_MAX_ATTEMPTS = 1
 PREGRASP_MAX_ATTEMPTS = 100
 GRASP_MAX_ATTEMPTS = 100

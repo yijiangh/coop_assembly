@@ -346,7 +346,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
         handles = []
 
         bounding = None
-        if len(printed_elements)+1 in chosen_seq:
+        if len(printed_elements) in chosen_seq:
             if printed_elements and 'tran' in trajectory.tag and element_from_index is not None:
                 node_points = []
                 for e in printed_elements:
@@ -366,16 +366,13 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
                 else:
                     wait_for_duration(time_step)
 
+            print('{}) {:9} | Connected: {} | Ground: {} | Length: {}'.format(
+                i, str(trajectory), is_connected, True, len(trajectory.path)))
+
         if isinstance(trajectory, MotionTrajectory):
             for attach in trajectory.attachments:
                 set_color(attach.child, BLUE)
             is_connected = True
-            print('{}) {:9} | Connected: {} | Ground: {} | Length: {}'.format(
-                i, str(trajectory), is_connected, True, len(trajectory.path)))
-                # is_ground(trajectory.element, ground_nodes)
-        #     if not is_connected:
-        #         wait_for_user()
-        #     connected_nodes.add(trajectory.n2)
 
         if bounding is not None:
             remove_body(bounding)
