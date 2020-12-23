@@ -15,17 +15,17 @@ from pybullet_planning import wait_for_user, connect, has_gui, wait_for_user, Lo
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, RED, GREEN, refine_path, joints_from_names, \
     set_joint_positions, create_attachment, wait_if_gui, apply_alpha, set_color, get_relative_pose, create_shape, get_mesh_geometry, \
-    create_flying_body, SE3, YELLOW, get_movable_joints, Attachment, Pose, invert, multiply, Euler, BLUE
+    create_flying_body, SE3, YELLOW, get_movable_joints, Attachment, Pose, invert, multiply, Euler, BLUE, INF
 
 from coop_assembly.data_structure import BarStructure, OverallStructure, MotionTrajectory
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions import contact_to_ground
-from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
+from coop_assembly.help_functions.shared_const import METER_SCALE
 
 from coop_assembly.planning import get_picknplace_robot_data, TOOL_LINK_NAME, EE_LINK_NAME, get_gripper_mesh_path
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, \
     display_trajectories, check_model, set_camera, visualize_stiffness, GROUND_COLOR
-from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
+from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, \
     flatten_commands
 
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
@@ -35,7 +35,7 @@ from coop_assembly.planning.validator import validate_trajectories, validate_pdd
 from coop_assembly.planning.utils import recover_sequence, Command, load_world, notify
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
 from coop_assembly.planning.regression import regression
-from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness
+from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness, plan_stiffness
 from coop_assembly.planning.heuristics import HEURISTICS
 from coop_assembly.planning.robot_setup import ROBOT_NAME, BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
 
@@ -99,14 +99,24 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         if args.check_model:
             check_model(bar_struct, chosen_bars, debug=args.debug)
 
-        checker = None
-        if args.stiffness and (checker is None):
+        if args.stiffness:
             checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug,
                 save_model=args.save_cm_model)
             cprint('stiffness checker created.', 'green')
             # check full structure
             evaluate_stiffness(bar_struct, list(bar_struct.nodes()), checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
-        wait_if_gui('Please review structure\'s workspace position.')
+
+            sequence = plan_stiffness(bar_struct, chosen_bars or sorted(element_from_index.keys()), initial_position=None, checker=None, stiffness=True,
+                heuristic='z', max_time=INF, max_backtrack=0)
+            assert sequence is not None, 'Structure does not have a stiffness-feasible sequence.'
+
+            if has_gui():
+                endpts_from_element = bar_struct.get_axis_pts_from_element(scale=METER_SCALE)
+                h = draw_ordered(list(bar_struct.vertices()), endpts_from_element)
+                wait_for_user('stiffness only plan. (purple->blue->green->yellow->red)')
+                remove_handles(h)
+        else:
+            wait_if_gui('Please review structure\'s workspace position.')
 
         # visualize_stiffness
         with WorldSaver():
@@ -219,7 +229,7 @@ def create_parser():
                         help='The name of the problem to solve')
     parser.add_argument('-a', '--algorithm', default='regression', choices=ALGORITHMS,
                         help='Planning algorithms')
-    parser.add_argument('--bias', default='z', choices=HEURISTICS,
+    parser.add_argument('-b', '--bias', default='z', choices=HEURISTICS,
                         help='Which heuristic to use')
     parser.add_argument('-c', '--collisions', action='store_false',
                         help='Disable collision checking with obstacles')
@@ -227,7 +237,7 @@ def create_parser():
                         help='Disable transfer/transit planning')
     parser.add_argument('-l', '--lazy', action='store_true',
                         help='lazily plan transit/transfer motions.')
-    parser.add_argument('-b', '--bar_only', action='store_true',
+    parser.add_argument('--bar_only', action='store_true',
                         help='Only planning motion for floating bars, diable arm planning')
     parser.add_argument('--stiffness', action='store_false',
                         help='Disable stiffness checking')

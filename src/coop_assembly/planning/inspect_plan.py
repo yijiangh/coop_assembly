@@ -26,7 +26,7 @@ from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning import get_picknplace_robot_data, TOOL_LINK_NAME, EE_LINK_NAME, get_gripper_mesh_path
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, \
     display_trajectories, check_model, set_camera, visualize_stiffness, GROUND_COLOR
-from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
+from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, \
     flatten_commands
 
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \

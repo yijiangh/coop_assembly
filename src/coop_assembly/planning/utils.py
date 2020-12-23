@@ -226,10 +226,10 @@ def check_connected(connectors, grounded_elements, printed_elements):
                 queue.append(element)
     return printed_elements <= visited_elements
 
-def get_connected_structures(connectors, elements):
-    edges = {(e1, e2) for e1, neighbors in get_element_neighbors(connectors, elements).items()
-             for e2 in neighbors}
-    return get_connected_components(elements, edges)
+# def get_connected_structures(connectors, elements):
+#     edges = {(e1, e2) for e1, neighbors in get_element_neighbors(connectors, elements).items()
+#              for e2 in neighbors}
+#     return get_connected_components(elements, edges)
 
 ######################################################
 
@@ -240,6 +240,22 @@ def compute_z_distance(element_from_index, element):
     # Distance to a ground plane
     # Opposing gravitational force
     return get_midpoint(element_from_index, element)[2]
+
+######################################################
+
+def compute_sequence_distance(node_points, elements, start=None, end=None):
+    if elements is None:
+        return INF
+    distance = 0.
+    position = start
+    for (n1, n2) in directed_elements:
+        if position is not None:
+            distance += get_distance(position, node_points[n1])
+        distance += get_distance(node_points[n1], node_points[n2])
+        position = node_points[n2]
+    if end is not None:
+        distance += get_distance(position, end)
+    return distance
 
 ######################################################
 

@@ -23,8 +23,8 @@ from coop_assembly.planning import get_picknplace_robot_data, TOOL_LINK_NAME, EE
 from coop_assembly.planning.utils import load_world
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera, draw_partial_ordered
 from coop_assembly.planning.visualization import display_trajectories
-from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
-    flatten_commands
+from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, \
+    flatten_commands #get_connected_structures,
 
 from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn, command_collision, \
     get_element_body_in_goal_pose, se3_conf_from_pose

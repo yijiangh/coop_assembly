@@ -25,8 +25,8 @@ from coop_assembly.geometry_generation.tangents import lines_tangent_to_cylinder
 from coop_assembly.help_functions.parsing import export_structure_data, parse_saved_structure_data
 from coop_assembly.help_functions.shared_const import HAS_PYBULLET, METER_SCALE
 from coop_assembly.planning.visualization import set_camera, SHADOWS, BACKGROUND_COLOR, label_elements
-from coop_assembly.planning.utils import load_world, get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
-    flatten_commands
+from coop_assembly.planning.utils import load_world, get_element_neighbors, get_connector_from_elements, check_connected, \
+    flatten_commands #, get_connected_structures,
 from coop_assembly.planning.visualization import color_structure, draw_ordered, draw_element, label_elements, label_connector, set_camera, draw_partial_ordered
 
 # from coop_assembly.assembly_info_generation import calculate_gripping_plane, calculate_offset, contact_info_from_seq

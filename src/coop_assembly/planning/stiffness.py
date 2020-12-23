@@ -1,11 +1,14 @@
+import heapq
 import os
-import json
 import random
-from collections import namedtuple, defaultdict
-from itertools import combinations
-from termcolor import cprint
+import time
+import json
 import numpy as np
 from numpy.linalg import norm
+
+from collections import namedtuple, defaultdict
+from itertools import combinations, product, combinations_with_replacement
+from termcolor import cprint
 
 try:
     from pyconmech.frame_analysis import StiffnessChecker
@@ -20,12 +23,13 @@ else:
 from pybullet_planning import HideOutput, INF, apply_alpha, RED, get_distance, angle_between, get_difference, get_angle, has_gui
 from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, \
     set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body, \
-    remove_handles, remove_debug, LockRenderer, draw_point
+    remove_handles, remove_debug, LockRenderer, draw_point, elapsed_time
 
 from compas.geometry import is_colinear
 from coop_assembly.help_functions.shared_const import METER_SCALE, EPS
 from coop_assembly.data_structure import GROUND_INDEX
 from coop_assembly.planning.parsing import load_structure, unpack_structure, PICKNPLACE_DIRECTORY
+from coop_assembly.planning.utils import check_connected, compute_z_distance
 
 # TRANS_TOL = 0.0015
 TRANS_TOL = 0.01
@@ -284,3 +288,75 @@ def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_
 
 def test_stiffness(bar_struct, elements, **kwargs):
     return evaluate_stiffness(bar_struct, elements, **kwargs).success
+
+##################################################
+
+def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fem_element_from_bar_id=None, \
+        stiffness=True, heuristic='z', max_time=INF, max_backtrack=0):
+    """use the progression algorithm to plan a stiff sequence
+    """
+    start_time = time.time()
+    # TODO chosen bars
+    element_from_index, grounded_elements, _, connectors = \
+        unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=apply_alpha(RED,0.1))
+    if stiffness and (checker is None or fem_element_from_bar_id is None):
+        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct)
+
+    # all_elements = frozenset(element_from_index)
+    remaining_elements = frozenset(elements)
+    min_remaining = len(remaining_elements)
+    queue = [(None, frozenset(), [])]
+    while queue and (elapsed_time(start_time) < max_time):
+        # TODO pop position and try distance heuristic
+        _, printed, sequence = heapq.heappop(queue)
+        num_remaining = len(remaining_elements) - len(printed)
+        backtrack = num_remaining - min_remaining
+        if max_backtrack < backtrack:
+            break # continue
+
+        # * check constraints
+        if not check_connected(connectors, grounded_elements, printed):
+            continue
+        if stiffness and not test_stiffness(bar_struct, printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id):
+        # if stiffness and not test_stiffness(extrusion_path, element_from_id, printed, checker=checker, verbose=False):
+            continue
+
+        if printed == remaining_elements:
+            # * Done!
+            #from extrusion.visualization import draw_ordered
+            # distance = compute_sequence_distance(node_points, sequence, start=initial_position, end=initial_position)
+            print('Success! Elements: {}, Time: {:.3f}sec'.format(len(sequence), elapsed_time(start_time))) #Distance: {:.3f}m,
+            #local_search(extrusion_path, element_from_id, node_points, ground_nodes, checker, sequence,
+            #             initial_position=initial_position, stiffness=stiffness, max_time=INF)
+            #draw_ordered(sequence, node_points)
+            #wait_for_user()
+            return sequence
+
+        # * add successors
+        for element in remaining_elements - printed:
+            new_printed = printed | {element}
+            new_sequence = sequence + [element]
+            num_remaining = len(remaining_elements) - len(new_printed)
+            min_remaining = min(min_remaining, num_remaining)
+            # Don't count edge length
+            # distance = get_distance(position, node_points[node1]) if position is not None else None
+            # distance = compute_sequence_distance(node_points, new_sequence)
+            if heuristic == 'none':
+                bias = None
+            elif heuristic == 'random':
+                bias = random.random()
+            elif heuristic == 'z':
+                bias = compute_z_distance(element_from_index, element)
+            # elif heuristic == 'distance':
+            #     bias = distance
+            else:
+                raise ValueError(heuristic)
+            #bias = heuristic_fn(printed, element, conf=None) # TODO: experiment with other biases
+            priority = (num_remaining, bias, random.random())
+            heapq.heappush(queue, (priority, new_printed, new_sequence))
+
+    cprint('Failed to find stiffness plan! Elements: {}, Min remaining {}, Time: {:.3f}sec'.format(
+        len(remaining_elements), min_remaining, elapsed_time(start_time)), 'red')
+    return None
+
+##################################################
