@@ -292,7 +292,7 @@ def test_stiffness(bar_struct, elements, **kwargs):
 ##################################################
 
 def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fem_element_from_bar_id=None, \
-        stiffness=True, heuristic='z', max_time=INF, max_backtrack=0):
+        stiffness=True, heuristic='z', max_time=INF, max_backtrack=0, verbose=False):
     """use the progression algorithm to plan a stiff sequence
     """
     start_time = time.time()
@@ -317,8 +317,7 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
         # * check constraints
         if not check_connected(connectors, grounded_elements, printed):
             continue
-        if stiffness and not test_stiffness(bar_struct, printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id):
-        # if stiffness and not test_stiffness(extrusion_path, element_from_id, printed, checker=checker, verbose=False):
+        if stiffness and not test_stiffness(bar_struct, printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose):
             continue
 
         if printed == remaining_elements:

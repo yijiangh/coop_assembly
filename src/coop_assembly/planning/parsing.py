@@ -125,7 +125,7 @@ def save_plan(config, trajectories, save_link_names=None, overwrite=True, elemen
         for traj in trajectories:
             # print(traj)
             if traj.element is not None and e_id != traj.element:
-                print('break')
+                # print('break')
                 # break subprocess if there is a discontinuity in the element id
                 data['plan'].append(copy.deepcopy(e_path))
                 e_path = []
