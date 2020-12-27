@@ -31,7 +31,7 @@ from coop_assembly.data_structure import GROUND_INDEX
 from coop_assembly.planning.parsing import load_structure, unpack_structure, PICKNPLACE_DIRECTORY
 from coop_assembly.planning.utils import check_connected, compute_z_distance
 
-TRANS_TOL = 0.005
+TRANS_TOL = 0.003
 # SP Arch
 # TRANS_TOL = 0.01
 ROT_TOL = INF # 5 * np.pi / 180

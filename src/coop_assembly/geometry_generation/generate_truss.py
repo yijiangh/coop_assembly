@@ -92,15 +92,16 @@ def generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, r
     all_elements = frozenset(edges)
     bar_from_elements = {}
     for e in all_elements:
-        p0 = node_points[e[0]]
-        p1 = node_points[e[1]]
+        n1, n2 = e
+        p0 = node_points[n1]
+        p1 = node_points[n2]
         delta_p = (p1 - p0) / norm(p1 - p0)
         shrink = 0.0
         if 'shrink' in edge_attributes[e]:
             shrink = edge_attributes[e]['shrink']
         bar_from_elements[e] = {
-            e[0] : p0 + shrink*delta_p,
-            e[1] : p1 - shrink*delta_p
+            n1 : p0 + shrink*delta_p,
+            n2 : p1 - shrink*delta_p
             }
 
     index_from_element = {}
@@ -116,7 +117,7 @@ def generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, r
         # update contact point into BarS's edges
         for ne in element_neighbors[e]:
             b_struct.connect_bars(index_from_element[e], index_from_element[ne])
-            contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e], index_from_element[ne])
+            contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e], index_from_element[ne], method='opt')
             b_struct.edge[index_from_element[e]][index_from_element[ne]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
 
     # * add grounded connector
@@ -726,13 +727,14 @@ def gen_truss(problem_data, viewer=False, radius=3.17, debug=False, method='sear
     # TODO waiting for compas update to use ordered dict for nodes
     # node_points, edges = net.to_nodes_and_edges()
     node_points = [np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
-    edges = [EDGE(e) for e in net.edges()]
+    # EDGE
+    edges = [e for e in net.edges()]
     edge_attributes = {e[0] : e[1] for e in net.edges(True)}
     ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
 
-    print('parsed edges from to_node_and_edges: {}'.format(edges))
-    print('parsed node_points: {}'.format(node_points))
-    print('parsed grounded_nodes: {}'.format(ground_nodes))
+    # print('parsed edges from to_node_and_edges: {}'.format(edges))
+    # print('parsed node_points: {}'.format(node_points))
+    # print('parsed grounded_nodes: {}'.format(ground_nodes))
 
     # if not verbose:
     #     # used when rpc call is made to get around stdout error
@@ -771,9 +773,8 @@ def gen_truss(problem_data, viewer=False, radius=3.17, debug=False, method='sear
             'x_vars' : x_vars_data,
             'z_vars' : z_vars_data,
             }
-
     elif method == 'shrink':
-        b_struct = generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, radius, debug=debug)
+        b_struct = generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, float(radius), debug=debug)
     else:
         raise NotImplementedError('Unsupported method : {}'.format(method))
 

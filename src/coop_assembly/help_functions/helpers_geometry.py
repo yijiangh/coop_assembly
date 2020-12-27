@@ -315,7 +315,7 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
            else:
                return [line_point_1_2, contact_pt2]
 
-def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
+def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key, method='geometric'):
     """a convenient wrapper for ``dropped_perpendicular_points`` to operate directly on BarStructure and its bar vertices
 
     Parameters
@@ -335,8 +335,14 @@ def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key):
     """
     bar1 = b_struct.vertex[bar1_key]
     bar2 = b_struct.vertex[bar2_key]
-    return dropped_perpendicular_points(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1],
-                                        bar2["axis_endpoints"][0], bar2["axis_endpoints"][1])
+    if method == 'geometric':
+        return dropped_perpendicular_points(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1],
+                                            bar2["axis_endpoints"][0], bar2["axis_endpoints"][1])
+    elif method == 'opt':
+        return closest_point_segments(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1],
+                                      bar2["axis_endpoints"][0], bar2["axis_endpoints"][1])
+    else:
+        raise ValueError
 
 def find_points_extreme(pts_all, pts_init):
     """update a bar's axis end point based on all the contact projected points specified in `pts_all`
