@@ -23,19 +23,32 @@ INCLUDE_ENV_COLLISION_OBJS = True
 # BUILD_PLATE_CENTER = np.array([550, 0, -14.23])*1e-3
 BUILD_PLATE_CENTERs = {
     'kuka' : np.array([500, 0, -14.23])*1e-3,
-    # 'abb_track' : np.array([1.63, -0.5, 30.7*1e-3]),
-    'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
+    # 'abb_track' : np.array([1.35, -2, 30.7*1e-3]),
+    # SP Arch
+    # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
+    # IT Hydra
+    'abb_track' : np.array([1.35, -2, 30.7*1e-3]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
+# [32, 33, 39, 40, 41, 24, 26, 31]
+
+# BOTTOM_BUFFER = 0.1
 # BOTTOM_BUFFER = 0.005
 # BOTTOM_BUFFER = 0.01
 BOTTOM_BUFFER = 0.03
-# BOTTOM_BUFFER = 0.1
-BASE_YAW = np.pi#-np.pi/18
+# SP Arch
+# BASE_YAW = np.pi
+# IT Hydra
+BASE_YAW = 0
 # BASE_YAW = -np.pi/18
 # BASE_YAW = np.pi + np.pi/6
 # BASE_YAW = -np.pi/3
+
+####################
+# SP_arch
+# 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
+# BASE_YAW = np.pi#-np.pi/18
 
 ########################################
 
@@ -97,7 +110,6 @@ CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 ## - http://lavalle.pl/planning/node217.html
 ## - http://openrave.org/docs/latest_stable/openravepy/databases.linkstatistics/
 ## joint resolution used in transit motions
-# 0.003 captures pregrasp collision
 # RESOLUTION = 0.005
 # RESOLUTION = 0.01
 # RESOLUTION_RATIO = 1
@@ -105,7 +117,7 @@ RESOLUTION_RATIO = 5
 
 INITIAL_CONFs = {
     'kuka': np.radians([5., -90., 100, 5, 10, -5]),
-    'abb_track' : np.hstack([0., np.radians([0,0,0,0,0,0])]),
+    'abb_track' : np.hstack([0.1, np.radians([0,0,0,0,0,0])]),
     }
 INITIAL_CONF = INITIAL_CONFs[ROBOT_NAME]
 

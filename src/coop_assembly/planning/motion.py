@@ -18,7 +18,7 @@ from coop_assembly.data_structure import Element
 from coop_assembly.data_structure.utils import MotionTrajectory
 from .utils import get_index_from_bodies
 from .robot_setup import CONTROL_JOINT_NAMES, get_disabled_collisions, IK_MODULE, get_custom_limits, JOINT_WEIGHTS, EE_LINK_NAME, \
-    BUILD_PLATE_CENTER, ROBOT_NAME, JOINT_RESOLUTIONS
+    BUILD_PLATE_CENTER, ROBOT_NAME, JOINT_RESOLUTIONS, ROBOT_NAME
 from .stream import ENABLE_SELF_COLLISIONS, get_element_body_in_goal_pose, POS_STEP_SIZE, ORI_STEP_SIZE, MAX_DISTANCE
 
 DYNMAIC_RES_RATIO = 0.1
@@ -27,7 +27,11 @@ CONVEX_BUFFER = 0.3
 
 ##################################################
 
-EE_INITIAL_POINT = np.array(BUILD_PLATE_CENTER) + np.array([0.4, 0, 0.6])
+EE_INITIAL_POINTs = {
+    'kuka' : np.array(BUILD_PLATE_CENTER) + np.array([0.4, 0, 0.6]),
+    'abb_track' : np.array(BUILD_PLATE_CENTER) + np.array([0.4, 0, 1.6]),
+}
+EE_INITIAL_POINT = EE_INITIAL_POINTs[ROBOT_NAME]
 EE_INITIAL_EULER = np.array([0, np.pi/2, 0])
 EE_INITIAL_CONF = np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
 

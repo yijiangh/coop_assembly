@@ -23,7 +23,7 @@ else:
 from pybullet_planning import HideOutput, INF, apply_alpha, RED, get_distance, angle_between, get_difference, get_angle, has_gui
 from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, \
     set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body, \
-    remove_handles, remove_debug, LockRenderer, draw_point, elapsed_time
+    remove_handles, remove_debug, LockRenderer, draw_point, elapsed_time, randomize
 
 from compas.geometry import is_colinear
 from coop_assembly.help_functions.shared_const import METER_SCALE, EPS
@@ -31,8 +31,9 @@ from coop_assembly.data_structure import GROUND_INDEX
 from coop_assembly.planning.parsing import load_structure, unpack_structure, PICKNPLACE_DIRECTORY
 from coop_assembly.planning.utils import check_connected, compute_z_distance
 
-# TRANS_TOL = 0.0015
-TRANS_TOL = 0.01
+TRANS_TOL = 0.005
+# SP Arch
+# TRANS_TOL = 0.01
 ROT_TOL = INF # 5 * np.pi / 180
 
 ####################################
@@ -192,6 +193,7 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
         cprint('Conmech model saved to: {}'.format(model_path), 'green')
 
     if debug and has_gui():
+        h = []
         with LockRenderer(False):
             # for n in cm_nodes:
             #     draw_point(n.point, size=0.002, color=GREEN if n.is_grounded else BLACK)
@@ -201,13 +203,16 @@ def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, 
                     e = cm_elements[elem_id]
                     node_inds = e.end_node_inds
                     if 'bar' in e.elem_tag:
-                        add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=(random.random(), random.random(), random.random(), 1), width=3)
+                        th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=(random.random(), random.random(), random.random(), 1), width=3)
                     elif 'connector' in e.elem_tag:
-                        add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
+                        th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
+                    h.append(th)
                 # input()
             for s in supports:
-                draw_point(cm_nodes[s.node_ind].point, size=0.02, color=RED)
+                ph = draw_point(cm_nodes[s.node_ind].point, size=0.02, color=RED)
+                h.append(ph)
         wait_if_gui()
+        remove_handles(h)
 
     return model, fem_element_from_bar_id
 
@@ -296,6 +301,7 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
     """use the progression algorithm to plan a stiff sequence
     """
     start_time = time.time()
+    # TODO the bar index gives the algorithm hints, try other starting point
     # TODO chosen bars
     element_from_index, grounded_elements, _, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=apply_alpha(RED,0.1))
@@ -305,12 +311,14 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
     # all_elements = frozenset(element_from_index)
     remaining_elements = frozenset(elements)
     min_remaining = len(remaining_elements)
+    max_bt = stiffness_failures = 0
     queue = [(None, frozenset(), [])]
     while queue and (elapsed_time(start_time) < max_time):
         # TODO pop position and try distance heuristic
         _, printed, sequence = heapq.heappop(queue)
         num_remaining = len(remaining_elements) - len(printed)
         backtrack = num_remaining - min_remaining
+        max_bt = max(max_bt, backtrack)
         if max_backtrack < backtrack:
             break # continue
 
@@ -318,13 +326,14 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
         if not check_connected(connectors, grounded_elements, printed):
             continue
         if stiffness and not test_stiffness(bar_struct, printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose):
+            stiffness_failures += 1
             continue
 
         if printed == remaining_elements:
             # * Done!
             #from extrusion.visualization import draw_ordered
             # distance = compute_sequence_distance(node_points, sequence, start=initial_position, end=initial_position)
-            print('Success! Elements: {}, Time: {:.3f}sec'.format(len(sequence), elapsed_time(start_time))) #Distance: {:.3f}m,
+            cprint('Plan-stiffness success! Elements: {}, max BT: {}, stiffness failure: {}, Time: {:.3f}sec'.format(len(sequence), max_bt, stiffness_failures, elapsed_time(start_time))) #Distance: {:.3f}m,
             #local_search(extrusion_path, element_from_id, node_points, ground_nodes, checker, sequence,
             #             initial_position=initial_position, stiffness=stiffness, max_time=INF)
             #draw_ordered(sequence, node_points)
@@ -332,7 +341,7 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
             return sequence
 
         # * add successors
-        for element in remaining_elements - printed:
+        for element in randomize(remaining_elements - printed):
             new_printed = printed | {element}
             new_sequence = sequence + [element]
             num_remaining = len(remaining_elements) - len(new_printed)
@@ -354,8 +363,8 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
             priority = (num_remaining, bias, random.random())
             heapq.heappush(queue, (priority, new_printed, new_sequence))
 
-    cprint('Failed to find stiffness plan! Elements: {}, Min remaining {}, Time: {:.3f}sec'.format(
-        len(remaining_elements), min_remaining, elapsed_time(start_time)), 'red')
+    cprint('Failed to find stiffness plan under tol {}! Elements: {}, Min remaining {}, Time: {:.3f}sec'.format(
+        TRANS_TOL, len(remaining_elements), min_remaining, elapsed_time(start_time)), 'red')
     return None
 
 ##################################################

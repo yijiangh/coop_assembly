@@ -35,7 +35,7 @@ from coop_assembly.planning.validator import validate_trajectories, validate_pdd
 from coop_assembly.planning.utils import recover_sequence, Command, load_world, notify
 from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
 from coop_assembly.planning.regression import regression
-from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness, plan_stiffness
+from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness, plan_stiffness, TRANS_TOL
 from coop_assembly.planning.heuristics import HEURISTICS
 from coop_assembly.planning.robot_setup import ROBOT_NAME, BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
 
@@ -70,7 +70,9 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
     # the arm itself
     robots = [end_effector] if args.bar_only else [robot]
 
-    chosen_bars = [int(b) for b in args.subset_bars] if args.subset_bars is not None else None
+    chosen_bars = None
+    if args.subset_bars is not None:
+        chosen_bars = list(map(int, args.subset_bars[1:-1].split(', ')))
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.2))
     # color grounded elements
@@ -79,7 +81,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
             set_color(element_from_index[grounded_e].body, apply_alpha(BLUE,0.2))
         except KeyError:
             pass
-    if args.subset_bars is not None:
+    if chosen_bars is not None:
         label_elements({k : element_from_index[k] for k in chosen_bars})
 
     # bar_struct.set_body_color(RED, indices=chosen_bars)
@@ -110,9 +112,13 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 heuristic='z', max_time=INF, max_backtrack=0)
             assert sequence is not None, 'Structure does not have a stiffness-feasible sequence.'
 
+            cprint('Precomputed progression stiffness plan:', 'cyan')
+            progression_stiffness_history = compute_plan_deformation(bar_struct, sequence, verbose=False)
+            cprint('Max deformation in seq {} | tol {}'.format(max([t[1] for t in progression_stiffness_history]), TRANS_TOL), 'cyan')
+
             if has_gui():
                 endpts_from_element = bar_struct.get_axis_pts_from_element(scale=METER_SCALE)
-                h = draw_ordered(list(bar_struct.vertices()), endpts_from_element)
+                h = draw_ordered(sequence, endpts_from_element)
                 wait_for_user('stiffness only plan. (purple->blue->green->yellow->red)')
                 remove_handles(h)
         else:
@@ -166,8 +172,11 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
             elem_plan = recover_sequence(trajectories, element_from_index)
             if args.stiffness:
                 cprint('Computing stiffness history...', 'yellow')
-                stiffness_history = compute_plan_deformation(bar_struct, elem_plan)
+                stiffness_history = compute_plan_deformation(bar_struct, elem_plan, verbose=False)
+                # print('='*10)
                 extra_data = {'stiffness_history' : stiffness_history,
+                              'progression_sequence' : sequence,
+                              'progression_stiffness_history' : progression_stiffness_history,
                               'fem_element_from_bar_id' : { k : list(v) for k, v in fem_element_from_bar_id.items()},
                               'planning_data' : data,
                               }
@@ -229,7 +238,7 @@ def create_parser():
                         help='The name of the problem to solve')
     parser.add_argument('-a', '--algorithm', default='regression', choices=ALGORITHMS,
                         help='Planning algorithms')
-    parser.add_argument('-b', '--bias', default='z', choices=HEURISTICS,
+    parser.add_argument('-b', '--bias', default='plan-stiffness', choices=HEURISTICS,
                         help='Which heuristic to use')
     parser.add_argument('-c', '--collisions', action='store_false',
                         help='Disable collision checking with obstacles')
@@ -243,12 +252,15 @@ def create_parser():
                         help='Disable stiffness checking')
     parser.add_argument('-po', '--partial_ordering', action='store_true',
                         help='Use partial ordering (if-any)')
-    parser.add_argument('-co', '--costs', action='store_true',
-                        help='Turn on cost_effective planning')
+    # parser.add_argument('-co', '--costs', action='store_true',
+    #                     help='Turn on cost_effective planning')
     parser.add_argument('-to', '--teleops', action='store_true',
                         help='Use teleop for trajectories (turn off in-between traj planning)')
-    parser.add_argument('--subset_bars', nargs='+', default=None,
+    # parser.add_argument('-s', '--subset_bars', nargs='+', default=None,
+    parser.add_argument('-s', '--subset_bars', default=None,
                         help='Plan for only subset of bar indices.')
+    parser.add_argument('-d', '--disable', action='store_true',
+                        help='Disables robot planning, only consider floating bars')
 
     # parser.add_argument('-m', '--motion', action='store_true', help='enable transit motion')
     # parser.add_argument('--rfn', help='result file name')
@@ -263,13 +275,18 @@ def main():
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     parser.add_argument('-n', '--n_trails', default=1, help='number of trails')
     parser.add_argument('-w', '--watch', action='store_true', help='watch trajectories')
-    parser.add_argument('-sm', '--step_sim', action='store_true', help='stepping simulation.')
+    parser.add_argument('--step_sim', action='store_true', help='stepping simulation.')
     parser.add_argument('-wr', '--write', action='store_true', help='Export results')
     parser.add_argument('-db', '--debug', action='store_true', help='Debug verbose mode')
     parser.add_argument('--check_model', action='store_true', help='Inspect model.')
     parser.add_argument('--save_cm_model', action='store_true', help='Export conmech model.')
     args = parser.parse_args()
     print('Arguments:', args)
+
+    if args.disable:
+        args.collisions = False
+        args.motions = False
+        args.bar_only = True
 
     success_cnt = 0
     if int(args.n_trails) == 1:

@@ -18,7 +18,7 @@ import os, sys
 
 from pybullet_planning import INF, get_movable_joints, get_joint_positions, randomize, has_gui, \
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
-    set_joint_positions, get_relative_pose, WorldSaver, set_renderer, apply_alpha, RED
+    set_joint_positions, get_relative_pose, WorldSaver, set_renderer, apply_alpha, RED, wait_for_duration, wait_if_gui
 
 from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
 from coop_assembly.data_structure.utils import MotionTrajectory
@@ -33,7 +33,7 @@ from .heuristics import get_heuristic_fn
 from .parsing import unpack_structure
 from .stiffness import create_stiffness_checker, test_stiffness
 
-PAUSE_UPON_BT = True
+PAUSE_UPON_BT = 1
 MAX_REVISIT = 5
 
 Node = namedtuple('Node', ['action', 'state'])
@@ -155,7 +155,10 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                 color_structure(element_from_index, printed, next_element=element, built_alpha=0.6)
                 label_elements({k : element_from_index[k] for k in list(printed | {element})})
                 # print('Blues are the remaining ones, green is the current one, blacks are the already removed ones.')
-                wait_for_user('BT increased. Remaining: {} | place_failures {}, transit_failures {}, transfer_failures {}, stiffness_failures {}'.format(list(printed | {element}), place_failures, transit_failures, transfer_failures, stiffness_failures))
+                cprint('BT increased. Remaining: {} | place_failures {}, transit_failures {}, transfer_failures {}, stiffness_failures {}'.format(
+                    list(printed | {element}), place_failures, transit_failures, transfer_failures, stiffness_failures), 'cyan')
+                # wait_for_duration(5)
+                wait_if_gui()
                 set_renderer(enable=False)
 
         if backtrack_limit < backtrack:

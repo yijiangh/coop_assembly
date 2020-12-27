@@ -162,7 +162,7 @@ def label_points(points, **kwargs):
 #####################################################
 
 def check_model(bar_struct, indices=None, debug=False):
-    from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures
+    from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected
     elements = list(bar_struct.nodes()) if indices is None else indices
 
     element_bodies = bar_struct.get_element_bodies(indices=elements, color=apply_alpha(RED, 0.3))
@@ -366,13 +366,13 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
                 else:
                     wait_for_duration(time_step)
 
-            print('{}) {:9} | Connected: {} | Ground: {} | Length: {}'.format(
-                i, str(trajectory), is_connected, True, len(trajectory.path)))
+            print('{}) {:9} | Ground: {} | Length: {}'.format(
+                i, str(trajectory), True, len(trajectory.path)))
 
         if isinstance(trajectory, MotionTrajectory):
             for attach in trajectory.attachments:
                 set_color(attach.child, BLUE)
-            is_connected = True
+            # is_connected = True
 
         if bounding is not None:
             remove_body(bounding)

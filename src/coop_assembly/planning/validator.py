@@ -28,7 +28,7 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
     valid = True
     obstacles = list(fixed_obstacles)
     for i, trajectory in enumerate(trajectories):
-        cprint(trajectory, 'cyan')
+        # cprint(trajectory, 'cyan')
 
         robot = trajectory.robot
         joints = trajectory.joints
@@ -90,51 +90,51 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
                 set_color(body, apply_alpha(BLUE))
             obstacles.append(body)
         # wait_if_gui()
-        cprint('>'*10, 'cyan')
+        # cprint('>'*10, 'cyan')
     return valid
 
 ##############################################
 
 def validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, allow_failure=False, watch=False, debug=False, **kwargs):
-    print('Collided element should be included in the future (unprinted) set.')
+    # print('Collided element should be included in the future (unprinted) set.')
     label_elements({e:element_from_index[e].body for e in element_from_index}, body_index=True)
     element_seq = recover_sequence(trajectories, element_from_index)
     index_from_bodies = get_index_from_bodies(element_from_index)
     collision_facts = []
-    for traj in trajectories:
-        if traj.element is not None and traj.tag=='place_approach':
-            print('E{} : future E{}'.format(traj.element, element_seq[element_seq.index(traj.element):]))
-            command = Command([traj])
-            elements_order = [e for e in element_from_index if (e != traj.element)]
-            bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-            colliding = command_collision(command, bodies_order, index_from_bodies=index_from_bodies, debug=False)
-            for element2, unsafe in zip(elements_order, colliding):
-                if unsafe:
-                    command.set_unsafe(element2)
-                else:
-                    command.set_safe(element2)
-            facts = [('Collision', command, e2) for e2 in command.colliding]
-            print('Collision facts: ', command.colliding)
-            collision_facts.extend(facts)
-            # * checking (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
-            valid = set(command.colliding) <= set(element_seq[element_seq.index(traj.element):])
-            if not valid:
-                if not allow_failure:
-                    return False
-                cprint('Collision facts violated!', 'red')
-                wait_if_gui()
-        print('------------')
+    # for traj in trajectories:
+    #     if traj.element is not None and traj.tag=='place_approach':
+    #         print('E{} : future E{}'.format(traj.element, element_seq[element_seq.index(traj.element):]))
+    #         command = Command([traj])
+    #         elements_order = [e for e in element_from_index if (e != traj.element)]
+    #         bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
+    #         colliding = command_collision(command, bodies_order, index_from_bodies=index_from_bodies, debug=False)
+    #         for element2, unsafe in zip(elements_order, colliding):
+    #             if unsafe:
+    #                 command.set_unsafe(element2)
+    #             else:
+    #                 command.set_safe(element2)
+    #         facts = [('Collision', command, e2) for e2 in command.colliding]
+    #         print('Collision facts: ', command.colliding)
+    #         collision_facts.extend(facts)
+    #         # * checking (forall (?e2) (imply (Collision ?t ?e2) (Removed ?e2)))
+    #         valid = set(command.colliding) <= set(element_seq[element_seq.index(traj.element):])
+    #         if not valid:
+    #             if not allow_failure:
+    #                 return False
+    #             cprint('Collision facts violated!', 'red')
+    #             wait_if_gui()
+    #     print('------------')
 
     # * visualize the collision constraint directional graph
     # https://networkx.github.io/documentation/stable/tutorial.html#directed-graphs
-    if debug:
-        visualize_collision_digraph(collision_facts)
+    # if debug:
+    #     visualize_collision_digraph(collision_facts)
 
     valid = validate_trajectories(element_from_index, fixed_obstacles, trajectories, \
         grounded_elements=grounded_elements, allow_failure=allow_failure, watch=watch, **kwargs)
     return valid
 
-def compute_plan_deformation(bar_struct, plan):
+def compute_plan_deformation(bar_struct, plan, verbose=False):
     checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
     trans_tol, rot_tol = checker.get_nodal_deformation_tol()
     if plan is None:
@@ -143,10 +143,12 @@ def compute_plan_deformation(bar_struct, plan):
     printed = []
     translations = []
     rotations = []
-    for element in plan:
+    for i, element in enumerate(plan):
+        if verbose:
+            cprint('{}) : bar#{}'.format(i, element), 'yellow')
         printed.append(element)
         deformation = evaluate_stiffness(bar_struct, printed,
-                                         checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
+                                         checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose)
         trans, rot, _, _ = checker.get_max_nodal_deformation()
         translations.append([bool(deformation.success), trans])
         rotations.append(rot)

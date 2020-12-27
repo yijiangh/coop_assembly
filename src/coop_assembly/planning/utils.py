@@ -35,10 +35,11 @@ def load_world(use_floor=True, built_plate_z=0.0, viewer=False):
                 obstacles.append(floor)
                 set_point(floor, Point(x=1.2, z=built_plate_z))
             elif ROBOT_NAME == 'abb_track':
-                h = 0.2
-                build_platform = create_box(2, 6, 0.2, color=GROUND_COLOR)
-                set_point(build_platform, Point(x=1.7, y=-1.5, z=built_plate_z-h/2))
-                obstacles.append(build_platform)
+                pass
+                # h = 0.2
+                # build_platform = create_box(2, 6, 0.2, color=GROUND_COLOR)
+                # set_point(build_platform, Point(x=1.7, y=-1.5, z=built_plate_z-h/2))
+                # obstacles.append(build_platform)
         if INCLUDE_ENV_COLLISION_OBJS:
             for cm in WS_MESH_PATH:
                 env_obj = create_obj(coop_assembly.get_data(cm), color=GROUND_COLOR)
@@ -260,9 +261,10 @@ def compute_sequence_distance(node_points, elements, start=None, end=None):
 ######################################################
 
 def notify(msg=''):
-    notification.notify(
-        title='coop_assembly',
-        message=msg,
-        app_icon=None,  # e.g. 'C:\\icon_32x32.ico'
-        timeout=3,  # seconds
-    )
+    pass
+    # notification.notify(
+    #     title='coop_assembly',
+    #     message=msg,
+    #     app_icon=None,  # e.g. 'C:\\icon_32x32.ico'
+    #     timeout=3,  # seconds
+    # )
