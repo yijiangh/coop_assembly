@@ -79,7 +79,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
         checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
 
     heuristic_fn = get_heuristic_fn(robot, bar_struct, heuristic, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, forward=False)
-    place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=False, bar_only=bar_only,\
+    place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=debug, bar_only=bar_only,\
         precompute_collisions=False, allow_failure=True, teleops=teleops)
 
     # TODO: partial ordering
@@ -185,7 +185,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
             heapq.heappush(queue, (visits + 1, priority, printed, current_command))
 
         with WorldSaver():
-            command, = next(place_gen_fn(element, printed=next_printed))
+            command, = next(place_gen_fn(element, printed=next_printed, diagnosis=debug))
         if command is None:
             if verbose:
                 cprint('<'*5, 'red')

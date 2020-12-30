@@ -31,9 +31,12 @@ from coop_assembly.data_structure import GROUND_INDEX
 from coop_assembly.planning.parsing import load_structure, unpack_structure, PICKNPLACE_DIRECTORY
 from coop_assembly.planning.utils import check_connected, compute_z_distance
 
-TRANS_TOL = 0.003
-# SP Arch
+# TRANS_TOL = 0.003
+# * SP Arch
 # TRANS_TOL = 0.01
+# * Other
+TRANS_TOL = 0.005
+
 ROT_TOL = INF # 5 * np.pi / 180
 
 ####################################
@@ -96,9 +99,9 @@ def find_nodes(new_pts, cm_nodes, tol=1e-6):
     return cm_nodes, node_inds
 
 
-def conmech_model_from_bar_structure(bar_struct, chosen_bars=None, debug=False, save_model=False):
+def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False):
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
-        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0))
+        unpack_structure(bar_struct, scale=METER_SCALE, color=apply_alpha(RED,0))
     grounded_connectors = bar_struct.get_grounded_connector_keys()
 
     # Element = namedtuple('Element', ['index', 'axis_endpoints', 'radius', 'body', 'initial_pose', 'goal_pose',

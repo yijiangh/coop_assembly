@@ -1,6 +1,8 @@
 import colorsys
 import numpy as np
+from matplotlib import cm
 from termcolor import cprint
+
 from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, get_visual_data, \
     set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body, \
     remove_handles, pairwise_collision, pairwise_collision_info, draw_collision_diagnosis, has_gui, remove_debug, LockRenderer, get_distance
@@ -22,8 +24,11 @@ def draw_element(axis_endpts, element, color=RED, width=BAR_LINE_WIDTH):
     return add_line(p1, p2, color=color[:3], width=width)
 
 
-def sample_colors(num, lower=0.0, upper=0.75): # for now wrap around
-    return [colorsys.hsv_to_rgb(h, s=1, v=1) for h in reversed(np.linspace(lower, upper, num, endpoint=True))]
+def sample_colors(num, lower=0.0, upper=1.0): # for now wrap around
+    # lower=0.0, upper=0.75
+    # return [colorsys.hsv_to_rgb(h, s=1, v=1) for h in reversed(np.linspace(lower, upper, num, endpoint=True))]
+    viridis = cm.get_cmap('viridis', 12)
+    return viridis(np.linspace(lower, upper, num, endpoint=True))
 
 
 def draw_ordered(elements, axis_endpts):

@@ -1,0 +1,16590 @@
+{
+"write_time": "2020-12-27 18:10:31.861844",
+"bar_structure": {
+"compas": "0.18.1",
+"datatype": "coop_assembly.data_structure/BarStructure",
+"data": {
+"attributes": {
+"name": "NetworkBar"
+},
+"node_attributes": {
+"x": 0.0,
+"y": 0.0,
+"z": 0.0
+},
+"edge_attributes": {},
+"node": {
+"0": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7069.35489209211,
+1870.6670000000001,
+938.9787139735354
+],
+[
+7165.31160790789,
+1870.6670000000001,
+843.0222860264646
+]
+],
+"pb_body": 0,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5645316297506267,
+-0.6021678884226453,
+-0.5645333233421336
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"1": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6831.977713973694,
+1870.6670000000001,
+772.3116079077304
+],
+[
+6569.355286026305,
+1870.6670000000001,
+509.68839209226974
+]
+],
+"pb_body": 1,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.56453332334464,
+-0.6021678884227042,
+-0.5645316297480575
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"2": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6838.465486540518,
+1508.4654865405187,
+1112.1324865405188
+],
+[
+6562.867513459481,
+1232.8675134594814,
+836.5345134594813
+]
+],
+"pb_body": 2,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.4082482460174973,
+0.40824833491022805,
+-0.816496580927724
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"3": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6831.977660940673,
+1204.0,
+438.97766094067265
+],
+[
+6569.355339059327,
+1204.0,
+176.3553390593274
+]
+],
+"pb_body": 3,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.020824353537538726,
+0.9995662522311801,
+0.02082435353753876
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"4": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6831.977713973694,
+1537.333,
+772.3116079077304
+],
+[
+6569.355286026305,
+1537.333,
+509.68839209226974
+]
+],
+"pb_body": 4,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.5645332849628523,
+0.6021679603884518,
+-0.5645315913663849
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"5": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1906.0222860263057,
+772.3116079077304
+],
+[
+6867.333,
+2168.6447139736947,
+509.6883920922697
+]
+],
+"pb_body": 5,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.6021678332489282,
+-0.5645333527706917,
+-0.5645316591740207
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"6": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7236.022286026306,
+1870.6670000000001,
+772.3116079077304
+],
+[
+7498.644713973695,
+1870.6670000000001,
+509.68839209226974
+]
+],
+"pb_body": 6,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5645333642852632,
+-0.602167811659132,
+-0.5645316706885578
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"7": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6534.0,
+1204.0,
+191.0
+],
+[
+6534.0,
+1204.0,
+757.667
+]
+],
+"pb_body": 7,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.7071067480409156,
+0.7071068143321779,
+-0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"8": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7534.0,
+1239.3553390593274,
+176.35533905932738
+],
+[
+7534.0,
+1501.9776609406726,
+438.97766094067265
+]
+],
+"pb_body": 8,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.9995662542088594,
+-0.020824306073313828,
+0.020824306073313825
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"9": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6838.465486540518,
+1508.4654865405187,
+445.4654865405187
+],
+[
+6562.867513459481,
+1232.8675134594814,
+169.8675134594813
+]
+],
+"pb_body": 9,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.4082496682988034,
+-0.40824691262737345,
+0.8164965809261756
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"10": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7505.132486540519,
+1232.8675134594814,
+169.8675134594813
+],
+[
+7229.534513459482,
+1508.4654865405187,
+445.4654865405187
+]
+],
+"pb_body": 10,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.4082478311844502,
+-0.4082487497431045,
+0.8164965809275535
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"11": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1254.0,
+474.333
+],
+[
+7200.667,
+1487.333,
+474.333
+]
+],
+"pb_body": 11,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6643639393433786,
+0.0,
+0.747409229338351
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"12": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6838.465486540518,
+1899.5345134594813,
+1112.1324865405188
+],
+[
+6562.867513459481,
+2175.1324865405186,
+836.5345134594813
+]
+],
+"pb_body": 12,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.40824827564840793,
+-0.4082483052793188,
+-0.8164965809277255
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"13": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7534.0,
+1587.333,
+474.333
+],
+[
+7534.0,
+1820.6670000000001,
+474.333
+]
+],
+"pb_body": 13,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.936328963527931,
+0.0,
+0.35112401236416524
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"14": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1906.0222860263057,
+772.3116079077304
+],
+[
+7200.667,
+2168.6447139736947,
+509.6883920922697
+]
+],
+"pb_body": 14,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6021679771804297,
+-0.5645332760071168,
+-0.564531582410676
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"15": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7229.534484591939,
+1508.465515408061,
+503.2005711944794
+],
+[
+7505.132515408061,
+1232.867484591939,
+778.7994288055207
+]
+],
+"pb_body": 15,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.40824913397640245,
+0.40824907994366816,
+0.8164957644303281
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"16": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7069.354998157915,
+1537.333,
+1009.6891799600231
+],
+[
+7165.311501842085,
+1537.333,
+1105.6448200399768
+]
+],
+"pb_body": 16,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.5645311259659148,
+0.6021656574942548,
+-0.564536206766376
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"17": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7505.132486540519,
+2175.1324865405186,
+836.5345134594813
+],
+[
+7229.534513459482,
+1899.5345134594813,
+1112.1324865405188
+]
+],
+"pb_body": 17,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.4082483349102287,
+-0.40824824601749665,
+-0.816496580927724
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"18": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6838.465515408061,
+1899.5344845919392,
+503.2005711944794
+],
+[
+6562.867484591939,
+2175.132515408061,
+778.7994288055206
+]
+],
+"pb_body": 18,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.40824907994366505,
+-0.40824913397640555,
+0.8164957644303282
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"19": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7534.0,
+1906.0223390593276,
+438.97766094067265
+],
+[
+7534.0,
+2168.6446609406726,
+176.35533905932738
+]
+],
+"pb_body": 19,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.9995662529084681,
+0.020824337282664983,
+0.02082433728266496
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"20": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7498.644713973695,
+1537.333,
+509.68839209226974
+],
+[
+7236.022286026306,
+1537.333,
+772.3116079077304
+]
+],
+"pb_body": 20,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5645333259034824,
+0.602167883624881,
+-0.5645316323068922
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"21": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1239.3552860263055,
+509.6883920922697
+],
+[
+6867.333,
+1501.9777139736946,
+772.3116079077304
+]
+],
+"pb_body": 21,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.6021677948671433,
+0.564533373241001,
+-0.5645316796442684
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"22": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6838.465515408061,
+1508.465515408061,
+503.2005711944794
+],
+[
+6562.867484591939,
+1232.867484591939,
+778.7994288055207
+]
+],
+"pb_body": 22,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.4082490259109299,
+0.40824918800913595,
+0.8164957644303233
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"23": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6998.644213973695,
+1537.333,
+938.9786079077303
+],
+[
+6902.688286026305,
+1537.333,
+843.0223920922697
+]
+],
+"pb_body": 23,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.56453328496285,
+0.6021679603884521,
+-0.564531591366387
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"24": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6838.465486540518,
+1899.5345134594813,
+445.4654865405187
+],
+[
+6562.867513459481,
+2175.1324865405186,
+169.8675134594813
+]
+],
+"pb_body": 24,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.408248749741997,
+0.4082478311855576,
+0.8164965809275534
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"25": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1870.6670000000001,
+524.3330000000001
+],
+[
+6867.333,
+1870.6670000000001,
+757.667
+]
+],
+"pb_body": 25,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.707106748040977,
+-0.7071068143321165,
+0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"26": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6998.644213973695,
+1870.6670000000001,
+938.9786079077303
+],
+[
+6902.688286026305,
+1870.6670000000001,
+843.0223920922697
+]
+],
+"pb_body": 26,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.5645333233446378,
+-0.6021678884227043,
+-0.5645316297480595
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"27": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6817.333,
+1870.6670000000001,
+474.333
+],
+[
+6584.0,
+1870.6670000000001,
+474.333
+]
+],
+"pb_body": 27,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.0,
+-0.664363834964018,
+0.747409322120017
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"28": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1537.333,
+524.3330000000001
+],
+[
+7200.667,
+1537.333,
+757.667
+]
+],
+"pb_body": 28,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7071068143321086,
+0.7071067480409848,
+0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"29": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7505.132486540519,
+1232.8675134594814,
+836.5345134594813
+],
+[
+7229.534513459482,
+1508.4654865405187,
+1112.1324865405188
+]
+],
+"pb_body": 29,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.4082483052793195,
+0.4082482756484073,
+-0.8164965809277254
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"30": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1739.3553920922698,
+1009.6887860263055
+],
+[
+6867.333,
+1835.3116079077304,
+1105.6447139736945
+]
+],
+"pb_body": 30,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.6021678716307187,
+0.5645316387037682,
+-0.5645333323003774
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"31": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1920.6670000000001,
+474.333
+],
+[
+6867.333,
+2154.0,
+474.333
+]
+],
+"pb_body": 31,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.6643638001708884,
+-0.0,
+0.7474093530472414
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"32": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1835.3117139736946,
+843.0223920922697
+],
+[
+7200.667,
+1739.3557860263056,
+938.9786079077303
+]
+],
+"pb_body": 32,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6021679771804296,
+-0.5645332760071167,
+-0.5645315824106764
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"33": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1668.6446079077302,
+1009.6887860263055
+],
+[
+6867.333,
+1572.6883920922699,
+1105.6447139736945
+]
+],
+"pb_body": 33,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.6021679100123962,
+-0.5645316182335745,
+-0.5645333118301209
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"34": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6998.644107907571,
+1870.6670000000001,
+1009.6892860261463
+],
+[
+6902.688392092428,
+1870.6670000000001,
+1105.6447139738536
+]
+],
+"pb_body": 34,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5645316297473902,
+-0.6021678884191907,
+-0.5645333233490551
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"35": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7150.667,
+1204.0,
+474.333
+],
+[
+6917.333,
+1204.0,
+474.333
+]
+],
+"pb_body": 35,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.0,
+0.9363289599204874,
+0.35112402198399684
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"36": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6998.644107907571,
+1537.333,
+1009.6892860261463
+],
+[
+6902.688392092428,
+1537.333,
+1105.6447139738536
+]
+],
+"pb_body": 36,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5645315913657176,
+0.6021679603849384,
+-0.5645332849672674
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"37": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1572.6883920921107,
+843.0222860264646
+],
+[
+7200.667,
+1668.6451079078895,
+938.9787139735354
+]
+],
+"pb_body": 37,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6021680155621032,
+0.5645315619430187,
+-0.5645332555343169
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"38": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1537.333,
+857.667
+],
+[
+6867.333,
+1537.333,
+1091.0
+]
+],
+"pb_body": 38,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.7071066817498437,
+0.7071068806232373,
+-0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"39": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7069.35489209211,
+1537.333,
+938.9787139735354
+],
+[
+7165.31160790789,
+1537.333,
+843.0222860264646
+]
+],
+"pb_body": 39,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.564531591368954,
+0.6021679603883932,
+-0.5645332849603458
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"40": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6817.333,
+1537.333,
+474.333
+],
+[
+6584.0,
+1537.333,
+474.333
+]
+],
+"pb_body": 40,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.0,
+0.6643639045502604,
+0.747409260265574
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"41": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7069.354998157915,
+1870.6670000000001,
+1009.6891799600231
+],
+[
+7165.311501842085,
+1870.6670000000001,
+1105.6448200399768
+]
+],
+"pb_body": 41,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.5645311643472622,
+-0.6021655855284692,
+-0.5645362451480689
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"42": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1537.333,
+857.667
+],
+[
+7200.667,
+1537.333,
+1091.0
+]
+],
+"pb_body": 42,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7071068143321088,
+0.7071067480409848,
+0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"43": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1668.6450018420844,
+1009.6891799600231
+],
+[
+7200.667,
+1572.6884981579158,
+1105.6448200399768
+]
+],
+"pb_body": 43,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6021656742864745,
+-0.5645311170101603,
+-0.5645361978105355
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"44": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1870.6670000000001,
+757.667
+],
+[
+7200.667,
+1870.6670000000001,
+524.3330000000001
+]
+],
+"pb_body": 44,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7071068806232295,
+-0.7071066817498516,
+-0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"45": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7484.0,
+1537.333,
+474.333
+],
+[
+7250.667,
+1537.333,
+474.333
+]
+],
+"pb_body": 45,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.0,
+0.6643639045502605,
+0.747409260265574
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"46": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7498.644660940673,
+2204.0,
+176.3553390593274
+],
+[
+7236.022339059327,
+2204.0,
+438.97766094067265
+]
+],
+"pb_body": 46,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.02082429241922109,
+-0.9995662547777799,
+0.020824292419221124
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"47": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6534.0,
+1587.333,
+474.333
+],
+[
+6534.0,
+1820.6670000000001,
+474.333
+]
+],
+"pb_body": 47,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.9363289490981552,
+-0.0,
+0.35112405084349363
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"48": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7498.644660940673,
+1204.0,
+176.3553390593274
+],
+[
+7236.022339059327,
+1204.0,
+438.97766094067265
+]
+],
+"pb_body": 48,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.020824291118831672,
+0.9995662548319628,
+0.02082429111883171
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"49": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1537.333,
+524.3330000000001
+],
+[
+6867.333,
+1537.333,
+757.667
+]
+],
+"pb_body": 49,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.7071066817498438,
+0.7071068806232373,
+-0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"50": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1870.6670000000001,
+857.667
+],
+[
+6867.333,
+1870.6670000000001,
+1091.0
+]
+],
+"pb_body": 50,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.707106748040977,
+-0.7071068143321166,
+0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"51": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6534.0,
+2168.6446609406726,
+176.35533905932738
+],
+[
+6534.0,
+1906.0223390593276,
+438.97766094067265
+]
+],
+"pb_body": 51,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.9995662528001019,
+0.020824339883449727,
+0.020824339883449703
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"52": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6534.0,
+1239.3553390593274,
+176.35533905932738
+],
+[
+6534.0,
+1501.9776609406726,
+438.97766094067265
+]
+],
+"pb_body": 52,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.9995662541004935,
+-0.020824308674094745,
+0.02082430867409474
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"53": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7534.0,
+2204.0,
+191.0
+],
+[
+7534.0,
+2204.0,
+757.667
+]
+],
+"pb_body": 53,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7071068143321769,
+-0.7071067480409166,
+0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"54": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1239.3552860263055,
+509.6883920922697
+],
+[
+7200.667,
+1501.9777139736946,
+772.3116079077304
+]
+],
+"pb_body": 54,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6021679387986463,
+0.5645332964774329,
+-0.5645316028809307
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"55": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7229.534513459482,
+1899.5345134594813,
+445.4654865405187
+],
+[
+7505.132486540519,
+2175.1324865405186,
+169.8675134594813
+]
+],
+"pb_body": 55,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.4082469126262644,
+0.40824966829991244,
+0.8164965809261756
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"56": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7484.0,
+1870.6670000000001,
+474.333
+],
+[
+7250.667,
+1870.6670000000001,
+474.333
+]
+],
+"pb_body": 56,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.0,
+-0.664363834964018,
+0.747409322120017
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"57": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7229.534484591939,
+1899.5344845919392,
+503.2005711944794
+],
+[
+7505.132515408061,
+2175.132515408061,
+778.7994288055206
+]
+],
+"pb_body": 57,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.40824918800913274,
+-0.40824902591093304,
+0.8164957644303235
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"58": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1668.6446079077302,
+938.9782139736944
+],
+[
+6867.333,
+1572.6883920922699,
+843.0222860263056
+]
+],
+"pb_body": 58,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.6021678716307182,
+0.5645316387037689,
+-0.5645333323003773
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"59": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1870.6670000000001,
+857.667
+],
+[
+7200.667,
+1870.6670000000001,
+1091.0
+]
+],
+"pb_body": 59,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7071068806232295,
+-0.7071066817498516,
+0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"60": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1254.0,
+474.333
+],
+[
+6867.333,
+1487.333,
+474.333
+]
+],
+"pb_body": 60,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.6643638001708884,
+-0.0,
+0.7474093530472414
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"61": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6569.355339059327,
+2204.0,
+176.3553390593274
+],
+[
+6831.977660940673,
+2204.0,
+438.97766094067265
+]
+],
+"pb_body": 61,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.020824354837932026,
+-0.999566252176997,
+0.02082435483793206
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"62": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1920.6670000000001,
+474.333
+],
+[
+7200.667,
+2154.0,
+474.333
+]
+],
+"pb_body": 62,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6643639393433785,
+0.0,
+0.747409229338351
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"63": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7200.667,
+1739.3558920924288,
+1009.6892860261464
+],
+[
+7200.667,
+1835.3116079075714,
+1105.6447139738536
+]
+],
+"pb_body": 63,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6021680155586487,
+0.5645315619397797,
+-0.5645332555412407
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"64": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7534.0,
+1204.0,
+191.0
+],
+[
+7534.0,
+1204.0,
+757.667
+]
+],
+"pb_body": 64,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7071067922350909,
+0.707106770138004,
+0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"65": {
+"bar_type": null,
+"axis_endpoints": [
+[
+7150.667,
+2204.0,
+474.333
+],
+[
+6917.333,
+2204.0,
+474.333
+]
+],
+"pb_body": 65,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.0,
+-0.9363289527055997,
+0.3511240412236605
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"66": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6867.333,
+1739.3553920922698,
+938.9782139736944
+],
+[
+6867.333,
+1835.3116079077304,
+843.0222860263056
+]
+],
+"pb_body": 66,
+"radius": 13.0,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.6021679100123948,
+-0.5645316182335742,
+-0.5645333118301227
+],
+"bar_parameters": [],
+"exchange_values": {}
+},
+"67": {
+"bar_type": null,
+"axis_endpoints": [
+[
+6534.0,
+2204.0,
+191.0
+],
+[
+6534.0,
+2204.0,
+757.667
+]
+],
+"pb_body": 67,
+"radius": 13.0,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.707106770138003,
+-0.707106792235092,
+0.0
+],
+"bar_parameters": [],
+"exchange_values": {}
+}
+},
+"edge": {
+"0": {
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.31160790789,
+1870.6670000000001,
+843.0222860264647
+],
+[
+7200.667,
+1835.311713973686,
+843.0223920922783
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.35489209211,
+1870.6670000000001,
+938.9787139735354
+],
+[
+6998.644107907571,
+1870.6670000000001,
+1009.6892860261463
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.31160790789,
+1870.6670000000001,
+843.0222860264648
+],
+[
+7236.022286026306,
+1870.6670000000001,
+772.3116079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"59": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.3116079078345,
+1870.6670000000001,
+843.02228602652
+],
+[
+7200.667,
+1870.6670000000001,
+857.6670000002358
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.354892092129,
+1870.6670000000001,
+938.9787139735165
+],
+[
+7069.354998157918,
+1870.6670000000001,
+1009.6891799600263
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.354892092111,
+1870.6670000000001,
+938.978713973535
+],
+[
+6998.644213973695,
+1870.6670000000001,
+938.97860790773
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.311607907838,
+1870.6670000000001,
+843.022286026516
+],
+[
+7200.667,
+1870.6670000000001,
+757.6669999999626
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.311607907882,
+1870.6670000000001,
+843.0222860264728
+],
+[
+7200.667,
+1906.0222860263357,
+772.3116079077004
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"1": {
+"50": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973694,
+1870.6670000000001,
+772.3116079077304
+],
+[
+6867.333,
+1870.6670000000001,
+857.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"51": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355286026306,
+1870.6670000000001,
+509.68839209227
+],
+[
+6534.0,
+1906.0223390593276,
+438.9776609406726
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973694,
+1870.667,
+772.3116079077301
+],
+[
+6867.333,
+1870.6670000000001,
+757.6669999999939
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973682,
+1870.6670000000001,
+772.3116079077183
+],
+[
+6867.333,
+1906.0222860263057,
+772.3116079077301
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973693,
+1870.6670000000004,
+772.3116079077296
+],
+[
+6902.688286026305,
+1870.6670000000001,
+843.0223920922698
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355286026305,
+1870.6670000000001,
+509.6883920922699
+],
+[
+6584.000000000006,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"47": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355286026305,
+1870.6670000000001,
+509.68839209226974
+],
+[
+6534.0,
+1820.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"66": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973642,
+1870.6670000000001,
+772.3116079076771
+],
+[
+6867.333,
+1835.311607907726,
+843.0222860263098
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"2": {
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540486,
+1508.4654865404866,
+1112.1324865404868
+],
+[
+6867.333,
+1537.333,
+1090.9999999999989
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540517,
+1508.4654865405173,
+1112.1324865405177
+],
+[
+6867.333,
+1572.6883920922724,
+1105.644713973692
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540517,
+1508.4654865405173,
+1112.1324865405177
+],
+[
+6902.688392092431,
+1537.333,
+1105.6447139738511
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459482,
+1232.8675134594826,
+836.5345134594824
+],
+[
+6562.867484591939,
+1232.867484591939,
+778.7994288055206
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459555,
+1232.8675134595555,
+836.5345134595556
+],
+[
+6534.0,
+1204.0,
+757.6669999999933
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"3": {
+"52": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.35533905934,
+1204.0,
+176.3553390593394
+],
+[
+6533.999999999999,
+1239.3553390593277,
+176.35533905932758
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977660940673,
+1204.0,
+438.97766094067254
+],
+[
+6917.333,
+1204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977660940673,
+1204.0,
+438.97766094067265
+],
+[
+6867.333,
+1239.3552860263055,
+509.6883920922697
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355339059345,
+1204.0,
+176.3553390593456
+],
+[
+6534.0,
+1204.0,
+191.0000000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"60": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977660940673,
+1204.0,
+438.97766094067265
+],
+[
+6867.333,
+1254.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.3553390595,
+1204.0,
+176.3553390595004
+],
+[
+6562.867513459508,
+1232.8675134595078,
+169.86751345950776
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355339059327,
+1204.0,
+176.3553390593274
+],
+[
+6569.355339059327,
+1204.0,
+163.3553390593274
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"4": {
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973694,
+1537.333,
+772.3116079077301
+],
+[
+6867.333,
+1537.333,
+757.6669999999939
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"52": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355286026306,
+1537.333,
+509.68839209227
+],
+[
+6534.0,
+1501.9776609406726,
+438.9776609406726
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973688,
+1537.333,
+772.311607907723
+],
+[
+6867.333,
+1501.9777139736943,
+772.31160790773
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973693,
+1537.3330000000003,
+772.3116079077296
+],
+[
+6902.688286026305,
+1537.333,
+843.0223920922698
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"58": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973642,
+1537.333,
+772.3116079076771
+],
+[
+6867.333,
+1572.688392092274,
+843.0222860263098
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977713973694,
+1537.333,
+772.3116079077304
+],
+[
+6867.333,
+1537.333,
+857.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355286026305,
+1537.333,
+509.6883920922699
+],
+[
+6584.000000000006,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"47": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355286026305,
+1537.333,
+509.68839209226974
+],
+[
+6534.0,
+1587.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"5": {
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1906.0222860263177,
+772.3116079077183
+],
+[
+6831.977713973693,
+1870.6670000000001,
+772.3116079077301
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+2168.6447139736943,
+509.68839209226985
+],
+[
+6867.333,
+2153.9999999999936,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"50": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1906.0222860263057,
+772.3116079077304
+],
+[
+6867.333,
+1870.6670000000001,
+857.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1906.0222860263057,
+772.3116079077301
+],
+[
+6867.333,
+1870.6670000000001,
+757.6669999999939
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"61": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+2168.6447139736943,
+509.68839209226996
+],
+[
+6831.977660940673,
+2204.0,
+438.9776609406726
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1906.022286026359,
+772.3116079076771
+],
+[
+6902.6882860263095,
+1870.6670000000001,
+843.0223920922739
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"65": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+2168.6447139736947,
+509.6883920922697
+],
+[
+6917.333,
+2204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"66": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1906.0222860263066,
+772.3116079077296
+],
+[
+6867.333,
+1835.3116079077301,
+843.0222860263057
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"6": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.0222860263075,
+1870.6670000000004,
+772.3116079077296
+],
+[
+7165.31160790789,
+1870.6670000000001,
+843.0222860264647
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022286026306,
+1870.6670000000001,
+772.3116079077304
+],
+[
+7200.667,
+1835.3117139736946,
+843.0223920922697
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"56": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644713973393,
+1870.6670000000001,
+509.6883920925716
+],
+[
+7483.9999999998745,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"59": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022286026306,
+1870.6670000000001,
+772.3116079077304
+],
+[
+7200.667,
+1870.6670000000001,
+857.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022286026306,
+1870.6670000000001,
+772.31160790773
+],
+[
+7200.667,
+1870.667,
+757.6669999999998
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.0222860263175,
+1870.6670000000001,
+772.3116079077183
+],
+[
+7200.667,
+1906.0222860263057,
+772.3116079077301
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644713973695,
+1870.6670000000001,
+509.68839209226974
+],
+[
+7534.0,
+1820.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644713973694,
+1870.6670000000001,
+509.6883920922704
+],
+[
+7533.999999999999,
+1906.0223390593276,
+438.97766094067254
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"7": {
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1204.0,
+191.0000000001325
+],
+[
+6562.867513459483,
+1232.8675134594832,
+169.86751345948326
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1204.0,
+757.6669999999995
+],
+[
+6562.867513459482,
+1232.8675134594814,
+836.5345134594814
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"52": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1204.0000000000002,
+191.00000000000102
+],
+[
+6534.0,
+1239.3553390593445,
+176.35533905934443
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.000000000001,
+1204.0,
+191.00000000000023
+],
+[
+6569.35533905933,
+1204.0,
+176.3553390593305
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1204.0,
+757.6669999998675
+],
+[
+6562.86748459194,
+1232.8674845919409,
+778.7994288055187
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1204.0,
+191.0
+],
+[
+6534.0,
+1204.0,
+178.0
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"8": {
+"48": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1239.3553390593395,
+176.35533905933937
+],
+[
+7498.644660940673,
+1204.0,
+176.3553390593276
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1501.977660940672,
+438.9776609406719
+],
+[
+7498.644713973694,
+1537.3329999999999,
+509.68839209226985
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1239.355339059422,
+176.35533905942188
+],
+[
+7505.132486540507,
+1232.8675134594926,
+169.86751345949233
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"45": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1501.9776609406726,
+438.97766094067265
+],
+[
+7484.0,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1501.9776609406722,
+438.97766094067225
+],
+[
+7534.0,
+1587.3330000000003,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"64": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1239.3553390593454,
+176.35533905934557
+],
+[
+7534.0,
+1204.0,
+191.0000000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1239.3553390593274,
+176.35533905932738
+],
+[
+7534.0,
+1239.3553390593274,
+163.35533905932738
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"9": {
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540518,
+1508.4654865405187,
+445.4654865405187
+],
+[
+6867.333,
+1537.333,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"52": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459494,
+1232.8675134594948,
+169.86751345949475
+],
+[
+6534.0,
+1239.3553390593283,
+176.3553390593285
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459526,
+1232.8675134595262,
+169.86751345952612
+],
+[
+6569.355339059333,
+1204.0,
+176.35533905933352
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540518,
+1508.4654865405187,
+445.46548654051867
+],
+[
+6838.465515408061,
+1508.4655154080608,
+503.20057119447955
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459481,
+1232.8675134594816,
+169.86751345948142
+],
+[
+6534.0,
+1204.0,
+191.0000000000029
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"60": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540486,
+1508.4654865404866,
+445.46548654048667
+],
+[
+6867.333,
+1487.3329999999987,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540497,
+1508.465486540498,
+445.465486540498
+],
+[
+6817.333,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459481,
+1232.8675134594814,
+169.8675134594813
+],
+[
+6562.867513459481,
+1232.8675134594814,
+156.8675134594813
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"10": {
+"48": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540506,
+1232.867513459495,
+169.86751345949477
+],
+[
+7498.644660940671,
+1204.0,
+176.35533905932851
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"45": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459514,
+1508.4654865404866,
+445.46548654048667
+],
+[
+7250.667000000002,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540506,
+1232.867513459495,
+169.86751345949477
+],
+[
+7534.0,
+1239.3553390593283,
+176.3553390593285
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459514,
+1508.4654865404866,
+445.46548654048667
+],
+[
+7200.667,
+1487.3329999999987,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.5345134594845,
+1508.4654865405168,
+445.46548654051674
+],
+[
+7200.667,
+1537.3330000000003,
+524.3330000000005
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"64": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540519,
+1232.8675134594816,
+169.86751345948142
+],
+[
+7534.0,
+1204.0,
+191.0000000000029
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459546,
+1508.465486540454,
+445.4654865404542
+],
+[
+7229.534484592096,
+1508.4655154079037,
+503.2005711946367
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540519,
+1232.8675134594814,
+169.8675134594813
+],
+[
+7505.132486540519,
+1232.8675134594814,
+156.8675134594813
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"11": {
+"48": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1254.0,
+474.333
+],
+[
+7236.022339059327,
+1204.0,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1254.0,
+474.333
+],
+[
+7150.667,
+1204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"45": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1487.333,
+474.333
+],
+[
+7250.667,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"54": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.6669999999995,
+1254.0000000000007,
+474.333
+],
+[
+7200.6669999999995,
+1239.3552860263176,
+509.6883920922818
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1487.3329999999983,
+474.333
+],
+[
+7229.534513459482,
+1508.4654865405187,
+445.46548654051867
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1487.333,
+474.333
+],
+[
+7200.667,
+1537.333,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1487.3329999999999,
+474.333
+],
+[
+7229.534484591943,
+1508.465515408058,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"12": {
+"50": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540486,
+1899.5345134595134,
+1112.1324865404868
+],
+[
+6867.333,
+1870.6670000000001,
+1090.9999999999989
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540517,
+1899.5345134594827,
+1112.1324865405177
+],
+[
+6902.688392092431,
+1870.6670000000001,
+1105.6447139738511
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"67": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459555,
+2175.1324865404445,
+836.5345134595556
+],
+[
+6534.0,
+2204.0,
+757.6669999999933
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459482,
+2175.1324865405177,
+836.5345134594824
+],
+[
+6562.867484591939,
+2175.1325154080605,
+778.7994288055205
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540517,
+1899.5345134594827,
+1112.1324865405177
+],
+[
+6867.333,
+1835.311607907728,
+1105.644713973692
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"13": {
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1587.333,
+474.333
+],
+[
+7498.644713973695,
+1537.333,
+509.68839209226974
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"56": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1820.6670000000001,
+474.333
+],
+[
+7484.0,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.000000000001,
+1587.3330000000776,
+474.3330000000001
+],
+[
+7534.0,
+1501.977660940579,
+438.9776609405789
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1820.6670000000001,
+474.333
+],
+[
+7498.644713973695,
+1870.6670000000001,
+509.68839209226974
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"45": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1587.333,
+474.333
+],
+[
+7484.0,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1820.666999999999,
+474.333
+],
+[
+7534.0,
+1906.0223390593312,
+438.97766094066907
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"14": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1906.022286026359,
+772.3116079076771
+],
+[
+7165.311607907885,
+1870.6670000000001,
+843.0222860264688
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1906.0222860263057,
+772.3116079077304
+],
+[
+7200.667,
+1835.3117139736946,
+843.0223920922697
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1906.0222860263177,
+772.3116079077183
+],
+[
+7236.022286026306,
+1870.6670000000001,
+772.3116079077301
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"59": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1906.0222860263057,
+772.3116079077304
+],
+[
+7200.667,
+1870.6670000000001,
+857.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"62": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+2168.6447139736943,
+509.68839209226985
+],
+[
+7200.667,
+2153.9999999999936,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1906.0222860263061,
+772.31160790773
+],
+[
+7200.667,
+1870.667,
+757.6669999999998
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"46": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+2168.6447139736943,
+509.68839209226996
+],
+[
+7236.022339059327,
+2204.0,
+438.9776609406726
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"65": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+2168.6447139736947,
+509.6883920922697
+],
+[
+7150.667,
+2204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"15": {
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.53448459194,
+1508.4655154080601,
+503.2005711944804
+],
+[
+7229.534513459482,
+1508.4654865405187,
+445.46548654051867
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534484591971,
+1508.465515408029,
+503.20057119451144
+],
+[
+7200.667,
+1487.3329999999987,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"45": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534484591971,
+1508.465515408029,
+503.20057119451144
+],
+[
+7250.667000000002,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.53448459196,
+1508.4655154080403,
+503.2005711945001
+],
+[
+7200.667,
+1537.333,
+524.333000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"64": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.1325154079805,
+1232.8674845920204,
+778.7994288054394
+],
+[
+7534.0,
+1204.0,
+757.6669999998795
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132515407997,
+1232.8674845920036,
+778.7994288054563
+],
+[
+7505.132486540361,
+1232.8675134596388,
+836.5345134596388
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"16": {
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.354998157915,
+1537.333,
+1009.6891799600231
+],
+[
+6998.644107907571,
+1537.333,
+1009.6892860261463
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.354998157915,
+1537.333,
+1009.6891799600231
+],
+[
+6998.644213973695,
+1537.333,
+938.9786079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.3549981579345,
+1537.333,
+1009.689179960042
+],
+[
+7069.354892092113,
+1537.333,
+938.9787139735321
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.3115018419985,
+1537.333,
+1105.6448200398904
+],
+[
+7200.667,
+1572.688498157917,
+1105.6448200399757
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.311501841977,
+1537.333,
+1105.6448200398688
+],
+[
+7200.667,
+1537.333,
+1090.9999999999852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.311501842081,
+1537.333,
+1105.6448200399732
+],
+[
+7229.534513459487,
+1508.4654865405132,
+1112.1324865405134
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"17": {
+"59": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459514,
+1899.5345134595134,
+1112.1324865404868
+],
+[
+7200.667,
+1870.6670000000001,
+1090.9999999999989
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"53": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540444,
+2175.132486540443,
+836.5345134595568
+],
+[
+7534.0,
+2204.0,
+757.6669999999931
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459483,
+1899.5345134594827,
+1112.1324865405177
+],
+[
+7165.311501842083,
+1870.6670000000001,
+1105.6448200399743
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"63": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459483,
+1899.5345134594827,
+1112.1324865405177
+],
+[
+7200.667,
+1835.3116079075692,
+1105.6447139738511
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"57": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540518,
+2175.132486540517,
+836.5345134594822
+],
+[
+7505.132515408061,
+2175.1325154080605,
+778.7994288055205
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"18": {
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.46551540804,
+1899.5344845919599,
+503.2005711945001
+],
+[
+6867.333,
+1920.667000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.46551540804,
+1899.5344845919599,
+503.2005711945001
+],
+[
+6817.333,
+1870.6670000000004,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"67": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.8674845920195,
+2175.1325154079796,
+778.7994288054393
+],
+[
+6534.0,
+2204.0,
+757.6669999998795
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465515408061,
+1899.5344845919392,
+503.20057119447944
+],
+[
+6838.465486540518,
+1899.5345134594813,
+445.4654865405186
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.46551540804,
+1899.5344845919599,
+503.2005711945001
+],
+[
+6867.333,
+1870.6670000000004,
+524.333000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.8674845919395,
+2175.13251540806,
+778.7994288055197
+],
+[
+6562.867513459481,
+2175.132486540518,
+836.5345134594813
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"19": {
+"53": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2168.6446609406544,
+176.35533905934557
+],
+[
+7534.0,
+2204.0,
+191.0000000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"55": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2168.6446609404993,
+176.35533905950038
+],
+[
+7505.132486540492,
+2175.132486540492,
+169.86751345950776
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"56": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1906.0223390593276,
+438.97766094067265
+],
+[
+7484.0,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1906.022339059328,
+438.97766094067237
+],
+[
+7498.644713973695,
+1870.6670000000001,
+509.6883920922698
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"46": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2168.6446609406607,
+176.35533905933937
+],
+[
+7498.644660940673,
+2204.0,
+176.3553390593276
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1906.0223390593278,
+438.97766094067254
+],
+[
+7534.0,
+1820.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2168.6446609406726,
+176.35533905932738
+],
+[
+7534.0,
+2168.6446609406726,
+163.35533905932738
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"20": {
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022286026307,
+1537.333,
+772.3116079077301
+],
+[
+7200.667,
+1537.333,
+757.6669999999939
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"54": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022286026313,
+1537.333,
+772.3116079077229
+],
+[
+7200.667,
+1501.9777139736943,
+772.31160790773
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022286026356,
+1537.333,
+772.3116079076799
+],
+[
+7200.667,
+1572.6883920921157,
+843.0222860264696
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644713973695,
+1537.333,
+509.68839209227
+],
+[
+7534.0,
+1501.9776609406726,
+438.9776609406726
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022286026307,
+1537.333,
+772.3116079077295
+],
+[
+7165.31160790789,
+1537.333,
+843.0222860264647
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022286026307,
+1537.333,
+772.3116079077299
+],
+[
+7200.667,
+1537.333,
+857.6670000000003
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"45": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644713973695,
+1537.333,
+509.6883920922701
+],
+[
+7483.999999999999,
+1537.333,
+474.33299999999997
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644713973695,
+1537.333,
+509.68839209226974
+],
+[
+7534.0,
+1587.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"21": {
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1501.9777139736943,
+772.3116079077301
+],
+[
+6867.333,
+1537.333,
+757.6669999999939
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1239.3552860263055,
+509.6883920922697
+],
+[
+6831.977660940673,
+1204.0,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1239.3552860263055,
+509.6883920922697
+],
+[
+6917.333,
+1204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1501.9777139736418,
+772.3116079076776
+],
+[
+6902.6882860263095,
+1537.333,
+843.0223920922738
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1501.9777139736825,
+772.3116079077183
+],
+[
+6831.977713973693,
+1537.333,
+772.3116079077301
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"58": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1501.9777139736937,
+772.3116079077295
+],
+[
+6867.333,
+1572.6883920922699,
+843.0222860263057
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1501.977713973694,
+772.3116079077299
+],
+[
+6867.3330000000005,
+1537.333,
+857.6670000000003
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"60": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.3330000000005,
+1239.355286026306,
+509.68839209227
+],
+[
+6867.333,
+1254.0000000000002,
+474.33299999999997
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"22": {
+"60": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465515408029,
+1508.465515408029,
+503.20057119451144
+],
+[
+6867.333,
+1487.3329999999987,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465515408061,
+1508.465515408061,
+503.20057119447944
+],
+[
+6838.465486540518,
+1508.4654865405184,
+445.4654865405186
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.46551540804,
+1508.4655154080403,
+503.2005711945001
+],
+[
+6817.333,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.46551540804,
+1508.4655154080403,
+503.2005711945001
+],
+[
+6867.333,
+1537.333,
+524.333000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.8674845919395,
+1232.8674845919402,
+778.7994288055198
+],
+[
+6562.867513459481,
+1232.8675134594814,
+836.5345134594813
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.8674845920195,
+1232.8674845920204,
+778.7994288054394
+],
+[
+6534.0,
+1204.0,
+757.6669999998795
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"23": {
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688286026305,
+1537.333,
+843.0223920922698
+],
+[
+6867.333,
+1537.333,
+757.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644213973695,
+1537.333,
+938.97860790773
+],
+[
+6998.644107907571,
+1537.333,
+1009.6892860261465
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688286026376,
+1537.333,
+843.0223920923402
+],
+[
+6867.333,
+1501.977713973651,
+772.3116079076866
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688286026306,
+1537.333,
+843.0223920922699
+],
+[
+6831.977713973694,
+1537.333,
+772.3116079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"58": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688286026391,
+1537.333,
+843.0223920923562
+],
+[
+6867.333,
+1572.688392092271,
+843.0222860263068
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.68828602636,
+1537.333,
+843.0223920923249
+],
+[
+6867.333,
+1537.333,
+857.6670000002359
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644213973695,
+1537.333,
+938.97860790773
+],
+[
+7069.354892092111,
+1537.333,
+938.978713973535
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644213973695,
+1537.333,
+938.9786079077303
+],
+[
+7069.354998157915,
+1537.333,
+1009.6891799600231
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"24": {
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540497,
+1899.534513459502,
+445.465486540498
+],
+[
+6867.333,
+1920.667000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"51": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459494,
+2175.1324865405054,
+169.86751345949475
+],
+[
+6534.0,
+2168.644660940671,
+176.3553390593285
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540518,
+1899.5345134594813,
+445.4654865405187
+],
+[
+6867.333,
+1870.6670000000001,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"61": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459494,
+2175.1324865405054,
+169.86751345949475
+],
+[
+6569.355339059328,
+2204.0,
+176.35533905932851
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540497,
+1899.534513459502,
+445.465486540498
+],
+[
+6817.333,
+1870.6670000000004,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6838.465486540518,
+1899.5345134594813,
+445.46548654051867
+],
+[
+6838.465515408061,
+1899.5344845919392,
+503.20057119447955
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"67": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459481,
+2175.1324865405186,
+169.86751345948142
+],
+[
+6534.0,
+2204.0,
+191.0000000000029
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6562.867513459481,
+2175.1324865405186,
+169.8675134594813
+],
+[
+6562.867513459481,
+2175.1324865405186,
+156.8675134594813
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"25": {
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+757.6669999999992
+],
+[
+6831.9777139736825,
+1870.6670000000001,
+772.3116079077182
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+524.3330000000001
+],
+[
+6867.333,
+1920.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"50": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+757.6669999999997
+],
+[
+6867.333,
+1870.6670000000001,
+857.6670000000004
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+524.3330000000001
+],
+[
+6838.465486540518,
+1899.5345134594813,
+445.4654865405187
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+757.6669999999992
+],
+[
+6867.333,
+1906.022286026318,
+772.3116079077182
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"66": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+757.666999999991
+],
+[
+6867.333,
+1835.3116079077288,
+843.022286026307
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+524.3330000000001
+],
+[
+6817.333,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+757.666999999991
+],
+[
+6902.688286026307,
+1870.6670000000001,
+843.0223920922712
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.3330000000005,
+1870.6670000000001,
+524.3330000000002
+],
+[
+6838.465515408057,
+1899.5344845919421,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"26": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644213973695,
+1870.6670000000001,
+938.97860790773
+],
+[
+7069.354892092111,
+1870.6670000000001,
+938.978713973535
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688286026306,
+1870.6670000000001,
+843.0223920922699
+],
+[
+6831.977713973694,
+1870.6670000000001,
+772.3116079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"50": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.68828602636,
+1870.6670000000001,
+843.0223920923249
+],
+[
+6867.333,
+1870.6670000000001,
+857.6670000002359
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644213973695,
+1870.6670000000001,
+938.97860790773
+],
+[
+6998.644107907571,
+1870.6670000000001,
+1009.6892860261465
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688286026305,
+1870.6670000000001,
+843.0223920922698
+],
+[
+6867.333,
+1870.6670000000001,
+757.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688286026313,
+1870.6670000000001,
+843.0223920922779
+],
+[
+6867.333,
+1906.0222860263355,
+772.3116079077004
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644213973695,
+1870.6670000000001,
+938.9786079077303
+],
+[
+7069.354998157915,
+1870.6670000000001,
+1009.6891799600231
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"66": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688286026391,
+1870.6670000000001,
+843.0223920923562
+],
+[
+6867.333,
+1835.311607907729,
+843.0222860263068
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"27": {
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6584.000000000001,
+1870.6670000000001,
+474.333
+],
+[
+6569.355286026308,
+1870.6670000000001,
+509.6883920922725
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6817.333,
+1870.6670000000001,
+474.333
+],
+[
+6867.333,
+1920.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"51": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6584.0,
+1870.6670000000001,
+474.333
+],
+[
+6534.0,
+1906.0223390593276,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6817.333,
+1870.6670000000001,
+474.333
+],
+[
+6838.465486540515,
+1899.5345134594843,
+445.4654865405157
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6817.333,
+1870.6670000000001,
+474.333
+],
+[
+6867.333,
+1870.6670000000001,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"47": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6584.0,
+1870.6670000000001,
+474.333
+],
+[
+6534.0,
+1820.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6817.333,
+1870.6670000000001,
+474.333
+],
+[
+6838.465515408057,
+1899.5344845919421,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"28": {
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+757.6669999999998
+],
+[
+7236.022286026308,
+1537.333,
+772.3116079077275
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"54": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+757.6669999999998
+],
+[
+7200.667,
+1501.9777139736918,
+772.3116079077275
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+757.6669999999766
+],
+[
+7200.667,
+1572.6883920921143,
+843.0222860264682
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+757.666999999991
+],
+[
+7165.311607907888,
+1537.333,
+843.0222860264661
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.6669999999995,
+1537.333,
+524.3330000000027
+],
+[
+7229.534513459497,
+1508.4654865405028,
+445.46548654050275
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+524.3330000000001
+],
+[
+7200.667,
+1487.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+757.6669999999997
+],
+[
+7200.667000000001,
+1537.3330000000003,
+857.6670000000004
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"45": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+524.3330000000001
+],
+[
+7250.667,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+524.3330000000002
+],
+[
+7229.534484591943,
+1508.465515408058,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"29": {
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459483,
+1508.4654865405173,
+1112.1324865405177
+],
+[
+7200.667,
+1572.6884981579183,
+1105.6448200399743
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459514,
+1508.4654865404866,
+1112.1324865404868
+],
+[
+7200.667,
+1537.333,
+1090.9999999999989
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"64": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540444,
+1232.8675134595571,
+836.5345134595568
+],
+[
+7534.0,
+1204.0,
+757.6669999999931
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540518,
+1232.8675134594823,
+836.5345134594822
+],
+[
+7505.132515408061,
+1232.867484591939,
+778.7994288055206
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459483,
+1508.4654865405173,
+1112.1324865405177
+],
+[
+7165.311501842083,
+1537.333,
+1105.6448200399743
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"30": {
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1739.3553920922698,
+1009.6887860263055
+],
+[
+6867.333,
+1668.6446079077302,
+1009.6887860263055
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1835.311607907644,
+1105.644713973608
+],
+[
+6902.688392092429,
+1870.6670000000001,
+1105.6447139738525
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"50": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1835.3116079076224,
+1105.6447139735865
+],
+[
+6867.333,
+1870.6670000000001,
+1090.9999999999852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"58": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1739.3553920922698,
+1009.6887860263055
+],
+[
+6867.333,
+1668.6446079077302,
+938.9782139736944
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1835.3116079074875,
+1105.6447139734516
+],
+[
+6838.465486540505,
+1899.5345134594952,
+1112.1324865405052
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"66": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1739.3553920922886,
+1009.6887860263242
+],
+[
+6867.333,
+1739.355392092273,
+938.9782139736911
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"31": {
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.3330000000005,
+1920.6670000000001,
+474.333
+],
+[
+6838.465486540515,
+1899.5345134594843,
+445.4654865405157
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1920.6670000000001,
+474.333
+],
+[
+6867.333,
+1870.6670000000001,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+2154.0,
+474.333
+],
+[
+6867.333,
+2168.644713973692,
+509.68839209227247
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"61": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+2154.0,
+474.333
+],
+[
+6831.977660940673,
+2204.0,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1920.6670000000001,
+474.333
+],
+[
+6817.333,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"65": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+2154.0,
+474.333
+],
+[
+6917.333,
+2204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.3330000000005,
+1920.6670000000001,
+474.333
+],
+[
+6838.465515408057,
+1899.5344845919421,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"32": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1835.311713973608,
+843.0223920923565
+],
+[
+7165.311607907889,
+1870.6670000000001,
+843.0222860264658
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1739.3557860263056,
+938.9786079077301
+],
+[
+7200.667,
+1668.6451079078895,
+938.9787139735352
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1835.3117139736946,
+843.0223920922697
+],
+[
+7236.022286026306,
+1870.6670000000001,
+772.3116079077304
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"59": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1835.3117139736391,
+843.0223920923253
+],
+[
+7200.667,
+1870.6670000000001,
+857.6670000002355
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1739.3557860263056,
+938.9786079077301
+],
+[
+7200.667,
+1668.6450018420842,
+1009.6891799600232
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"63": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1739.3557860263056,
+938.9786079077303
+],
+[
+7200.667,
+1739.3558920924288,
+1009.6892860261464
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1835.3117139736946,
+843.0223920922697
+],
+[
+7200.667,
+1870.6670000000001,
+757.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1835.3117139736946,
+843.0223920922697
+],
+[
+7200.667,
+1906.0222860263057,
+772.3116079077304
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"33": {
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1572.6883920925127,
+1105.6447139734516
+],
+[
+6838.465486540505,
+1508.4654865405048,
+1112.1324865405052
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1572.6883920923563,
+1105.644713973608
+],
+[
+6902.688392092429,
+1537.333,
+1105.6447139738525
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"58": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1668.6446079077114,
+1009.6887860263242
+],
+[
+6867.333,
+1668.6446079077268,
+938.9782139736911
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1572.6883920923779,
+1105.6447139735865
+],
+[
+6867.333,
+1537.333,
+1090.9999999999852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"66": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1668.6446079077302,
+1009.6887860263055
+],
+[
+6867.333,
+1739.3553920922698,
+938.9782139736944
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1668.6446079077302,
+1009.6887860263055
+],
+[
+6867.333,
+1739.3553920922698,
+1009.6887860263055
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"34": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644107907571,
+1870.6670000000001,
+1009.6892860261463
+],
+[
+7069.35489209211,
+1870.6670000000001,
+938.9787139735354
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"50": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688392092537,
+1870.6670000000001,
+1105.6447139737456
+],
+[
+6867.333,
+1870.6670000000001,
+1090.9999999999852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644107907571,
+1870.6670000000001,
+1009.6892860261463
+],
+[
+7069.354998157915,
+1870.6670000000001,
+1009.6891799600231
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644107907571,
+1870.6670000000001,
+1009.6892860261465
+],
+[
+6998.644213973695,
+1870.6670000000001,
+938.97860790773
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688392092671,
+1870.6670000000001,
+1105.6447139736108
+],
+[
+6838.465486540505,
+1899.5345134594952,
+1112.1324865405052
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688392092515,
+1870.6670000000001,
+1105.6447139737672
+],
+[
+6867.333,
+1835.311607907729,
+1105.6447139736933
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"35": {
+"48": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7150.666999999924,
+1204.0000000000002,
+474.3330000000001
+],
+[
+7236.022339059421,
+1204.0,
+438.9776609405789
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6917.333000000001,
+1204.0,
+474.333
+],
+[
+6831.977660940669,
+1204.0,
+438.97766094066907
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"54": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7150.667,
+1204.0,
+474.333
+],
+[
+7200.667,
+1239.3552860263055,
+509.6883920922697
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6917.333,
+1204.0,
+474.333
+],
+[
+6867.333,
+1239.3552860263055,
+509.6883920922697
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"60": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6917.333,
+1204.0,
+474.333
+],
+[
+6867.333,
+1254.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7150.667,
+1204.0,
+474.333
+],
+[
+7200.667,
+1254.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"36": {
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688392092671,
+1537.333,
+1105.6447139736108
+],
+[
+6838.465486540505,
+1508.4654865405048,
+1112.1324865405052
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688392092515,
+1537.333,
+1105.6447139737672
+],
+[
+6867.333,
+1572.688392092271,
+1105.6447139736933
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644107907571,
+1537.333,
+1009.6892860261465
+],
+[
+6998.644213973695,
+1537.333,
+938.97860790773
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6902.688392092537,
+1537.333,
+1105.6447139737456
+],
+[
+6867.333,
+1537.333,
+1090.9999999999852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644107907571,
+1537.333,
+1009.6892860261463
+],
+[
+7069.35489209211,
+1537.333,
+938.9787139735354
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6998.644107907571,
+1537.333,
+1009.6892860261463
+],
+[
+7069.354998157915,
+1537.333,
+1009.6891799600231
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"37": {
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1668.6451079078895,
+938.9787139735352
+],
+[
+7200.667,
+1739.3557860263056,
+938.9786079077301
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667000000001,
+1572.688392092179,
+843.0222860265328
+],
+[
+7236.022286026348,
+1537.333,
+772.3116079076875
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"54": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1572.688392092111,
+843.0222860264648
+],
+[
+7200.667,
+1501.9777139736946,
+772.3116079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.6669999999995,
+1572.6883920921973,
+843.0222860265513
+],
+[
+7165.311607907889,
+1537.333,
+843.0222860264658
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1668.6451079078895,
+938.9787139735354
+],
+[
+7200.667,
+1668.6450018420844,
+1009.6891799600231
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1572.6883920921664,
+843.0222860265202
+],
+[
+7200.667000000001,
+1537.333,
+857.6670000002355
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"63": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1668.6451079078895,
+938.9787139735352
+],
+[
+7200.667,
+1739.3558920924288,
+1009.6892860261465
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1572.6883920921107,
+843.0222860264647
+],
+[
+7200.667,
+1537.333,
+757.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"38": {
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+1091.0
+],
+[
+6838.465486540515,
+1508.4654865405157,
+1112.1324865405156
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.3330000000003,
+857.6670000000004
+],
+[
+6867.333,
+1537.333,
+757.6669999999997
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+1090.999999999816
+],
+[
+6867.333,
+1572.6883920922833,
+1105.644713973681
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+1090.999999999816
+],
+[
+6902.688392092442,
+1537.333,
+1105.6447139738402
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+857.6670000000776
+],
+[
+6867.333,
+1501.9777139736009,
+772.3116079076367
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+857.667
+],
+[
+6831.977713973694,
+1537.333,
+772.3116079077304
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+857.6670000001842
+],
+[
+6902.688286026319,
+1537.333,
+843.0223920922831
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"58": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.3330000000005,
+1537.333,
+857.6670000001842
+],
+[
+6867.333,
+1572.6883920922833,
+843.022286026319
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"39": {
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.31160790789,
+1537.333,
+843.0222860264648
+],
+[
+7236.022286026306,
+1537.333,
+772.3116079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.35489209211,
+1537.333,
+938.9787139735354
+],
+[
+6998.644107907571,
+1537.333,
+1009.6892860261463
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"54": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.31160790782,
+1537.333,
+843.0222860265351
+],
+[
+7200.667,
+1501.977713973651,
+772.3116079076866
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.354892092111,
+1537.333,
+938.978713973535
+],
+[
+6998.644213973695,
+1537.333,
+938.97860790773
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.31160790789,
+1537.333,
+843.0222860264647
+],
+[
+7200.667,
+1572.6883920921193,
+843.0222860264732
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.3116079078345,
+1537.333,
+843.02228602652
+],
+[
+7200.667,
+1537.333,
+857.6670000002358
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.31160790789,
+1537.333,
+843.0222860264647
+],
+[
+7200.667,
+1537.333,
+757.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.354892092129,
+1537.333,
+938.9787139735165
+],
+[
+7069.354998157918,
+1537.333,
+1009.6891799600263
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"40": {
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6817.333,
+1537.333,
+474.333
+],
+[
+6867.333,
+1537.333,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"52": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6584.0,
+1537.333,
+474.333
+],
+[
+6534.0,
+1501.9776609406726,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6817.333,
+1537.333,
+474.333
+],
+[
+6838.465515408057,
+1508.465515408058,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6584.000000000001,
+1537.333,
+474.333
+],
+[
+6569.355286026308,
+1537.333,
+509.6883920922725
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"60": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6817.333,
+1537.333,
+474.333
+],
+[
+6867.333,
+1487.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6817.333,
+1537.333,
+474.333
+],
+[
+6838.465486540515,
+1508.4654865405157,
+445.4654865405157
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"47": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6584.0,
+1537.333,
+474.333
+],
+[
+6534.0,
+1587.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"41": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.3549981579345,
+1870.6670000000001,
+1009.689179960042
+],
+[
+7069.354892092113,
+1870.6670000000001,
+938.9787139735321
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.354998157915,
+1870.6670000000001,
+1009.6891799600231
+],
+[
+6998.644107907571,
+1870.6670000000001,
+1009.6892860261463
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"59": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.311501841977,
+1870.6670000000001,
+1105.6448200398688
+],
+[
+7200.667,
+1870.6670000000001,
+1090.9999999999852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7069.354998157915,
+1870.6670000000001,
+1009.6891799600231
+],
+[
+6998.644213973695,
+1870.6670000000001,
+938.9786079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"63": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.3115018419985,
+1870.6670000000001,
+1105.6448200398902
+],
+[
+7200.667,
+1835.31160790757,
+1105.6447139738525
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7165.311501842081,
+1870.6670000000001,
+1105.6448200399732
+],
+[
+7229.534513459487,
+1899.5345134594868,
+1112.1324865405134
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"42": {
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+857.6670000000776
+],
+[
+7236.022286026399,
+1537.333,
+772.3116079076367
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"54": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+857.6670000000776
+],
+[
+7200.667,
+1501.9777139736009,
+772.3116079076367
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667000000001,
+1537.333,
+857.6670000001455
+],
+[
+7200.6669999999995,
+1572.6883920921202,
+843.0222860264743
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.3330000000003,
+857.6670000001843
+],
+[
+7165.311607907876,
+1537.333,
+843.022286026478
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+1090.999999999816
+],
+[
+7200.667,
+1572.6884981579292,
+1105.6448200399634
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667000000001,
+1537.3330000000003,
+857.6670000000004
+],
+[
+7200.667,
+1537.333,
+757.6669999999997
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+1090.999999999816
+],
+[
+7165.311501842071,
+1537.333,
+1105.6448200399634
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1537.333,
+1090.9999999999982
+],
+[
+7229.534513459482,
+1508.4654865405187,
+1112.1324865405188
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"43": {
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1668.6450018420842,
+1009.6891799600232
+],
+[
+7200.667,
+1739.3557860263056,
+938.9786079077301
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1668.6450018420844,
+1009.6891799600231
+],
+[
+7200.667,
+1668.6451079078895,
+938.9787139735354
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1572.6884981580238,
+1105.6448200398688
+],
+[
+7200.667,
+1537.333,
+1090.9999999999852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"63": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1668.6450018420844,
+1009.6891799600231
+],
+[
+7200.667,
+1739.3558920924288,
+1009.6892860261464
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1572.6884981580022,
+1105.6448200398904
+],
+[
+7165.311501842084,
+1537.333,
+1105.6448200399757
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1572.6884981579192,
+1105.6448200399732
+],
+[
+7229.534513459487,
+1508.4654865405132,
+1112.1324865405134
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"44": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+757.666999999991
+],
+[
+7165.311607907888,
+1870.6670000000001,
+843.0222860264661
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+757.667
+],
+[
+7200.667,
+1835.3117139736946,
+843.0223920922697
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"55": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+524.3330000000008
+],
+[
+7229.534513459482,
+1899.5345134594813,
+445.4654865405186
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"57": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+524.3330000000002
+],
+[
+7229.534484591943,
+1899.5344845919421,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"56": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+524.3330000000001
+],
+[
+7250.667,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.6669999999995,
+1870.667,
+757.6669999999992
+],
+[
+7236.0222860263175,
+1870.667,
+772.3116079077181
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"59": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+757.667
+],
+[
+7200.667,
+1870.6670000000001,
+857.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"62": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+524.3330000000001
+],
+[
+7200.667,
+1920.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.6669999999995,
+1870.667,
+757.6669999999992
+],
+[
+7200.6669999999995,
+1906.0222860263177,
+772.3116079077181
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"45": {
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7250.667,
+1537.333,
+474.333
+],
+[
+7200.667,
+1537.333,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7483.999999999999,
+1537.333,
+474.333
+],
+[
+7498.644713973682,
+1537.333,
+509.68839209228184
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7484.0,
+1537.333,
+474.333
+],
+[
+7534.0,
+1501.9776609406726,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7250.667000000002,
+1537.333,
+474.333
+],
+[
+7229.534513459482,
+1508.4654865405187,
+445.46548654051867
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7250.667,
+1537.333,
+474.333
+],
+[
+7200.667,
+1487.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7484.0,
+1537.333,
+474.333
+],
+[
+7534.0,
+1587.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7250.667,
+1537.333,
+474.333
+],
+[
+7229.534484591943,
+1508.465515408058,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"46": {
+"53": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644660940655,
+2204.0,
+176.3553390593456
+],
+[
+7534.0,
+2204.0,
+191.0000000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"55": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644660940499,
+2204.0,
+176.35533905950115
+],
+[
+7505.132486540492,
+2175.132486540492,
+169.86751345950785
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"62": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022339059327,
+2204.0,
+438.97766094067265
+],
+[
+7200.667,
+2154.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022339059327,
+2204.0,
+438.97766094067237
+],
+[
+7200.667,
+2168.6447139736943,
+509.68839209226974
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"65": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022339059328,
+2204.0,
+438.97766094067225
+],
+[
+7150.667000000001,
+2204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644660940666,
+2204.0,
+176.35533905933488
+],
+[
+7534.0,
+2168.6446609406726,
+176.35533905932766
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644660940673,
+2204.0,
+176.3553390593274
+],
+[
+7498.644660940673,
+2204.0,
+163.3553390593274
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"47": {
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1820.6670000000001,
+474.333
+],
+[
+6569.355286026305,
+1870.6670000000001,
+509.68839209226974
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"52": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1587.3330000000776,
+474.3330000000001
+],
+[
+6534.0,
+1501.977660940579,
+438.9776609405789
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"51": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1820.6669999999476,
+474.333
+],
+[
+6534.0,
+1906.0223390594217,
+438.97766094057846
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1587.333,
+474.333
+],
+[
+6569.355286026305,
+1537.333,
+509.68839209226974
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1587.333,
+474.333
+],
+[
+6584.0,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1820.6670000000001,
+474.333
+],
+[
+6584.0,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"48": {
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022339059328,
+1204.0,
+438.97766094067225
+],
+[
+7150.667000000001,
+1204.0000000000002,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"54": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022339059328,
+1204.0,
+438.9776609406719
+],
+[
+7200.667,
+1239.3552860263055,
+509.6883920922698
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644660940661,
+1204.0,
+176.3553390593394
+],
+[
+7534.0,
+1239.3553390593277,
+176.35533905932758
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644660940578,
+1204.0000000000002,
+176.3553390594219
+],
+[
+7505.132486540507,
+1232.8675134594926,
+169.86751345949233
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7236.022339059327,
+1204.0,
+438.97766094067265
+],
+[
+7200.667,
+1254.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"64": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644660940655,
+1204.0,
+176.3553390593456
+],
+[
+7534.0,
+1204.0,
+191.0000000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7498.644660940673,
+1204.0,
+176.3553390593274
+],
+[
+7498.644660940673,
+1204.0,
+163.3553390593274
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"49": {
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+757.6669999999998
+],
+[
+6867.333,
+1501.9777139736918,
+772.3116079077275
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.3330000000005,
+1537.333,
+524.3330000000002
+],
+[
+6838.465515408057,
+1508.465515408058,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+757.666999999991
+],
+[
+6902.688286026307,
+1537.333,
+843.0223920922712
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+757.6669999999992
+],
+[
+6831.9777139736825,
+1537.3330000000003,
+772.3116079077182
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"58": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+757.666999999991
+],
+[
+6867.333,
+1572.6883920922712,
+843.022286026307
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+757.6669999999997
+],
+[
+6867.333,
+1537.3330000000003,
+857.6670000000004
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"60": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+524.3330000000001
+],
+[
+6867.333,
+1487.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+524.3330000000001
+],
+[
+6838.465486540518,
+1508.4654865405187,
+445.4654865405187
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1537.333,
+524.3330000000001
+],
+[
+6817.333,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"50": {
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+857.667
+],
+[
+6831.977713973694,
+1870.6670000000001,
+772.3116079077304
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+1090.999999999816
+],
+[
+6902.688392092442,
+1870.6670000000001,
+1105.6447139738402
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+857.6670000000004
+],
+[
+6867.333,
+1870.6670000000001,
+757.6669999999997
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+857.667
+],
+[
+6867.333,
+1906.0222860263057,
+772.3116079077304
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+857.6670000001842
+],
+[
+6902.688286026319,
+1870.6670000000001,
+843.0223920922831
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+1091.0
+],
+[
+6838.465486540515,
+1899.5345134594843,
+1112.1324865405156
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"66": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.3330000000005,
+1870.6670000000004,
+857.6670000001842
+],
+[
+6867.333,
+1835.311607907717,
+843.022286026319
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1870.6670000000001,
+1090.999999999816
+],
+[
+6867.333,
+1835.311607907717,
+1105.644713973681
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"51": {
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1906.022339059328,
+438.97766094067237
+],
+[
+6569.355286026305,
+1870.6670000000001,
+509.6883920922698
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2168.644660940499,
+176.35533905950112
+],
+[
+6562.867513459509,
+2175.132486540492,
+169.86751345950785
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"61": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2168.6446609406607,
+176.35533905933937
+],
+[
+6569.355339059327,
+2204.0,
+176.3553390593276
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1906.0223390593276,
+438.97766094067265
+],
+[
+6584.0,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"47": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1906.0223390593276,
+438.97766094067254
+],
+[
+6534.0,
+1820.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"67": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2168.6446609406544,
+176.35533905934557
+],
+[
+6534.0,
+2204.0,
+191.0000000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2168.6446609406726,
+176.35533905932738
+],
+[
+6534.0,
+2168.6446609406726,
+163.35533905932738
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"52": {
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1239.355339059335,
+176.35533905933485
+],
+[
+6569.355339059327,
+1204.0,
+176.3553390593277
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1501.9776609406722,
+438.97766094067237
+],
+[
+6569.355286026305,
+1537.333,
+509.6883920922698
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1239.3553390593454,
+176.35533905934557
+],
+[
+6534.0,
+1204.0,
+191.0000000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1239.3553390595011,
+176.35533905950112
+],
+[
+6562.867513459509,
+1232.8675134595078,
+169.86751345950785
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1501.9776609406726,
+438.97766094067265
+],
+[
+6584.0,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"47": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1501.9776609406722,
+438.97766094067225
+],
+[
+6534.0,
+1587.3330000000003,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+1239.3553390593274,
+176.35533905932738
+],
+[
+6534.0,
+1239.3553390593274,
+163.35533905932738
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"53": {
+"55": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2204.0,
+191.0000000001325
+],
+[
+7505.132486540516,
+2175.1324865405168,
+169.86751345948326
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"46": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2204.0,
+191.00000000000102
+],
+[
+7498.644660940657,
+2204.0,
+176.35533905934446
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"57": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2204.0,
+757.6669999998675
+],
+[
+7505.132515408059,
+2175.132515408059,
+778.7994288055186
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2204.0,
+757.6669999999995
+],
+[
+7505.132486540518,
+2175.132486540518,
+836.5345134594814
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2204.0,
+191.00000000000023
+],
+[
+7534.0,
+2168.6446609406694,
+176.35533905933048
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+2204.0,
+191.0
+],
+[
+7534.0,
+2204.0,
+178.0
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"54": {
+"48": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1239.355286026306,
+509.68839209226996
+],
+[
+7236.022339059327,
+1204.0,
+438.9776609406726
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1501.9777139736873,
+772.3116079077229
+],
+[
+7236.022286026306,
+1537.333,
+772.31160790773
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1239.3552860263055,
+509.6883920922697
+],
+[
+7150.667,
+1204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1501.9777139736937,
+772.3116079077295
+],
+[
+7200.667,
+1572.688392092111,
+843.0222860264647
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1501.9777139736418,
+772.3116079076776
+],
+[
+7165.311607907885,
+1537.333,
+843.0222860264687
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1239.355286026306,
+509.68839209227
+],
+[
+7200.667,
+1254.0000000000002,
+474.33299999999997
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1501.977713973694,
+772.3116079077299
+],
+[
+7200.667,
+1537.333,
+857.6670000000003
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1501.9777139736943,
+772.3116079077301
+],
+[
+7200.667,
+1537.333,
+757.6669999999939
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"55": {
+"53": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540519,
+2175.1324865405186,
+169.86751345948142
+],
+[
+7534.0,
+2204.0,
+191.0000000000029
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"56": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459514,
+1899.5345134595134,
+445.46548654048667
+],
+[
+7250.667000000002,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"57": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459482,
+1899.5345134594813,
+445.46548654051867
+],
+[
+7229.53448459194,
+1899.5344845919392,
+503.20057119447955
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"62": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459503,
+1899.534513459502,
+445.465486540498
+],
+[
+7200.667,
+1920.667000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534513459482,
+1899.534513459482,
+445.46548654051793
+],
+[
+7200.667,
+1870.6670000000001,
+524.3330000000004
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"46": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540505,
+2175.1324865405054,
+169.86751345949475
+],
+[
+7498.644660940671,
+2204.0,
+176.35533905932851
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540474,
+2175.132486540474,
+169.86751345952612
+],
+[
+7534.0,
+2168.6446609406667,
+176.3553390593335
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132486540519,
+2175.1324865405186,
+169.8675134594813
+],
+[
+7505.132486540519,
+2175.1324865405186,
+156.8675134594813
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"56": {
+"55": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7250.667,
+1870.6670000000001,
+474.333
+],
+[
+7229.534513459485,
+1899.5345134594843,
+445.4654865405157
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"57": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7250.667,
+1870.6670000000001,
+474.333
+],
+[
+7229.534484591943,
+1899.5344845919421,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7484.0,
+1870.6670000000001,
+474.333
+],
+[
+7498.644713973692,
+1870.6670000000001,
+509.6883920922725
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"62": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7250.667,
+1870.6670000000001,
+474.333
+],
+[
+7200.667,
+1920.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7250.667,
+1870.6670000000001,
+474.333
+],
+[
+7200.667,
+1870.6670000000001,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7484.0,
+1870.6670000000001,
+474.333
+],
+[
+7534.0,
+1820.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7484.0,
+1870.6670000000001,
+474.333
+],
+[
+7534.0,
+1906.0223390593276,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"57": {
+"53": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.1325154079805,
+2175.1325154079796,
+778.7994288054393
+],
+[
+7534.0,
+2204.0,
+757.6669999998795
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"62": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.53448459196,
+1899.5344845919599,
+503.2005711945001
+],
+[
+7200.667,
+1920.667000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"56": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534484591971,
+1899.5344845919712,
+503.20057119451144
+],
+[
+7250.667000000002,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534484591971,
+1899.5344845919712,
+503.20057119451144
+],
+[
+7200.667,
+1870.6670000000001,
+524.3330000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"55": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7229.534484591939,
+1899.5344845919392,
+503.20057119447944
+],
+[
+7229.534513459483,
+1899.5345134594813,
+445.4654865405186
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7505.132515407997,
+2175.132515407997,
+778.7994288054562
+],
+[
+7505.132486540361,
+2175.1324865403612,
+836.5345134596388
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"58": {
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1572.6883920922699,
+843.0222860263057
+],
+[
+6867.333,
+1537.333,
+757.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1668.6446079077114,
+938.9782139736756
+],
+[
+6867.333,
+1668.6446079077268,
+1009.6887860263087
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1572.68839209227,
+843.0222860263058
+],
+[
+6867.333,
+1501.9777139736946,
+772.3116079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1572.6883920923563,
+843.0222860263921
+],
+[
+6902.688286026306,
+1537.333,
+843.0223920922709
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1572.688392092278,
+843.0222860263137
+],
+[
+6831.977713973664,
+1537.333,
+772.3116079077004
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1572.688392092325,
+843.0222860263609
+],
+[
+6867.3330000000005,
+1537.333,
+857.6670000002358
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"66": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1668.6446079077302,
+938.9782139736944
+],
+[
+6867.333,
+1739.3553920922698,
+938.9782139736944
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1668.6446079077302,
+938.9782139736944
+],
+[
+6867.333,
+1739.3553920922698,
+1009.6887860263055
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"59": {
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000004,
+857.6670000001843
+],
+[
+7165.311607907876,
+1870.6670000000001,
+843.022286026478
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+857.6670000001454
+],
+[
+7200.667,
+1835.3117139736848,
+843.0223920922795
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+857.667
+],
+[
+7236.022286026306,
+1870.6670000000001,
+772.3116079077304
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+1090.999999999816
+],
+[
+7165.311501842071,
+1870.6670000000001,
+1105.6448200399634
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"63": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+1090.999999999816
+],
+[
+7200.667,
+1835.311607907558,
+1105.6447139738402
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+857.667
+],
+[
+7200.667,
+1870.6670000000001,
+757.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+857.667
+],
+[
+7200.667,
+1906.0222860263057,
+772.3116079077304
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1870.6670000000001,
+1090.9999999999982
+],
+[
+7229.534513459482,
+1899.5345134594813,
+1112.1324865405188
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"60": {
+"49": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1487.333,
+474.333
+],
+[
+6867.333,
+1537.333,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1254.0,
+474.333
+],
+[
+6831.977660940673,
+1204.0,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1254.0,
+474.333
+],
+[
+6917.333,
+1204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1254.0000000000007,
+474.333
+],
+[
+6867.332999999999,
+1239.3552860263176,
+509.6883920922818
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1487.3329999999999,
+474.333
+],
+[
+6838.465515408057,
+1508.465515408058,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1487.3329999999999,
+474.333
+],
+[
+6838.465486540515,
+1508.4654865405157,
+445.4654865405157
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1487.333,
+474.333
+],
+[
+6817.333,
+1537.333,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"61": {
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977660940673,
+2204.0,
+438.97766094067265
+],
+[
+6867.333,
+2154.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"51": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.35533905934,
+2204.0,
+176.3553390593394
+],
+[
+6533.999999999999,
+2168.644660940672,
+176.35533905932758
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355339059501,
+2204.0,
+176.35533905950115
+],
+[
+6562.867513459509,
+2175.132486540492,
+169.86751345950785
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977660940672,
+2204.0,
+438.97766094067237
+],
+[
+6867.333,
+2168.6447139736943,
+509.68839209226974
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"65": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6831.977660940673,
+2204.0,
+438.97766094067254
+],
+[
+6917.333,
+2204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"67": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355339059345,
+2204.0,
+176.3553390593456
+],
+[
+6534.0,
+2204.0,
+191.0000000000013
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6569.355339059327,
+2204.0,
+176.3553390593274
+],
+[
+6569.355339059327,
+2204.0,
+163.3553390593274
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"62": {
+"55": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1920.6670000000001,
+474.333
+],
+[
+7229.534513459485,
+1899.5345134594843,
+445.4654865405157
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"56": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1920.6670000000001,
+474.333
+],
+[
+7250.667,
+1870.6670000000001,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"57": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1920.6670000000001,
+474.333
+],
+[
+7229.534484591943,
+1899.5344845919421,
+503.20057119448245
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1920.6670000000001,
+474.333
+],
+[
+7200.667,
+1870.6670000000001,
+524.3330000000001
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+2154.0,
+474.333
+],
+[
+7200.667,
+2168.644713973692,
+509.68839209227247
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"46": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+2154.0,
+474.333
+],
+[
+7236.022339059327,
+2204.0,
+438.97766094067265
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"65": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+2154.0,
+474.333
+],
+[
+7150.667,
+2204.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"63": {
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1739.3558920924288,
+1009.6892860261464
+],
+[
+7200.667,
+1739.3557860263056,
+938.9786079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1739.3558920924288,
+1009.6892860261465
+],
+[
+7200.667,
+1668.6451079078895,
+938.9787139735352
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"59": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1835.3116079074634,
+1105.6447139737456
+],
+[
+7200.667,
+1870.6670000000001,
+1090.9999999999852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1739.3558920924288,
+1009.6892860261464
+],
+[
+7200.667,
+1668.6450018420844,
+1009.6891799600231
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1835.311607907485,
+1105.6447139737672
+],
+[
+7165.311501842084,
+1870.6670000000001,
+1105.6448200399757
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7200.667,
+1835.3116079075678,
+1105.64471397385
+],
+[
+7229.534513459487,
+1899.5345134594868,
+1112.1324865405134
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"64": {
+"48": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1204.0000000000002,
+191.00000000000102
+],
+[
+7498.644660940657,
+1204.0,
+176.35533905934446
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1204.0,
+191.0000000000004
+],
+[
+7505.132486540518,
+1232.8675134594826,
+169.8675134594824
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1204.0000000000002,
+191.00000000000102
+],
+[
+7534.0,
+1239.3553390593445,
+176.35533905934443
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1204.0,
+757.6669999998675
+],
+[
+7505.132515408059,
+1232.8674845919409,
+778.7994288055187
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1204.0,
+757.6669999999995
+],
+[
+7505.132486540518,
+1232.8675134594816,
+836.5345134594814
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7534.0,
+1204.0,
+191.0
+],
+[
+7534.0,
+1204.0,
+178.0
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"65": {
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6917.333,
+2204.0,
+474.333
+],
+[
+6867.333,
+2154.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6917.333,
+2204.0,
+474.333
+],
+[
+6867.333,
+2168.6447139736947,
+509.6883920922697
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"61": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6917.333000000052,
+2204.0,
+474.333
+],
+[
+6831.977660940578,
+2204.0,
+438.97766094057846
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"62": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7150.667,
+2204.0,
+474.333
+],
+[
+7200.667,
+2154.0,
+474.333
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7150.667,
+2204.0,
+474.333
+],
+[
+7200.667,
+2168.6447139736947,
+509.6883920922697
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"46": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+7150.666999999924,
+2204.0,
+474.3330000000001
+],
+[
+7236.022339059421,
+2204.0,
+438.9776609405789
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"66": {
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1835.3116079077222,
+843.0222860263137
+],
+[
+6831.977713973664,
+1870.6670000000001,
+772.3116079077004
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1739.3553920922698,
+938.9782139736944
+],
+[
+6867.333,
+1668.6446079077302,
+1009.6887860263055
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"50": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1835.311607907675,
+843.0222860263609
+],
+[
+6867.3330000000005,
+1870.6670000000001,
+857.6670000002358
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1835.3116079077301,
+843.0222860263057
+],
+[
+6867.333,
+1870.6670000000001,
+757.667
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1835.31160790773,
+843.0222860263058
+],
+[
+6867.333,
+1906.0222860263057,
+772.3116079077303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"58": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1739.3553920922698,
+938.9782139736944
+],
+[
+6867.333,
+1668.6446079077302,
+938.9782139736944
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1835.311607907644,
+843.0222860263921
+],
+[
+6902.688286026306,
+1870.6670000000001,
+843.0223920922709
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6867.333,
+1739.3553920922886,
+938.9782139736756
+],
+[
+6867.333,
+1739.355392092273,
+1009.6887860263087
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"67": {
+"61": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2204.0,
+191.00000000000102
+],
+[
+6569.355339059344,
+2204.0,
+176.35533905934446
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"51": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2204.0,
+191.00000000000102
+],
+[
+6534.0,
+2168.6446609406553,
+176.35533905934443
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2204.0,
+757.6669999999995
+],
+[
+6562.867513459482,
+2175.132486540518,
+836.5345134594814
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2204.0,
+191.0000000001325
+],
+[
+6562.867513459483,
+2175.1324865405168,
+169.86751345948326
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2204.0,
+757.6669999998675
+],
+[
+6562.86748459194,
+2175.132515408059,
+778.7994288055186
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+6534.0,
+2204.0,
+191.0
+],
+[
+6534.0,
+2204.0,
+178.0
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"-1": {}
+},
+"adjacency": {
+"0": {
+"32": null,
+"34": null,
+"6": null,
+"59": null,
+"41": null,
+"26": null,
+"44": null,
+"14": null
+},
+"1": {
+"50": null,
+"51": null,
+"25": null,
+"5": null,
+"26": null,
+"27": null,
+"47": null,
+"66": null
+},
+"2": {
+"38": null,
+"33": null,
+"36": null,
+"22": null,
+"7": null
+},
+"3": {
+"52": null,
+"35": null,
+"21": null,
+"7": null,
+"60": null,
+"9": null,
+"-1": null
+},
+"4": {
+"49": null,
+"52": null,
+"21": null,
+"23": null,
+"58": null,
+"38": null,
+"40": null,
+"47": null
+},
+"5": {
+"1": null,
+"31": null,
+"50": null,
+"25": null,
+"61": null,
+"26": null,
+"65": null,
+"66": null
+},
+"6": {
+"0": null,
+"32": null,
+"56": null,
+"59": null,
+"44": null,
+"14": null,
+"13": null,
+"19": null
+},
+"7": {
+"2": null,
+"3": null,
+"9": null,
+"52": null,
+"22": null,
+"-1": null
+},
+"8": {
+"48": null,
+"20": null,
+"10": null,
+"45": null,
+"13": null,
+"64": null,
+"-1": null
+},
+"9": {
+"3": null,
+"7": null,
+"49": null,
+"52": null,
+"22": null,
+"60": null,
+"40": null,
+"-1": null
+},
+"10": {
+"8": null,
+"48": null,
+"45": null,
+"11": null,
+"28": null,
+"64": null,
+"15": null,
+"-1": null
+},
+"11": {
+"10": null,
+"48": null,
+"35": null,
+"45": null,
+"54": null,
+"28": null,
+"15": null
+},
+"12": {
+"50": null,
+"34": null,
+"67": null,
+"18": null,
+"30": null
+},
+"13": {
+"6": null,
+"8": null,
+"20": null,
+"56": null,
+"45": null,
+"19": null
+},
+"14": {
+"0": null,
+"6": null,
+"32": null,
+"59": null,
+"62": null,
+"44": null,
+"46": null,
+"65": null
+},
+"15": {
+"10": null,
+"11": null,
+"45": null,
+"28": null,
+"64": null,
+"29": null
+},
+"16": {
+"36": null,
+"23": null,
+"39": null,
+"43": null,
+"42": null,
+"29": null
+},
+"17": {
+"59": null,
+"53": null,
+"41": null,
+"63": null,
+"57": null
+},
+"18": {
+"12": null,
+"31": null,
+"27": null,
+"67": null,
+"24": null,
+"25": null
+},
+"19": {
+"6": null,
+"13": null,
+"53": null,
+"55": null,
+"56": null,
+"46": null,
+"-1": null
+},
+"20": {
+"8": null,
+"13": null,
+"28": null,
+"54": null,
+"37": null,
+"39": null,
+"42": null,
+"45": null
+},
+"21": {
+"3": null,
+"4": null,
+"49": null,
+"35": null,
+"23": null,
+"58": null,
+"38": null,
+"60": null
+},
+"22": {
+"2": null,
+"7": null,
+"9": null,
+"60": null,
+"40": null,
+"49": null
+},
+"23": {
+"4": null,
+"16": null,
+"21": null,
+"49": null,
+"36": null,
+"58": null,
+"38": null,
+"39": null
+},
+"24": {
+"18": null,
+"31": null,
+"51": null,
+"25": null,
+"61": null,
+"27": null,
+"67": null,
+"-1": null
+},
+"25": {
+"1": null,
+"5": null,
+"18": null,
+"24": null,
+"31": null,
+"50": null,
+"66": null,
+"27": null,
+"26": null
+},
+"26": {
+"0": null,
+"1": null,
+"5": null,
+"25": null,
+"50": null,
+"34": null,
+"41": null,
+"66": null
+},
+"27": {
+"1": null,
+"18": null,
+"24": null,
+"25": null,
+"31": null,
+"51": null,
+"47": null
+},
+"28": {
+"10": null,
+"11": null,
+"15": null,
+"20": null,
+"54": null,
+"37": null,
+"39": null,
+"42": null,
+"45": null
+},
+"29": {
+"15": null,
+"16": null,
+"43": null,
+"42": null,
+"64": null
+},
+"30": {
+"12": null,
+"33": null,
+"34": null,
+"50": null,
+"58": null,
+"66": null
+},
+"31": {
+"5": null,
+"18": null,
+"24": null,
+"25": null,
+"27": null,
+"61": null,
+"65": null
+},
+"32": {
+"0": null,
+"6": null,
+"14": null,
+"37": null,
+"59": null,
+"43": null,
+"63": null,
+"44": null
+},
+"33": {
+"2": null,
+"30": null,
+"36": null,
+"58": null,
+"38": null,
+"66": null
+},
+"34": {
+"0": null,
+"12": null,
+"26": null,
+"30": null,
+"50": null,
+"41": null
+},
+"35": {
+"3": null,
+"11": null,
+"21": null,
+"48": null,
+"54": null,
+"60": null
+},
+"36": {
+"2": null,
+"16": null,
+"23": null,
+"33": null,
+"38": null,
+"39": null
+},
+"37": {
+"20": null,
+"28": null,
+"32": null,
+"54": null,
+"39": null,
+"43": null,
+"42": null,
+"63": null
+},
+"38": {
+"2": null,
+"4": null,
+"21": null,
+"23": null,
+"33": null,
+"36": null,
+"49": null,
+"58": null
+},
+"39": {
+"16": null,
+"20": null,
+"23": null,
+"28": null,
+"36": null,
+"37": null,
+"54": null,
+"42": null
+},
+"40": {
+"4": null,
+"9": null,
+"22": null,
+"49": null,
+"52": null,
+"60": null,
+"47": null
+},
+"41": {
+"0": null,
+"17": null,
+"26": null,
+"34": null,
+"59": null,
+"63": null
+},
+"42": {
+"16": null,
+"20": null,
+"28": null,
+"29": null,
+"37": null,
+"39": null,
+"54": null,
+"43": null
+},
+"43": {
+"16": null,
+"29": null,
+"32": null,
+"37": null,
+"42": null,
+"63": null
+},
+"44": {
+"0": null,
+"6": null,
+"14": null,
+"32": null,
+"55": null,
+"57": null,
+"56": null,
+"59": null,
+"62": null
+},
+"45": {
+"8": null,
+"10": null,
+"11": null,
+"13": null,
+"15": null,
+"20": null,
+"28": null
+},
+"46": {
+"14": null,
+"19": null,
+"53": null,
+"55": null,
+"62": null,
+"65": null,
+"-1": null
+},
+"47": {
+"1": null,
+"4": null,
+"27": null,
+"40": null,
+"52": null,
+"51": null
+},
+"48": {
+"8": null,
+"10": null,
+"11": null,
+"35": null,
+"54": null,
+"64": null,
+"-1": null
+},
+"49": {
+"4": null,
+"9": null,
+"21": null,
+"22": null,
+"23": null,
+"38": null,
+"40": null,
+"58": null,
+"60": null
+},
+"50": {
+"1": null,
+"5": null,
+"12": null,
+"25": null,
+"26": null,
+"30": null,
+"34": null,
+"66": null
+},
+"51": {
+"1": null,
+"24": null,
+"27": null,
+"47": null,
+"61": null,
+"67": null,
+"-1": null
+},
+"52": {
+"3": null,
+"4": null,
+"7": null,
+"9": null,
+"40": null,
+"47": null,
+"-1": null
+},
+"53": {
+"17": null,
+"19": null,
+"46": null,
+"55": null,
+"57": null,
+"-1": null
+},
+"54": {
+"11": null,
+"20": null,
+"28": null,
+"35": null,
+"37": null,
+"39": null,
+"42": null,
+"48": null
+},
+"55": {
+"19": null,
+"44": null,
+"46": null,
+"53": null,
+"56": null,
+"57": null,
+"62": null,
+"-1": null
+},
+"56": {
+"6": null,
+"13": null,
+"19": null,
+"44": null,
+"55": null,
+"57": null,
+"62": null
+},
+"57": {
+"17": null,
+"44": null,
+"53": null,
+"55": null,
+"56": null,
+"62": null
+},
+"58": {
+"4": null,
+"21": null,
+"23": null,
+"30": null,
+"33": null,
+"38": null,
+"49": null,
+"66": null
+},
+"59": {
+"0": null,
+"6": null,
+"14": null,
+"17": null,
+"32": null,
+"41": null,
+"44": null,
+"63": null
+},
+"60": {
+"3": null,
+"9": null,
+"21": null,
+"22": null,
+"35": null,
+"40": null,
+"49": null
+},
+"61": {
+"5": null,
+"24": null,
+"31": null,
+"51": null,
+"65": null,
+"67": null,
+"-1": null
+},
+"62": {
+"14": null,
+"44": null,
+"46": null,
+"55": null,
+"56": null,
+"57": null,
+"65": null
+},
+"63": {
+"17": null,
+"32": null,
+"37": null,
+"41": null,
+"43": null,
+"59": null
+},
+"64": {
+"8": null,
+"10": null,
+"15": null,
+"29": null,
+"48": null,
+"-1": null
+},
+"65": {
+"5": null,
+"14": null,
+"31": null,
+"46": null,
+"61": null,
+"62": null
+},
+"66": {
+"1": null,
+"5": null,
+"25": null,
+"26": null,
+"30": null,
+"33": null,
+"50": null,
+"58": null
+},
+"67": {
+"12": null,
+"18": null,
+"24": null,
+"51": null,
+"61": null,
+"-1": null
+},
+"-1": {
+"61": null
+}
+},
+"max_int_key": 67
+}
+},
+"overall_structure": {
+"adjacency": {
+"16": {
+"31": null,
+"7": null,
+"14": null
+},
+"26": {
+"13": null,
+"20": null,
+"6": null,
+"24": null
+},
+"15": {
+"7": null,
+"27": null,
+"18": null,
+"25": null
+},
+"18": {
+"5": null,
+"4": null,
+"15": null,
+"25": null,
+"0": null,
+"23": null
+},
+"25": {
+"23": null,
+"15": null,
+"8": null,
+"18": null
+},
+"28": {
+"20": null,
+"19": null,
+"9": null,
+"10": null
+},
+"10": {
+"28": null,
+"23": null,
+"9": null,
+"11": null
+},
+"30": {
+"3": null,
+"9": null,
+"29": null,
+"17": null
+},
+"20": {
+"26": null,
+"19": null,
+"1": null,
+"13": null,
+"28": null,
+"29": null
+},
+"17": {
+"22": null,
+"30": null,
+"3": null,
+"11": null,
+"9": null
+},
+"27": {
+"15": null,
+"7": null,
+"6": null,
+"1": null,
+"2": null,
+"31": null
+},
+"12": {
+"4": null,
+"0": null,
+"8": null,
+"5": null
+},
+"22": {
+"3": null,
+"0": null,
+"9": null,
+"17": null
+},
+"19": {
+"28": null,
+"21": null,
+"20": null,
+"1": null
+},
+"29": {
+"30": null,
+"20": null,
+"13": null,
+"24": null
+},
+"11": {
+"10": null,
+"3": null,
+"17": null
+},
+"5": {
+"12": null,
+"4": null,
+"18": null,
+"0": null,
+"8": null
+},
+"4": {
+"5": null,
+"12": null,
+"18": null,
+"2": null
+},
+"7": {
+"27": null,
+"1": null,
+"15": null,
+"16": null
+},
+"6": {
+"31": null,
+"26": null,
+"27": null,
+"14": null
+},
+"1": {
+"20": null,
+"7": null,
+"19": null,
+"27": null
+},
+"0": {
+"12": null,
+"22": null,
+"18": null,
+"5": null
+},
+"3": {
+"30": null,
+"22": null,
+"17": null,
+"11": null
+},
+"2": {
+"31": null,
+"4": null,
+"27": null,
+"14": null
+},
+"21": {
+"13": null,
+"19": null,
+"24": null
+},
+"31": {
+"14": null,
+"27": null,
+"6": null,
+"2": null,
+"16": null
+},
+"9": {
+"17": null,
+"22": null,
+"10": null,
+"28": null,
+"30": null,
+"23": null
+},
+"8": {
+"12": null,
+"5": null,
+"25": null
+},
+"14": {
+"31": null,
+"6": null,
+"16": null,
+"2": null
+},
+"24": {
+"13": null,
+"21": null,
+"26": null,
+"29": null
+},
+"13": {
+"26": null,
+"24": null,
+"29": null,
+"20": null,
+"21": null
+},
+"23": {
+"18": null,
+"9": null,
+"10": null,
+"25": null
+}
+},
+"node_attributes": {
+"z": 0.0,
+"y": 0.0,
+"x": 0.0
+},
+"node": {
+"16": {
+"fixed": false,
+"z": 807.667,
+"y": 2204.0,
+"x": 7534.0
+},
+"26": {
+"fixed": false,
+"z": 474.333,
+"y": 1537.333,
+"x": 7534.0
+},
+"15": {
+"fixed": false,
+"z": 974.334,
+"y": 1870.6670000000001,
+"x": 7033.9995
+},
+"18": {
+"fixed": false,
+"z": 807.667,
+"y": 1870.6670000000001,
+"x": 6867.333
+},
+"25": {
+"fixed": false,
+"z": 1141.0,
+"y": 1870.6670000000001,
+"x": 6867.333
+},
+"28": {
+"fixed": false,
+"z": 974.334,
+"y": 1537.333,
+"x": 7033.9995
+},
+"10": {
+"fixed": false,
+"z": 1141.0,
+"y": 1537.333,
+"x": 6867.333
+},
+"30": {
+"fixed": false,
+"z": 474.333,
+"y": 1204.0,
+"x": 6867.333
+},
+"20": {
+"fixed": false,
+"z": 807.667,
+"y": 1537.333,
+"x": 7200.667
+},
+"17": {
+"fixed": false,
+"z": 474.333,
+"y": 1537.333,
+"x": 6867.333
+},
+"27": {
+"fixed": false,
+"z": 807.667,
+"y": 1870.6670000000001,
+"x": 7200.667
+},
+"12": {
+"fixed": true,
+"z": 141.0,
+"y": 2204.0,
+"x": 6534.0
+},
+"22": {
+"fixed": false,
+"z": 474.333,
+"y": 1537.333,
+"x": 6534.0
+},
+"19": {
+"fixed": false,
+"z": 1141.0,
+"y": 1537.333,
+"x": 7200.667
+},
+"29": {
+"fixed": false,
+"z": 474.333,
+"y": 1204.0,
+"x": 7200.667
+},
+"11": {
+"fixed": false,
+"z": 807.667,
+"y": 1204.0,
+"x": 6534.0
+},
+"5": {
+"fixed": false,
+"z": 474.333,
+"y": 1870.6670000000001,
+"x": 6867.333
+},
+"4": {
+"fixed": false,
+"z": 474.333,
+"y": 2204.0,
+"x": 6867.333
+},
+"7": {
+"fixed": false,
+"z": 1141.0,
+"y": 1870.6670000000001,
+"x": 7200.667
+},
+"6": {
+"fixed": false,
+"z": 474.333,
+"y": 1870.6670000000001,
+"x": 7534.0
+},
+"1": {
+"fixed": false,
+"z": 974.334,
+"y": 1704.0005,
+"x": 7200.667
+},
+"0": {
+"fixed": false,
+"z": 474.333,
+"y": 1870.6670000000001,
+"x": 6534.0
+},
+"3": {
+"fixed": true,
+"z": 141.0,
+"y": 1204.0,
+"x": 6534.0
+},
+"2": {
+"fixed": false,
+"z": 474.333,
+"y": 2204.0,
+"x": 7200.667
+},
+"21": {
+"fixed": false,
+"z": 807.667,
+"y": 1204.0,
+"x": 7534.0
+},
+"31": {
+"fixed": false,
+"z": 474.333,
+"y": 1870.6670000000001,
+"x": 7200.667
+},
+"9": {
+"fixed": false,
+"z": 807.667,
+"y": 1537.333,
+"x": 6867.333
+},
+"8": {
+"fixed": false,
+"z": 807.667,
+"y": 2204.0,
+"x": 6534.0
+},
+"14": {
+"fixed": true,
+"z": 141.0,
+"y": 2204.0,
+"x": 7534.0
+},
+"24": {
+"fixed": true,
+"z": 141.0,
+"y": 1204.0,
+"x": 7534.0
+},
+"13": {
+"fixed": false,
+"z": 474.333,
+"y": 1537.333,
+"x": 7200.667
+},
+"23": {
+"fixed": false,
+"z": 974.3335,
+"y": 1704.0,
+"x": 6867.333
+}
+},
+"max_int_key": 31,
+"attributes": {
+"name": "Network"
+},
+"edge_attributes": {},
+"edge": {
+"16": {
+"7": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"26": {
+"13": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"20": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"6": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"15": {
+"7": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"27": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"18": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"25": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"18": {
+"4": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"0": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"25": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"25": {
+"8": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"28": {
+"20": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"19": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"9": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"10": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"10": {
+"11": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"30": {
+"9": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"17": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"3": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+}
+},
+"20": {
+"19": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"1": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"17": {
+"22": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"9": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"3": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"11": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"27": {
+"7": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"6": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"1": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"2": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"31": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"12": {
+"4": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"0": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"8": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+}
+},
+"22": {
+"0": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"19": {},
+"29": {
+"30": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"20": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"13": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"11": {},
+"5": {
+"12": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"4": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"18": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"0": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"8": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"4": {},
+"7": {},
+"6": {
+"31": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"14": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+}
+},
+"1": {
+"7": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"19": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"0": {},
+"3": {
+"22": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"11": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+}
+},
+"2": {
+"4": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"21": {
+"19": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"31": {
+"14": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"16": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"2": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"9": {
+"22": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"10": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"8": {},
+"14": {
+"16": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"2": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+}
+},
+"24": {
+"13": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"21": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"26": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+},
+"29": {
+"radius": 13.0,
+"fixed": true,
+"shrink": 50.0
+}
+},
+"13": {
+"21": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"20": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+},
+"23": {
+"18": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"9": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"10": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+},
+"25": {
+"radius": 13.0,
+"fixed": false,
+"shrink": 50.0
+}
+}
+}
+},
+"opt_data": null
+}

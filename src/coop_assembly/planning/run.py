@@ -37,7 +37,7 @@ from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream,
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness, plan_stiffness, TRANS_TOL
 from coop_assembly.planning.heuristics import HEURISTICS
-from coop_assembly.planning.robot_setup import ROBOT_NAME, BUILD_PLATE_CENTER, BASE_YAW, BOTTOM_BUFFER
+from coop_assembly.planning.robot_setup import ROBOT_NAME, BUILD_PLATE_CENTER, BASE_PITCH, BASE_ROLL, BASE_YAW, BOTTOM_BUFFER
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
@@ -53,7 +53,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
     # transform model
     new_world_from_base = Pose(point=(BUILD_PLATE_CENTER + np.array([0,0,bar_radius+BOTTOM_BUFFER])))
     world_from_base = Pose(point=bar_struct.base_centroid(METER_SCALE))
-    rotation = Pose(euler=Euler(yaw=BASE_YAW))
+    rotation = Pose(euler=Euler(roll=BASE_ROLL, pitch=BASE_PITCH, yaw=BASE_YAW))
     tf = multiply(new_world_from_base, rotation, invert(world_from_base))
     bar_struct.transform(tf, scale=METER_SCALE)
     #
@@ -72,7 +72,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
 
     chosen_bars = None
     if args.subset_bars is not None:
-        chosen_bars = list(map(int, args.subset_bars[1:-1].split(', ')))
+        chosen_bars = list(map(int, [c for c in args.subset_bars[1:-1].split(', ') if c]))
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.2))
     # color grounded elements
@@ -83,6 +83,8 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
             pass
     if chosen_bars is not None:
         label_elements({k : element_from_index[k] for k in chosen_bars})
+    # else:
+    #     label_elements(element_from_index)
 
     # bar_struct.set_body_color(RED, indices=chosen_bars)
     print('base: ', bar_struct.base_centroid(METER_SCALE))
@@ -101,10 +103,11 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         if args.check_model:
             check_model(bar_struct, chosen_bars, debug=args.debug)
 
+        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug,
+            save_model=args.save_cm_model)
+        cprint('stiffness checker created.', 'green')
+
         if args.stiffness:
-            checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug,
-                save_model=args.save_cm_model)
-            cprint('stiffness checker created.', 'green')
             # check full structure
             evaluate_stiffness(bar_struct, list(bar_struct.nodes()), checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
 
@@ -170,16 +173,19 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
 
             extra_data = {}
             elem_plan = recover_sequence(trajectories, element_from_index)
+            cprint('Computing stiffness history...', 'yellow')
+            stiffness_history = compute_plan_deformation(bar_struct, elem_plan, verbose=False)
+            # print('='*10)
+            extra_data = {
+                          'stiffness_history' : stiffness_history,
+                          'fem_element_from_bar_id' : { k : list(v) for k, v in fem_element_from_bar_id.items()},
+                          'planning_data' : data,
+                          }
             if args.stiffness:
-                cprint('Computing stiffness history...', 'yellow')
-                stiffness_history = compute_plan_deformation(bar_struct, elem_plan, verbose=False)
-                # print('='*10)
-                extra_data = {'stiffness_history' : stiffness_history,
-                              'progression_sequence' : sequence,
-                              'progression_stiffness_history' : progression_stiffness_history,
-                              'fem_element_from_bar_id' : { k : list(v) for k, v in fem_element_from_bar_id.items()},
-                              'planning_data' : data,
-                              }
+                extra_data.update({
+                          'progression_sequence' : sequence,
+                          'progression_stiffness_history' : progression_stiffness_history,
+                })
                 # print(extra_data)
             if write:
                 suffix = ''

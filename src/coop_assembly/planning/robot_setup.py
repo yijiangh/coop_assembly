@@ -16,7 +16,7 @@ import coop_assembly
 # ! set robot here
 # ROBOT_NAME  = 'kuka'
 ROBOT_NAME  = 'abb_track'
-INCLUDE_ENV_COLLISION_OBJS = True
+INCLUDE_ENV_COLLISION_OBJS = 1
 
 ########################################
 
@@ -24,26 +24,38 @@ INCLUDE_ENV_COLLISION_OBJS = True
 BUILD_PLATE_CENTERs = {
     'kuka' : np.array([500, 0, -14.23])*1e-3,
     # 'abb_track' : np.array([1.35, -2, 30.7*1e-3]),
-    # SP Arch
+    # * SP Arch
     # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
-    # IT Hydra
-    'abb_track' : np.array([1.35, -2, 30.7*1e-3]),
+    # * IT Arch
+    # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
+    # * SP Column
+    # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
+    # * IT Hydra
+    'abb_track' : np.array([1.45, -2, 30.7*1e-3]),
+    # * topopt tiny valut
+    # 'abb_track' : np.array([1.5, -2, 30.7*1e-3]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
 # [32, 33, 39, 40, 41, 24, 26, 31]
 
-# BOTTOM_BUFFER = 0.1
-# BOTTOM_BUFFER = 0.005
-# BOTTOM_BUFFER = 0.01
-BOTTOM_BUFFER = 0.03
-# SP Arch
+# BOTTOM_BUFFER = 0.03
+# * IT Hydra
+BOTTOM_BUFFER = 0.06
+
+# * SP Arch
 # BASE_YAW = np.pi
-# IT Hydra
-BASE_YAW = 0
-# BASE_YAW = -np.pi/18
-# BASE_YAW = np.pi + np.pi/6
-# BASE_YAW = -np.pi/3
+# * IT Arch
+# BASE_YAW = 0
+# * SP Column
+# BASE_YAW = 0
+# * IT Hydra
+BASE_YAW = -np.pi-np.pi/10.0
+
+BASE_ROLL = 0
+BASE_PITCH = 0
+# * IT Hydra
+BASE_PITCH = np.pi/10
 
 ####################
 # SP_arch
@@ -117,7 +129,9 @@ RESOLUTION_RATIO = 5
 
 INITIAL_CONFs = {
     'kuka': np.radians([5., -90., 100, 5, 10, -5]),
-    'abb_track' : np.hstack([0.1, np.radians([0,0,0,0,0,0])]),
+    # 'abb_track' : np.hstack([1.0, np.radians([0,0,0,0,0,0])]),
+    # * SP arch
+    'abb_track' : np.hstack([0.0, np.radians([0,0,0,0,0,0])]),
     }
 INITIAL_CONF = INITIAL_CONFs[ROBOT_NAME]
 

@@ -26,7 +26,7 @@ class Config(object):
         data['collision'] = bool(self.args.collisions)
         data['teleops'] = bool(self.args.teleops)
         data['partial_ordering'] = bool(self.args.partial_ordering)
-        data['chosen_bars'] = [int(b) for b in self.args.subset_bars] if self.args.subset_bars is not None else None
+        data['chosen_bars'] = list(map(int, [c for c in self.args.subset_bars[1:-1].split(', ') if c])) if self.args.subset_bars is not None else None
         return data
 
 PICKNPLACE_DIRECTORY = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'tests', 'test_data')
@@ -150,8 +150,8 @@ def save_plan(config, trajectories, save_link_names=None, overwrite=True, elemen
 
         if bar_struct:
             from .stiffness import conmech_model_from_bar_structure
-            chosen_bars = config_data['chosen_bars'] if config_data['chosen_bars'] and len(config_data['chosen_bars']) > 0 else None
-            model, fem_element_from_bar_id = conmech_model_from_bar_structure(bar_struct, chosen_bars=chosen_bars)
+            # chosen_bars = config_data['chosen_bars'] if config_data['chosen_bars'] and len(config_data['chosen_bars']) > 0 else None
+            model, fem_element_from_bar_id = conmech_model_from_bar_structure(bar_struct)
             model_data = model.to_data()
             model_data['fem_element_from_bar_id'] = {bar : list(fem_es) for bar, fem_es in fem_element_from_bar_id.items()}
             data['conmech_model'] = model_data
