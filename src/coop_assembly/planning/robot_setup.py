@@ -25,13 +25,13 @@ BUILD_PLATE_CENTERs = {
     'kuka' : np.array([500, 0, -14.23])*1e-3,
     # 'abb_track' : np.array([1.35, -2, 30.7*1e-3]),
     # * SP Arch
-    # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
+    'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
     # * IT Arch
     # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
     # * SP Column
     # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
     # * IT Hydra
-    'abb_track' : np.array([1.45, -2, 30.7*1e-3]),
+    # 'abb_track' : np.array([1.45, -2, 30.7*1e-3]),
     # * topopt tiny valut
     # 'abb_track' : np.array([1.5, -2, 30.7*1e-3]),
 }
@@ -39,23 +39,23 @@ BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
 # [32, 33, 39, 40, 41, 24, 26, 31]
 
-# BOTTOM_BUFFER = 0.03
+BOTTOM_BUFFER = 0.03
 # * IT Hydra
-BOTTOM_BUFFER = 0.06
+# BOTTOM_BUFFER = 0.06
 
 # * SP Arch
-# BASE_YAW = np.pi
+BASE_YAW = np.pi
 # * IT Arch
 # BASE_YAW = 0
 # * SP Column
 # BASE_YAW = 0
 # * IT Hydra
-BASE_YAW = -np.pi-np.pi/10.0
+# BASE_YAW = -np.pi-np.pi/10.0
 
 BASE_ROLL = 0
 BASE_PITCH = 0
 # * IT Hydra
-BASE_PITCH = np.pi/10
+# BASE_PITCH = np.pi/10
 
 ####################
 # SP_arch

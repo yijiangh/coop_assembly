@@ -33,9 +33,9 @@ from coop_assembly.planning.utils import check_connected, compute_z_distance
 
 # TRANS_TOL = 0.003
 # * SP Arch
-# TRANS_TOL = 0.01
-# * Other
 TRANS_TOL = 0.005
+# * Other
+# TRANS_TOL = 0.005
 
 ROT_TOL = INF # 5 * np.pi / 180
 
