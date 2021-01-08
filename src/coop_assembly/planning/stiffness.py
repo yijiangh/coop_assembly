@@ -32,7 +32,7 @@ from coop_assembly.planning.parsing import load_structure, unpack_structure, PIC
 from coop_assembly.planning.utils import check_connected, compute_z_distance
 
 # TRANS_TOL = 0.003
-# * SP Arch
+# * SP & IT Arch,
 TRANS_TOL = 0.005
 # * Other
 # TRANS_TOL = 0.005

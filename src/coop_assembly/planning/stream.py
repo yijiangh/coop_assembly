@@ -45,9 +45,8 @@ ANGLE = np.pi/3
 # pregrasp interpolation
 POS_STEP_SIZE = 0.01
 ORI_STEP_SIZE = np.pi/18
-
-# POS_STEP_SIZE = 0.002 # | 0.005
-# ORI_STEP_SIZE = np.pi/90
+# POS_STEP_SIZE = 0.005 # | 0.002
+# ORI_STEP_SIZE = np.pi/36
 
 RETREAT_DISTANCEs = {
     'kuka': 0.025,

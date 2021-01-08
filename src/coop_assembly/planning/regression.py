@@ -33,7 +33,7 @@ from .heuristics import get_heuristic_fn
 from .parsing import unpack_structure
 from .stiffness import create_stiffness_checker, test_stiffness
 
-PAUSE_UPON_BT = 1
+PAUSE_UPON_BT = 0
 MAX_REVISIT = 5
 
 Node = namedtuple('Node', ['action', 'state'])
@@ -92,11 +92,14 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
     visited = {final_printed: Node(None, None)}
 
     outgoing_from_element = outgoing_from_edges(partial_orders)
+    print(outgoing_from_element)
     def add_successors(printed, command):
         num_remaining = len(printed) - 1
         # assert 0 <= num_remaining
         for element in randomize(printed):
             # if not (outgoing_from_element[element] & printed) and implies(is_ground(element, ground_nodes), only_ground):
+            # print('E:{}, outgoing: {}, printed:{}, intersect: {}'.format(element, outgoing_from_element[element], printed, outgoing_from_element[element] & printed))
+            # input()
             if not (outgoing_from_element[element] & printed):
                 visits = 0
                 bias = heuristic_fn(printed, element)
@@ -262,6 +265,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
 
     data = {
         #'memory': get_memory_in_kb(), # May need to update instead
+        'search_time' : elapsed_time(start_time),
         'num_evaluated': num_evaluated,
         'min_remaining': min_remaining,
         'max_backtrack': max_backtrack,

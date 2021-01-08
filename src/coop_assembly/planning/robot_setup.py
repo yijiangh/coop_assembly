@@ -44,6 +44,7 @@ BOTTOM_BUFFER = 0.03
 # BOTTOM_BUFFER = 0.06
 
 # * SP Arch
+# BASE_YAW = 0
 BASE_YAW = np.pi
 # * IT Arch
 # BASE_YAW = 0
@@ -51,6 +52,10 @@ BASE_YAW = np.pi
 # BASE_YAW = 0
 # * IT Hydra
 # BASE_YAW = -np.pi-np.pi/10.0
+# * topopt vault
+# BASE_YAW = 0
+# subset bars (everything except 44)
+# "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67]"
 
 BASE_ROLL = 0
 BASE_PITCH = 0
@@ -61,6 +66,9 @@ BASE_PITCH = 0
 # SP_arch
 # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
 # BASE_YAW = np.pi#-np.pi/18
+
+# RESOLUTION_RATIO = 1
+RESOLUTION_RATIO = 5
 
 ########################################
 
@@ -122,10 +130,6 @@ CUSTOM_LIMITS = CUSTOM_LIMITSs[ROBOT_NAME]
 ## - http://lavalle.pl/planning/node217.html
 ## - http://openrave.org/docs/latest_stable/openravepy/databases.linkstatistics/
 ## joint resolution used in transit motions
-# RESOLUTION = 0.005
-# RESOLUTION = 0.01
-# RESOLUTION_RATIO = 1
-RESOLUTION_RATIO = 5
 
 INITIAL_CONFs = {
     'kuka': np.radians([5., -90., 100, 5, 10, -5]),
