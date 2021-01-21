@@ -28,7 +28,7 @@ from .parsing import parse_2D_truss
 from .robot_setup import load_2d_world, Conf, INITIAL_CONF
 from .stripstream import STRIPSTREAM_ALGORITHM, solve_pddlstream
 
-ALGORITHMS = STRIPSTREAM_ALGORITHM #+ ['regression']
+ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
 # robot geometry data files
 HERE = os.path.dirname(__file__)
@@ -124,7 +124,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--problem', default='2D_truss_0_skeleton.json', help='The name of the problem to solve')
-    parser.add_argument('-a', '--algorithm', default='focused', choices=ALGORITHMS, help='Stripstream algorithms')
+    parser.add_argument('-a', '--algorithm', default='focused', choices=ALGORITHMS, help='Planning algorithms')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enable the pybullet viewer.')
     parser.add_argument('-c', '--collisions', action='store_false', help='Disable collision checking.')
     parser.add_argument('-co', '--costs', action='store_true', help='Uses unit costs')

@@ -107,3 +107,24 @@ Congrats! 🎉 You are all set!
 
 Grasshopper examples can be found in the `examples` folder. For Stefana and her students,
 please see `examples/shape_gen_GH <../examples/shape_gen_GH>`_ for the latest examples on design generation.
+
+
+**Installating sequence and motion planning stack**
+
+We have to install a few additional packages to make our sequence and motion planning stack to work.
+
+For the regression searcha algorithm, you will need to install `conmech` for structural analysis and `ikfast_pybind` for analytic IK.
+
+::
+
+    pip install ./external/conmech
+    pip install ./external/ikfast_pybind
+
+
+**Installating PDDLStream (WIP)**
+
+To install PDDLStream and `pyplanner` for using semantic attachments in the incremental algorithm,
+we have to add the path to `externals/pyplanner` to the environment variable `PYPLANNERS_PATH`.
+
+Then, `cd externals/pddlstream/FastDownward` and follow the instructions `here https://github.com/caelan/FastDownward#installation`_
+to install FastDownward, the default discrete AI planner used by PDDLStream.

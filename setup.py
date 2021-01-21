@@ -24,7 +24,6 @@ requirements = [
     'numpy',
     'scipy>=1.2.0',
     'pybullet_planning>=0.5.0',
-    'ikfast_pybind',
     'cmake',
     # 'ikfast_pybind',
     'termcolor',

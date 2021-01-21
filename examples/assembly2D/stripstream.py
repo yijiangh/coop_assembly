@@ -12,8 +12,17 @@ except KeyError:
     cprint('No `PDDLSTREAM_PATH` found in the env variables, using pddlstream submodule', 'yellow')
     here = os.path.abspath(os.path.dirname(__file__))
     sys.path.extend([
-        os.path.join(here, '..', '..', 'external', 'pddlstream'),
+        os.path.abspath(os.path.join(here, '..', '..', 'external', 'pddlstream')),
     ])
+
+try:
+    sys.path.append(os.environ['PYPLANNERS_PATH'])
+except KeyError:
+    cprint('No `PYPLANNERS_PATH` found in the env variables, using pyplanner submodule', 'yellow')
+    here = os.path.abspath(os.path.dirname(__file__))
+    pyplanner_path = os.path.abspath(os.path.join(here, '..', '..', 'external', 'pyplanners'))
+    # Inside PDDLStream, it will look for 'PYPLANNERS_PATH'
+    os.environ['PYPLANNERS_PATH'] = pyplanner_path
 
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
@@ -238,7 +247,7 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 
     pr = cProfile.Profile()
     pr.enable()
-    with LockRenderer(lock=False):
+    with LockRenderer(lock=not debug):
         if algorithm == 'incremental':
             discrete_planner = 'max-astar'
             solution = solve_incremental(pddlstream_problem, max_time=600, planner=discrete_planner,
