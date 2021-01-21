@@ -6,7 +6,8 @@ Getting Started
 
 .. Write installation instructions here
 
-**Prerequisites**
+Prerequisites
+===============================================
 
 0. Operating System:
     **Windows 10** and **Mac(!)** both works!
@@ -27,7 +28,8 @@ Getting Started
     Our simulation environment ``pybullet`` has a C++ backend, which needs
     ``Microsoft Visual C++ 14.0`` to compile and build the python bindings. Note that this is needed only for Windows OS.
 
-**Working in a conda environment**
+Working in a conda environment
+===============================================
 
 It is recommended to set up a conda environment to create a clean, isolated space for
 installing all the required python packages.
@@ -109,7 +111,8 @@ Grasshopper examples can be found in the `examples` folder. For Stefana and her 
 please see `examples/shape_gen_GH <../examples/shape_gen_GH>`_ for the latest examples on design generation.
 
 
-**Installating sequence and motion planning stack**
+Installating sequence and motion planning stack
+===============================================
 
 We have to install a few additional packages to make our sequence and motion planning stack to work.
 
@@ -121,7 +124,8 @@ For the regression searcha algorithm, you will need to install `conmech` for str
     pip install ./external/ikfast_pybind
 
 
-**Installating PDDLStream (WIP)**
+Installating PDDLStream (WIP)
+===============================================
 
 To install PDDLStream and `pyplanner` for using semantic attachments in the incremental algorithm,
 we have to add the path to `externals/pyplanner` to the environment variable `PYPLANNERS_PATH`.

@@ -45,6 +45,61 @@ Getting Started
 
 See `Getting Started <./docs/getting_started.rst>`_ for installation instructions.
 
+Planning examples
+-----------------
+
+PDDLStream examples
+```````````````````
+
+First, make sure that you first follow the `Installating sequence and motion planning stack` section
+of the `Getting Started <./docs/getting_started.rst>`_ document.
+
+Then, Run the regression search algorithm for find a construction plan for spatial bars.
+
+::
+
+    python -m coop_assembly.planning.run -v -w
+
+Issue `python -m coop_assembly.planning.run -h` to print out the helps.
+
+And you should be able to see the following (press Enter when asked in the commandline):
+
+.. image:: http://img.youtube.com/vi/KGrHz5gNqqc/0.jpg
+    :target: http://www.youtube.com/watch?feature=player_embedded&v=KGrHz5gNqqc
+    :alt: bar assembly simulated demo
+
+PDDLStream examples (WIP)
+`````````````````````````
+
+First, follow the `Installating PDDLStream (WIP)` section
+of the `Getting Started <./docs/getting_started.rst>`_ document to set up `PDDLStream` and `pyplanners`.
+
+2D version
+::::::::::
+
+This is a 2D additive construction domain, developed for testing our algorithms.
+
+::
+
+    python -m examples.assembly2D.run -v -w -p 2D_tower_skeleton.json -a incremental_sa
+
+The `incremental_sa` is the `incremental algorithm https://arxiv.org/pdf/1802.08705.pdf`_ in PDDLStream, using
+the `pyplanners https://github.com/caelan/pyplanners`_ for supporting
+`semantic attachments http://www2.informatik.uni-freiburg.de/~ki/papers/dornhege-etal-icaps09.pdf`_.
+
+Issue `python -m examples.assembly2D.run -h` to print out the helps.
+
+If run correctly, you should see something like (subject to changes) after a plan is found:
+
+.. image:: http://img.youtube.com/vi/xAPpfH2SzDo/0.jpg
+    :target: http://www.youtube.com/watch?feature=player_embedded&v=xAPpfH2SzDo
+    :alt: bar assembly simulated demo
+
+3D version
+::::::::::
+
+WIP.
+
 Troubleshooting
 ---------------
 

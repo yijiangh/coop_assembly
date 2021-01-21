@@ -30,9 +30,6 @@ from .stripstream import STRIPSTREAM_ALGORITHM, solve_pddlstream
 
 ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 
-# robot geometry data files
-HERE = os.path.dirname(__file__)
-
 ##################################################
 
 def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
