@@ -130,5 +130,5 @@ Installating PDDLStream (WIP)
 To install PDDLStream and `pyplanner` for using semantic attachments in the incremental algorithm,
 we have to add the path to `externals/pyplanner` to the environment variable `PYPLANNERS_PATH`.
 
-Then, `cd externals/pddlstream/FastDownward` and follow the instructions `here https://github.com/caelan/FastDownward#installation`_
+Then, `cd externals/pddlstream/FastDownward` and follow the instructions `here <https://github.com/caelan/FastDownward#installation>`_
 to install FastDownward, the default discrete AI planner used by PDDLStream.
