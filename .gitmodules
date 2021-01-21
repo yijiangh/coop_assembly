@@ -10,3 +10,6 @@
 [submodule "external/conmech"]
 	path = external/conmech
 	url = https://github.com/yijiangh/conmech.git
+[submodule "external/ikfast_pybind"]
+	path = external/ikfast_pybind
+	url = https://github.com/yijiangh/ikfast_pybind.git
