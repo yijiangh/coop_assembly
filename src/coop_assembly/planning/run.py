@@ -6,7 +6,6 @@ import pytest
 import numpy as np
 from numpy.linalg import norm
 import json
-import jsonpickle
 from termcolor import cprint
 from itertools import islice
 from collections import defaultdict
@@ -246,7 +245,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
 def create_parser():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--problem', default='single_tet',
+    parser.add_argument('-p', '--problem', default='1_exp_tets.json',
                         help='The name of the problem to solve')
     parser.add_argument('-a', '--algorithm', default='regression', choices=ALGORITHMS,
                         help='Planning algorithms')
