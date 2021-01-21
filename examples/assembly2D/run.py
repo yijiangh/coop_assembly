@@ -11,12 +11,20 @@ from termcolor import cprint
 import numpy as np
 from numpy.linalg import norm
 import math
-import pybullet as pb
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# add your PDDLStream path here: https://github.com/caelan/pddlstream
-sys.path.append(os.environ['PDDLSTREAM_PATH'])
+try:
+    # prioritize local pddlstream first
+    # add your PDDLStream path here: https://github.com/caelan/pddlstream
+    sys.path.append(os.environ['PDDLSTREAM_PATH'])
+except KeyError:
+    cprint('No `PDDLSTREAM_PATH` found in the env variables, using pddlstream submodule', 'yellow')
+    here = os.path.abspath(os.path.dirname(__file__))
+    sys.path.extend([
+        os.path.join(here, '..', '..', 'external', 'pddlstream'),
+    ])
+
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused
@@ -29,15 +37,11 @@ from pddlstream.utils import read, get_file_path, inclusive_range, INF
 from pddlstream.language.temporal import compute_duration, get_end
 from pddlstream.language.conversion import obj_from_pddl
 
-from compas.datastructures import Network
-
 from coop_assembly.data_structure import WorldPose, MotionTrajectory
-from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected, get_connected_structures, \
+from coop_assembly.planning.utils import get_connector_from_elements, check_connected, \
     flatten_commands
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
-from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.planning.visualization import set_camera, label_points, display_trajectories
-from coop_assembly.geometry_generation.utils import get_element_neighbors
 
 from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui, set_pose, create_plane, \
     draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
@@ -46,6 +50,8 @@ from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui,
     body_collision_info, get_distance, draw_collision_diagnosis, get_aabb, BodySaver
 
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
+from .parsing import parse_2D_truss
+from .robot_setup import load_2d_world, Conf, INITIAL_CONF
 
 # pddlstream algorithm options
 STRIPSTREAM_ALGORITHM = [
@@ -63,17 +69,8 @@ SS_OPTIONS = {
     'adaptive': {'max_skeletons':INF, 'bind':True, 'search_sample_ratio':2,},
 }
 
-# viz settings
-GROUND_COLOR = 0.8*np.ones(3)
-BACKGROUND_COLOR = [0.9, 0.9, 1.0] # 229, 229, 255
-SHADOWS = True
-
 # robot geometry data files
 HERE = os.path.dirname(__file__)
-DUCK_OBJ_PATH = os.path.join(HERE, 'data', 'duck.obj')
-
-SE2_xz = ['x', 'z', 'pitch']
-INITIAL_CONF = [-1.0, 0.0, 0.0]
 
 # representation used in pddlstream
 ROBOT_TEMPLATE = 'r{}'
@@ -81,31 +78,6 @@ ELEMENT_ROBOT_TEMPLATE = 'e{}'
 
 def index_from_name(robots, name):
     return robots[int(name[1:])]
-
-class Conf(object):
-    """wrapper for robot (incl. the element robot) configurations in pddlstream formulation
-    """
-    def __init__(self, robot, positions=None, element=None):
-        self.robot = robot
-        self.joints = get_movable_joints(self.robot)
-        if positions is None:
-            positions = get_configuration(self.robot)
-        self.positions = positions
-        self.element = element
-    def assign(self):
-        set_configuration(self.robot, self.positions)
-    def __repr__(self):
-        return '{}(E{})'.format(self.__class__.__name__, self.element)
-
-###########################################
-# convenient classes
-
-Element2D = namedtuple('Element2D', ['index',
-                                     'wlh',
-                                     'body', # 'element_robot',
-                                     'initial_pose', 'goal_pose',
-                                    #  'grasps', 'layer'
-                                     ])
 
 ###################################################
 
@@ -372,139 +344,6 @@ def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, c
 
 ##################################################
 
-def load_2d_world(viewer=False):
-    connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
-    with HideOutput():
-       floor = create_plane(color=GROUND_COLOR)
-       # duck_body = create_obj(DUCK_OBJ_PATH, scale=0.2 * 1e-3, color=apply_alpha(GREEN, 0.5))
-       # treat end effector as a flying 2D robot
-       collision_id, visual_id = create_shape(get_mesh_geometry(DUCK_OBJ_PATH, scale=0.2 * 1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
-       end_effector = create_flying_body(SE2_xz, collision_id, visual_id)
-
-    return end_effector, floor
-
-def get_example_assembly_problem():
-    # creating beams
-    width = 0.01
-    l = 0.01 # this dimension doesn't matter
-    length = 0.2
-    shrink = 0.015
-    initial_pose = WorldPose('init', pose_from_xz_values([0.3,-0.2,0]))
-    element_dims = {0 : [width, l, length*np.sqrt(2)-2*shrink],
-                    1 : [width, l, length-2*shrink],
-                    2 : [width, l, length*np.sqrt(2)-2*shrink],
-                    3 : [width, l, 2*length],
-                    }
-    element_from_index = {0 : Element2D(0, element_dims[0],
-                                        create_box(*element_dims[0]),
-                                        initial_pose, WorldPose(0, pose_from_xz_values([0,length/2,-np.pi/4]))),
-                          1 : Element2D(1, element_dims[1],
-                                        create_box(*element_dims[1]),
-                                        initial_pose, WorldPose(1, pose_from_xz_values([length/2,length/2,0]))),
-                          2 : Element2D(2, element_dims[2],
-                                        create_box(*element_dims[2]),
-                                        initial_pose, WorldPose(2, pose_from_xz_values([length,length/2,np.pi/4]))),
-                          3 : Element2D(3, element_dims[3],
-                                        create_box(*element_dims[3], color=BLUE),
-                                        initial_pose, WorldPose(3, pose_from_xz_values([length/2,length,np.pi/2]))),
-                          }
-    for ei, e in element_from_index.items():
-        set_pose(e.body, e.goal_pose.value)
-
-    # looking down from the top since it's 2D
-    # TODO: use centroid of geometry here
-    camera_target_point = [0.1,0,0.1]
-    set_camera_pose(camera_target_point + np.array([0,-0.3,0]), camera_target_point)
-    draw_pose(unit_pose())
-
-    connectors = {(0,3) : None,
-                  (1,3) : None,
-                  (2,3) : None,
-                  }
-    grounded_elements = [0, 1, 2]
-    return element_from_index, connectors, grounded_elements
-
-
-def parse_2D_truss(problem, scale=1e-3, debug=False):
-    problem_path = get_assembly_path(problem)
-    with open(problem_path) as json_file:
-        data = json.load(json_file)
-        cprint('Parsed from : {}'.format(problem_path), 'green')
-
-    if 'data' in data:
-        data = data['data']
-    net = Network.from_data(data)
-
-    # TODO waiting for compas update to use ordered dict for nodes
-    # node_points, edges = net.to_nodes_and_edges()
-    node_points = [np.array([net.node[v]['x'], 0, net.node[v]['z']]) for v in range(net.number_of_nodes())]
-    ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
-
-    initial_pose = WorldPose('init', pose_from_xz_values([2.0,0,2.0]))
-    length = 0.01 # out-of-plane thickness
-    element_from_index = {}
-    grounded_elements = []
-    for e, e_attr in net.edges(True):
-        height = e_attr['radius'] * scale
-        shrink = e_attr['shrink'] * scale
-        width = norm(node_points[e[0]] - node_points[e[1]]) * scale
-        wlh = [width - 2*shrink, length, height]
-
-        mid_pt = (node_points[e[0]] + node_points[e[1]]) / 2 * scale
-        # assert abs(mid_pt[1]) < 1e-9
-
-        diff = (node_points[e[1]] - node_points[e[0]])
-        pitch = np.math.atan2(diff[0], diff[2])
-        e_pose = pose_from_xz_values([mid_pt[0],mid_pt[2],pitch+np.pi/2])
-        e2d = Element2D(e, wlh,
-                        create_box(*wlh),
-                        initial_pose, WorldPose(e, e_pose))
-        element_from_index[e] = e2d
-        set_pose(e2d.body, e2d.goal_pose.value)
-
-        if e_attr['fixed']:
-            grounded_elements.append(e)
-
-    connectors = {}
-    element_neighbors = get_element_neighbors(element_from_index)
-    for e, ens in element_neighbors.items():
-        for en in ens:
-            connectors[(e, en)] = None
-
-    # * collision check for beams at goal poses
-    collided_pairs = set()
-    # `p_tol` is based on some manual experiement,
-    # might need to be changed accordingly for specific scales and input models
-    p_tol = 1e-3
-    for i in element_from_index:
-        for j in element_from_index:
-            if i == j:
-                continue
-            if (i, j) not in collided_pairs and (j, i) not in collided_pairs:
-                if pairwise_collision(element_from_index[i].body, element_from_index[j].body):
-                    cr = body_collision_info(element_from_index[i].body, element_from_index[j].body)
-                    penetration_depth = get_distance(cr[0][5], cr[0][6])
-                    if penetration_depth > p_tol:
-                        cprint('({}-{}) colliding : penetrating depth {:.4E}'.format(i,j, penetration_depth), 'red')
-                        collided_pairs.add((i,j))
-                        if debug:
-                            draw_collision_diagnosis(cr, focus_camera=False)
-    assert len(collided_pairs) == 0, 'model has mutual collision between elements!'
-    cprint('No mutual collisions among elements in the model | penetration threshold: {}'.format(p_tol), 'green')
-
-    set_camera(node_points, camera_dir=np.array([0,-1,0]), camera_dist=0.3)
-
-    # draw the ideal truss that we want to achieve
-    label_points([pt*1e-3 for pt in node_points])
-    for e in net.edges():
-        p1 = node_points[e[0]] * 1e-3
-        p2 = node_points[e[1]] * 1e-3
-        add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
-    for v in ground_nodes:
-        draw_circle(node_points[v]*1e-3, 0.01)
-
-    return element_from_index, connectors, grounded_elements
-
 def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
     end_effector, floor = load_2d_world(viewer=args.viewer)
     # element_from_index, connectors, grounded_elements = get_assembly_problem()
@@ -577,7 +416,7 @@ def run_pddlstream(args, viewer=False, watch=False, debug=False, step_sim=False,
                 time_step = None
             else:
                 time_step = 0.01
-            display_trajectories(trajectories, time_step=time_step)
+            display_trajectories(trajectories, time_step=time_step, element_from_index=element_from_index)
         # verify
         if args.collisions:
             valid = validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False,

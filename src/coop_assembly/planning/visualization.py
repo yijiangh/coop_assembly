@@ -339,8 +339,8 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
     # connected_nodes = set(ground_nodes)
     # TODO: resolution depends on bar distance to convex hull of obstacles
     # TODO: fine resolution still results in collision?
-    if element_from_index is not None:
-        chosen_seq = chosen_seq or list(range(len(element_from_index)))
+    assert element_from_index is not None
+    chosen_seq = chosen_seq or list(range(len(element_from_index)))
     printed_elements = []
     print('Trajectories:', len(trajectories))
     for i, trajectory in enumerate(trajectories):

@@ -13,7 +13,7 @@ except KeyError:
     cprint('No `PDDLSTREAM_PATH` found in the env variables, using pddlstream submodule', 'yellow')
     here = os.path.abspath(os.path.dirname(__file__))
     sys.path.extend([
-        os.path.join(here, '..', '..', '..', 'external', 'pddlstream/'),
+        os.path.join(here, '..', '..', '..', 'external', 'pddlstream'),
     ])
 
 from pddlstream.algorithms.downward import set_cost_scale
