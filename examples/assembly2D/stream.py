@@ -204,7 +204,8 @@ def compute_2d_place_path(gripper_robot, pregrasp_poses, grasp, index, element_f
 ######################################
 
 def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_obstacles, collisions=True,
-    max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, teleops=False):
+    max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, teleops=False,
+    precompute_collisions=False):
 
     # goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
     grasp_gen = get_2d_element_grasp_gen_fn(element_from_index, tool_from_ee, reverse_grasp=True, safety_margin_length=0.005)
@@ -216,7 +217,7 @@ def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_ob
     # ee_body_link = get_links(end_effector)[-1]
 
     def gen_fn(element, printed=[], diagnosis=False):
-        print('new stream fn - printed: {}'.format(printed))
+        # print('new stream fn call - printed: {}'.format(printed))
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
         if not collisions:
@@ -247,25 +248,28 @@ def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_ob
                 # command.update_safe(printed)
                 # this is only for checking collision between the robot and env
                 # pregrasp path takes care about the element-element collision
-                bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-                colliding = command_collision(command, bodies_order)
-                for element2, unsafe in zip(elements_order, colliding):
-                    if unsafe:
-                        command.set_unsafe(element2)
-                    else:
-                        command.set_safe(element2)
+                # ! no need for this when running incremental + semantic attachment
+                if precompute_collisions:
+                    bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
+                    colliding = command_collision(command, bodies_order)
+                    for element2, unsafe in zip(elements_order, colliding):
+                        if unsafe:
+                            command.set_unsafe(element2)
+                        else:
+                            command.set_safe(element2)
 
                 # if not is_ground(element, ground_nodes) and (neighboring_elements <= command.colliding):
                 #     continue # TODO If all neighbors collide
 
                 trajectories.append(command)
-                prune_dominated(trajectories)
+                if precompute_collisions:
+                    prune_dominated(trajectories)
                 if command not in trajectories:
                     continue
 
                 # if verbose:
-                cprint('Place E#{} | Attempts: {} | Trajectories: {} | Colliding: {}'.format(element, attempt, len(trajectories), \
-                        sorted([len(t.colliding) for t in trajectories])[0:3]), 'green')
+                # cprint('Place E#{} | Attempts: {} | Trajs: {} | Colliding: {}'.format(element, attempt, len(trajectories), \
+                #         sorted([len(t.colliding) for t in trajectories])[0:3]), 'green')
 
                 yield command,
                 break

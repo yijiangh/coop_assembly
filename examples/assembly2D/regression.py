@@ -63,7 +63,7 @@ def regression(robot, tool_from_ee, obstacles, problem, partial_orders=[],
     # def get_2d_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisions=True,
     #     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, teleops=False):
     place_gen_fn = get_2d_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision,
-        verbose=debug, allow_failure=True, teleops=teleops) #precompute_collisions=False,
+        verbose=debug, allow_failure=True, teleops=teleops, precompute_collisions=False)
 
     # TODO: partial ordering
 

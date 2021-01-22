@@ -186,7 +186,7 @@ def get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index
         # ee_link = get_links(robot)[-1]
         # tool_link = get_links(robot)[-1]
         pick_gen_fn = get_2d_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False, \
-            collisions=collisions, teleops=teleops, **kwargs)
+            collisions=collisions, teleops=teleops, precompute_collisions=not fluent_special, **kwargs)
         gen_fn_from_robot[robot] = pick_gen_fn
 
     def wild_gen_fn(robot_name, element, fluents=[]):
