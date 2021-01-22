@@ -3,7 +3,8 @@ import pytest
 from pybullet_planning import connect, has_gui, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
-    set_joint_positions, create_attachment, wait_if_gui, apply_alpha, get_movable_joints, get_links, invert
+    set_joint_positions, create_attachment, wait_if_gui, apply_alpha, get_movable_joints, get_links, invert, set_color, \
+    dump_body
 
 from coop_assembly.planning.utils import flatten_commands
 from coop_assembly.planning.visualization import display_trajectories
@@ -23,11 +24,17 @@ def test_import_model(viewer, problem, debug_mode):
 @pytest.mark.stream
 def test_stream(viewer, problem, collision):
     end_effector, floor, tool_from_ee = load_2d_world(viewer=viewer)
+    draw_pose(invert(tool_from_ee))
     element_from_index, connectors, grounded_elements = parse_2D_truss(problem)
+    for e_id, element in element_from_index.items():
+        # draw_pose(get_pose(element.body))
+        set_color(element.body, apply_alpha(RED, 0.2))
+
     wait_if_gui("Model loaded.")
 
-    printed = set([(13,8), (8,4)])
-    chosen = (6,4)
+    e_keys = list(element_from_index.keys())
+    printed = set([e_keys[0], e_keys[1]])
+    chosen = e_keys[3]
 
     # color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
     # wait_if_gui()
@@ -45,6 +52,8 @@ def test_stream(viewer, problem, collision):
 
     ee_joints = get_movable_joints(end_effector)
     ee_body_link = get_links(end_effector)[-1]
+    # print('ee links: ', get_links(end_effector))
+    # dump_body(end_effector)
 
     # body_pose = element_from_index[chosen].goal_pose.value
     for _ in range(n_attempts):
@@ -61,6 +70,9 @@ def test_stream(viewer, problem, collision):
         gripper_from_bar = grasp.attach
         set_pose(element_from_index[chosen].body, p)
         world_from_ee = end_effector_from_body(p, gripper_from_bar)
+
+        draw_pose(world_from_ee)
+        wait_if_gui()
 
         ee_pose = xz_values_from_pose(world_from_ee)
         set_joint_positions(end_effector, ee_joints, ee_pose)

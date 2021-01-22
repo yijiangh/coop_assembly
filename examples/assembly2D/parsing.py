@@ -9,7 +9,7 @@ from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui,
     draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
     create_flying_body, create_shape, get_mesh_geometry, get_movable_joints, get_configuration, set_configuration, get_links, \
     has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer, YELLOW, add_line, draw_circle, pairwise_collision, \
-    body_collision_info, get_distance, draw_collision_diagnosis, get_aabb, BodySaver
+    body_collision_info, get_distance, draw_collision_diagnosis, get_aabb, BodySaver, BLACK
 
 from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.data_structure import WorldPose, MotionTrajectory
@@ -19,7 +19,7 @@ from coop_assembly.planning.visualization import set_camera, label_points
 from .stream import pose_from_xz_values
 
 # millemeter
-GROUND_BUFFER = np.array([0,0,100])
+GROUND_BUFFER = np.array([1000,0,100])
 
 ###########################################
 
@@ -111,7 +111,7 @@ def parse_2D_truss(problem, scale=1e-3, debug=False):
     for e in net.edges():
         p1 = node_points[e[0]] * 1e-3
         p2 = node_points[e[1]] * 1e-3
-        add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
+        add_line(p1, p2, color=apply_alpha(BLACK, 0.1), width=0.5)
     for v in ground_nodes:
         draw_circle(node_points[v]*1e-3, 0.01)
 
