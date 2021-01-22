@@ -22,14 +22,19 @@ from .stream import pose_from_xz_values
 GROUND_BUFFER = np.array([0,0,100])
 
 ###########################################
-# convenient classes
+
+# Element = namedtuple('Element', ['index', 'axis_endpoints', 'radius', 'body', 'initial_pose', 'goal_pose',
+#                                  'grasps', 'goal_supports', 'layer'])
 
 Element2D = namedtuple('Element2D', ['index',
+                                     'axis_endpoints',
                                      'wlh',
                                      'body', # 'element_robot',
                                      'initial_pose', 'goal_pose',
                                     #  'grasps', 'layer'
                                      ])
+
+###########################################
 
 def parse_2D_truss(problem, scale=1e-3, debug=False):
     problem_path = get_assembly_path(problem)
@@ -62,8 +67,8 @@ def parse_2D_truss(problem, scale=1e-3, debug=False):
         diff = (node_points[e[1]] - node_points[e[0]])
         pitch = np.math.atan2(diff[0], diff[2])
         e_pose = pose_from_xz_values([mid_pt[0],mid_pt[2],pitch+np.pi/2])
-        e2d = Element2D(e, wlh,
-                        create_box(*wlh),
+        e2d = Element2D(e, (node_points[e[0]]*scale, node_points[e[1]]*scale),
+                        wlh, create_box(*wlh),
                         initial_pose, WorldPose(e, e_pose))
         element_from_index[e] = e2d
         set_pose(e2d.body, e2d.goal_pose.value)

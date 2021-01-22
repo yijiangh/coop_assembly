@@ -44,6 +44,7 @@ from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui,
 
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
 from .robot_setup import Conf, INITIAL_CONF
+from .parsing import parse_2D_truss
 
 SS_OPTIONS = {
     'focused' : {'max_skeletons':None, 'bind':False, 'search_sample_ratio':0,},
@@ -68,7 +69,7 @@ def index_from_name(robots, name):
 
 #############################################
 
-def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elements, connectors,
+def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, grounded_elements, connectors,
                    partial_orders={}, printed=set(), removed=set(), collisions=True,
                    return_home=True, teleops=False, fluent_special=False, **kwargs): # checker=None, transit=False,
     # TODO update removed & printed
@@ -88,9 +89,10 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
     constant_map = {}
     stream_map = {
-        'sample-place': get_wild_2d_place_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+        'sample-place': get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements,
                                               partial_orders=partial_orders, collisions=collisions, \
-                                              initial_confs=initial_confs, teleops=teleops, fluent_special=fluent_special, **kwargs),
+                                              initial_confs=initial_confs, teleops=teleops,
+                                              fluent_special=fluent_special, **kwargs),
         'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
@@ -137,15 +139,15 @@ def get_pddlstream(robots, static_obstacles, element_from_index, grounded_elemen
 
 ##################################################
 
-def get_wild_2d_place_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
-        initial_confs={}, teleops=False, fluent_special=False, **kwargs):
+def get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements,
+        partial_orders=[], collisions=True, initial_confs={}, teleops=False, fluent_special=False, **kwargs):
     """ fluent_special : True if we are running incremental + semantic attachment
     """
     gen_fn_from_robot = {}
     for robot in robots:
-        ee_link = get_links(robot)[-1]
-        tool_link = get_links(robot)[-1]
-        pick_gen_fn = get_2d_place_gen_fn(robot, element_from_index, obstacles, verbose=False, \
+        # ee_link = get_links(robot)[-1]
+        # tool_link = get_links(robot)[-1]
+        pick_gen_fn = get_2d_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False, \
             collisions=collisions, teleops=teleops, **kwargs)
         gen_fn_from_robot[robot] = pick_gen_fn
 
@@ -218,14 +220,16 @@ def get_order_fn(element_from_index):
         return sorted(actions, key=height_from_action.__getitem__, reverse=True)
     return order_fn
 
-def solve_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
+def solve_pddlstream(robots, tool_from_ee, obstacles, problem, partial_orders={},
                      collisions=True, disable=False, max_time=60*4, algorithm='focused',
                      debug=False, costs=False, teleops=False, **kwargs):
+    element_from_index, connectors, grounded_elements = parse_2D_truss(problem)
+
     fluent_special = algorithm == 'incremental_sa'
     if fluent_special:
         cprint('Using incremental + semantic attachment.', 'yellow')
 
-    pddlstream_problem = get_pddlstream(robots, obstacles, element_from_index, grounded_elements, connectors, collisions=collisions,
+    pddlstream_problem = get_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, collisions=collisions,
                    return_home=True, teleops=teleops, partial_orders=partial_orders, fluent_special=fluent_special)
                    # , printed=set(), removed=set(),
 

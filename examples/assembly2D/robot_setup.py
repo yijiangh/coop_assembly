@@ -13,7 +13,7 @@ from coop_assembly.planning.parsing import get_assembly_path
 HERE = os.path.dirname(__file__)
 # GRIPPER_OBJ_PATH = os.path.join(HERE, 'data', 'Princeton_gripper.obj')
 GRIPPER_OBJ_PATH = os.path.join(HERE, 'data', 'duck.obj')
-TOOL_FROM_EE = Pose(point=[0.0, 0.0, 0.3705])
+EE_FROM_TOOL = Pose(point=[0.0, 0.0, 0.3705])
 
 SE2_xz = ['x', 'z', 'pitch']
 INITIAL_CONF = [-1.0, 0.0, 0.0]

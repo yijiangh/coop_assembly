@@ -10,36 +10,25 @@ from pybullet_planning import INF, get_movable_joints, get_joint_positions, rand
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
     set_joint_positions, get_relative_pose, WorldSaver, set_renderer, apply_alpha, RED, wait_for_duration, wait_if_gui
 
-from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.geometry_generation.utils import outgoing_from_edges
 
-from .visualization import draw_element, color_structure, label_elements
-from .stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
-from .utils import flatten_commands, Command, check_connected, notify
-from .motion import compute_motion, EE_INITIAL_POINT, EE_INITIAL_EULER, compute_motions
-from .robot_setup import INITIAL_CONF # , TOOL_LINK_NAME, EE_LINK_NAME
+from coop_assembly.planning.visualization import draw_element, color_structure, label_elements
+# from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn, get_pregrasp_gen_fn
+from coop_assembly.planning.utils import flatten_commands, Command, check_connected, notify
+# from coop_assembly.planning.motion import compute_motion, EE_INITIAL_POINT, EE_INITIAL_EULER, compute_motions
+# from coop_assembly.planning.robot_setup import INITIAL_CONF # , TOOL_LINK_NAME, EE_LINK_NAME
+# from coop_assembly.planning.stiffness import create_stiffness_checker, test_stiffness
+
+from .parsing import parse_2D_truss
 from .heuristics import get_heuristic_fn
-from .parsing import unpack_structure
-from .stiffness import create_stiffness_checker, test_stiffness
+from .stream import get_2d_place_gen_fn
+from .robot_setup import INITIAL_CONF
 
 PAUSE_UPON_BT = 0
 MAX_REVISIT = 5
 
 Node = namedtuple('Node', ['action', 'state'])
-
-# def draw_action(element_bodies, printed, element):
-#     """printed elements are drawn green, current element drawn red
-#     """
-#     if not has_gui():
-#         return []
-#     with LockRenderer():
-#         remove_all_debug()
-#         # handles = [draw_element(node_points, element, color=(1, 0, 0))]
-#         # handles.extend(draw_element(node_points, e, color=(0, 1, 0)) for e in printed)
-#         color_structure(element_bodies, printed, next_element=element, built_alpha=0.6)
-#     wait_for_user()
-#     return handles
 
 ##################################################
 
@@ -54,23 +43,27 @@ def retrace_commands(visited, current_state, horizon=INF, reverse=False):
 
 ##################################################
 
-def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
+def regression(robot, tool_from_ee, obstacles, problem, partial_orders=[],
                heuristic='z', max_time=INF, backtrack_limit=INF, revisit=False, bar_only=False,
                collision=True, stiffness=True, motions=True, lazy=True, checker=None, fem_element_from_bar_id=None,
                verbose=False, chosen_bars=None, debug=False, teleops=False, **kwargs):
     start_time = time.time()
     joints = get_movable_joints(robot)
-    initial_conf = INITIAL_CONF if not bar_only else np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
+    initial_conf = INITIAL_CONF
+    # if not bar_only else np.concatenate([EE_INITIAL_POINT, EE_INITIAL_EULER])
 
-    # element_from_index, grounded_elements, connectors
-    element_from_index, grounded_elements, _, connectors = \
-        unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.1))
-    if stiffness and (checker is None or fem_element_from_bar_id is None):
-        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
+    # element_from_index, grounded_elements, _, connectors = \
+    #     unpack_structure(bar_struct, chosen_bars=chosen_bars, scale=METER_SCALE, color=apply_alpha(RED,0.1))
+    element_from_index, connectors, grounded_elements = parse_2D_truss(problem)
+    # if stiffness and (checker is None or fem_element_from_bar_id is None):
+    #     checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
 
-    heuristic_fn = get_heuristic_fn(robot, bar_struct, heuristic, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, forward=False)
-    place_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision, verbose=debug, bar_only=bar_only,\
-        precompute_collisions=False, allow_failure=True, teleops=teleops)
+    heuristic_fn = get_heuristic_fn(robot, problem, heuristic) #, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, forward=False)
+
+    # def get_2d_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisions=True,
+    #     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, teleops=False):
+    place_gen_fn = get_2d_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, collisions=collision,
+        verbose=debug, allow_failure=True, teleops=teleops) #precompute_collisions=False,
 
     # TODO: partial ordering
 
@@ -101,13 +94,11 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
     # print('all_elements: ', all_elements)
     # * connectivity & stiffness constraint checking
     if check_connected(connectors, grounded_elements, all_elements):
-        if (not stiffness or test_stiffness(bar_struct, final_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id)):
-            final_command = Command([MotionTrajectory(robot, joints, [final_conf])])
-                #if not bar_only \
-                # else Command([MotionTrajectory(None, None, [final_conf])])
-            add_successors(final_printed, final_command)
-        else:
-            cprint('The completed state not stiff!', 'yellow')
+        # if (not stiffness or test_stiffness(bar_struct, final_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id)):
+        final_command = Command([MotionTrajectory(robot, joints, [final_conf])])
+        add_successors(final_printed, final_command)
+        # else:
+        #     cprint('The completed state not stiff!', 'yellow')
     else:
         cprint('The completed state not connected to the ground!', 'yellow')
         if debug:
@@ -167,12 +158,12 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
             continue
         if not check_connected(connectors, grounded_elements, next_printed):
             continue
-        if stiffness and not test_stiffness(bar_struct, next_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id):
-            if verbose:
-                cprint('>'*5, 'red')
-                cprint('Stiffness failure', 'red')
-            stiffness_failures += 1
-            continue
+        # if stiffness and not test_stiffness(bar_struct, next_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id):
+        #     if verbose:
+        #         cprint('>'*5, 'red')
+        #         cprint('Stiffness failure', 'red')
+        #     stiffness_failures += 1
+        #     continue
 
         if revisit and visits < MAX_REVISIT:
             heapq.heappush(queue, (visits + 1, priority, printed, current_command))
@@ -188,37 +179,37 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
 
         # TODO: use pick conf
         # transit_start_conf = command.end_conf
-        transfer_start_conf = initial_conf
-        if motions and not lazy:
-            # if not(bar_only and len(printed) == len(all_elements)):
-            # if bar_only, skip to final conf transit motion
-            with WorldSaver():
-                transit_traj = compute_motion(command.end_robot, obstacles, element_from_index, printed,
-                                              command.end_conf, transfer_start_conf,
-                                              collisions=collision, attachments=[],
-                                              max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
-            if transit_traj is None:
-                transit_failures += 1
-                if verbose:
-                    cprint('%'*5, 'red')
-                    cprint('Transit planning failure.', 'yellow')
-                continue
-            transit_traj.tag = 'transit'
-            command.trajectories.append(transit_traj)
+        # transfer_start_conf = initial_conf
+        # if motions and not lazy:
+        #     # if not(bar_only and len(printed) == len(all_elements)):
+        #     # if bar_only, skip to final conf transit motion
+        #     with WorldSaver():
+        #         transit_traj = compute_motion(command.end_robot, obstacles, element_from_index, printed,
+        #                                       command.end_conf, transfer_start_conf,
+        #                                       collisions=collision, attachments=[],
+        #                                       max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
+        #     if transit_traj is None:
+        #         transit_failures += 1
+        #         if verbose:
+        #             cprint('%'*5, 'red')
+        #             cprint('Transit planning failure.', 'yellow')
+        #         continue
+        #     transit_traj.tag = 'transit'
+        #     command.trajectories.append(transit_traj)
 
-            with WorldSaver():
-                transfer_traj = compute_motion(command.start_robot, obstacles, element_from_index, next_printed,
-                                               transfer_start_conf, command.start_conf,
-                                               collisions=collision, attachments=command.trajectories[0].attachments,
-                                               max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
-            if transfer_traj is None:
-                transfer_failures += 1
-                if verbose:
-                    cprint('%'*5, 'red')
-                    cprint('Transfer planning failure.', 'yellow')
-                continue
-            transfer_traj.tag = 'transfer'
-            command.trajectories.insert(0, transfer_traj)
+        #     with WorldSaver():
+        #         transfer_traj = compute_motion(command.start_robot, obstacles, element_from_index, next_printed,
+        #                                        transfer_start_conf, command.start_conf,
+        #                                        collisions=collision, attachments=command.trajectories[0].attachments,
+        #                                        max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
+        #     if transfer_traj is None:
+        #         transfer_failures += 1
+        #         if verbose:
+        #             cprint('%'*5, 'red')
+        #             cprint('Transfer planning failure.', 'yellow')
+        #         continue
+        #     transfer_traj.tag = 'transfer'
+        #     command.trajectories.insert(0, transfer_traj)
 
         if num_remaining < min_remaining:
             min_remaining = num_remaining
@@ -230,23 +221,23 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
             commands = retrace_commands(visited, next_printed, reverse=True)
             plan = flatten_commands(commands)
 
-            # * return-to-start transit
-            if motions and not lazy:
-                transit_traj = compute_motion(plan[0].robot, obstacles, element_from_index, frozenset(),
-                                             initial_conf, plan[0].start_conf,
-                                             collisions=collision, attachments=command.trajectories[0].attachments,
-                                             max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
-                if transit_traj is None:
-                    plan = None
-                    transit_failures += 1
-                else:
-                    plan.insert(0, transit_traj)
+            # # * return-to-start transit
+            # if motions and not lazy:
+            #     transit_traj = compute_motion(plan[0].robot, obstacles, element_from_index, frozenset(),
+            #                                  initial_conf, plan[0].start_conf,
+            #                                  collisions=collision, attachments=command.trajectories[0].attachments,
+            #                                  max_time=max_time - elapsed_time(start_time), bar_only=bar_only, debug=debug)
+            #     if transit_traj is None:
+            #         plan = None
+            #         transit_failures += 1
+            #     else:
+            #         plan.insert(0, transit_traj)
             # TODO: lazy
-            if motions and lazy:
-                with WorldSaver():
-                    plan = compute_motions(robot, obstacles, element_from_index, initial_conf, plan,
-                                           collisions=collision, max_time=max_time - elapsed_time(start_time),
-                                           bar_only=bar_only, debug=debug)
+            # if motions and lazy:
+            #     with WorldSaver():
+            #         plan = compute_motions(robot, obstacles, element_from_index, initial_conf, plan,
+            #                                collisions=collision, max_time=max_time - elapsed_time(start_time),
+            #                                bar_only=bar_only, debug=debug)
             break
             # if plan is not None:
             #     break
@@ -259,9 +250,9 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
         'num_evaluated': num_evaluated,
         'min_remaining': min_remaining,
         'max_backtrack': max_backtrack,
-        'stiffness_failures': stiffness_failures,
         'place_failures': place_failures,
-        'transit_failures': transit_failures,
-        'transfer_failures': transfer_failures,
+        # 'stiffness_failures': stiffness_failures,
+        # 'transit_failures': transit_failures,
+        # 'transfer_failures': transfer_failures,
     }
     return plan, data

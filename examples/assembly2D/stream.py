@@ -202,7 +202,7 @@ def compute_2d_place_path(gripper_robot, pregrasp_poses, grasp, index, element_f
 
 ######################################
 
-def get_2d_place_gen_fn(end_effector, element_from_index, fixed_obstacles, collisions=True,
+def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_obstacles, collisions=True,
     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, teleops=False):
 
     # goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)

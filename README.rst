@@ -83,7 +83,7 @@ This is a 2D additive construction domain, developed for testing our algorithms.
 
     python -m examples.assembly2D.run -v -w -p 2D_tower_skeleton.json -a incremental_sa
 
-The `incremental_sa` is the `incremental algorithm <https://arxiv.org/pdf/1802.08705.pdf>`_ in PDDLStream, using
+The ``incremental_sa`` flag is the `incremental algorithm <https://arxiv.org/pdf/1802.08705.pdf>`_ in PDDLStream, using
 the `pyplanners <https://github.com/caelan/pyplanners>`_ for supporting
 `semantic attachments <http://www2.informatik.uni-freiburg.de/~ki/papers/dornhege-etal-icaps09.pdf>`_.
 
@@ -111,5 +111,4 @@ Credits
 
 This package was initiated by Stefana Parascho <parascho@princeton.edu> `@stefanaparascho <https://github.com/stefanaparascho>`_
 at the CREATE lab, Princeton University.
-The sequence and motion planning scripts are developed by Yijiang Huang <yijiangh@mit.edu> `@yijiangh <https://github.com/yijiangh>`_
- with `collaborators <./AUTHORS.rst>`_.
+The sequence and motion planning scripts are developed by Yijiang Huang <yijiangh@mit.edu> `@yijiangh <https://github.com/yijiangh>`_ with `collaborators <./AUTHORS.rst>`_.
