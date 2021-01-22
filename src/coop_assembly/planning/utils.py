@@ -4,7 +4,7 @@ from collections import defaultdict, deque
 # from pddlstream.utils import get_connected_components
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, has_gui, wait_for_user, randomize, pairwise_link_collision, \
-    BASE_LINK, is_connected, connect, create_box, create_obj
+    BASE_LINK, is_connected, connect, create_box, create_obj, INF
 
 from plyer import notification
 

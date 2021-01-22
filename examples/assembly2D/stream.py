@@ -3,6 +3,7 @@ import random
 import math
 import time
 from termcolor import cprint
+from numpy.linalg import norm
 
 from collections import namedtuple
 from itertools import islice
@@ -58,7 +59,7 @@ def pose_from_xz_values(base_values, default_pose=unit_pose()):
 
 ######################################
 
-def get_2d_element_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_grasp=False, safety_margin_length=0.0):
+def get_2d_element_grasp_gen_fn(element_from_index, tool_from_ee=unit_pose(), reverse_grasp=False, safety_margin_length=0.0):
     # rotate the box's frame to make x axis align with the longitude axis
     longitude_x = Pose(euler=Euler(yaw=np.pi/2))
     def gen_fn(index):
@@ -75,7 +76,7 @@ def get_2d_element_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), rever
                 rotate_around_z = Pose(euler=[0, 0, math.pi/2 + j * math.pi])
 
                 object_from_gripper = multiply(longitude_x, translate_along_x_axis, \
-                    rotate_around_z, tool_pose)
+                    rotate_around_z, tool_from_ee)
                 yield Grasp(index, None, None, invert(object_from_gripper), None),
     return gen_fn
 
@@ -206,7 +207,7 @@ def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_ob
     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, teleops=False):
 
     # goal_pose_gen_fn = get_goal_pose_gen_fn(element_from_index)
-    grasp_gen = get_2d_element_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
+    grasp_gen = get_2d_element_grasp_gen_fn(element_from_index, tool_from_ee, reverse_grasp=True, safety_margin_length=0.005)
     pregrasp_gen_fn = get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, collision=collisions, teleops=teleops) # max_attempts=max_attempts,
 
     # retreat_distance = RETREAT_DISTANCE

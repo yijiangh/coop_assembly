@@ -24,7 +24,7 @@ from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui,
     body_collision_info, get_distance, draw_collision_diagnosis, get_aabb, BodySaver, multiply, invert
 
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
-from .robot_setup import load_2d_world, Conf, INITIAL_CONF, EE_FROM_TOOL
+from .robot_setup import load_2d_world, Conf, INITIAL_CONF
 from .stripstream import STRIPSTREAM_ALGORITHM, solve_pddlstream
 from .regression import regression
 from .parsing import parse_2D_truss
@@ -34,7 +34,7 @@ ALGORITHMS = STRIPSTREAM_ALGORITHM + ['regression']
 ##################################################
 
 def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, write=False):
-    end_effector, floor = load_2d_world(viewer=args.viewer)
+    end_effector, floor, tool_from_ee = load_2d_world(viewer=args.viewer)
     # element_from_index, connectors, grounded_elements = get_assembly_problem()
 
     robots = [end_effector]
@@ -51,10 +51,6 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
     print('Partial orders: ', partial_orders)
     # input("Enter to proceed.")
 
-    # tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
-    # link2_from_link1 = multiply(invert(world_from_link2), world_from_link1)
-    tool_from_ee = invert(EE_FROM_TOOL)
-
     with LockRenderer(not debug):
         if args.algorithm in STRIPSTREAM_ALGORITHM:
             plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, args.problem, partial_orders=partial_orders,
@@ -63,6 +59,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
                 plan, data = regression(robots[0], tool_from_ee, fixed_obstacles, args.problem, collision=args.collisions, motions=True, stiffness=True,
                     revisit=False, verbose=True, lazy=False, partial_orders=partial_orders)
                     # bar_only=args.bar_only,
+                print(data)
         else:
             raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
 

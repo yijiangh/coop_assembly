@@ -42,6 +42,8 @@ from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui,
     has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer, YELLOW, add_line, draw_circle, pairwise_collision, \
     body_collision_info, get_distance, draw_collision_diagnosis, get_aabb, BodySaver
 
+from coop_assembly.planning.utils import compute_z_distance
+
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
 from .robot_setup import Conf, INITIAL_CONF
 from .parsing import parse_2D_truss
@@ -66,6 +68,42 @@ ELEMENT_ROBOT_TEMPLATE = 'e{}'
 
 def index_from_name(robots, name):
     return robots[int(name[1:])]
+
+##################################################
+
+# def get_height(index):
+#     with BodySaver(element.body):
+#         set_pose(element.body, element.goal_pose.value)
+#         _, upper = get_aabb(element.body)
+#         z = upper[2]
+#     return z
+
+def get_bias_fn(element_from_index):
+    def bias_fn(state, goal, operators):
+        assembled = {obj_from_pddl(atom.args[0]).value for atom in state.atoms if atom.predicate == 'assembled'}
+        height = 0
+        for index in assembled:
+            # element = element_from_index[index]
+            height = max(height, compute_z_distance(element_from_index, index))
+        return height
+    return bias_fn
+
+def get_order_fn(element_from_index):
+    def order_fn(state, goal, operators):
+        actions = [op for op in operators if op.__class__.__name__ == 'Action'] # TODO: repair ugliness
+        height_from_action = {}
+        for action in actions:
+            name, args = parse_action(action.fd_action.name)
+            height = 0
+            if name == 'place':
+                args = [obj_from_pddl(arg).value for arg in args]
+                _, index, _ = args
+                # element = element_from_index[index]
+                # height = get_height(element)
+                height = compute_z_distance(element_from_index, index)
+            height_from_action[action] = height
+        return sorted(actions, key=height_from_action.__getitem__, reverse=True)
+    return order_fn
 
 #############################################
 
@@ -186,39 +224,6 @@ def get_test_cfree():
     return test_fn
 
 ##################################################
-
-def get_height(element):
-    with BodySaver(element.body):
-        set_pose(element.body, element.goal_pose.value)
-        _, upper = get_aabb(element.body)
-        z = upper[2]
-    return z
-
-def get_bias_fn(element_from_index):
-    def bias_fn(state, goal, operators):
-        assembled = {obj_from_pddl(atom.args[0]).value for atom in state.atoms if atom.predicate == 'assembled'}
-        height = 0
-        for index in assembled:
-            element = element_from_index[index]
-            height = max(height, get_height(element))
-        return height
-    return bias_fn
-
-def get_order_fn(element_from_index):
-    def order_fn(state, goal, operators):
-        actions = [op for op in operators if op.__class__.__name__ == 'Action'] # TODO: repair ugliness
-        height_from_action = {}
-        for action in actions:
-            name, args = parse_action(action.fd_action.name)
-            height = 0
-            if name == 'place':
-                args = [obj_from_pddl(arg).value for arg in args]
-                _, index, _ = args
-                element = element_from_index[index]
-                height = get_height(element)
-            height_from_action[action] = height
-        return sorted(actions, key=height_from_action.__getitem__, reverse=True)
-    return order_fn
 
 def solve_pddlstream(robots, tool_from_ee, obstacles, problem, partial_orders={},
                      collisions=True, disable=False, max_time=60*4, algorithm='focused',

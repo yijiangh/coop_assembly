@@ -55,26 +55,27 @@ def parse_2D_truss(problem, scale=1e-3, debug=False):
     length = 0.01 # out-of-plane thickness
     element_from_index = {}
     grounded_elements = []
-    for e, e_attr in net.edges(True):
-        height = e_attr['radius'] * scale
-        shrink = e_attr['shrink'] * scale
-        width = norm(node_points[e[0]] - node_points[e[1]]) * scale
-        wlh = [width - 2*shrink, length, height]
+    with LockRenderer(True):
+        for e, e_attr in net.edges(True):
+            height = e_attr['radius'] * scale
+            shrink = e_attr['shrink'] * scale
+            width = norm(node_points[e[0]] - node_points[e[1]]) * scale
+            wlh = [width - 2*shrink, length, height]
 
-        mid_pt = (node_points[e[0]] + node_points[e[1]]) / 2 * scale
-        # assert abs(mid_pt[1]) < 1e-9
+            mid_pt = (node_points[e[0]] + node_points[e[1]]) / 2 * scale
+            # assert abs(mid_pt[1]) < 1e-9
 
-        diff = (node_points[e[1]] - node_points[e[0]])
-        pitch = np.math.atan2(diff[0], diff[2])
-        e_pose = pose_from_xz_values([mid_pt[0],mid_pt[2],pitch+np.pi/2])
-        e2d = Element2D(e, (node_points[e[0]]*scale, node_points[e[1]]*scale),
-                        wlh, create_box(*wlh),
-                        initial_pose, WorldPose(e, e_pose))
-        element_from_index[e] = e2d
-        set_pose(e2d.body, e2d.goal_pose.value)
+            diff = (node_points[e[1]] - node_points[e[0]])
+            pitch = np.math.atan2(diff[0], diff[2])
+            e_pose = pose_from_xz_values([mid_pt[0],mid_pt[2],pitch+np.pi/2])
+            e2d = Element2D(e, (node_points[e[0]]*scale, node_points[e[1]]*scale),
+                            wlh, create_box(*wlh),
+                            initial_pose, WorldPose(e, e_pose))
+            element_from_index[e] = e2d
+            set_pose(e2d.body, e2d.goal_pose.value)
 
-        if e_attr['fixed']:
-            grounded_elements.append(e)
+            if e_attr['fixed']:
+                grounded_elements.append(e)
 
     connectors = {}
     element_neighbors = get_element_neighbors(element_from_index)
@@ -103,7 +104,7 @@ def parse_2D_truss(problem, scale=1e-3, debug=False):
     assert len(collided_pairs) == 0, 'model has mutual collision between elements!'
     cprint('No mutual collisions among elements in the model | penetration threshold: {}'.format(p_tol), 'green')
 
-    set_camera(node_points, camera_dir=np.array([0,-1,0]), camera_dist=0.3)
+    set_camera(node_points, camera_dir=np.array([0,-1,0]), camera_dist=1.0)
 
     # draw the ideal truss that we want to achieve
     label_points([pt*1e-3 for pt in node_points])

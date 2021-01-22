@@ -4,13 +4,12 @@ def pytest_addoption(parser):
     parser.addoption('--viewer', action='store_true', help='Enables the pybullet viewer')
     parser.addoption('--write', action='store_true', help='Export results')
     parser.addoption('--collision', action='store_false', help='disable collision checking')
-    parser.addoption('--bar_only', action='store_true', help='only planning motion for the bars')
+    # parser.addoption('--bar_only', action='store_true', help='only planning motion for the bars')
     parser.addoption('--stiffness', action='store_false', help='disable stiffness')
     parser.addoption('--motion', action='store_false', help='disable transit motion (only works for regression now)')
     parser.addoption('--watch', action='store_true', help='watch trajectories')
     parser.addoption('--revisit', action='store_true')
-    parser.addoption('--problem', default='single_tet')
-    parser.addoption('--truss_problem', default='truss_3-cant_skeleton.json')
+    parser.addoption('--problem', default='2D_tower_skeleton.json')
     parser.addoption('--rfn', help='result file name')
     parser.addoption('--n_trails', default=1)
     parser.addoption('--algorithm', default='focused')
@@ -49,12 +48,8 @@ def revisit(request):
     return request.config.getoption("--revisit")
 
 @pytest.fixture
-def file_spec(request):
+def problem(request):
     return request.config.getoption("--problem")
-
-@pytest.fixture
-def truss_problem(request):
-    return request.config.getoption("--truss_problem")
 
 @pytest.fixture
 def n_trails(request):
