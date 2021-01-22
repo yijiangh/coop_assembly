@@ -333,13 +333,11 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
         wait_if_gui('Ready to simulate trajectories.')
 
     remove_all_debug()
-    #element_bodies = dict(zip(planned_elements, create_elements(node_points, planned_elements)))
-    #for body in element_bodies.values():
-    #    set_color(body, (1, 0, 0, 0))
-    # connected_nodes = set(ground_nodes)
     # TODO: resolution depends on bar distance to convex hull of obstacles
     # TODO: fine resolution still results in collision?
     assert element_from_index is not None
+    # for element in element_from_index.values():
+    #    set_color(element.body, (1, 0, 0, 0))
     chosen_seq = chosen_seq or list(range(len(element_from_index)))
     printed_elements = []
     print('Trajectories:', len(trajectories))

@@ -36,7 +36,7 @@ Element2D = namedtuple('Element2D', ['index',
 
 ###########################################
 
-def parse_2D_truss(problem, scale=1e-3, debug=False):
+def parse_2D_truss(problem, scale=1e-3, debug=False, color=apply_alpha(RED, 0.1)):
     problem_path = get_assembly_path(problem)
     with open(problem_path) as json_file:
         data = json.load(json_file)
@@ -69,7 +69,7 @@ def parse_2D_truss(problem, scale=1e-3, debug=False):
             pitch = np.math.atan2(diff[0], diff[2])
             e_pose = pose_from_xz_values([mid_pt[0],mid_pt[2],pitch+np.pi/2])
             e2d = Element2D(e, (node_points[e[0]]*scale, node_points[e[1]]*scale),
-                            wlh, create_box(*wlh),
+                            wlh, create_box(*wlh, color=color),
                             initial_pose, WorldPose(e, e_pose))
             element_from_index[e] = e2d
             set_pose(e2d.body, e2d.goal_pose.value)

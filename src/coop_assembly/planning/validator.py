@@ -80,7 +80,8 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
                     cprint('Bar collision under tolerance {}, viewed as a valid solution.'.format(ALLOWABLE_BAR_COLLISION_DEPTH), 'yellow')
 
         if isinstance(trajectory, MotionTrajectory) \
-            and 'retreat' in trajectory.tag:
+            and 'approach' in trajectory.tag:
+            # after approach
             # set into goal pose
             body = element_from_index[trajectory.element].body
             set_pose(body, element_from_index[trajectory.element].goal_pose.value)
@@ -95,7 +96,8 @@ def validate_trajectories(element_from_index, fixed_obstacles, trajectories,
 
 ##############################################
 
-def validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, allow_failure=False, watch=False, debug=False, **kwargs):
+def validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements,
+        allow_failure=False, watch=False, debug=False, **kwargs):
     # print('Collided element should be included in the future (unprinted) set.')
     label_elements({e:element_from_index[e].body for e in element_from_index}, body_index=True)
     element_seq = recover_sequence(trajectories, element_from_index)

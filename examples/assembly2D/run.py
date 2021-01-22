@@ -57,7 +57,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
                 collisions=args.collisions, algorithm=args.algorithm, costs=args.costs, debug=debug, teleops=args.teleops)
         elif args.algorithm == 'regression':
                 plan, data = regression(robots[0], tool_from_ee, fixed_obstacles, args.problem, collision=args.collisions, motions=True, stiffness=True,
-                    revisit=False, verbose=True, lazy=False, partial_orders=partial_orders)
+                    revisit=False, verbose=True, lazy=False, partial_orders=partial_orders, debug=debug)
                     # bar_only=args.bar_only,
                 print(data)
         else:

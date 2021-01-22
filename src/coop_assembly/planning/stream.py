@@ -503,7 +503,7 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
             grasp = grasp_t[0]
             # * ik iterations, usually 1 is enough
             for _ in range(max_attempts):
-                # ! when used in pddlstream, the pregrasp sampler assumes no elements assembled at all time
+                # ! when used in pddlstream (except incremental_sm), the pregrasp sampler assumes no elements assembled at all time
                 pregrasp_poses, = next(pregrasp_gen_fn(element, element_goal_pose, printed, diagnosis=diagnosis))
                 if not pregrasp_poses:
                     if verbose : print('pregrasp failure.')

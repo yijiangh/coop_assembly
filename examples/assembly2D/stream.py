@@ -185,7 +185,8 @@ def command_collision(command, bodies):
 
 ######################################
 
-def compute_2d_place_path(gripper_robot, pregrasp_poses, grasp, index, element_from_index, verbose=False, teleops=False):
+def compute_2d_place_path(gripper_robot, pregrasp_poses, grasp, index, element_from_index, collision_fn,
+    verbose=False, teleops=False, diagnosis=False):
     """ IK computation, attachment. EE path is given.
     """
     body = element_from_index[index].body
@@ -196,9 +197,16 @@ def compute_2d_place_path(gripper_robot, pregrasp_poses, grasp, index, element_f
     set_joint_positions(gripper_robot, gripper_joints, attach_conf)
     set_pose(body, pregrasp_poses[-1])
     attachment = create_attachment(gripper_robot, gripper_body_link, body)
-    command = Command([MotionTrajectory(gripper_robot, gripper_joints,
-                      [xz_values_from_pose(p) for p in pregrasp_poses], \
-                      attachments=[attachment], tag='place_approach', element=index)])
+    approach_path = [xz_values_from_pose(p) for p in pregrasp_poses]
+
+    # * check robot collision with the obstacles
+    for conf in randomize(approach_path):
+        if collision_fn(conf, diagnosis):
+            return None
+
+    approach_traj = MotionTrajectory(gripper_robot, gripper_joints, approach_path,
+                      attachments=[attachment], tag='place_approach', element=index)
+    command = Command([approach_traj])
     return command
 
 ######################################
@@ -216,6 +224,9 @@ def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_ob
     # ee_joints = get_movable_joints(end_effector)
     # ee_body_link = get_links(end_effector)[-1]
 
+    control_joints = get_movable_joints(end_effector)
+    disabled_collisions = {}
+
     def gen_fn(element, printed=[], diagnosis=False):
         # print('new stream fn call - printed: {}'.format(printed))
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
@@ -223,6 +234,13 @@ def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_ob
         if not collisions:
             obstacles = set()
         elements_order = [e for e in element_from_index if (e != element) and (element_from_index[e].body not in obstacles)]
+
+        # attachment is assumed to be empty here, since pregrasp sampler guarantees that
+        collision_fn = get_collision_fn(end_effector, control_joints, obstacles=obstacles, attachments=[],
+                                        self_collisions=True,
+                                        disabled_collisions=disabled_collisions,
+                                        custom_limits={}, # if bar_only else get_custom_limits(robot)
+                                        max_distance=MAX_DISTANCE)
 
         # keep track of sampled traj, prune newly sampled one with more collided element
         trajectories = []
@@ -233,14 +251,14 @@ def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_ob
             # * ik iterations, usually 1 is enough
             for _ in range(max_attempts):
                 # when used in pddlstream without fluents, the pregrasp sampler assumes no elements assembled at all time
-                pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed))
+                pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed, diagnosis=diagnosis))
                 if not pregrasp_poses:
                     if verbose : print('pregrasp failure.')
                     continue
 
                 # in 2D case, command will never be None since there is no collision_fn
                 # passed in for checking robot's body collision with assembled stuff
-                command = compute_2d_place_path(end_effector, pregrasp_poses, grasp, element, element_from_index)
+                command = compute_2d_place_path(end_effector, pregrasp_poses, grasp, element, element_from_index, collision_fn, )
                 if command is None:
                     continue
 
