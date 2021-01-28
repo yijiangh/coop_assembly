@@ -56,6 +56,7 @@ def load_2d_world(viewer=False):
         # collision=True, color=apply_alpha(YELLOW, 0.5))
        ee_body = load_pybullet(GRIPPER_URDF, fixed_base=True)
        tool_from_ee = get_relative_pose(ee_body, link_from_name(ee_body, EE_LINK_NAME), link_from_name(ee_body, TOOL_LINK_NAME))
+       print(tool_from_ee)
 
        ee_body_link = link_from_name(ee_body, 'eef_base_link')
        collision_id = clone_collision_shape(ee_body, ee_body_link, CLIENT)

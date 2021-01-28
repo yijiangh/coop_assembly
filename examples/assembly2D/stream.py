@@ -19,7 +19,7 @@ from pybullet_planning import link_from_name, set_pose, \
     get_bodies_in_region, pairwise_link_collision, BASE_LINK, get_client, clone_collision_shape, clone_visual_shape, get_movable_joints, \
     create_flying_body, SE3, euler_from_quat, create_shape, get_cylinder_geometry, wait_if_gui, set_joint_positions, dump_body, get_links, \
     get_link_pose, get_joint_positions, intrinsic_euler_from_quat, implies, pairwise_collision, randomize, get_link_name, quat_from_euler, \
-    quat_from_pose
+    quat_from_pose, wait_for_user
 
 from coop_assembly.planning.utils import Command, prune_dominated
 from coop_assembly.data_structure import Grasp, WorldPose, MotionTrajectory
@@ -96,12 +96,15 @@ def get_delta_pose_generator(epsilon=EPSILON, angle=ANGLE):
         pose = Pose(point=[x,0,z], euler=Euler(pitch=pitch))
         yield pose
 
-def get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRASP_MAX_ATTEMPTS, collision=True, teleops=False):
+def get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PREGRASP_MAX_ATTEMPTS,
+    collision=True, teleops=False):
     pose_gen = get_delta_pose_generator()
 
     def gen_fn(index, pose, printed, diagnosis=False):
         body = element_from_index[index].body
         set_pose(body, pose.value)
+
+        # print('printed: ', printed)
 
         # element_obstacles = {element_from_index[e].body for e in list(printed)}
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
@@ -114,22 +117,25 @@ def get_2d_pregrasp_gen_fn(element_from_index, fixed_obstacles, max_attempts=PRE
         for _ in range(max_attempts):
             delta_pose = next(pose_gen)
             offset_pose = multiply(pose.value, delta_pose)
-            is_colliding = False
             if not teleops:
                 offset_path = list(interpolate_poses(offset_pose, pose.value, pos_step_size=POS_STEP_SIZE, ori_step_size=ORI_STEP_SIZE))
             else:
                 offset_path = [offset_pose, pose.value]
+            is_colliding = False
             for p in offset_path: # [:-1]
                 # TODO: if colliding at the world_from_bar pose, use local velocity + normal check
                 # TODO: normal can be derived from
-                if element_collision_fn(p):
-                # if element_robot_collision_fn(pose2conf(p)):
+                if element_collision_fn(p, diagnosis=False):
+                    # wait_for_user('pregrasp collision!')
                     is_colliding = True
                     break
+                # wait_for_user('pregrasp pose: pass')
             if not is_colliding:
+                # wait_for_user('no collision found in pregrasp')
                 yield offset_path,
-                break
+                # break
         else:
+            # wait_for_user('no pregrasp path found')
             yield None,
     return gen_fn
 
@@ -185,24 +191,29 @@ def command_collision(command, bodies):
 
 ######################################
 
-def compute_2d_place_path(gripper_robot, pregrasp_poses, grasp, index, element_from_index, collision_fn,
+def compute_2d_place_path(gripper_robot, tool_from_ee, pregrasp_poses, grasp, index, element_from_index, collision_fn,
     verbose=False, teleops=False, diagnosis=False):
     """ IK computation, attachment. EE path is given.
     """
     body = element_from_index[index].body
     gripper_joints = get_movable_joints(gripper_robot)
     gripper_body_link = get_links(gripper_robot)[-1]
+    # ee_from_tool = invert(tool_from_ee)
 
     attach_conf = xz_values_from_pose(pregrasp_poses[-1])
     set_joint_positions(gripper_robot, gripper_joints, attach_conf)
     set_pose(body, pregrasp_poses[-1])
     attachment = create_attachment(gripper_robot, gripper_body_link, body)
-    approach_path = [xz_values_from_pose(p) for p in pregrasp_poses]
+    approach_path = [xz_values_from_pose(multiply(world_from_object, tool_from_ee)) for world_from_object in pregrasp_poses]
 
     # * check robot collision with the obstacles
     for conf in randomize(approach_path):
         if collision_fn(conf, diagnosis):
             return None
+
+    for p in pregrasp_poses:
+        draw_pose(p)
+    # wait_for_user()
 
     approach_traj = MotionTrajectory(gripper_robot, gripper_joints, approach_path,
                       attachments=[attachment], tag='place_approach', element=index)
@@ -231,6 +242,10 @@ def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_ob
         # print('new stream fn call - printed: {}'.format(printed))
         element_obstacles = get_element_body_in_goal_pose(element_from_index, printed)
         obstacles = set(fixed_obstacles) | element_obstacles
+        # print('printed: ', printed)
+        # print('element_obstacles: ', element_obstacles)
+        # print('obstacles: ', obstacles)
+        # wait_for_user()
         if not collisions:
             obstacles = set()
         elements_order = [e for e in element_from_index if (e != element) and (element_from_index[e].body not in obstacles)]
@@ -252,13 +267,13 @@ def get_2d_place_gen_fn(end_effector, tool_from_ee, element_from_index, fixed_ob
             for _ in range(max_attempts):
                 # when used in pddlstream without fluents, the pregrasp sampler assumes no elements assembled at all time
                 pregrasp_poses, = next(pregrasp_gen_fn(element, world_pose, printed, diagnosis=diagnosis))
-                if not pregrasp_poses:
+                if  pregrasp_poses is None:
                     if verbose : print('pregrasp failure.')
                     continue
 
                 # in 2D case, command will never be None since there is no collision_fn
                 # passed in for checking robot's body collision with assembled stuff
-                command = compute_2d_place_path(end_effector, pregrasp_poses, grasp, element, element_from_index, collision_fn, )
+                command = compute_2d_place_path(end_effector, tool_from_ee, pregrasp_poses, grasp, element, element_from_index, collision_fn, )
                 if command is None:
                     continue
 

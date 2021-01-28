@@ -332,7 +332,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
     else:
         wait_if_gui('Ready to simulate trajectories.')
 
-    remove_all_debug()
+    # remove_all_debug()
     # TODO: resolution depends on bar distance to convex hull of obstacles
     # TODO: fine resolution still results in collision?
     assert element_from_index is not None
