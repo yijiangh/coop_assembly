@@ -36,11 +36,7 @@ from pddlstream.utils import read, get_file_path, inclusive_range, INF
 from pddlstream.language.temporal import compute_duration, get_end
 from pddlstream.language.conversion import obj_from_pddl
 
-from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui, set_pose, create_plane, \
-    draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
-    create_flying_body, create_shape, get_mesh_geometry, get_movable_joints, get_configuration, set_configuration, get_links, \
-    has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer, YELLOW, add_line, draw_circle, pairwise_collision, \
-    body_collision_info, get_distance, draw_collision_diagnosis, get_aabb, BodySaver
+from pybullet_planning import LockRenderer
 
 from coop_assembly.planning.utils import compute_z_distance
 
@@ -128,9 +124,9 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
     constant_map = {}
     stream_map = {
         'sample-place': get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements,
-                                              partial_orders=partial_orders, collisions=collisions, \
-                                              initial_confs=initial_confs, teleops=teleops,
-                                              fluent_special=fluent_special, **kwargs),
+                                                 partial_orders=partial_orders, collisions=collisions,
+                                                 initial_confs=initial_confs, teleops=teleops,
+                                                 fluent_special=fluent_special, **kwargs),
         'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
@@ -164,7 +160,7 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
             ('Assembled', e),
         ])
     for rname in initial_confs:
-            init.extend([('Assigned', rname, e) for e in remaining])
+        init.extend(('Assigned', rname, e) for e in remaining)
 
     # * goal facts
     goal_literals = []
@@ -178,21 +174,19 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
 ##################################################
 
 def get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements,
-        partial_orders=[], collisions=True, initial_confs={}, teleops=False, fluent_special=False, **kwargs):
+                             partial_orders=[], collisions=True, initial_confs={}, teleops=False, fluent_special=False, **kwargs):
     """ fluent_special : True if we are running incremental + semantic attachment
     """
     gen_fn_from_robot = {}
     for robot in robots:
         # ee_link = get_links(robot)[-1]
         # tool_link = get_links(robot)[-1]
-        pick_gen_fn = get_2d_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False, \
-            collisions=collisions, teleops=teleops, precompute_collisions=not fluent_special, **kwargs)
-        gen_fn_from_robot[robot] = pick_gen_fn
+        gen_fn_from_robot[robot] = get_2d_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False,
+                                                       collisions=collisions, teleops=teleops, precompute_collisions=not fluent_special, **kwargs)
 
     def wild_gen_fn(robot_name, element, fluents=[]):
         # TODO: could check connectivity here
         #fluents = [] # For debugging
-        robot = index_from_name(robots, robot_name)
         printed = []
         for fact in fluents:
             if fact[0] == 'assembled':
@@ -200,7 +194,9 @@ def get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index
                     printed.append(fact[1])
             else:
                 raise NotImplementedError(fact[0])
-        print('E{} - fluent printed {}'.format(element, printed))
+        print('E{} - fluent printed ({}): {}'.format(element, len(printed), sorted(printed)))
+
+        robot = index_from_name(robots, robot_name)
         for command, in gen_fn_from_robot[robot](element, printed=printed):
             if not fluent_special:
                 q1 = Conf(robot, np.array(command.start_conf), element)
@@ -208,8 +204,10 @@ def get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index
                 outputs = [(q1, q2, command)]
             else:
                 outputs = [(command,)]
-            facts = []
-            yield WildOutput(outputs, facts)
+            yield outputs
+            #facts = []
+            #yield WildOutput(outputs, facts)
+            break # NOTE(caelan): only one output is needed but pddlstream now automatically does this
             # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
             # facts.append(('AtConf', robot_name, initial_confs[robot_name]))
             # cprint('print facts: {}'.format(command.colliding), 'yellow')
@@ -260,21 +258,23 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, problem, partial_orders={}
         if algorithm == 'incremental':
             discrete_planner = 'max-astar'
             solution = solve_incremental(pddlstream_problem, max_time=600, planner=discrete_planner,
-                                        success_cost=success_cost, unit_costs=not costs,
-                                        max_planner_time=300, debug=debug, verbose=True)
+                                         success_cost=success_cost, unit_costs=not costs,
+                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm == 'incremental_sa':
+            # TODO: log new best heuristic value
             discrete_planner = {
                 'search': 'eager',
+                #'search': 'lazy',
                 'evaluator': 'greedy',
-                'heuristic': 'ff',
+                'heuristic': 'goal',
+                #'heuristic': 'ff',
                 #'heuristic': ['ff', get_bias_fn(element_from_index)],
                 #'successors': 'all',
                 'successors': get_order_fn(element_from_index),
-
             }
-            solution = solve_incremental(pddlstream_problem, max_time=600, planner=discrete_planner,
-                                        success_cost=success_cost, unit_costs=not costs,
-                                        max_planner_time=300, debug=debug, verbose=True)
+            solution = solve_incremental(pddlstream_problem, max_time=600,  planner=discrete_planner,
+                                         success_cost=success_cost, unit_costs=not costs,
+                                         max_planner_time=300, debug=debug, verbose=True)
         elif algorithm in SS_OPTIONS:
             # creates unique free variable for each output during the focused algorithm
             # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)

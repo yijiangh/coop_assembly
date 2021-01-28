@@ -4,10 +4,9 @@ from __future__ import print_function
 import argparse
 import os, sys
 import json
+
 from termcolor import cprint
-import numpy as np
 from numpy.linalg import norm
-import math
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,11 +16,7 @@ from coop_assembly.planning.utils import get_connector_from_elements, check_conn
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan
 from coop_assembly.planning.visualization import set_camera, label_points, display_trajectories
 
-from pybullet_planning import set_camera_pose, connect, create_box, wait_if_gui, set_pose, create_plane, \
-    draw_pose, unit_pose, set_camera_pose2, Pose, Point, Euler, RED, BLUE, GREEN, CLIENT, HideOutput, create_obj, apply_alpha, \
-    create_flying_body, create_shape, get_mesh_geometry, get_movable_joints, get_configuration, set_configuration, get_links, \
-    has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer, YELLOW, add_line, draw_circle, pairwise_collision, \
-    body_collision_info, get_distance, draw_collision_diagnosis, get_aabb, BodySaver, multiply, invert
+from pybullet_planning import has_gui, set_color, reset_simulation, disconnect, get_date, WorldSaver, LockRenderer
 
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
 from .robot_setup import load_2d_world, Conf, INITIAL_CONF
@@ -56,10 +51,10 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
             plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, args.problem, partial_orders=partial_orders,
                 collisions=args.collisions, algorithm=args.algorithm, costs=args.costs, debug=debug, teleops=args.teleops)
         elif args.algorithm == 'regression':
-                plan, data = regression(robots[0], tool_from_ee, fixed_obstacles, args.problem, collision=args.collisions, motions=True, stiffness=True,
-                    revisit=False, verbose=True, lazy=False, partial_orders=partial_orders, debug=debug)
-                    # bar_only=args.bar_only,
-                print(data)
+            plan, data = regression(robots[0], tool_from_ee, fixed_obstacles, args.problem, collision=args.collisions, motions=True, stiffness=True,
+                revisit=False, verbose=True, lazy=False, partial_orders=partial_orders, debug=debug)
+                # bar_only=args.bar_only,
+            print(data)
         else:
             raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
 
@@ -125,7 +120,7 @@ def run_planning(args, viewer=False, watch=False, debug=False, step_sim=False, w
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--problem', default='2D_truss_0_skeleton.json', help='The name of the problem to solve')
-    parser.add_argument('-a', '--algorithm', default='focused', choices=ALGORITHMS, help='Planning algorithms')
+    parser.add_argument('-a', '--algorithm', default=ALGORITHMS[-1], choices=ALGORITHMS, help='Planning algorithms')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enable the pybullet viewer.')
     parser.add_argument('-c', '--collisions', action='store_false', help='Disable collision checking.')
     parser.add_argument('-co', '--costs', action='store_true', help='Uses unit costs')
