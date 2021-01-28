@@ -212,7 +212,7 @@ def check_connected(connectors, grounded_elements, printed_elements):
     # TODO: for stability might need to check 2-connected
     if not printed_elements:
         return True
-    printed_grounded_elements = set(grounded_elements) & printed_elements
+    printed_grounded_elements = set(grounded_elements) & set(printed_elements)
     if not printed_grounded_elements:
         return False
     element_neighbors = get_element_neighbors(connectors, printed_elements)

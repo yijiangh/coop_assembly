@@ -47,10 +47,10 @@
                  )
   )
 
-  ; TODO: could also enforce within the fluent condition
+  ; NOTE(caelan): can also enforce within the fluent condition
   (:derived (Connected ?e2)
    (or (Grounded ?e2)
-       (exists (?e1) (and (Joined ?e1 ?e2)
+       (exists (?e1) (and (Joined ?e1 ?e2) ; (not (= ?e2 ?e1))
                           (Assembled ?e1)
                           (Connected ?e1)
                      )

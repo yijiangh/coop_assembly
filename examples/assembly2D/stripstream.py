@@ -36,10 +36,12 @@ from pddlstream.utils import read, get_file_path, inclusive_range, INF
 from pddlstream.language.temporal import compute_duration, get_end
 from pddlstream.language.conversion import obj_from_pddl
 
+from strips.utils import ha_applicable
 from pybullet_planning import LockRenderer
 
-from coop_assembly.planning.utils import compute_z_distance
+from coop_assembly.planning.utils import compute_z_distance, check_connected
 
+from .heuristics import get_heuristic_fn
 from .stream import get_element_body_in_goal_pose, get_2d_place_gen_fn, pose_from_xz_values, xz_values_from_pose
 from .robot_setup import Conf, INITIAL_CONF
 from .parsing import parse_2D_truss
@@ -85,7 +87,11 @@ def get_bias_fn(element_from_index):
     return bias_fn
 
 def get_order_fn(element_from_index):
+    # TODO: seems to get stuck into deadends due to connectivity
+    #heuristic_fn = get_heuristic_fn(robot=None, problem=???, heuristic='z')
+
     def order_fn(state, goal, operators):
+        operators = ha_applicable(state, goal, operators)
         actions = [op for op in operators if op.__class__.__name__ == 'Action'] # TODO: repair ugliness
         height_from_action = {}
         for action in actions:
@@ -123,7 +129,7 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
 
     constant_map = {}
     stream_map = {
-        'sample-place': get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements,
+        'sample-place': get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
                                                  partial_orders=partial_orders, collisions=collisions,
                                                  initial_confs=initial_confs, teleops=teleops,
                                                  fluent_special=fluent_special, **kwargs),
@@ -173,8 +179,8 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
 
 ##################################################
 
-def get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements,
-                             partial_orders=[], collisions=True, initial_confs={}, teleops=False, fluent_special=False, **kwargs):
+def get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
+                             partial_orders=[], collisions=True, initial_confs={}, teleops=False, fluent_special=False, connectivity=True, **kwargs):
     """ fluent_special : True if we are running incremental + semantic attachment
     """
     gen_fn_from_robot = {}
@@ -187,14 +193,16 @@ def get_wild_2d_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index
     def wild_gen_fn(robot_name, element, fluents=[]):
         # TODO: could check connectivity here
         #fluents = [] # For debugging
-        printed = []
+        printed = set()
         for fact in fluents:
             if fact[0] == 'assembled':
                 if fact[1] != element:
-                    printed.append(fact[1])
+                    printed.add(fact[1])
             else:
                 raise NotImplementedError(fact[0])
         print('E{} - fluent printed ({}): {}'.format(element, len(printed), sorted(printed)))
+        if connectivity and not check_connected(connectors, grounded_elements, printed):
+            return
 
         robot = index_from_name(robots, robot_name)
         for command, in gen_fn_from_robot[robot](element, printed=printed):
@@ -233,8 +241,8 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, problem, partial_orders={}
         cprint('Using incremental + semantic attachment.', 'yellow')
 
     pddlstream_problem = get_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, collisions=collisions,
-                   return_home=True, teleops=teleops, partial_orders=partial_orders, fluent_special=fluent_special)
-                   # , printed=set(), removed=set(),
+                                        return_home=True, teleops=teleops, partial_orders=partial_orders, fluent_special=fluent_special)
+                                        # , printed=set(), removed=set(),
 
     if debug:
         print('Init:', pddlstream_problem.init)
@@ -266,11 +274,11 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, problem, partial_orders={}
                 'search': 'eager',
                 #'search': 'lazy',
                 'evaluator': 'greedy',
-                'heuristic': 'goal',
-                #'heuristic': 'ff',
+                #'heuristic': 'goal',
+                'heuristic': 'ff',
                 #'heuristic': ['ff', get_bias_fn(element_from_index)],
                 #'successors': 'all',
-                'successors': get_order_fn(element_from_index),
+                'successors': get_order_fn(element_from_index), # TODO: confirm that this is working correctly
             }
             solution = solve_incremental(pddlstream_problem, max_time=600,  planner=discrete_planner,
                                          success_cost=success_cost, unit_costs=not costs,
@@ -316,7 +324,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, problem, partial_orders={}
             raise NotImplementedError('Algorithm |{}| not in {}'.format(algorithm, STRIPSTREAM_ALGORITHM))
     pr.disable()
     if debug:
-        pstats.Stats(pr).sort_stats('cumtime').print_stats(10)
+        pstats.Stats(pr).sort_stats('cumtime').print_stats(10) # cumtime | tottime
 
     # print(solution)
     print_solution(solution)
