@@ -204,7 +204,8 @@ def compute_2d_place_path(gripper_robot, tool_from_ee, pregrasp_poses, grasp, in
     set_joint_positions(gripper_robot, gripper_joints, attach_conf)
     set_pose(body, pregrasp_poses[-1])
     attachment = create_attachment(gripper_robot, gripper_body_link, body)
-    approach_path = [xz_values_from_pose(multiply(world_from_object, tool_from_ee)) for world_from_object in pregrasp_poses]
+    approach_path = [xz_values_from_pose(world_from_object) for world_from_object in pregrasp_poses]
+    # approach_path = [xz_values_from_pose(multiply(world_from_object, tool_from_ee)) for world_from_object in pregrasp_poses]
 
     # * check robot collision with the obstacles
     for conf in randomize(approach_path):
