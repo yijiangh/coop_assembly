@@ -8,6 +8,7 @@ import os, sys
 
 try:
     # prioritize local pddlstream first
+    # add your PDDLStream path here: https://github.com/caelan/pddlstream
     sys.path.append(os.environ['PDDLSTREAM_PATH'])
 except KeyError:
     cprint('No `PDDLSTREAM_PATH` found in the env variables, using pddlstream submodule', 'yellow')
@@ -16,7 +17,16 @@ except KeyError:
         os.path.join(here, '..', '..', '..', 'external', 'pddlstream'),
     ])
 
-from pddlstream.algorithms.downward import set_cost_scale
+try:
+    sys.path.append(os.environ['PYPLANNERS_PATH'])
+except KeyError:
+    cprint('No `PYPLANNERS_PATH` found in the env variables, using pyplanner submodule', 'yellow')
+    here = os.path.abspath(os.path.dirname(__file__))
+    pyplanner_path = os.path.abspath(os.path.join(here, '..', '..', 'external', 'pyplanners'))
+    # Inside PDDLStream, it will look for 'PYPLANNERS_PATH'
+    os.environ['PYPLANNERS_PATH'] = pyplanner_path
+
+from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused
 from pddlstream.language.constants import And, PDDLProblem, Equal
@@ -25,6 +35,10 @@ from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput
 from pddlstream.language.function import FunctionInfo
 from pddlstream.utils import read, get_file_path, inclusive_range
 from pddlstream.language.temporal import compute_duration, get_end
+from pddlstream.language.conversion import obj_from_pddl
+
+from strips.utils import ha_applicable
+from coop_assembly.planning.utils import compute_z_distance, check_connected
 
 from pybullet_planning import has_gui, get_movable_joints, get_configuration, set_configuration, WorldSaver, LockRenderer, \
     wait_if_gui, EndEffector, link_from_name, joints_from_names, intrinsic_euler_from_quat, get_links, create_attachment, \
@@ -74,17 +88,43 @@ class Conf(object):
 
 ##################################################
 
-from itertools import product
+# def get_height(index):
+#     with BodySaver(element.body):
+#         set_pose(element.body, element.goal_pose.value)
+#         _, upper = get_aabb(element.body)
+#         z = upper[2]
+#     return z
 
-def compute_orders(elements_from_layer):
-    # elements_from_layer = compute_elements_from_layer(elements, layer_from_n)
-    partial_orders = set()
-    layers = sorted(elements_from_layer)
-    for layer in layers[:-1]:
-        partial_orders.update(product(elements_from_layer[layer], elements_from_layer[layer+1]))
-    return partial_orders
+def get_bias_fn(element_from_index):
+    def bias_fn(state, goal, operators):
+        assembled = {obj_from_pddl(atom.args[0]).value for atom in state.atoms if atom.predicate == 'assembled'}
+        height = 0
+        for index in assembled:
+            # element = element_from_index[index]
+            height = max(height, compute_z_distance(element_from_index, index))
+        return height
+    return bias_fn
 
-##################################################
+def get_order_fn(element_from_index):
+    # TODO: seems to get stuck into deadends due to connectivity
+    #heuristic_fn = get_heuristic_fn(robot=None, problem=???, heuristic='z')
+
+    def order_fn(state, goal, operators):
+        operators = ha_applicable(state, goal, operators)
+        actions = [op for op in operators if op.__class__.__name__ == 'Action'] # TODO: repair ugliness
+        height_from_action = {}
+        for action in actions:
+            name, args = parse_action(action.fd_action.name)
+            height = 0
+            if name == 'place':
+                args = [obj_from_pddl(arg).value for arg in args]
+                _, index, _ = args
+                # element = element_from_index[index]
+                # height = get_height(element)
+                height = compute_z_distance(element_from_index, index)
+            height_from_action[action] = height
+        return sorted(actions, key=height_from_action.__getitem__, reverse=True)
+    return order_fn##################################################
 
 def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                    printed=set(), removed=set(), collisions=True,
@@ -108,18 +148,20 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
     constant_map = {}
 
     stream_map = {
-        'sample-place': get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements,
+        'sample-place': get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
-                                              initial_confs=initial_confs, teleops=teleops, fluent_special=fluent_special, **kwargs),
+                                              initial_confs=initial_confs, teleops=teleops,
+                                              fluent_special=fluent_special, **kwargs),
         'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
-    if not fluent_special:
-        stream_map.update({
-            'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                                   partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
-                                                   initial_confs=initial_confs, teleops=teleops, **kwargs),
-        })
+
+    # if not fluent_special:
+    #     stream_map.update({
+    #         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+    #                                                partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
+    #                                                initial_confs=initial_confs, teleops=teleops, **kwargs),
+    #     })
 
     init = []
     # if transit:
@@ -180,16 +222,29 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
     # planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
     # planner = 'ff-lazy' | 'ff-wastar3'
 
-    def get_planner(costs):
-        return 'ff-astar' if costs else 'ff-wastar3'
     success_cost = 0 if costs else INF
 
     pr = cProfile.Profile()
     pr.enable()
-    with LockRenderer(lock=True):
-        if algorithm in ['incremental', 'incremental_sa']:
+    with LockRenderer(lock=not debug):
+        if algorithm == 'incremental':
             discrete_planner = 'max-astar' # get_planner(costs)
             solution = solve_incremental(pddlstream_problem, max_time=600, #planner=discrete_planner,
+                                         success_cost=success_cost, unit_costs=not costs,
+                                         max_planner_time=300, debug=debug, verbose=True)
+        elif algorithm == 'incremental_sa':
+            # TODO: log new best heuristic value
+            discrete_planner = {
+                'search': 'eager',
+                #'search': 'lazy',
+                'evaluator': 'greedy',
+                #'heuristic': 'goal',
+                'heuristic': 'ff',
+                #'heuristic': ['ff', get_bias_fn(element_from_index)],
+                #'successors': 'all',
+                'successors': get_order_fn(element_from_index), # TODO: confirm that this is working correctly
+            }
+            solution = solve_incremental(pddlstream_problem, max_time=600,  planner=discrete_planner,
                                          success_cost=success_cost, unit_costs=not costs,
                                          max_planner_time=300, debug=debug, verbose=True)
         elif algorithm in SS_OPTIONS:
@@ -197,12 +252,13 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
             # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
             stream_info = {
                 'sample-place': StreamInfo(PartialInputs(unique=True)),
-                'sample-move': StreamInfo(PartialInputs(unique=True)),
+                # 'sample-move': StreamInfo(PartialInputs(unique=True)),
                 'test-cfree': StreamInfo(negate=True),
             }
             # TODO: effort_weight=0 will lead to noplan found
             effort_weight = 1e-3 if costs else None
             # effort_weight = 1e-3 if costs else 1 # | 0
+            planner = 'ff-astar' if costs else 'ff-wastar3'
 
             # TODO what can we tell about a problem if it requires many iterations?
             # ? max_time: the maximum amount of time to apply streams
@@ -217,7 +273,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
             #   success_cost=0 runs the planner in a true anytime mode
             #   success_cost=INF terminates whenever any plan is found
             solution = solve_focused(pddlstream_problem, stream_info=stream_info,
-                                     planner=get_planner(costs), max_planner_time=60, max_time=max_time,
+                                     planner=planner, max_planner_time=60, max_time=max_time,
                                      max_skeletons=SS_OPTIONS[algorithm]['max_skeletons'],
                                      bind=SS_OPTIONS[algorithm]['bind'],
                                      search_sample_ratio=SS_OPTIONS[algorithm]['search_sample_ratio'],
@@ -255,28 +311,30 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
 
 ###############################################################
 
-def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, \
-    bar_only=False, initial_confs={}, teleops=False, fluent_special=False, **kwargs):
+def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
+                          partial_orders=[], collisions=True, bar_only=False, initial_confs={}, teleops=False, fluent_special=False, connectivity=True, **kwargs):
     """ fluent_special : True if we are running incremental + semantic attachment
     """
     gen_fn_from_robot = {}
     for robot in robots:
         # TODO: not need precompute_collisions when running incremental + semantic attachment
         # but just do it for now
-        pick_gen_fn = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False, \
-            precompute_collisions=True, collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
-        gen_fn_from_robot[robot] = pick_gen_fn
+        gen_fn_from_robot[robot] = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False, \
+            precompute_collisions=not fluent_special, collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
 
     def wild_gen_fn(robot_name, element, fluents=[]):
         robot = index_from_name(robots, robot_name)
-        printed = []
-        # print('E{} - fluent {}'.format(element, fluents))
+        printed = set()
         for fact in fluents:
             if fact[0] == 'assembled':
                 if fact[1] != element:
-                    printed.append(fact[1])
+                    printed.add(fact[1])
             else:
                 raise NotImplementedError(fact[0])
+        print('E{} - fluent printed ({}): {}'.format(element, len(printed), sorted(printed)))
+        if connectivity and not check_connected(connectors, grounded_elements, printed):
+            return
+
         for command, in gen_fn_from_robot[robot](element, printed=printed):
             if not fluent_special:
                 q1 = Conf(robot, np.array(command.start_conf), element)
@@ -284,8 +342,10 @@ def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, g
                 outputs = [(q1, q2, command)]
             else:
                 outputs = [(command,)]
-            facts = []
-            yield WildOutput(outputs, facts)
+            yield outputs
+            #facts = []
+            #yield WildOutput(outputs, facts)
+            break # NOTE(caelan): only one output is needed but pddlstream now automatically does this
             # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
             # facts.append(('AtConf', robot_name, initial_confs[robot_name]))
             # cprint('print facts: {}'.format(command.colliding), 'yellow')

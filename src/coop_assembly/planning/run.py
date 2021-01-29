@@ -32,7 +32,7 @@ from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn
 from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES, save_plan, parse_plan, unpack_structure, Config
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan, compute_plan_deformation
 from coop_assembly.planning.utils import recover_sequence, Command, load_world, notify
-from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM, compute_orders
+from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM
 from coop_assembly.planning.regression import regression
 from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness, plan_stiffness, TRANS_TOL
 from coop_assembly.planning.heuristics import HEURISTICS
@@ -66,9 +66,6 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
     collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
     end_effector = create_flying_body(SE3, collision_id, visual_id)
 
-    # the arm itself
-    robots = [end_effector] if args.bar_only else [robot]
-
     chosen_bars = None
     if args.subset_bars is not None:
         chosen_bars = list(map(int, [c for c in args.subset_bars[1:-1].split(', ') if c]))
@@ -91,15 +88,15 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
 
     elements_from_layer = defaultdict(set)
     if args.partial_ordering:
+        partial_orders = []
         # for v in bar_struct.nodes():
         #     elements_from_layer[bar_struct.node[v]['layer']].add(v)
         # partial_orders = compute_orders(elements_from_layer)
-        pre_order = [36, 1, 0, 2, 37, 35, 38, 32, 30, 31, 7, 6, 25, 3, 4, 5, 33, 9, 27, \
-            26, 8, 12, 20, 23, 17, 34, 29, 11, 24, 10, 21, 22, 16, 28, 14, 19, 13, 15, 18]
-        partial_orders = []
-        for i in range(len(pre_order)-1):
+        # pre_order = [36, 1, 0, 2, 37, 35, 38, 32, 30, 31, 7, 6, 25, 3, 4, 5, 33, 9, 27, \
+            # 26, 8, 12, 20, 23, 17, 34, 29, 11, 24, 10, 21, 22, 16, 28, 14, 19, 13, 15, 18]
+        # for i in range(len(pre_order)-1):
             # 1 must be removed before 0
-            partial_orders.append((pre_order[i], pre_order[i+1]))
+            # partial_orders.append((pre_order[i], pre_order[i+1]))
         print('Partial orders: ', partial_orders)
     else:
         partial_orders = []
@@ -135,11 +132,13 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         # visualize_stiffness
         with WorldSaver():
             if args.algorithm in STRIPSTREAM_ALGORITHM:
-                # plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles, element_from_index, grounded_elements, connectors,
-                #     partial_orders=partial_orders,
-                #     collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
-                #     debug=args.debug, teleops=args.teleops)
-                raise NotImplementedError()
+                robots = [end_effector] if args.bar_only else [robot]
+                plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles,
+                    element_from_index, grounded_elements, connectors,
+                    partial_orders=partial_orders,
+                    collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
+                    debug=args.debug, teleops=args.teleops)
+                data = {}
             elif args.algorithm == 'regression':
                 with LockRenderer(not args.debug):
                     plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles,
@@ -231,13 +230,16 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
     # verify
     if args.collisions:
         valid = validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, grounded_elements, watch=False, allow_failure=has_gui() or args.debug, \
-            bar_only=args.bar_only, refine_num=1, debug=args.debug)
+            bar_only=args.bar_only, refine_num=1, debug=args.debug, check_facts=args.algorithm in STRIPSTREAM_ALGORITHM)
         cprint('Valid: {}'.format(valid), 'green' if valid else 'red')
         assert valid
     else:
         cprint('Collision disabled, no verfication performed.', 'yellow')
     reset_simulation()
     disconnect()
+
+# {complexity: 0, cost: 39, evaluations: 367, iterations: 1, length: 39, run_time: 25.769129037857056, solutions: 1, solved: True, timeout: False}
+# {'search_time': 4.095053434371948, 'num_evaluated': 40, 'min_remaining': 0, 'max_backtrack': 0, 'stiffness_failures': 0, 'place_failures': 0, 'transit_failures': 0, 'transfer_failures': 0}
 
 
 ##################################################
@@ -263,8 +265,8 @@ def create_parser():
                         help='Disable stiffness checking')
     parser.add_argument('-po', '--partial_ordering', action='store_true',
                         help='Use partial ordering (if-any)')
-    # parser.add_argument('-co', '--costs', action='store_true',
-    #                     help='Turn on cost_effective planning')
+    parser.add_argument('-co', '--costs', action='store_true',
+                        help='Turn on cost_effective planning')
     parser.add_argument('-to', '--teleops', action='store_true',
                         help='Use teleop for trajectories (turn off in-between traj planning)')
     # parser.add_argument('-s', '--subset_bars', nargs='+', default=None,

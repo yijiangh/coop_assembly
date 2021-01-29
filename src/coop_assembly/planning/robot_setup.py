@@ -44,7 +44,6 @@ BOTTOM_BUFFER = 0.03
 # BOTTOM_BUFFER = 0.06
 
 # * SP Arch
-# BASE_YAW = 0
 BASE_YAW = np.pi
 # * IT Arch
 # BASE_YAW = 0

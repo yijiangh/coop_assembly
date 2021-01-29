@@ -26,24 +26,24 @@
     ; (Stiff)
   )
 
-  (:action move
-    :parameters (?r ?q1 ?q2 ?t2)
-    :precondition (and
-                        (Conf ?r ?q1)
-                        ; (AtConf ?r ?q1)
-                        (Conf ?r ?q2)
-                        (Traj ?r ?t2)
-                        (CanMove ?r)
-                        (MoveAction ?r ?q1 ?q2 ?t2)
-                        ;;; collision constraint
-                        (not (UnSafeTraj ?r ?t2))
-                       )
-    :effect (and
-                ;  (not (AtConf ?r ?q1))
-                 (AtConf ?r ?q2)
-                 (not (CanMove ?r)) ; switch to avoid transit forever
-                 )
-  )
+;   (:action move
+;     :parameters (?r ?q1 ?q2 ?t2)
+;     :precondition (and
+;                         (Conf ?r ?q1)
+;                         ; (AtConf ?r ?q1)
+;                         (Conf ?r ?q2)
+;                         (Traj ?r ?t2)
+;                         (CanMove ?r)
+;                         (MoveAction ?r ?q1 ?q2 ?t2)
+;                         ;;; collision constraint
+;                         (not (UnSafeTraj ?r ?t2))
+;                        )
+;     :effect (and
+;                 ;  (not (AtConf ?r ?q1))
+;                  (AtConf ?r ?q2)
+;                  (not (CanMove ?r)) ; switch to avoid transit forever
+;                  )
+;   )
 
   ; place = remove the element
   (:action place
