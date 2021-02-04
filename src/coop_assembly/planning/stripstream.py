@@ -42,13 +42,13 @@ from coop_assembly.planning.utils import compute_z_distance, check_connected
 
 from pybullet_planning import has_gui, get_movable_joints, get_configuration, set_configuration, WorldSaver, LockRenderer, \
     wait_if_gui, EndEffector, link_from_name, joints_from_names, intrinsic_euler_from_quat, get_links, create_attachment, \
-    set_joint_positions, get_links, set_pose, INF
+    set_joint_positions, get_links, set_pose, INF, Attachment
 from .stream import get_element_body_in_goal_pose, get_place_gen_fn, ENABLE_SELF_COLLISIONS, get_pregrasp_gen_fn, command_collision
 from .utils import flatten_commands, recover_sequence, Command, get_index_from_bodies
 from .visualization import draw_ordered, display_trajectories
 from .motion import compute_motion, EE_INITIAL_CONF
 from .robot_setup import EE_LINK_NAME, TOOL_LINK_NAME, CONTROL_JOINT_NAMES, JOINT_WEIGHTS, get_disabled_collisions, INITIAL_CONF
-from coop_assembly.data_structure.utils import MotionTrajectory
+from coop_assembly.data_structure.utils import MotionTrajectory, Grasp
 from coop_assembly.help_functions import METER_SCALE
 
 STRIPSTREAM_ALGORITHM = [
@@ -148,30 +148,28 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
     constant_map = {}
 
     stream_map = {
-        'sample-place': get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
-                                              partial_orders=partial_orders, collisions=collisions, bar_only=bar_only, \
-                                              initial_confs=initial_confs, teleops=teleops,
+        'sample-remove': get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
+                                              collisions=collisions, bar_only=bar_only, teleops=teleops,
                                               fluent_special=fluent_special, **kwargs),
-        'test-cfree': from_test(get_test_cfree()),
+        'sample-holding-motion': get_holding_motion_gen_fn(robots, obstacles, element_from_index,
+                                                   collisions=collisions, bar_only=bar_only,
+                                                   teleops=teleops, **kwargs),
+        'sample-free-motion': get_free_motion_gen_fn(robots, obstacles, element_from_index,
+                                                   collisions=collisions, bar_only=bar_only,
+                                                   teleops=teleops, **kwargs),
+        # 'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
 
-    # if not fluent_special:
-    stream_map.update({
-        'sample-move': get_wild_transfer_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
-                                               initial_confs=initial_confs, teleops=teleops, **kwargs),
-    })
-
     init = []
-    # if transit:
-    #     init.append(('Move',))
     for name, conf in initial_confs.items():
         init.extend([
             ('Robot', name),
             ('Conf', name, conf),
+            ('InitialConf', name, conf),
             ('AtConf', name, conf),
             ('CanMove', name),
+            ('HandEmpty', name),
         ])
     init.extend(('Grounded', e) for e in grounded_elements)
     init.extend(('Joined', e1, e2) for e1, e2 in connectors)
@@ -251,7 +249,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
             # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
             stream_info = {
                 'sample-place': StreamInfo(PartialInputs(unique=True)),
-                'sample-move': StreamInfo(PartialInputs(unique=True)),
+                'sample-transfer': StreamInfo(PartialInputs(unique=True)),
                 'test-cfree': StreamInfo(negate=True),
             }
             # TODO: effort_weight=0 will lead to noplan found
@@ -311,7 +309,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
 ###############################################################
 
 def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
-                          partial_orders=[], collisions=True, bar_only=False, initial_confs={}, teleops=False, fluent_special=False, connectivity=True, **kwargs):
+                          collisions=True, bar_only=False, teleops=False, fluent_special=False, connectivity=True, **kwargs):
     """ fluent_special : True if we are running incremental + semantic attachment
     """
     gen_fn_from_robot = {}
@@ -335,43 +333,33 @@ def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, g
             return
 
         for command, in gen_fn_from_robot[robot](element, printed=printed):
+            attachments = command.trajectories[0].attachments
+            assert len(attachments) == 1
+            grasp = Grasp(element, attachments[0].grasp_pose)
             if not fluent_special:
                 q1 = Conf(robot, np.array(command.start_conf), element)
                 q2 = Conf(robot, np.array(command.end_conf), element)
                 outputs = [(q1, q2, command)]
             else:
-                outputs = [(command,)]
+                outputs = [(q1, command, q2, grasp)]
             yield outputs
-            #facts = []
-            #yield WildOutput(outputs, facts)
-            break # NOTE(caelan): only one output is needed but pddlstream now automatically does this
-            # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-            # facts.append(('AtConf', robot_name, initial_confs[robot_name]))
-            # cprint('print facts: {}'.format(command.colliding), 'yellow')
-            # yield (q1, q2, command),
-
+            break
     return wild_gen_fn
 
-def get_wild_transfer_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[],
-    collisions=True, precompute_collisions=False, bar_only=False, initial_confs={}, teleops=False, **kwargs):
-    # TODO initial confs
-    # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
+def get_holding_motion_gen_fn(robots, obstacles, element_from_index,
+    collisions=True, precompute_collisions=False, bar_only=False, teleops=False, **kwargs):
     if not collisions:
         precompute_collisions = False
 
-    def wild_gen_fn(robot_name, q1, q2, current_command, fluents=[]):
-        # transit_start_conf = INITIAL_CONF if not bar_only else EE_INITIAL_CONF
-        # assert norm(q1.positions - transit_start_conf) < 1e-8
-        init_q = initial_confs[robot_name]
-        assert norm(q2.positions - current_command.start_conf) < 1e-8
-
-        # print('-'*3)
+    def wild_gen_fn(robot_name, q1, q2, element, grasp, fluents=[]):
         robot = index_from_name(robots, robot_name)
-        attachments = current_command.trajectories[0].attachments
-        element = None
-        if len(attachments) > 0:
-            index_from_body = get_index_from_bodies(element_from_index)
-            element = index_from_body[attachments[0].child]
+        if bar_only:
+            tool_link = get_links(robot)[-1]
+        else:
+            tool_link = link_from_name(robot, TOOL_LINK_NAME)
+
+        assert grasp.element == element
+        attachments = [Attachment(robot, tool_link, grasp.gripper_from_object, element_from_index[element].body)]
 
         printed = set()
         for fact in fluents:
@@ -380,26 +368,25 @@ def get_wild_transfer_gen_fn(robots, obstacles, element_from_index, grounded_ele
                     printed.add(fact[1])
             else:
                 raise NotImplementedError(fact[0])
-        print('Transfer | fluent printed ({}): {}'.format(len(printed), sorted(printed)))
+        print('Holding motion | fluent printed ({}): {}'.format(len(printed), sorted(printed)))
 
         if not teleops:
             traj = compute_motion(robot, obstacles, element_from_index, printed,
-                           init_q.positions, q2.positions, attachments=attachments,
+                           q1.positions, q2.positions, attachments=attachments,
                            collisions=collisions, bar_only=bar_only)
                         #    restarts=3, iterations=100, smooth=100, max_distance=0.0)
             if not traj:
-                cprint('Transit sampling failed.', 'red')
-                # TODO what's the impact of return here?
+                # TODO can iterate too
+                cprint('Holding motion sampling failed.', 'red')
                 return
         else:
-            path = [init_q.positions, q2.positions]
+            path = [q1.positions, q2.positions]
             joints = joints_from_names(robot, CONTROL_JOINT_NAMES) if not bar_only else get_movable_joints(robot)
-            traj = MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit2place')
+            traj = MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transfer')
         command = Command([traj])
 
         if precompute_collisions:
-            elements_order = [e for e in element_from_index if (e != current_command.trajectories[0].element)]
-                # and (element_from_index[e].body not in obstacles)]
+            elements_order = [e for e in element_from_index if e != element]
             bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
             colliding = command_collision(command, bodies_order)
             for element2, unsafe in zip(elements_order, colliding):
@@ -407,22 +394,57 @@ def get_wild_transfer_gen_fn(robots, obstacles, element_from_index, grounded_ele
                     command.set_unsafe(element2)
                 else:
                     command.set_safe(element2)
-            # trajectories.append(command)
-            # if precompute_collisions:
-            #     prune_dominated(trajectories)
-            # if command not in trajectories:
-            #     continue
 
-        # cprint('Transfer E#{} | Attempts: {} | Trajectories: {} | Colliding: {}'.format(element, attempt, len(trajectories), \
-        #         sorted([len(t.colliding) for t in trajectories])[0:3]), 'green')
-
-        # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
-        # cprint('Transit E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
-        # cprint('transit facts: {}'.format(command.colliding), 'blue')
         outputs = [(command,)]
         yield outputs
 
     return wild_gen_fn
+
+def get_free_motion_gen_fn(robots, obstacles, element_from_index,
+    collisions=True, precompute_collisions=False, bar_only=False, teleops=False, **kwargs):
+    if not collisions:
+        precompute_collisions = False
+
+    def wild_gen_fn(robot_name, q1, q2, fluents=[]):
+        robot = index_from_name(robots, robot_name)
+        printed = set()
+        for fact in fluents:
+            if fact[0] == 'assembled':
+                printed.add(fact[1])
+            else:
+                raise NotImplementedError(fact[0])
+        print('Free motion | fluent printed ({}): {}'.format(len(printed), sorted(printed)))
+
+        if not teleops:
+            traj = compute_motion(robot, obstacles, element_from_index, printed,
+                           q1.positions, q2.positions, attachments=[],
+                           collisions=collisions, bar_only=bar_only)
+                        #    restarts=3, iterations=100, smooth=100, max_distance=0.0)
+            if not traj:
+                # TODO can iterate too
+                cprint('Free motion sampling failed.', 'red')
+                return
+        else:
+            path = [q1.positions, q2.positions]
+            joints = joints_from_names(robot, CONTROL_JOINT_NAMES) if not bar_only else get_movable_joints(robot)
+            traj = MotionTrajectory(robot, joints, path, attachments=[], element=None, tag='transit')
+        command = Command([traj])
+
+        if precompute_collisions:
+            bodies_order = get_element_body_in_goal_pose(element_from_index, printed)
+            colliding = command_collision(command, bodies_order)
+            for element2, unsafe in zip(list(printed), colliding):
+                if unsafe:
+                    command.set_unsafe(element2)
+                else:
+                    command.set_safe(element2)
+
+        outputs = [(command,)]
+        yield outputs
+
+    return wild_gen_fn
+
+
 
 def get_test_cfree():
     def test_fn(robot_name, traj, element):

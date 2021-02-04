@@ -28,14 +28,11 @@ class WorldPose(object):
                                   str(np.array(point_from_pose(self.value))))
 
 class Grasp(object):
-    def __init__(self, index, num, approach, attach, retreat):
-        self.index = index # bar vertex key
-        self.num = num # grasp id associated for a bar
-        self.approach = approach
-        self.attach = attach
-        self.retreat = retreat
+    def __init__(self, element, gripper_from_object):
+        self.element = element # bar vertex key
+        self.gripper_from_object = gripper_from_object
     def __repr__(self):
-        return '{}({},{})'.format(self.__class__.__name__, self.index, self.num)
+        return '{}(E{})'.format(self.__class__.__name__, self.element)
 
 ##################################################
 

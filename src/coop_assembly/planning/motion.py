@@ -229,7 +229,8 @@ def compute_motion(robot, fixed_obstacles, element_from_index,
         index_from_body = get_index_from_bodies(element_from_index)
         element = index_from_body[attachments[0].child]
 
-    return MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit')
+    return MotionTrajectory(robot, joints, path, attachments=attachments, element=element,
+        tag='transit' if len(attachments)==0 else 'transfer')
 
 def compute_motions(robot, fixed_obstacles, element_from_index, initial_conf, print_trajectories, **kwargs):
     # TODO: reoptimize for the sequence that have the smallest movements given this
