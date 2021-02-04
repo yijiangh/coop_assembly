@@ -8,14 +8,13 @@
     (Removed ?e)
 
     (PlaceAction ?r ?e ?t)
+    (MoveAction ?r ?q1 ?q2 ?t2)
     (Grounded ?e)
     (Connected ?e)
     (Joined ?e1 ?e2)
     (Traj ?r ?t)
 
-    (CollisionFree ?r ?t ?e)
-    (UnSafeTraj ?r ?t)
-
+    (CanMove ?r)
     (Conf ?r ?q)
     (AtConf ?r ?q)
     (AtStart ?q ?t)
@@ -32,18 +31,27 @@
                        (Assembled ?e)
                        ; (Stiff)
                        (Connected ?e)
-
-                       ; TODO: the following precondition will cause the following error:
-                       ;  line 51, in compile_fluents_as_attachments
-                       ;  if literal.predicate in predicate_map:
-                       ;  AttributeError: 'UniversalCondition' object has no attribute 'predicate'
-                    ;    (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
-
-                       ;; uncomment if not using fluent
-                    ;    (not (UnSafeTraj ?r ?t))
                        )
     :effect (and (Removed ?e)
                  (not (Assembled ?e))
+                 )
+  )
+
+  (:action move
+    :parameters (?r ?q1 ?q2 ?t2)
+    :precondition (and
+                        (Conf ?r ?q1)
+                        ; (AtConf ?r ?q1)
+                        (Conf ?r ?q2)
+                        (Traj ?r ?t2)
+                        (CanMove ?r)
+                        (MoveAction ?r ?q1 ?q2 ?t2)
+                        ;;; collision constraint handled by fluent
+                       )
+    :effect (and
+                ;  (not (AtConf ?r ?q1))
+                 (AtConf ?r ?q2)
+                 (not (CanMove ?r)) ; switch to avoid transit forever
                  )
   )
 
@@ -56,12 +64,4 @@
        )
    )
   )
-
-  (:derived (UnSafeTraj ?r ?t)
-   (exists (?e2) (and   (Element ?e2) (Traj ?r ?t) (Robot ?r)
-                        (Assembled ?e2)
-                        (not (CollisionFree ?r ?t ?e2))
-                  ))
-  )
-
 )

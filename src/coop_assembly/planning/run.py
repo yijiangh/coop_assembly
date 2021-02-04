@@ -241,7 +241,6 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
 # {complexity: 0, cost: 39, evaluations: 367, iterations: 1, length: 39, run_time: 25.769129037857056, solutions: 1, solved: True, timeout: False}
 # {'search_time': 4.095053434371948, 'num_evaluated': 40, 'min_remaining': 0, 'max_backtrack': 0, 'stiffness_failures': 0, 'place_failures': 0, 'transit_failures': 0, 'transfer_failures': 0}
 
-
 ##################################################
 
 def create_parser():

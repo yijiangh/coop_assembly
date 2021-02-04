@@ -14,7 +14,7 @@ except KeyError:
     cprint('No `PDDLSTREAM_PATH` found in the env variables, using pddlstream submodule', 'yellow')
     here = os.path.abspath(os.path.dirname(__file__))
     sys.path.extend([
-        os.path.join(here, '..', '..', '..', 'external', 'pddlstream'),
+       os.path.abspath(os.path.join(here, '..', '..', '..', 'external', 'pddlstream'))
     ])
 
 try:
@@ -157,11 +157,11 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
     }
 
     # if not fluent_special:
-    #     stream_map.update({
-    #         'sample-move': get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements,
-    #                                                partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
-    #                                                initial_confs=initial_confs, teleops=teleops, **kwargs),
-    #     })
+    stream_map.update({
+        'sample-move': get_wild_transfer_gen_fn(robots, obstacles, element_from_index, grounded_elements,
+                                               partial_orders=partial_orders, collisions=collisions, bar_only=bar_only,
+                                               initial_confs=initial_confs, teleops=teleops, **kwargs),
+    })
 
     init = []
     # if transit:
@@ -218,7 +218,6 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
     # planner = 'ff-ehc'
     # planner = 'ff-lazy-tiebreak' # Branching factor becomes large. Rely on preferred. Preferred should also be cheaper
     # planner = 'max-astar'
-
     # planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
     # planner = 'ff-lazy' | 'ff-wastar3'
 
@@ -252,7 +251,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
             # (we have an additional search step that initially "shares" outputs, but it doesn't do anything in our domain)
             stream_info = {
                 'sample-place': StreamInfo(PartialInputs(unique=True)),
-                # 'sample-move': StreamInfo(PartialInputs(unique=True)),
+                'sample-move': StreamInfo(PartialInputs(unique=True)),
                 'test-cfree': StreamInfo(negate=True),
             }
             # TODO: effort_weight=0 will lead to noplan found
@@ -331,7 +330,7 @@ def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, g
                     printed.add(fact[1])
             else:
                 raise NotImplementedError(fact[0])
-        print('E{} - fluent printed ({}): {}'.format(element, len(printed), sorted(printed)))
+        print('Place | E{} - fluent printed ({}): {}'.format(element, len(printed), sorted(printed)))
         if connectivity and not check_connected(connectors, grounded_elements, printed):
             return
 
@@ -353,10 +352,12 @@ def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, g
 
     return wild_gen_fn
 
-def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[], collisions=True, bar_only=False, \
-    initial_confs={}, teleops=False, **kwargs):
+def get_wild_transfer_gen_fn(robots, obstacles, element_from_index, grounded_elements, partial_orders=[],
+    collisions=True, precompute_collisions=False, bar_only=False, initial_confs={}, teleops=False, **kwargs):
     # TODO initial confs
     # https://github.com/caelan/pb-construction/blob/30b42e12c82de3ba4b117ffc380e58dd649c0ec5/extrusion/stripstream.py#L765
+    if not collisions:
+        precompute_collisions = False
 
     def wild_gen_fn(robot_name, q1, q2, current_command, fluents=[]):
         # transit_start_conf = INITIAL_CONF if not bar_only else EE_INITIAL_CONF
@@ -364,12 +365,25 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
         init_q = initial_confs[robot_name]
         assert norm(q2.positions - current_command.start_conf) < 1e-8
 
-        print('-'*3)
+        # print('-'*3)
         robot = index_from_name(robots, robot_name)
         attachments = current_command.trajectories[0].attachments
+        element = None
+        if len(attachments) > 0:
+            index_from_body = get_index_from_bodies(element_from_index)
+            element = index_from_body[attachments[0].child]
+
+        printed = set()
+        for fact in fluents:
+            if fact[0] == 'assembled':
+                if fact[1] != element:
+                    printed.add(fact[1])
+            else:
+                raise NotImplementedError(fact[0])
+        print('Transfer | fluent printed ({}): {}'.format(len(printed), sorted(printed)))
 
         if not teleops:
-            traj = compute_motion(robot, obstacles, element_from_index, [],
+            traj = compute_motion(robot, obstacles, element_from_index, printed,
                            init_q.positions, q2.positions, attachments=attachments,
                            collisions=collisions, bar_only=bar_only)
                         #    restarts=3, iterations=100, smooth=100, max_distance=0.0)
@@ -380,14 +394,10 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
         else:
             path = [init_q.positions, q2.positions]
             joints = joints_from_names(robot, CONTROL_JOINT_NAMES) if not bar_only else get_movable_joints(robot)
-            element=None
-            if len(attachments) > 0:
-                index_from_body = get_index_from_bodies(element_from_index)
-                element = index_from_body[attachments[0].child]
             traj = MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transit2place')
         command = Command([traj])
 
-        if collisions:
+        if precompute_collisions:
             elements_order = [e for e in element_from_index if (e != current_command.trajectories[0].element)]
                 # and (element_from_index[e].body not in obstacles)]
             bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
@@ -397,13 +407,21 @@ def get_wild_transit_gen_fn(robots, obstacles, element_from_index, grounded_elem
                     command.set_unsafe(element2)
                 else:
                     command.set_safe(element2)
+            # trajectories.append(command)
+            # if precompute_collisions:
+            #     prune_dominated(trajectories)
+            # if command not in trajectories:
+            #     continue
+
+        # cprint('Transfer E#{} | Attempts: {} | Trajectories: {} | Colliding: {}'.format(element, attempt, len(trajectories), \
+        #         sorted([len(t.colliding) for t in trajectories])[0:3]), 'green')
 
         # facts = [('Collision', command, e2) for e2 in command.colliding] if collisions else []
         # cprint('Transit E#{} | Colliding: {}'.format(traj.element, len(command.colliding)), 'green')
         # cprint('transit facts: {}'.format(command.colliding), 'blue')
         outputs = [(command,)]
-        facts = []
-        yield WildOutput(outputs, facts)
+        yield outputs
+
     return wild_gen_fn
 
 def get_test_cfree():
