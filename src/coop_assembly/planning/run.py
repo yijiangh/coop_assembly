@@ -102,14 +102,14 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         partial_orders = []
 
     if saved_plan is None:
+        checker, fem_element_from_bar_id = None, None
         if args.check_model:
             check_model(bar_struct, chosen_bars, debug=args.debug)
 
-        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug,
-            save_model=args.save_cm_model)
-        cprint('stiffness checker created.', 'green')
-
         if args.stiffness:
+            checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug,
+                save_model=args.save_cm_model)
+            cprint('stiffness checker created.', 'green')
             # check full structure
             evaluate_stiffness(bar_struct, list(bar_struct.nodes()), checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
 
@@ -159,15 +159,17 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
             notify('plan found!')
             if args.algorithm in STRIPSTREAM_ALGORITHM:
                 commands = []
-                place_actions = [action for action in reversed(plan) if action.name == 'place']
+                place_actions = [action for action in reversed(plan) if action.name == 'remove_element']
                 start_conf_id = 1 if args.algorithm == 'incremental_sa' else 2
                 for pc in place_actions:
-                    print_command = pc.args[-1]
+                    print(pc)
                     robot_name = pc.args[0]
+                    print_command = pc.args[2]
                     for action in plan:
-                        if action.name == 'move' and action.args[0] == robot_name and \
+                        if ('move_holding' == action.name or 'move_free' == action.name) and \
+                            action.args[0] == robot_name and \
                             norm(action.args[start_conf_id].positions-print_command.start_conf)<1e-8:
-                            commands.append(action.args[-1])
+                            commands.append(action.args[2])
                             break
                     commands.append(print_command)
                 trajectories = flatten_commands(commands)
@@ -175,23 +177,25 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 # regression plan is flattened already
                 trajectories = plan
 
-            extra_data = {}
-            elem_plan = recover_sequence(trajectories, element_from_index)
-            cprint('Computing stiffness history...', 'yellow')
-            stiffness_history = compute_plan_deformation(bar_struct, elem_plan, verbose=False)
-            # print('='*10)
-            extra_data = {
-                          'stiffness_history' : stiffness_history,
-                          'fem_element_from_bar_id' : { k : list(v) for k, v in fem_element_from_bar_id.items()},
-                          'planning_data' : data,
-                          }
-            if args.stiffness:
-                extra_data.update({
-                          'progression_sequence' : sequence,
-                          'progression_stiffness_history' : progression_stiffness_history,
-                })
-                # print(extra_data)
             if write:
+                extra_data = {}
+                elem_plan = recover_sequence(trajectories, element_from_index)
+                cprint('Computing stiffness history...', 'yellow')
+                stiffness_history = compute_plan_deformation(bar_struct, elem_plan, verbose=False)
+                if fem_element_from_bar_id is None:
+                    checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct)
+                extra_data = {
+                              'stiffness_history' : stiffness_history,
+                              'fem_element_from_bar_id' : { k : list(v) for k, v in fem_element_from_bar_id.items()},
+                              'planning_data' : data,
+                              }
+                if args.stiffness:
+                    extra_data.update({
+                              'progression_sequence' : sequence,
+                              'progression_stiffness_history' : progression_stiffness_history,
+                    })
+                    # print(extra_data)
+
                 suffix = ''
                 save_plan(Config(args), trajectories, save_link_names=[TOOL_LINK_NAME] if not args.bar_only else None,
                     element_from_index=element_from_index, bar_struct=bar_struct, suffix=suffix, extra_data=extra_data, overwrite=False)

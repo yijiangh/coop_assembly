@@ -29,7 +29,7 @@ except KeyError:
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused
-from pddlstream.language.constants import And, PDDLProblem, Equal
+from pddlstream.language.constants import And, PDDLProblem, Equal, print_plan
 from pddlstream.language.generator import from_test, from_gen_fn, from_fn, empty_gen
 from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput
 from pddlstream.language.function import FunctionInfo
@@ -291,6 +291,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
     # print_solution(solution)
     plan, _, facts = solution
     print('-'*10)
+    print_plan(plan)
     # if debug:
     #     # cprint('certified facts: ', 'yellow')
     #     # for fact in facts[0]:
@@ -336,9 +337,9 @@ def get_wild_place_gen_fn(robots, tool_from_ee, obstacles, element_from_index, g
             attachments = command.trajectories[0].attachments
             assert len(attachments) == 1
             grasp = Grasp(element, attachments[0].grasp_pose)
+            q1 = Conf(robot, np.array(command.start_conf), element)
+            q2 = Conf(robot, np.array(command.end_conf), element)
             if not fluent_special:
-                q1 = Conf(robot, np.array(command.start_conf), element)
-                q2 = Conf(robot, np.array(command.end_conf), element)
                 outputs = [(q1, q2, command)]
             else:
                 outputs = [(q1, command, q2, grasp)]

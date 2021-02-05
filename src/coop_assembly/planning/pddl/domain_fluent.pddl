@@ -6,6 +6,7 @@
     (Conf ?r ?q)
     (InitialConf ?r ?q)
     (Grasp ?e ?g)
+    (Holding ?e)
     ; (RemoveStartConf ?r ?q)
     ; (RemoveEndConf ?r ?q)
 
@@ -35,11 +36,16 @@
                        (Assembled ?e)
                        ; (Stiff)
                        ; (Connected ?e)
+                       (HandEmpty ?r)
                        )
     :effect (and (Removed ?e)
                  (not (Assembled ?e))
                  (not (HandEmpty ?r))
+                 (Holding ?e)
                  (CanMove ?r)
+                ;  (Grasp ?g)
+                ;  (Conf ?r ?q1)
+                ;  (Conf ?r ?q2)
                  )
   )
 
@@ -49,12 +55,12 @@
     :precondition (and
                        (InitialConf ?r ?q)
                        (AtConf ?r ?q)
-                       (Removed ?e)
+                       (not (HandEmpty ?r))
+                       (Holding ?e)
                        )
-    :effect (and (Removed ?e)
-                 (not (Assembled ?e))
-                 (HandEmpty ?r)
+    :effect (and (HandEmpty ?r)
                  (CanMove ?r)
+                 (not (Holding ?e))
                  )
   )
 
@@ -65,6 +71,8 @@
                        (AtConf ?r ?q1)
                        (InitialConf ?r ?q2)
                        (CanMove ?r)
+                       (Holding ?e)
+                       (not (HandEmpty ?r))
                        )
     :effect (and
                  (not (AtConf ?r ?q1))
@@ -99,4 +107,17 @@
 ;        )
 ;    )
 ;   )
+
+  (:derived (RemoveMovement ?r ?q1 ?t ?q2 ?e ?g)
+    (and (Grasp ?e ?g) (Conf ?r ?q1) (Conf ?r ?q2))
+  )
+
+  (:derived (HoldingMovement ?r ?q1 ?t ?q2 ?e ?g)
+    (and (Conf ?r ?q1) (Conf ?r ?q2))
+  )
+
+  (:derived (FreeMovement ?r ?q1 ?t ?q2)
+    (and (Conf ?r ?q1) (Conf ?r ?q2))
+  )
+
 )

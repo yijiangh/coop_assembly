@@ -339,10 +339,12 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
     # for element in element_from_index.values():
     #    set_color(element.body, (1, 0, 0, 0))
     chosen_seq = chosen_seq or list(range(len(element_from_index)))
-    printed_elements = []
+    printed_elements = set()
     print('Trajectories:', len(trajectories))
+    print('chosen_seq: ', chosen_seq)
     for i, trajectory in enumerate(trajectories):
-        # print(trajectory)
+        print('----')
+        print(trajectory)
         #wait_for_user()
         #set_color(element_bodies[element], (1, 0, 0, 1))
         last_point = None
@@ -350,6 +352,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
 
         bounding = None
         if len(printed_elements) in chosen_seq:
+            print('printed_elements: ', printed_elements)
             if printed_elements and 'tran' in trajectory.tag and element_from_index is not None:
                 node_points = []
                 for e in printed_elements:
@@ -380,7 +383,7 @@ def display_trajectories(trajectories, time_step=0.02, video=False, animate=True
         if bounding is not None:
             remove_body(bounding)
         if 'retreat' in trajectory.tag:
-            printed_elements.append(trajectory.element)
+            printed_elements.add(trajectory.element)
 
     # if video_saver is not None:
     #     video_saver.restore()

@@ -113,7 +113,7 @@ def get_bar_grasp_gen_fn(element_from_index, tool_pose=unit_pose(), reverse_gras
 
                 object_from_gripper = multiply(longitude_x, translate_along_x_axis, \
                     rotate_around_z, tool_pose)
-                yield Grasp(index, None, None, invert(object_from_gripper), None),
+                yield Grasp(index, invert(object_from_gripper)),
     return gen_fn
 
 ######################################
@@ -306,7 +306,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
     """Give the grasp and EE workspace poses, compute cartesian planning for pre-detach ~ detach ~ post-detach process.
     """
     body = element_from_index[index].body
-    pre_attach_poses = [multiply(bar_pose, invert(grasp.attach)) for bar_pose in pregrasp_poses]
+    pre_attach_poses = [multiply(bar_pose, invert(grasp.gripper_from_object)) for bar_pose in pregrasp_poses]
     attach_pose = pre_attach_poses[-1]
     pre_attach_pose = pre_attach_poses[0]
     post_attach_pose = multiply(attach_pose, (retreat_vector, unit_quat()))
