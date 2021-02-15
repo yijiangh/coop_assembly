@@ -89,14 +89,17 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
     elements_from_layer = defaultdict(set)
     if args.partial_ordering:
         partial_orders = []
+        # * order based
         # for v in bar_struct.nodes():
         #     elements_from_layer[bar_struct.node[v]['layer']].add(v)
         # partial_orders = compute_orders(elements_from_layer)
+        # * from a given sequence
         # pre_order = [36, 1, 0, 2, 37, 35, 38, 32, 30, 31, 7, 6, 25, 3, 4, 5, 33, 9, 27, \
-            # 26, 8, 12, 20, 23, 17, 34, 29, 11, 24, 10, 21, 22, 16, 28, 14, 19, 13, 15, 18]
-        # for i in range(len(pre_order)-1):
+        #     26, 8, 12, 20, 23, 17, 34, 29, 11, 24, 10, 21, 22, 16, 28, 14, 19, 13, 15, 18]
+        pre_order = [1,0,2,4,3,5]
+        for i in range(len(pre_order)-1):
             # 1 must be removed before 0
-            # partial_orders.append((pre_order[i], pre_order[i+1]))
+            partial_orders.append((pre_order[i], pre_order[i+1]))
         print('Partial orders: ', partial_orders)
     else:
         partial_orders = []
@@ -136,8 +139,10 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles,
                     element_from_index, grounded_elements, connectors,
                     partial_orders=partial_orders,
-                    collisions=args.collisions, bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
-                    debug=args.debug, teleops=args.teleops)
+                    collisions=args.collisions, motions=args.motions, stiffness=args.stiffness,
+                    teleops=args.teleops, lazy=args.lazy,
+                    bar_only=args.bar_only, algorithm=args.algorithm, costs=args.costs,
+                    debug=args.debug)
                 data = {}
             elif args.algorithm == 'regression':
                 with LockRenderer(not args.debug):
@@ -147,36 +152,19 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                         motions=args.motions, stiffness=args.stiffness, revisit=False,
                         lazy=args.lazy, bar_only=args.bar_only, partial_orders=partial_orders, chosen_bars=chosen_bars,
                         debug=args.debug, verbose=args.debug, teleops=args.teleops)
-                print(data)
+                print('data: ', data)
             else:
                 raise NotImplementedError('Algorithm |{}| not in {}'.format(args.algorithm, ALGORITHMS))
+
         if plan is None:
             cprint('No plan found.', 'red')
             notify('plan not found!')
             assert False, 'No plan found.'
         else:
-            cprint('plan found.', 'green')
+            cprint('Plan found!', 'green')
             notify('plan found!')
-            if args.algorithm in STRIPSTREAM_ALGORITHM:
-                commands = []
-                place_actions = [action for action in reversed(plan) if action.name == 'remove_element']
-                start_conf_id = 1 if args.algorithm == 'incremental_sa' else 2
-                for pc in place_actions:
-                    print(pc)
-                    robot_name = pc.args[0]
-                    print_command = pc.args[2]
-                    for action in plan:
-                        if ('move_holding' == action.name or 'move_free' == action.name) and \
-                            action.args[0] == robot_name and \
-                            norm(action.args[start_conf_id].positions-print_command.start_conf)<1e-8:
-                            commands.append(action.args[2])
-                            break
-                    commands.append(print_command)
-                trajectories = flatten_commands(commands)
-            else:
-                # regression plan is flattened already
-                trajectories = plan
-
+            trajectories = plan
+            print('Sequence: ', recover_sequence(trajectories, element_from_index))
             if write:
                 extra_data = {}
                 elem_plan = recover_sequence(trajectories, element_from_index)
@@ -211,7 +199,6 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 attachments = []
                 e_id = tdata['element']
                 for at_data in tdata['attachments']:
-                    # attachment = jsonpickle.decode(at_data)
                     attachment = Attachment.from_data(at_data,
                         parent=robot, child=element_from_index[e_id].body)
                     attachments.append(attachment)

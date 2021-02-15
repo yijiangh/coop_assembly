@@ -4,98 +4,98 @@
     (Robot ?r)
     (Element ?e)
     (Conf ?r ?q)
-    (InitialConf ?r ?q)
     (Grasp ?e ?g)
-    (Holding ?e)
+    ; (Holding ?e)
+
+    ; (InitialConf ?r ?q)
     ; (RemoveStartConf ?r ?q)
     ; (RemoveEndConf ?r ?q)
 
-    (RemoveMovement ?r ?q1 ?t ?q2 ?e ?g)
-    (HoldingMovement ?r ?q1 ?t2 ?q2 ?e ?g)
-    (FreeMovement ?r ?q1 ?t2 ?q2)
+    (RemoveMovement ?r ?t ?e ?g)
+    ; (HoldingMovement ?r ?q1 ?t2 ?q2 ?e ?g)
+    ; (FreeMovement ?r ?q1 ?t2 ?q2)
 
     (Assembled ?e)
     (Removed ?e)
-    (Grounded ?e)
-    (Connected ?e)
-    (Joined ?e1 ?e2)
-    (Order ?e1 ?e2)
+    ; (Grounded ?e)
+    ; (Connected ?e)
+    ; (Joined ?e1 ?e2)
+    ; (Order ?e1 ?e2)
 
-    (CanMove ?r)
-    (HandEmpty ?r)
-    (AtConf ?r ?q)
     (Assigned ?r ?e)
-    ; (Stiff)
+
+    ; (CanMove ?r)
+    ; (HandEmpty ?r)
+    ; (AtConf ?r ?q)
   )
 
   ; remove an element from the assembled structure
   (:action remove_element
-    :parameters (?r ?q1 ?t ?q2 ?e ?g)
+    ; :parameters (?r ?q1 ?t ?q2 ?e ?g)
+    :parameters (?r ?t ?e ?g)
     :precondition (and
-                       (RemoveMovement ?r ?q1 ?t ?q2 ?e ?g)
+                       (RemoveMovement ?r ?t ?e ?g)
                        (Assembled ?e)
                        ; (Stiff)
                        ; (Connected ?e)
-                       (HandEmpty ?r)
+                    ;    (HandEmpty ?r)
                     ;    (AtConf ?r ?q1)
                        )
     :effect (and (Removed ?e)
                  (not (Assembled ?e))
-                 (not (HandEmpty ?r))
-                 (Holding ?e)
-                 (CanMove ?r)
-                ;  (not (AtConf ?r ?q1))
-                ;  (AtConf ?r ?q2)
+                ;  (not (HandEmpty ?r))
+                ;  (Holding ?e)
+                ;  (CanMove ?r)
                  )
   )
 
-  ; release an element to the rack
-  (:action release_element
-    :parameters (?r ?q ?e ?g)
-    :precondition (and
-                       (InitialConf ?r ?q)
-                    ;    (AtConf ?r ?q)
-                       (not (HandEmpty ?r))
-                       (Holding ?e)
-                       )
-    :effect (and (HandEmpty ?r)
-                 (CanMove ?r)
-                 (not (Holding ?e))
-                 )
-  )
+;   ; release an element to the rack
+;   (:action release_element
+;     :parameters (?r ?q ?e ?g)
+;     :precondition (and
+;                        (InitialConf ?r ?q)
+;                     ;    (AtConf ?r ?q)
+;                        (not (HandEmpty ?r))
+;                        (Holding ?e)
+;                        )
+;     :effect (and (HandEmpty ?r)
+;                  (CanMove ?r)
+;                  (not (Holding ?e))
+;                  )
+;   )
 
-  (:action move_holding
-    :parameters (?r ?q1 ?t ?q2 ?e ?g)
-    :precondition (and
-                       (HoldingMovement ?r ?q1 ?t ?q2 ?e ?g)
-                       (AtConf ?r ?q1)
-                       (InitialConf ?r ?q2)
-                       (CanMove ?r)
-                       (Holding ?e)
-                       (not (HandEmpty ?r))
-                       )
-    :effect (and
-                 (not (AtConf ?r ?q1))
-                 (AtConf ?r ?q2)
-                 (not (CanMove ?r))
-                 )
-  )
+;   (:action move_holding
+;     :parameters (?r ?q1 ?t ?q2 ?e ?g)
+;     :precondition (and
+;                        (HoldingMovement ?r ?q1 ?t ?q2 ?e ?g)
+;                        (AtConf ?r ?q1)
+;                        (InitialConf ?r ?q2)
+;                        (CanMove ?r)
+;                        (Holding ?e)
+;                        (not (HandEmpty ?r))
+;                        )
+;     :effect (and
+;                  (not (AtConf ?r ?q1))
+;                  (AtConf ?r ?q2)
+;                  (not (CanMove ?r))
+;                  )
+;   )
 
-  (:action move_free
-    :parameters (?r ?q1 ?t ?q2)
-    :precondition (and
-                       (FreeMovement ?r ?q1 ?t ?q2)
-                       (AtConf ?r ?q1)
-                       (InitialConf ?r ?q1)
-                       (CanMove ?r)
-                       (HandEmpty ?r)
-                       )
-    :effect (and
-                 (not (AtConf ?r ?q1))
-                 (AtConf ?r ?q2)
-                 (not (CanMove ?r))
-                 )
-  )
+;   (:action move_free
+;     :parameters (?r ?q1 ?t ?q2)
+;     :precondition (and
+;                        (FreeMovement ?r ?q1 ?t ?q2)
+;                        (AtConf ?r ?q1)
+;                        (InitialConf ?r ?q1)
+;                        (CanMove ?r)
+;                        (HandEmpty ?r)
+;                        )
+;     :effect (and
+;                  (not (AtConf ?r ?q1))
+;                  (AtConf ?r ?q2)
+;                  (not (CanMove ?r))
+;                  )
+;   )
 
 ; Connected handled within the stream function
 ;   (:derived (Connected ?e2)

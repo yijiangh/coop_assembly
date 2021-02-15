@@ -92,7 +92,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
     visited = {final_printed: Node(None, None)}
 
     outgoing_from_element = outgoing_from_edges(partial_orders)
-    print(outgoing_from_element)
+    print('Outing edges: ', outgoing_from_element)
     def add_successors(printed, command):
         num_remaining = len(printed) - 1
         # assert 0 <= num_remaining
@@ -176,6 +176,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
         if next_printed in visited:
             continue
         if not check_connected(connectors, grounded_elements, next_printed):
+            cprint('Connectivity failed: {}'.format(sorted(next_printed)), 'red')
             continue
         if stiffness and not test_stiffness(bar_struct, next_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id):
             if verbose:
@@ -251,7 +252,6 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                     transit_failures += 1
                 else:
                     plan.insert(0, transit_traj)
-            # TODO: lazy
             if motions and lazy:
                 with WorldSaver():
                     plan = compute_motions(robot, obstacles, element_from_index, initial_conf, plan,
