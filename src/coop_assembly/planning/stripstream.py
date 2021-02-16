@@ -148,8 +148,8 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
         stream_pddl = read(get_file_path(__file__, 'pddl/stream_fluent.pddl'))
     constant_map = {}
 
-    print('grounded elements: ', grounded_elements)
-    print('connectors: ', connectors)
+    # print('grounded elements: ', grounded_elements)
+    # print('connectors: ', connectors)
 
     stream_map = {
         'sample-remove': get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from_index,
@@ -202,14 +202,14 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
 
 def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                      max_time=60*4, bar_only=False, algorithm='focused',
-                     debug=False, costs=False, teleops=False, lazy=False, motions=False, **kwargs):
+                     debug=False, costs=False, teleops=False, lazy=False, motions=False, collisions=True, **kwargs):
     fluent_special = algorithm == 'incremental_sa'
     if fluent_special:
         cprint('Using incremental + semantic attachment.', 'yellow')
 
     initial_confs = {i : Conf(robot, EE_INITIAL_CONF if bar_only else INITIAL_CONF) for i, robot in enumerate(robots)}
     pddlstream_problem = get_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
-                                        bar_only=bar_only, teleops=teleops, fluent_special=fluent_special, lazy=lazy, motions=motions,
+                                        bar_only=bar_only, teleops=teleops, fluent_special=fluent_special, lazy=lazy, motions=motions, collisions=collisions,
                                         initial_confs=initial_confs, **kwargs)
 
     if debug:
@@ -302,18 +302,8 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
     if not is_plan(plan):
         return None
 
-    # * solve for transfer/transit trajectories conditioned on the sequence
-    # is the irrelevant predicated discarded at the end?
-    if motions and lazy:
-        assert not bar_only and len(robots) == 1
-        robot = robots[0]
-        with WorldSaver():
-            plan = compute_motions(robot, obstacles, element_from_index, initial_confs[robot].positions, plan,
-                                   collisions=collisions, max_time=max_time - elapsed_time(start_time),
-                                   bar_only=bar_only, debug=debug)
-
-    commands = []
     place_actions = [action for action in reversed(plan) if action.name == 'remove_element']
+    commands = []
     # start_conf_id = 1 if args.algorithm == 'incremental_sa' else 2
     for pc in place_actions:
         # print(pc)
@@ -327,6 +317,19 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
         #         break
         commands.append(print_command)
     trajectories = flatten_commands(commands)
+
+    # * solve for transfer/transit trajectories conditioned on the sequence
+    # is the irrelevant predicated discarded at the end?
+    with LockRenderer(lock=not debug):
+        if motions and lazy:
+            assert not bar_only and len(robots) == 1
+            robot = robots[0]
+            with WorldSaver():
+                trajectories = compute_motions(robot, obstacles, element_from_index, initial_confs[0].positions, trajectories,
+                                       collisions=collisions, max_time=INF,
+                                       bar_only=bar_only, debug=debug)
+
+
     return trajectories
 
 ###############################################################
