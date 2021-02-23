@@ -27,14 +27,19 @@ except KeyError:
     # Inside PDDLStream, it will look for 'PYPLANNERS_PATH'
     os.environ['PYPLANNERS_PATH'] = pyplanner_path
 
+import pddlstream
+print(pddlstream.__file__)
+import strips # pyplanners
+print(strips.__file__)
+
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.algorithms.focused import solve_focused
 from pddlstream.language.constants import And, PDDLProblem, Equal, print_plan, is_plan
 from pddlstream.language.generator import from_test, from_gen_fn, from_fn, empty_gen
-from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput
+from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput, DEBUG
 from pddlstream.language.function import FunctionInfo
-from pddlstream.utils import read, get_file_path, inclusive_range
+from pddlstream.utils import read, get_file_path, inclusive_range, randomize
 from pddlstream.language.temporal import compute_duration, get_end
 from pddlstream.language.conversion import obj_from_pddl
 
@@ -117,19 +122,27 @@ def get_order_fn(element_from_index):
         height_from_action = {}
         for action in actions:
             name, args = parse_action(action.fd_action.name)
+            args = [obj_from_pddl(arg).value for arg in args]
             height = 0
             if name == 'place':
-                args = [obj_from_pddl(arg).value for arg in args]
                 _, index, _ = args
                 # element = element_from_index[index]
                 # height = get_height(element)
                 height = compute_z_distance(element_from_index, index)
+            elif name == 'remove_element':
+                _, _, index, _ = args
+                height = compute_z_distance(element_from_index, index)
+            else:
+                # TODO: pass if height is irrelevant
+                raise NotImplementedError(name)
             height_from_action[action] = height
-        return sorted(actions, key=height_from_action.__getitem__, reverse=True)
+        actions = sorted(actions, key=height_from_action.__getitem__, reverse=True)
+        #actions = randomize(actions)
+        return actions
     return order_fn##################################################
 
 def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, grounded_elements, connectors, partial_orders=[],
-                   printed=set(), removed=set(), bar_only=False, teleops=False, fluent_special=False, initial_confs={}, **kwargs):
+                   printed=set(), removed=set(), bar_only=False, teleops=False, fluent_special=False, initial_confs={}, order=False, debug=False, **kwargs):
     """ special_fluent: True if using incremental + semantic attachment (fluents)
     """
     # TODO update removed & printed
@@ -165,6 +178,8 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
         # 'test-cfree': from_test(get_test_cfree()),
         # 'test-stiffness': from_test(test_stiffness),
     }
+    if debug:
+        stream_map = DEBUG
 
     init = []
     for name, conf in named_initial_confs.items():
@@ -179,7 +194,8 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
     # init.extend(('Grounded', e) for e in grounded_elements)
     # init.extend(('Joined', e1, e2) for e1, e2 in connectors)
     # init.extend(('Joined', e2, e1) for e1, e2 in connectors)
-    # init.extend(('Order',) + tup for tup in partial_orders)
+    if order:
+        init.extend(('Order',) + tup for tup in partial_orders)
 
     for e in remaining:
         init.extend([
@@ -203,7 +219,7 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
 def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                      max_time=60*4, bar_only=False, algorithm='focused',
                      debug=False, costs=False, teleops=False, lazy=False, motions=False, collisions=True, **kwargs):
-    fluent_special = algorithm == 'incremental_sa'
+    fluent_special = (algorithm in ['incremental_sa']) # focused
     if fluent_special:
         cprint('Using incremental + semantic attachment.', 'yellow')
 
@@ -239,14 +255,12 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
         elif algorithm == 'incremental_sa':
             # TODO: log new best heuristic value
             discrete_planner = {
-                'search': 'eager',
-                #'search': 'lazy',
+                'search': 'eager', # eager | lazy
                 'evaluator': 'greedy',
-                #'heuristic': 'goal',
-                'heuristic': 'ff',
+                'heuristic': 'goal', # goal | add | ff
                 #'heuristic': ['ff', get_bias_fn(element_from_index)],
-                #'successors': 'all',
-                'successors': get_order_fn(element_from_index), # TODO: confirm that this is working correctly
+                'successors': 'random', # all | random
+                #'successors': get_order_fn(element_from_index), # TODO: confirm that this is working correctly
             }
             solution = solve_incremental(pddlstream_problem, max_time=600,  planner=discrete_planner,
                                          success_cost=success_cost, unit_costs=not costs,
@@ -336,7 +350,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
 
 def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
                           bar_only=False, teleops=False, fluent_special=False,
-                          connectivity=True, collisions=True, motions=True, stiffness=True, lazy=False,
+                          connectivity=True, collisions=True, motions=True, stiffness=False, lazy=False, ordering=True, debug=False,
                           initial_confs={}, partial_orders=[], **kwargs):
     """ fluent_special : True if we are running incremental + semantic attachment
     """
@@ -345,7 +359,7 @@ def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from
     for robot in robots:
         # TODO: not need precompute_collisions when running incremental + semantic attachment
         # but just do it for now
-        gen_fn_from_robot[robot] = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False, \
+        gen_fn_from_robot[robot] = get_place_gen_fn(robot, tool_from_ee, element_from_index, obstacles, verbose=False,
             precompute_collisions=precompute_collisions, collisions=collisions, bar_only=bar_only, teleops=teleops, **kwargs)
     outgoing_from_element = outgoing_from_edges(partial_orders)
 
@@ -367,19 +381,26 @@ def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from
         print('---')
         print('Remove E{} - fluent printed ({}): {}'.format(element, len(next_printed), sorted(next_printed)))
 
+        # * partial ordering
+        if ordering and (outgoing_from_element[element] & next_printed):
+            # outgoing elements must be removed BEFORE element
+            cprint('Ordering fails.', 'red')
+            return
+
         # * connectivity
         if connectivity and not check_connected(connectors, grounded_elements, next_printed):
             cprint('Connectivity fails.', 'red')
             return
 
-        # * partial ordering
-        if outgoing_from_element[element] & next_printed:
-            # outgoing elements must be removed BEFORE element
+        # * stiffness
+        if stiffness and not check_connected(connectors, grounded_elements, printed): # TODO: stiffness
             return
 
-        # * stiffness
-        # if connectivity and not check_connected(connectors, grounded_elements, printed):
-        #     return
+        if debug:
+            num_outputs = 2 if fluent_special else 3
+            outputs = [num_outputs*(None,)]
+            yield outputs # For debugging
+            return
 
         for command, in gen_fn_from_robot[robot](element, printed=next_printed):
             attachments = command.trajectories[0].attachments
@@ -430,6 +451,9 @@ def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from
 
             yield outputs
             break
+        else:
+            cprint('Place motion sampling failed.', 'red')
+
     return wild_gen_fn
 
 #################################

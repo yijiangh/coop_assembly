@@ -20,7 +20,7 @@
     ; (Grounded ?e)
     ; (Connected ?e)
     ; (Joined ?e1 ?e2)
-    ; (Order ?e1 ?e2)
+    (Order ?e1 ?e2) ; TODO: AttributeError: 'UniversalCondition' object has no attribute 'predicate'
 
     (Assigned ?r ?e)
 
@@ -36,6 +36,7 @@
     :precondition (and
                        (RemoveMovement ?r ?t ?e ?g)
                        (Assembled ?e)
+                       (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
                        ; (Stiff)
                        ; (Connected ?e)
                     ;    (HandEmpty ?r)
