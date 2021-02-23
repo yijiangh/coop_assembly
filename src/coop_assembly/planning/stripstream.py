@@ -114,6 +114,7 @@ def get_bias_fn(element_from_index):
 
 def get_order_fn(element_from_index):
     # TODO: seems to get stuck into deadends due to connectivity
+    # TODO: use available partial orders
     #heuristic_fn = get_heuristic_fn(robot=None, problem=???, heuristic='z')
 
     def order_fn(state, goal, operators):
@@ -137,12 +138,13 @@ def get_order_fn(element_from_index):
                 raise NotImplementedError(name)
             height_from_action[action] = height
         actions = sorted(actions, key=height_from_action.__getitem__, reverse=True)
+        #actions = reversed(actions)
         #actions = randomize(actions)
         return actions
     return order_fn##################################################
 
 def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, grounded_elements, connectors, partial_orders=[],
-                   printed=set(), removed=set(), bar_only=False, teleops=False, fluent_special=False, initial_confs={}, order=False, debug=False, **kwargs):
+                   printed=set(), removed=set(), bar_only=False, teleops=False, fluent_special=False, initial_confs={}, order=True, debug=False, **kwargs):
     """ special_fluent: True if using incremental + semantic attachment (fluents)
     """
     # TODO update removed & printed
@@ -259,7 +261,7 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
                 'evaluator': 'greedy',
                 'heuristic': 'goal', # goal | add | ff
                 #'heuristic': ['ff', get_bias_fn(element_from_index)],
-                'successors': 'random', # all | random
+                'successors': 'all', # all | random
                 #'successors': get_order_fn(element_from_index), # TODO: confirm that this is working correctly
             }
             solution = solve_incremental(pddlstream_problem, max_time=600,  planner=discrete_planner,
@@ -374,11 +376,14 @@ def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from
         next_printed = set()
         for fact in fluents:
             if fact[0] == 'assembled':
-                if fact[1] != element:
-                    next_printed.add(fact[1])
+                #if fact[1] != element:
+                next_printed.add(fact[1])
             else:
                 raise NotImplementedError(fact[0])
+
         print('---')
+        assert element in next_printed
+        next_printed = next_printed - {element}
         print('Remove E{} - fluent printed ({}): {}'.format(element, len(next_printed), sorted(next_printed)))
 
         # * partial ordering

@@ -38,7 +38,7 @@
                        (Assembled ?e)
                        (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
                        ; (Stiff)
-                       ; (Connected ?e)
+                       ; (Connected ?e) ; TODO: connected
                     ;    (HandEmpty ?r)
                     ;    (AtConf ?r ?q1)
                        )

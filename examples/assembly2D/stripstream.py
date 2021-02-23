@@ -79,11 +79,10 @@ def index_from_name(robots, name):
 def get_bias_fn(element_from_index):
     def bias_fn(state, goal, operators):
         assembled = {obj_from_pddl(atom.args[0]).value for atom in state.atoms if atom.predicate == 'assembled'}
-        height = 0
-        for index in assembled:
-            # element = element_from_index[index]
-            height = max(height, compute_z_distance(element_from_index, index))
-        return height
+        heights = [compute_z_distance(element_from_index, index) for index in assembled]
+        #return max(heights)
+        #return np.average(heights)
+        return sum(heights)
     return bias_fn
 
 def get_order_fn(element_from_index):
@@ -103,6 +102,9 @@ def get_order_fn(element_from_index):
                 # element = element_from_index[index]
                 # height = get_height(element)
                 height = compute_z_distance(element_from_index, index)
+            else:
+                # TODO: pass if height is irrelevant
+                raise NotImplementedError(name)
             height_from_action[action] = height
         return sorted(actions, key=height_from_action.__getitem__, reverse=True)
     return order_fn
