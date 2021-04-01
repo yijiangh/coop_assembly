@@ -43,6 +43,8 @@ BOTTOM_BUFFER = 0.03
 # * IT Hydra
 # BOTTOM_BUFFER = 0.06
 
+# BASE_YAW = 0
+
 # * SP Arch
 BASE_YAW = np.pi
 # * IT Arch

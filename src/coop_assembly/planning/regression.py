@@ -33,7 +33,8 @@ from .heuristics import get_heuristic_fn
 from .parsing import unpack_structure
 from .stiffness import create_stiffness_checker, test_stiffness
 
-PAUSE_UPON_BT = 0
+WATCH_VIOLATION = 0
+PAUSE_UPON_BT = 1
 MAX_REVISIT = 5
 
 Node = namedtuple('Node', ['action', 'state'])
@@ -155,7 +156,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
             if PAUSE_UPON_BT:
                 remove_all_debug()
                 set_renderer(enable=True)
-                color_structure(element_from_index, printed, next_element=element, built_alpha=0.6)
+                color_structure(element_from_index, printed, next_element=element, built_alpha=1.0, remaining_alpha=0.1)
                 label_elements({k : element_from_index[k] for k in list(printed | {element})})
                 # print('Blues are the remaining ones, green is the current one, blacks are the already removed ones.')
                 cprint('BT increased. Remaining: {} | place_failures {}, transit_failures {}, transfer_failures {}, stiffness_failures {}'.format(
@@ -195,7 +196,19 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
                 cprint('<'*5, 'red')
                 cprint('Place planning failure.', 'red')
             place_failures += 1
-            continue
+            if not WATCH_VIOLATION:
+                continue
+            else:
+                remove_all_debug()
+                set_renderer(enable=True)
+                color_structure(element_from_index, printed, next_element=element, built_alpha=1.0, remaining_alpha=0.1)
+                label_elements({k : element_from_index[k] for k in list(next_printed)})
+                # print('Blues are the remaining ones, green is the current one, blacks are the already removed ones.')
+                cprint('Collision Constraint violated. Remaining: {} | place_failures {}, transit_failures {}, transfer_failures {}, stiffness_failures {}'.format(
+                    list(next_printed), place_failures, transit_failures, transfer_failures, stiffness_failures), 'cyan')
+                # wait_for_duration(5)
+                wait_if_gui()
+                set_renderer(enable=False)
 
         # TODO: use pick conf
         # transit_start_conf = command.end_conf
