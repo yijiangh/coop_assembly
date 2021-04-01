@@ -97,6 +97,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         # pre_order = [36, 1, 0, 2, 37, 35, 38, 32, 30, 31, 7, 6, 25, 3, 4, 5, 33, 9, 27, \
         #     26, 8, 12, 20, 23, 17, 34, 29, 11, 24, 10, 21, 22, 16, 28, 14, 19, 13, 15, 18]
         pre_order = [1,0,2,4,3,5]
+        print('Total order:', pre_order)
         for i in range(len(pre_order)-1):
             # 1 must be removed before 0
             partial_orders.append((pre_order[i], pre_order[i+1]))

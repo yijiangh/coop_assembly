@@ -42,8 +42,9 @@ def load_world(use_floor=True, built_plate_z=0.0, viewer=False):
                 # obstacles.append(build_platform)
         if INCLUDE_ENV_COLLISION_OBJS:
             for cm in WS_MESH_PATH:
-                env_obj = create_obj(coop_assembly.get_data(cm), color=GROUND_COLOR)
-                obstacles.append(env_obj)
+                if False: # TODO: pybullet.error: createCollisionShape failed
+                    env_obj = create_obj(coop_assembly.get_data(cm), color=GROUND_COLOR)
+                    obstacles.append(env_obj)
     return obstacles, robot
 
 ##################################################
