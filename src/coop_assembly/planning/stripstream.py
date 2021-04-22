@@ -144,7 +144,7 @@ def get_order_fn(element_from_index):
     return order_fn##################################################
 
 def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, grounded_elements, connectors, partial_orders=[],
-                   printed=set(), removed=set(), bar_only=False, teleops=False, fluent_special=False, initial_confs={}, order=True, debug=False, **kwargs):
+                   printed=set(), removed=set(), bar_only=False, teleops=False, use_fluent=False, initial_confs={}, order=True, debug=False, **kwargs):
     """ special_fluent: True if using incremental + semantic attachment (fluents)
     """
     # TODO update removed & printed
@@ -155,7 +155,7 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
 
     named_initial_confs = {ROBOT_TEMPLATE.format(r): conf for r, conf in initial_confs.items()}
 
-    if not fluent_special:
+    if not use_fluent:
         domain_pddl = read(get_file_path(__file__, 'pddl/domain.pddl'))
         stream_pddl = read(get_file_path(__file__, 'pddl/stream.pddl'))
     else:
@@ -170,7 +170,7 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
         'sample-remove': get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from_index,
                                               grounded_elements, connectors,
                                               bar_only=bar_only, teleops=teleops, partial_orders=partial_orders,
-                                              fluent_special=fluent_special, initial_confs=named_initial_confs, **kwargs),
+                                              use_fluent=use_fluent, initial_confs=named_initial_confs, **kwargs),
         # 'sample-holding-motion': get_holding_motion_gen_fn(robots, obstacles, element_from_index,
         #                                            collisions=collisions, bar_only=bar_only,
         #                                            teleops=teleops, **kwargs),
@@ -221,13 +221,13 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
 def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders={},
                      max_time=60*4, bar_only=False, algorithm='focused',
                      debug=False, costs=False, teleops=False, lazy=False, motions=False, collisions=True, **kwargs):
-    fluent_special = (algorithm in ['incremental_sa']) # focused
-    if fluent_special:
+    use_fluent = (algorithm in ['incremental_sa']) # focused
+    if use_fluent:
         cprint('Using incremental + semantic attachment.', 'yellow')
 
     initial_confs = {i : Conf(robot, EE_INITIAL_CONF if bar_only else INITIAL_CONF) for i, robot in enumerate(robots)}
     pddlstream_problem = get_pddlstream(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors, partial_orders=partial_orders,
-                                        bar_only=bar_only, teleops=teleops, fluent_special=fluent_special, lazy=lazy, motions=motions, collisions=collisions,
+                                        bar_only=bar_only, teleops=teleops, use_fluent=use_fluent, lazy=lazy, motions=motions, collisions=collisions,
                                         initial_confs=initial_confs, **kwargs)
 
     if debug:
@@ -318,19 +318,19 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
     if not is_plan(plan):
         return None
 
+    print('='*10)
     place_actions = [action for action in reversed(plan) if action.name == 'remove_element']
     commands = []
     # start_conf_id = 1 if args.algorithm == 'incremental_sa' else 2
     for pc in place_actions:
-        # print(pc)
-        # robot_name = pc.args[0]
+        print(pc)
+        # :parameters (?r ?t ?e ?g)
         print_command = pc.args[1]
-        # for action in plan:
-        #     if ('move_holding' == action.name or 'move_free' == action.name) and \
-        #         action.args[0] == robot_name and \
-        #         norm(action.args[start_conf_id].positions-print_command.start_conf)<1e-8:
-        #         commands.append(action.args[2])
-        #         break
+        # # TODO investigate why sometimes command = str
+        #  3) remove_element r0 c[m(#J7,#pt82,E0,transfer),m(#J7,#pt7,E0,place_approach),m(#J7,#pt9,E0,place_retreat),m(#J7,#pt78,ENone,transit)] 0 Grasp(E0)
+        #  4) remove_element r0 ~ 2 ~
+        # if not isinstance(print_command, Command):
+        #     continue
         commands.append(print_command)
     trajectories = flatten_commands(commands)
 
@@ -351,12 +351,12 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
 ###############################################################
 
 def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from_index, grounded_elements, connectors,
-                          bar_only=False, teleops=False, fluent_special=False,
+                          bar_only=False, teleops=False, use_fluent=False,
                           connectivity=True, collisions=True, motions=True, stiffness=False, lazy=False, ordering=True, debug=False,
                           initial_confs={}, partial_orders=[], **kwargs):
-    """ fluent_special : True if we are running incremental + semantic attachment
+    """ use_fluent : True if we are running incremental + semantic attachment
     """
-    precompute_collisions = not fluent_special
+    precompute_collisions = not use_fluent
     gen_fn_from_robot = {}
     for robot in robots:
         # TODO: not need precompute_collisions when running incremental + semantic attachment
@@ -368,10 +368,6 @@ def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from
     def wild_gen_fn(robot_name, element, fluents=[]):
         robot = index_from_name(robots, robot_name)
         initial_conf = initial_confs[robot_name]
-        # if bar_only:
-        #     tool_link = get_links(robot)[-1]
-        # else:
-        #     tool_link = link_from_name(robot, TOOL_LINK_NAME)
 
         next_printed = set()
         for fact in fluents:
@@ -397,12 +393,13 @@ def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from
             cprint('Connectivity fails.', 'red')
             return
 
-        # * stiffness
-        if stiffness and not check_connected(connectors, grounded_elements, printed): # TODO: stiffness
-            return
+        # # * stiffness
+        # if stiffness and not check_connected(connectors, grounded_elements, next_printed):
+        #     # TODO: stiffness
+        #     return
 
         if debug:
-            num_outputs = 2 if fluent_special else 3
+            num_outputs = 2 if use_fluent else 3
             outputs = [num_outputs*(None,)]
             yield outputs # For debugging
             return
@@ -448,7 +445,7 @@ def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from
             #         else:
             #             command.set_safe(element2)
 
-            if not fluent_special:
+            if not use_fluent:
                 outputs = [(q1, q2, command)]
             else:
                 # outputs = [(q1, command, q2, grasp)]
@@ -460,115 +457,3 @@ def get_wild_remove_element_gen_fn(robots, tool_from_ee, obstacles, element_from
             cprint('Place motion sampling failed.', 'red')
 
     return wild_gen_fn
-
-#################################
-
-# def get_holding_motion_gen_fn(robots, obstacles, element_from_index,
-#     collisions=True, precompute_collisions=False, bar_only=False, teleops=False, **kwargs):
-#     if not collisions:
-#         precompute_collisions = False
-
-#     def wild_gen_fn(robot_name, q1, q2, element, grasp, fluents=[]):
-#         robot = index_from_name(robots, robot_name)
-#         if bar_only:
-#             tool_link = get_links(robot)[-1]
-#         else:
-#             tool_link = link_from_name(robot, TOOL_LINK_NAME)
-
-#         assert grasp.element == element
-#         attachments = [Attachment(robot, tool_link, grasp.gripper_from_object, element_from_index[element].body)]
-
-#         printed = set()
-#         for fact in fluents:
-#             if fact[0] == 'assembled':
-#                 if fact[1] != element:
-#                     printed.add(fact[1])
-#             else:
-#                 raise NotImplementedError(fact[0])
-#         print('Holding motion | fluent printed ({}): {}'.format(len(printed), sorted(printed)))
-
-#         if not teleops:
-#             traj = compute_motion(robot, obstacles, element_from_index, printed,
-#                            q1.positions, q2.positions, attachments=attachments,
-#                            collisions=collisions, bar_only=bar_only)
-#                         #    restarts=3, iterations=100, smooth=100, max_distance=0.0)
-#             if not traj:
-#                 # TODO can iterate too
-#                 cprint('Holding motion sampling failed.', 'red')
-#                 return
-#         else:
-#             path = [q1.positions, q2.positions]
-#             joints = joints_from_names(robot, CONTROL_JOINT_NAMES) if not bar_only else get_movable_joints(robot)
-#             traj = MotionTrajectory(robot, joints, path, attachments=attachments, element=element, tag='transfer')
-#         command = Command([traj])
-
-#         if precompute_collisions:
-#             elements_order = [e for e in element_from_index if e != element]
-#             bodies_order = get_element_body_in_goal_pose(element_from_index, elements_order)
-#             colliding = command_collision(command, bodies_order)
-#             for element2, unsafe in zip(elements_order, colliding):
-#                 if unsafe:
-#                     command.set_unsafe(element2)
-#                 else:
-#                     command.set_safe(element2)
-
-#         outputs = [(command,)]
-#         yield outputs
-
-#     return wild_gen_fn
-
-# def get_free_motion_gen_fn(robots, obstacles, element_from_index,
-#     collisions=True, precompute_collisions=False, bar_only=False, teleops=False, **kwargs):
-#     if not collisions:
-#         precompute_collisions = False
-
-#     def wild_gen_fn(robot_name, q1, q2, fluents=[]):
-#         robot = index_from_name(robots, robot_name)
-#         printed = set()
-#         for fact in fluents:
-#             if fact[0] == 'assembled':
-#                 printed.add(fact[1])
-#             else:
-#                 raise NotImplementedError(fact[0])
-#         print('Free motion | fluent printed ({}): {}'.format(len(printed), sorted(printed)))
-
-#         if not teleops:
-#             traj = compute_motion(robot, obstacles, element_from_index, printed,
-#                            q1.positions, q2.positions, attachments=[],
-#                            collisions=collisions, bar_only=bar_only)
-#                         #    restarts=3, iterations=100, smooth=100, max_distance=0.0)
-#             if not traj:
-#                 # TODO can iterate too
-#                 cprint('Free motion sampling failed.', 'red')
-#                 return
-#         else:
-#             path = [q1.positions, q2.positions]
-#             joints = joints_from_names(robot, CONTROL_JOINT_NAMES) if not bar_only else get_movable_joints(robot)
-#             traj = MotionTrajectory(robot, joints, path, attachments=[], element=None, tag='transit')
-#         command = Command([traj])
-
-#         if precompute_collisions:
-#             bodies_order = get_element_body_in_goal_pose(element_from_index, printed)
-#             colliding = command_collision(command, bodies_order)
-#             for element2, unsafe in zip(list(printed), colliding):
-#                 if unsafe:
-#                     command.set_unsafe(element2)
-#                 else:
-#                     command.set_safe(element2)
-
-#         outputs = [(command,)]
-#         yield outputs
-
-#     return wild_gen_fn
-
-# def get_test_cfree():
-#     def test_fn(robot_name, traj, element):
-#         # return True if no collision detected
-#         return element not in traj.colliding
-#     return test_fn
-
-# def test_stiffness(fluents=[]):
-#     assert all(fact[0] == 'printed' for fact in fluents)
-#     # TODO: to use the non-skeleton focused algorithm, need to remove the negative axiom upon success
-#     # elements = {fact[1] for fact in fluents}
-#     return True

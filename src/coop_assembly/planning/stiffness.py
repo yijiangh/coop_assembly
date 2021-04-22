@@ -192,30 +192,29 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False):
         model_data = model.to_data()
         model_data['fem_element_from_bar_id'] = {bar : list(fem_es) for bar, fem_es in fem_element_from_bar_id.items()}
         with open(model_path, 'w') as f:
-            json.dump(model_data, f, indent=1)
+            json.dump(model_data, f, indent=None)
         cprint('Conmech model saved to: {}'.format(model_path), 'green')
 
-    if debug and has_gui():
-        h = []
-        with LockRenderer(False):
-            # for n in cm_nodes:
-            #     draw_point(n.point, size=0.002, color=GREEN if n.is_grounded else BLACK)
-            for e_id, elem_ids in fem_element_from_bar_id.items():
-                print('E#{}: {}'.format(e_id, elem_ids))
-                for elem_id in elem_ids:
-                    e = cm_elements[elem_id]
-                    node_inds = e.end_node_inds
-                    if 'bar' in e.elem_tag:
-                        th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=(random.random(), random.random(), random.random(), 1), width=3)
-                    elif 'connector' in e.elem_tag:
-                        th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
-                    h.append(th)
-                # input()
-            for s in supports:
-                ph = draw_point(cm_nodes[s.node_ind].point, size=0.02, color=RED)
-                h.append(ph)
-        wait_if_gui()
-        remove_handles(h)
+    # if debug and has_gui():
+    #     h = []
+    #     with LockRenderer():
+    #         # for n in cm_nodes:
+    #         #     draw_point(n.point, size=0.002, color=GREEN if n.is_grounded else BLACK)
+    #         for e_id, elem_ids in fem_element_from_bar_id.items():
+    #             print('E#{}: {}'.format(e_id, elem_ids))
+    #             for elem_id in elem_ids:
+    #                 e = cm_elements[elem_id]
+    #                 node_inds = e.end_node_inds
+    #                 if 'bar' in e.elem_tag:
+    #                     th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=(random.random(), random.random(), random.random(), 1), width=3)
+    #                 elif 'connector' in e.elem_tag:
+    #                     th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
+    #                 h.append(th)
+    #         for s in supports:
+    #             ph = draw_point(cm_nodes[s.node_ind].point, size=0.02, color=RED)
+    #             h.append(ph)
+    #     wait_if_gui()
+    #     remove_handles(h)
 
     return model, fem_element_from_bar_id
 

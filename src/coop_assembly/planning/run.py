@@ -58,13 +58,17 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
     #
     bar_struct.generate_grounded_connection()
 
-    fixed_obstacles, robot = load_world(use_floor=True, built_plate_z=BUILD_PLATE_CENTER[2])
-    tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
-    # end effector robot
-    ee_mesh_path = get_gripper_mesh_path()
-    # TODO offer option to turn off end effector collision by setting collision=False
-    collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
-    end_effector = create_flying_body(SE3, collision_id, visual_id)
+    if not args.bar_only:
+        fixed_obstacles, robot = load_world(use_floor=True, built_plate_z=BUILD_PLATE_CENTER[2])
+        tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
+    else:
+        fixed_obstacles = []
+        # end effector robot
+        ee_mesh_path = get_gripper_mesh_path()
+        # TODO offer option to turn off end effector collision by setting collision=False
+        collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
+        robot = create_flying_body(SE3, collision_id, visual_id)
+        tool_from_ee = ((1.1920928955078125e-07, 0.0, -0.37049996852874756), (0.0, 2.980232594040899e-08, 0.0, 0.9999999403953552))
 
     chosen_bars = None
     if args.subset_bars is not None:
@@ -136,7 +140,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         # visualize_stiffness
         with WorldSaver():
             if args.algorithm in STRIPSTREAM_ALGORITHM:
-                robots = [end_effector] if args.bar_only else [robot]
+                robots = [robot]
                 plan = solve_pddlstream(robots, tool_from_ee, fixed_obstacles,
                     element_from_index, grounded_elements, connectors,
                     partial_orders=partial_orders,
@@ -147,7 +151,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                 data = {}
             elif args.algorithm == 'regression':
                 with LockRenderer(not args.debug):
-                    plan, data = regression(end_effector if args.bar_only else robot, tool_from_ee, fixed_obstacles,
+                    plan, data = regression(robot, tool_from_ee, fixed_obstacles,
                         bar_struct,
                         collision=args.collisions,
                         motions=args.motions, stiffness=args.stiffness, revisit=False,
@@ -190,7 +194,6 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
                     element_from_index=element_from_index, bar_struct=bar_struct, suffix=suffix, extra_data=extra_data, overwrite=False)
     else:
         # parse a saved plan
-        robot = end_effector if "bar-only" in saved_plan else robot
         parsed_data = parse_plan(saved_plan)
         e_trajs = parsed_data['plan']
         trajectories = []

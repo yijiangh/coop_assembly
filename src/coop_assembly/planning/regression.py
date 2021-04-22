@@ -93,7 +93,7 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
     visited = {final_printed: Node(None, None)}
 
     outgoing_from_element = outgoing_from_edges(partial_orders)
-    print('Outing edges: ', outgoing_from_element)
+    # print('Outing edges: ', outgoing_from_element)
     def add_successors(printed, command):
         num_remaining = len(printed) - 1
         # assert 0 <= num_remaining

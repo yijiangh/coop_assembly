@@ -5,28 +5,14 @@
     (Element ?e)
     (Conf ?r ?q)
     (Grasp ?e ?g)
-    ; (Holding ?e)
-
-    ; (InitialConf ?r ?q)
-    ; (RemoveStartConf ?r ?q)
-    ; (RemoveEndConf ?r ?q)
 
     (RemoveMovement ?r ?t ?e ?g)
-    ; (HoldingMovement ?r ?q1 ?t2 ?q2 ?e ?g)
-    ; (FreeMovement ?r ?q1 ?t2 ?q2)
 
     (Assembled ?e)
     (Removed ?e)
-    ; (Grounded ?e)
-    ; (Connected ?e)
-    ; (Joined ?e1 ?e2)
-    (Order ?e1 ?e2) ; TODO: AttributeError: 'UniversalCondition' object has no attribute 'predicate'
+    (Order ?e1 ?e2)
 
     (Assigned ?r ?e)
-
-    ; (CanMove ?r)
-    ; (HandEmpty ?r)
-    ; (AtConf ?r ?q)
   )
 
   ; remove an element from the assembled structure
@@ -37,8 +23,6 @@
                        (RemoveMovement ?r ?t ?e ?g)
                        (Assembled ?e)
                        (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
-                       ; (Stiff)
-                       ; (Connected ?e) ; TODO: connected
                     ;    (HandEmpty ?r)
                     ;    (AtConf ?r ?q1)
                        )
@@ -49,6 +33,7 @@
                 ;  (CanMove ?r)
                  )
   )
+)
 
 ;   ; release an element to the rack
 ;   (:action release_element
@@ -108,5 +93,3 @@
 ;        )
 ;    )
 ;   )
-
-)

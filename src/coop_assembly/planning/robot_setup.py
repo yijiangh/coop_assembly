@@ -32,7 +32,7 @@ BUILD_PLATE_CENTERs = {
     # 'abb_track' : np.array([1.35, -1.5, 30.7*1e-3]),
     # * IT Hydra
     # 'abb_track' : np.array([1.45, -2, 30.7*1e-3]),
-    # * topopt tiny valut
+    # * topopt tiny valut S10
     # 'abb_track' : np.array([1.5, -2, 30.7*1e-3]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
@@ -53,7 +53,7 @@ BASE_YAW = np.pi
 # BASE_YAW = 0
 # * IT Hydra
 # BASE_YAW = -np.pi-np.pi/10.0
-# * topopt vault
+# * topopt vault S10
 # BASE_YAW = 0
 # subset bars (everything except 44)
 # "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67]"
