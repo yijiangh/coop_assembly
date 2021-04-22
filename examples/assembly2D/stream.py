@@ -77,7 +77,7 @@ def get_2d_element_grasp_gen_fn(element_from_index, tool_from_ee=unit_pose(), re
 
                 object_from_gripper = multiply(longitude_x, translate_along_x_axis, \
                     rotate_around_z, tool_from_ee)
-                yield Grasp(index, None, None, invert(object_from_gripper), None),
+                yield Grasp(index, invert(object_from_gripper)),
     return gen_fn
 
 ######################################
