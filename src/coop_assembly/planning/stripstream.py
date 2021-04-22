@@ -28,9 +28,9 @@ except KeyError:
     os.environ['PYPLANNERS_PATH'] = pyplanner_path
 
 import pddlstream
-print(pddlstream.__file__)
+cprint("Using pddlstream from {}".format(pddlstream.__file__), 'yellow')
 import strips # pyplanners
-print(strips.__file__)
+cprint("Using strips from {}".format(strips.__file__), 'yellow')
 
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
