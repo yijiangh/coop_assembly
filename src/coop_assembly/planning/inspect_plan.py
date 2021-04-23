@@ -1,3 +1,5 @@
+"""Replace target motions from a saved plan json file
+"""
 from __future__ import print_function
 
 import os

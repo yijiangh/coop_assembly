@@ -66,9 +66,12 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         # end effector robot
         ee_mesh_path = get_gripper_mesh_path()
         # TODO offer option to turn off end effector collision by setting collision=False
-        collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
+        collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1), collision=True,
+            color=apply_alpha(YELLOW, 0.5))
         robot = create_flying_body(SE3, collision_id, visual_id)
+        # TODO hardcoded for now
         tool_from_ee = ((1.1920928955078125e-07, 0.0, -0.37049996852874756), (0.0, 2.980232594040899e-08, 0.0, 0.9999999403953552))
+        # wait_if_gui()
 
     chosen_bars = None
     if args.subset_bars is not None:
@@ -232,9 +235,6 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         cprint('Collision disabled, no verfication performed.', 'yellow')
     reset_simulation()
     disconnect()
-
-# {complexity: 0, cost: 39, evaluations: 367, iterations: 1, length: 39, run_time: 25.769129037857056, solutions: 1, solved: True, timeout: False}
-# {'search_time': 4.095053434371948, 'num_evaluated': 40, 'min_remaining': 0, 'max_backtrack': 0, 'stiffness_failures': 0, 'place_failures': 0, 'transit_failures': 0, 'transfer_failures': 0}
 
 ##################################################
 

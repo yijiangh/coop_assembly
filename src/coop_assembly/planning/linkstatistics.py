@@ -1,3 +1,5 @@
+ """An attempt to compute joint weight automatically mimicking openrave
+ """
 import argparse
 import numpy as np
 import pybullet as pb

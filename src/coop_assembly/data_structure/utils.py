@@ -1,7 +1,8 @@
 from collections import namedtuple
 import numpy as np
+from numpy.linalg import norm
 
-from pybullet_planning import point_from_pose
+from pybullet_planning import point_from_pose, quat_from_euler, Euler
 from pybullet_planning import HideOutput, load_pybullet, set_static, set_joint_positions, joints_from_names, \
     create_plane, set_point, Point, link_from_name, get_link_pose, BodySaver, refine_path, set_pose, create_attachment
 from coop_assembly.planning.robot_setup import TOOL_LINK_NAME
@@ -24,8 +25,8 @@ class WorldPose(object):
                 'value' : [list(self.value[i]) for i in range(2)]}
         return data
     def __repr__(self):
-        return '{}({},{})'.format(self.__class__.__name__, self.index,
-                                  str(np.array(point_from_pose(self.value))))
+        pose_str = str(np.array(point_from_pose(self.value))) if self.value else 'None'
+        return '{}({},{})'.format(self.__class__.__name__, self.index, pose_str)
 
 class Grasp(object):
     def __init__(self, element, gripper_from_object):
@@ -100,3 +101,14 @@ class MotionTrajectory(Trajectory):
         element = data['element']
         tag = data['tag']
         return cls(robot, joints, path, attachments=attachments, element=element, tag=tag)
+
+def compute_bar_pose(_p1, _p2):
+    p1 = np.array(_p1)
+    p2 = np.array(_p2)
+    center = (p1 + p2) / 2
+    delta = p2 - p1
+    x, y, z = delta
+    phi = np.math.atan2(y, x)
+    theta = np.math.acos(z / np.linalg.norm(delta))
+    quat = quat_from_euler(Euler(pitch=theta, yaw=phi))
+    return (center, quat)

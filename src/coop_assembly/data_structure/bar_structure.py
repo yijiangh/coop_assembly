@@ -24,7 +24,7 @@ from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
 from pybullet_planning import create_plane, set_point, Point, get_pose, apply_alpha, RED, set_color, has_body, dump_world, get_bodies, \
     is_connected, remove_body, tform_point
-from .utils import Element, WorldPose
+from .utils import Element, WorldPose, compute_bar_pose
 from copy import copy
 
 GROUND_INDEX = -1
@@ -248,6 +248,8 @@ class BarStructure(Network):
         int
             [description]
         """
+        if not is_connected():
+            return None
         if bar_v_key not in self.node:
             # cprint('bar key not in the node {}'.format(bar_v_key))
             return None
@@ -301,8 +303,7 @@ class BarStructure(Network):
             axis_pts = [np.array(pt) for pt in self.get_bar_axis_end_pts(index, scale=scale)]
             radius=self.node[index]['radius']*scale
             body = self.get_bar_pb_body(index, scale=scale, regenerate=regenerate, color=color)
-            # goal_pose = self.node[index]['goal_pose']
-            goal_pose = get_pose(body)
+            goal_pose = get_pose(body) if is_connected() else compute_bar_pose(*axis_pts)
             layer = self.node[index]['layer']
             # all data in Element is in meter
             element_from_index[index] = Element(index=index, body=body,

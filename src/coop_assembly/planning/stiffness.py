@@ -286,10 +286,6 @@ def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_
         # print('Max rotation deformation: {0:.5f} / {1:.5} = {2:.5}, at node #{3}'.format(
         #     max_rot, rot_tol, max_rot / rot_tol, max_rot_vid))
 
-    #disc = 10
-    #time_step = 1.0
-    #orig_beam_shape = checker.get_original_shape(disc=disc, draw_full_shape=False)
-    #beam_disp = checker.get_deformed_shape(exagg_ratio=1.0, disc=disc)
     return Deformation(is_stiff, displacements, fixities, reactions)
 
 

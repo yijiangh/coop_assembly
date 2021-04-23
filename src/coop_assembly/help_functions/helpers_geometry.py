@@ -36,7 +36,7 @@ from coop_assembly.help_functions.shared_const import EPS, NODE_CORRECTION_TOP_D
 
 from pybullet_planning import quat_from_euler, create_box, set_color, set_point, set_quat, dump_body, create_cylinder, \
     get_aabb, draw_aabb, apply_alpha, draw_pose, get_pose, add_line, wait_for_user, Euler, STATIC_MASS, RED, create_shape, \
-    get_cylinder_geometry, create_flying_body, get_movable_joints, SE3
+    get_cylinder_geometry, create_flying_body, get_movable_joints, SE3, is_connected
 
 ###############################################################
 # utility functions used in Yijiang's tet sequence searching
@@ -92,6 +92,9 @@ SHRINK_RADIUS = 0.0001 # meter
 def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=apply_alpha(RED, 0)):
     """create bar's collision body in pybullet
     """
+    if not is_connected():
+        return None
+
     p1, p2 = axis_end_pts
     p1 = np.array(p1) * scale
     p2 = np.array(p2) * scale

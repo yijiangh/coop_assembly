@@ -193,6 +193,7 @@ def get_pddlstream(robots, tool_from_ee, static_obstacles, element_from_index, g
             # ('CanMove', name),
             # ('HandEmpty', name),
         ])
+    # no need for these since we are doing stiffness checking in a stream function
     # init.extend(('Grounded', e) for e in grounded_elements)
     # init.extend(('Joined', e1, e2) for e1, e2 in connectors)
     # init.extend(('Joined', e2, e1) for e1, e2 in connectors)
@@ -238,12 +239,6 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
     # Reachability heuristics good for detecting dead-ends
     # Infeasibility from the start means disconnected or collision
     set_cost_scale(1)
-    # planner = 'ff-ehc'
-    # planner = 'ff-lazy-tiebreak' # Branching factor becomes large. Rely on preferred. Preferred should also be cheaper
-    # planner = 'max-astar'
-    # planner = 'ff-eager-tiebreak'  # Need to use a eager search, otherwise doesn't incorporate child cost
-    # planner = 'ff-lazy' | 'ff-wastar3'
-
     success_cost = 0 if costs else INF
 
     pr = cProfile.Profile()
@@ -258,13 +253,16 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
             # TODO: log new best heuristic value
             discrete_planner = {
                 'search': 'eager', # eager | lazy
+                # lazy might be faster but the solution quality might be low
                 'evaluator': 'greedy',
                 'heuristic': 'goal', # goal | add | ff
                 #'heuristic': ['ff', get_bias_fn(element_from_index)],
                 'successors': 'all', # all | random
-                #'successors': get_order_fn(element_from_index), # TODO: confirm that this is working correctly
+                #'successors': get_order_fn(element_from_index),
+                # ? ordering scaffolds can come here
+                # TODO: confirm that this is working correctly
             }
-            solution = solve_incremental(pddlstream_problem, max_time=600,  planner=discrete_planner,
+            solution = solve_incremental(pddlstream_problem, max_time=600, planner=discrete_planner,
                                          success_cost=success_cost, unit_costs=not costs,
                                          max_planner_time=300, debug=debug, verbose=True)
         elif algorithm in SS_OPTIONS:
@@ -321,7 +319,6 @@ def solve_pddlstream(robots, tool_from_ee, obstacles, element_from_index, ground
     print('='*10)
     place_actions = [action for action in reversed(plan) if action.name == 'remove_element']
     commands = []
-    # start_conf_id = 1 if args.algorithm == 'incremental_sa' else 2
     for pc in place_actions:
         print(pc)
         # :parameters (?r ?t ?e ?g)

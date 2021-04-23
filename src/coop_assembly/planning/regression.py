@@ -112,7 +112,8 @@ def regression(robot, tool_from_ee, obstacles, bar_struct, partial_orders=[],
     # print('all_elements: ', all_elements)
     # * connectivity & stiffness constraint checking
     if check_connected(connectors, grounded_elements, all_elements):
-        if (not stiffness or test_stiffness(bar_struct, final_printed, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id)):
+        if (not stiffness or test_stiffness(bar_struct, final_printed, checker=checker,
+            fem_element_from_bar_id=fem_element_from_bar_id)):
             final_command = Command([MotionTrajectory(robot, joints, [final_conf])])
                 #if not bar_only \
                 # else Command([MotionTrajectory(None, None, [final_conf])])
