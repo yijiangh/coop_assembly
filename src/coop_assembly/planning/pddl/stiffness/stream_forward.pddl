@@ -1,0 +1,21 @@
+(define (stream stiffness)
+  (:stream sample-add
+    :inputs (?r ?e)
+    :domain (and (Robot ?r) (Element ?e))
+    :fluents (Assembled)
+    :outputs (?t ?g)
+    :certified (and (AddMovement ?r ?t ?e ?g)
+                    (Grasp ?e ?g)
+                    )
+  )
+
+;   (:stream sample-add-scaffold-element
+;     :inputs (?r ?e)
+;     :domain (and (Robot ?r) (ScaffoldElement ?se))
+;     :fluents (Assembled)
+;     :outputs (?t ?g)
+;     :certified (and (RemoveMovement ?r ?t ?e ?g)
+;                     (Grasp ?e ?g)
+;                     )
+;   )
+)

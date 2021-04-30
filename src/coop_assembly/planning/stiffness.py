@@ -99,13 +99,10 @@ def find_nodes(new_pts, cm_nodes, tol=1e-6):
     return cm_nodes, node_inds
 
 
-def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False):
+def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, presample_scaffolds=False):
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, scale=METER_SCALE, color=apply_alpha(RED,0))
     grounded_connectors = bar_struct.get_grounded_connector_keys()
-
-    # Element = namedtuple('Element', ['index', 'axis_endpoints', 'radius', 'body', 'initial_pose', 'goal_pose',
-    #                                  'grasps', 'goal_supports', 'layer'])
 
     # ! meter-based unit
     unit = "meter"
@@ -173,8 +170,31 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False):
                 cm_elements.append(new_element)
                 fem_element_from_bar_id[e_id].add(new_element.elem_ind)
                 seg_id += 1
-                # print(cm_elements[-1])
-        # input()
+
+    if presample_scaffolds:
+        ground_z = min([node.point[2] for node in cm_nodes])
+        scaffold_tags = set()
+        projected_nodes = []
+        for i, up_node in enumerate(cm_nodes):
+            if up_node.is_grounded or abs(up_node.point[2]-ground_z)<1e-12:
+                continue
+            new_node_id = len(projected_nodes)+len(cm_nodes)
+            projected_node = Node([up_node.point[0], up_node.point[1], ground_z], new_node_id, True)
+            projected_nodes.append(projected_node)
+
+            new_node_inds = (up_node.node_ind, projected_node.node_ind)
+            scaffold_tag = 'scaffold{}'.format(projected_node.node_ind)
+            new_element_id = len(cm_elements)
+            cm_elements.append(Element(new_node_inds, new_element_id, elem_tag=scaffold_tag, bending_stiff=True))
+
+            fem_element_from_bar_id[new_element_id].add(new_element_id)
+            scaffold_tags.add(scaffold_tag)
+
+            # TODO should only chosen one contact point as fixiety
+            supports.append(Support([1 for _ in range(6)], projected_node.node_ind))
+
+        cm_nodes.extend(projected_nodes)
+
     # TODO Add rotational stiffness later
     # Joint(self, c_conditions, elem_tags):
     node_c_conditions = [None, None, None] + [ROTATIONAL_STIFFNESS for _ in range(3)]
@@ -185,6 +205,9 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False):
     r = list(element_from_index.values())[0].radius # in meter
     crosssecs = [solid_cir_crosssec(r, elem_tags=list(bar_tags | connector_tags))]
     materials = [wood_material(list(bar_tags)), connector_material(list(connector_tags))]
+    if presample_scaffolds:
+        crosssecs.append(solid_cir_crosssec(r, elem_tags=list(scaffold_tags)))
+        materials.append(wood_material(list(scaffold_tags)))
 
     model = Model(cm_nodes, cm_elements, supports, joints, materials, crosssecs, unit=unit, model_name=model_name)
     if save_model:
@@ -195,28 +218,52 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False):
             json.dump(model_data, f, indent=None)
         cprint('Conmech model saved to: {}'.format(model_path), 'green')
 
-    # if debug and has_gui():
-    #     h = []
-    #     with LockRenderer():
-    #         # for n in cm_nodes:
-    #         #     draw_point(n.point, size=0.002, color=GREEN if n.is_grounded else BLACK)
-    #         for e_id, elem_ids in fem_element_from_bar_id.items():
-    #             print('E#{}: {}'.format(e_id, elem_ids))
-    #             for elem_id in elem_ids:
-    #                 e = cm_elements[elem_id]
-    #                 node_inds = e.end_node_inds
-    #                 if 'bar' in e.elem_tag:
-    #                     th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=(random.random(), random.random(), random.random(), 1), width=3)
-    #                 elif 'connector' in e.elem_tag:
-    #                     th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
-    #                 h.append(th)
-    #         for s in supports:
-    #             ph = draw_point(cm_nodes[s.node_ind].point, size=0.02, color=RED)
-    #             h.append(ph)
-    #     wait_if_gui()
-    #     remove_handles(h)
+    if debug and has_gui():
+        h = draw_conmech_model(model, fem_element_from_bar_id)
+        # wait_if_gui()
+        # remove_handles(h)
 
     return model, fem_element_from_bar_id
+
+def draw_conmech_model(model, fem_element_from_bar_id, elements=None):
+    elements = elements or list(fem_element_from_bar_id.keys())
+    cm_nodes = model.nodes
+    cm_elements = model.elements
+    cm_supports = model.supports
+    h = []
+    with LockRenderer():
+        existing_nodes = set()
+        for e_id in elements:
+            for fem_e in fem_element_from_bar_id[e_id]:
+                existing_nodes.update(set(cm_elements[fem_e].end_node_inds))
+        # for n in cm_nodes:
+        #     draw_point(n.point, size=0.002, color=GREEN if n.is_grounded else BLACK)
+        for e_id in elements:
+            elem_ids = fem_element_from_bar_id[e_id]
+            # print('E#{}: {}'.format(e_id, elem_ids))
+            for elem_id in elem_ids:
+                e = cm_elements[elem_id]
+                node_inds = e.end_node_inds
+                if 'bar' in e.elem_tag:
+                    th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point,
+                        color=(random.random(), random.random(), random.random(), 1), width=3)
+                    h.append(add_text(e.elem_tag, position=(np.array(cm_nodes[node_inds[0]].point)+\
+                        np.array(cm_nodes[node_inds[1]].point))/2))
+                elif 'connector' in e.elem_tag:
+                    th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
+                elif 'scaffold' in e.elem_tag:
+                    th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=TAN, width=3)
+                    h.append(add_text(e.elem_tag, position=(np.array(cm_nodes[node_inds[0]].point)+\
+                        np.array(cm_nodes[node_inds[1]].point))/2))
+                else:
+                    raise ValueError("undefined elem tag {}".format(e.elem_tag))
+
+                h.append(th)
+        for _, s in cm_supports.items():
+            if s.node_ind in existing_nodes:
+                ph = draw_point(cm_nodes[s.node_ind].point, size=0.02, color=RED)
+                h.extend(ph)
+    return h
 
 def create_stiffness_checker(bar_struct, verbose=False, **kwargs):
     if not USE_CONMECH:

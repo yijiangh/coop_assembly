@@ -53,26 +53,29 @@ def get_assembly_path(assembly_name, file_dir=PICKNPLACE_DIRECTORY):
         raise FileNotFoundError(model_path)
     return model_path
 
-def load_structure(test_file_name, viewer=False, color=(1,0,0,0)):
+def load_structure(test_file_name, connect_pb=True, viewer=False, color=(1,0,0,0)):
     """connect pybullet env and load the bar system
     """
-    if not is_connected():
+    if connect_pb and not is_connected():
         connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
-    with LockRenderer():
-        b_struct_data, o_struct_data = parse_saved_structure_data(get_assembly_path(test_file_name))
-        if 'data' in b_struct_data:
-            b_struct_data = b_struct_data['data']
-        b_struct = BarStructure.from_data(b_struct_data)
-        b_struct.name = test_file_name
-        b_struct.get_element_from_index(color=color, regenerate=True)
-        o_struct = None
-        if o_struct_data is not None:
-            if 'data' in o_struct_data:
-                o_struct_data = o_struct_data['data']
-            o_struct = OverallStructure.from_data(o_struct_data)
-            o_struct.struct_bar = b_struct # TODO: better way to do this
-        # set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
-        endpts_from_element = b_struct.get_axis_pts_from_element(scale=1e-3)
+    if connect_pb and viewer:
+        locker = LockRenderer()
+    b_struct_data, o_struct_data = parse_saved_structure_data(get_assembly_path(test_file_name))
+    if 'data' in b_struct_data:
+        b_struct_data = b_struct_data['data']
+    b_struct = BarStructure.from_data(b_struct_data)
+    b_struct.name = test_file_name
+    b_struct.get_element_from_index(color=color, regenerate=True)
+    o_struct = None
+    if o_struct_data is not None:
+        if 'data' in o_struct_data:
+            o_struct_data = o_struct_data['data']
+        o_struct = OverallStructure.from_data(o_struct_data)
+        o_struct.struct_bar = b_struct # TODO: better way to do this
+    # set_camera([attr['point_xyz'] for v, attr in o_struct.nodes(True)])
+    endpts_from_element = b_struct.get_axis_pts_from_element(scale=1e-3)
+    if connect_pb and viewer:
+        locker.restore()
         set_camera([p[0] for e, p in endpts_from_element.items()], scale=1.)
     return b_struct, o_struct
 
