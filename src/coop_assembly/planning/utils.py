@@ -171,6 +171,7 @@ class Command(object):
 ##################################################
 
 def get_connector_from_elements(connectors, elements):
+    # elements: list of indices
     connector_from_elements = defaultdict(set)
     for e in elements:
         for c in connectors:

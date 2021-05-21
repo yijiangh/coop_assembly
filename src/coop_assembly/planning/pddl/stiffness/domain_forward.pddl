@@ -3,7 +3,6 @@
   (:predicates
     (Robot ?r)
     (Element ?e)
-    (ScaffoldElement ?se)
     (Conf ?r ?q)
     (Grasp ?e ?g)
 
@@ -26,4 +25,5 @@
                  (not (Removed ?e))
                  )
   )
+
 )

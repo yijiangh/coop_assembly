@@ -8,14 +8,4 @@
                     (Grasp ?e ?g)
                     )
   )
-
-;   (:stream sample-add-scaffold-element
-;     :inputs (?r ?e)
-;     :domain (and (Robot ?r) (ScaffoldElement ?se))
-;     :fluents (Assembled)
-;     :outputs (?t ?g)
-;     :certified (and (RemoveMovement ?r ?t ?e ?g)
-;                     (Grasp ?e ?g)
-;                     )
-;   )
 )

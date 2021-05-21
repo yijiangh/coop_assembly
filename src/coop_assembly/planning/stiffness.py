@@ -4,6 +4,7 @@ import random
 import time
 import json
 import numpy as np
+from numpy.lib.function_base import copy
 from numpy.linalg import norm
 
 from collections import namedtuple, defaultdict
@@ -33,7 +34,7 @@ from coop_assembly.planning.utils import check_connected, compute_z_distance
 
 # TRANS_TOL = 0.003
 # * SP & IT Arch,
-TRANS_TOL = 0.005
+TRANS_TOL = 0.001 # 0.0005
 # * Other
 # TRANS_TOL = 0.005
 
@@ -114,6 +115,7 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, 
     cm_elements = []
     pts_from_element = defaultdict(list)
     fem_element_from_bar_id = defaultdict(set)
+    original_bar_cm_nodes  = []
     for e_id, element in element_from_index.items():
         # Node(self, point, node_ind, is_grounded):
         # ! is_grounded is used to mark grounded nodes for construction purpose
@@ -121,6 +123,7 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, 
         cm_nodes.append(Node(element.axis_endpoints[0], e_id*2, False))
         cm_nodes.append(Node(element.axis_endpoints[1], e_id*2+1, False))
         pts_from_element[e_id].extend(element.axis_endpoints)
+    original_bar_cm_nodes = copy(cm_nodes)
 
     supports = []
     connector_tags = set()
@@ -137,7 +140,7 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, 
         # * add connector element
         # Element(self, end_node_inds, elem_ind, elem_tag='', bending_stiff=True)
         e_id = len(cm_elements)
-        e_tag = 'connector{}'.format(e_id)
+        e_tag = 'connector'# .format(e_id)
         cm_elements.append(Element(tuple(node_inds), e_id, elem_tag=e_tag, bending_stiff=True))
         connector_tags.add(e_tag)
         for e in c_id:
@@ -159,9 +162,7 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, 
         # print(sorted_seg_pts)
         cm_nodes, node_inds = find_nodes(list(sorted_seg_pts), cm_nodes)
         assert len(sorted_seg_pts) == len(node_inds)
-        # print(node_inds)
-        # elem_tag = 'bar{}'.format(e_id)
-        elem_tag = 'bar{}'.format(e_id)
+        elem_tag = 'bar' #.format(e_id)
         bar_tags.add(elem_tag)
         seg_id = 0
         for i in range(len(sorted_seg_pts)-1):
@@ -172,10 +173,11 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, 
                 seg_id += 1
 
     if presample_scaffolds:
-        ground_z = min([node.point[2] for node in cm_nodes])
+        # TODO might restrict to a subset of nodes to add scaffolds
+        ground_z = min([node.point[2] for node in original_bar_cm_nodes])
         scaffold_tags = set()
         projected_nodes = []
-        for i, up_node in enumerate(cm_nodes):
+        for i, up_node in enumerate(original_bar_cm_nodes):
             if up_node.is_grounded or abs(up_node.point[2]-ground_z)<1e-12:
                 continue
             new_node_id = len(projected_nodes)+len(cm_nodes)
@@ -183,11 +185,12 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, 
             projected_nodes.append(projected_node)
 
             new_node_inds = (up_node.node_ind, projected_node.node_ind)
-            scaffold_tag = 'scaffold{}'.format(projected_node.node_ind)
+            scaffold_tag = 'scaffold' #.format(projected_node.node_ind)
             new_element_id = len(cm_elements)
             cm_elements.append(Element(new_node_inds, new_element_id, elem_tag=scaffold_tag, bending_stiff=True))
 
-            fem_element_from_bar_id[new_element_id].add(new_element_id)
+            # TODO lump the scaffold element to bar_id? new dict?
+            # fem_element_from_bar_id[new_element_id].add(new_element_id)
             scaffold_tags.add(scaffold_tag)
 
             # TODO should only chosen one contact point as fixiety
@@ -196,7 +199,7 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, 
         cm_nodes.extend(projected_nodes)
 
     # TODO Add rotational stiffness later
-    # Joint(self, c_conditions, elem_tags):
+    # ? Joint(self, c_conditions, elem_tags):
     node_c_conditions = [None, None, None] + [ROTATIONAL_STIFFNESS for _ in range(3)]
     # joint = Joint(node_c_conditions+node_c_conditions, list(bar_tags | connector_tags))
     joints = []
@@ -239,8 +242,11 @@ def draw_conmech_model(model, fem_element_from_bar_id, elements=None):
         # for n in cm_nodes:
         #     draw_point(n.point, size=0.002, color=GREEN if n.is_grounded else BLACK)
         for e_id in elements:
-            elem_ids = fem_element_from_bar_id[e_id]
-            # print('E#{}: {}'.format(e_id, elem_ids))
+            if e_id in fem_element_from_bar_id and len(fem_element_from_bar_id[e_id]) > 0:
+                elem_ids = fem_element_from_bar_id[e_id]
+            else:
+                elem_ids = [e_id]
+                # print('E#{}: {}'.format(e_id, elem_ids))
             for elem_id in elem_ids:
                 e = cm_elements[elem_id]
                 node_inds = e.end_node_inds
@@ -252,12 +258,12 @@ def draw_conmech_model(model, fem_element_from_bar_id, elements=None):
                 elif 'connector' in e.elem_tag:
                     th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=BLUE, width=3)
                 elif 'scaffold' in e.elem_tag:
+                    node_inds = e.end_node_inds
                     th = add_line(cm_nodes[node_inds[0]].point, cm_nodes[node_inds[1]].point, color=TAN, width=3)
                     h.append(add_text(e.elem_tag, position=(np.array(cm_nodes[node_inds[0]].point)+\
                         np.array(cm_nodes[node_inds[1]].point))/2))
                 else:
                     raise ValueError("undefined elem tag {}".format(e.elem_tag))
-
                 h.append(th)
         for _, s in cm_supports.items():
             if s.node_ind in existing_nodes:
@@ -265,7 +271,7 @@ def draw_conmech_model(model, fem_element_from_bar_id, elements=None):
                 h.extend(ph)
     return h
 
-def create_stiffness_checker(bar_struct, verbose=False, **kwargs):
+def create_stiffness_checker(bar_struct, verbose=False, trans_tol=TRANS_TOL, **kwargs):
     if not USE_CONMECH:
         return None
     # * convert ball structure to a conmech model
@@ -276,7 +282,7 @@ def create_stiffness_checker(bar_struct, verbose=False, **kwargs):
         checker.set_loads(LoadCase(gravity_load=GravityLoad([0,0,-1.0])))
     #checker.set_output_json(True)
     #checker.set_output_json_path(file_path=os.getcwd(), file_name="stiffness-results.json")
-    checker.set_nodal_displacement_tol(trans_tol=TRANS_TOL, rot_tol=ROT_TOL)
+    checker.set_nodal_displacement_tol(trans_tol=trans_tol, rot_tol=ROT_TOL)
     return checker, fem_element_from_bar_id
 
 def force_from_reaction(reaction):
@@ -285,13 +291,13 @@ def force_from_reaction(reaction):
 def torque_from_reaction(reaction):
     return reaction[3:]
 
-def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_id=None, verbose=True):
+def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_id=None, trans_tol=TRANS_TOL, verbose=True):
     # TODO: check each connected component individually
     if not elements:
         return Deformation(True, {}, {}, {})
 
     if checker is None or fem_element_from_bar_id is None:
-        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=verbose)
+        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, trans_tol=trans_tol, verbose=verbose)
 
     #nodal_loads = checker.get_nodal_loads(existing_ids=[], dof_flattened=False) # per node
     #weight_loads = checker.get_self_weight_loads(existing_ids=[], dof_flattened=False) # get_nodal_loads = get_self_weight_loads?
@@ -299,9 +305,13 @@ def evaluate_stiffness(bar_struct, elements, checker=None, fem_element_from_bar_
     #    print(node, nodal_loads[node] - weight_loads[node])
 
     exist_element_ids = set()
-    for bar in elements:
-        exist_element_ids.update(fem_element_from_bar_id[bar])
-    # print('fem elements len: ', len(exist_element_ids))
+    for elem in elements:
+        if elem in fem_element_from_bar_id:
+            # bar
+            exist_element_ids.update(fem_element_from_bar_id[elem])
+        else:
+            # in the case of scaffolding elements
+            exist_element_ids.add(elem)
 
     is_stiff = checker.solve(exist_element_ids=list(exist_element_ids), if_cond_num=True)
     if not checker.has_stored_result():
@@ -341,7 +351,7 @@ def test_stiffness(bar_struct, elements, **kwargs):
 
 ##################################################
 
-def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fem_element_from_bar_id=None, \
+def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fem_element_from_bar_id=None, trans_tol=TRANS_TOL,\
         stiffness=True, heuristic='z', max_time=INF, max_backtrack=0, verbose=False):
     """use the progression algorithm to plan a stiff sequence
     """
@@ -351,7 +361,7 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
     element_from_index, grounded_elements, _, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=apply_alpha(RED,0.1))
     if stiffness and (checker is None or fem_element_from_bar_id is None):
-        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct)
+        checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, trans_tol=trans_tol)
 
     # all_elements = frozenset(element_from_index)
     remaining_elements = frozenset(elements)
@@ -409,7 +419,7 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
             heapq.heappush(queue, (priority, new_printed, new_sequence))
 
     cprint('Failed to find stiffness plan under tol {}! Elements: {}, Min remaining {}, Time: {:.3f}sec'.format(
-        TRANS_TOL, len(remaining_elements), min_remaining, elapsed_time(start_time)), 'red')
+        trans_tol, len(remaining_elements), min_remaining, elapsed_time(start_time)), 'red')
     return None
 
 ##################################################
