@@ -10,6 +10,7 @@
 
     (AddMovement ?r ?t ?e ?g)
     (AddScaffoldMovement ?r ?t ?se ?g)
+    (RemoveScaffoldMovement ?r ?t ?se ?g)
     ; (RemoveMovement ?r ?t ?e ?g)
 
     (Assembled ?e)
@@ -34,6 +35,18 @@
     :parameters (?r ?t ?se ?g)
     :precondition (and
                        (AddScaffoldMovement ?r ?t ?se ?g)
+                       (Removed ?se)
+                       )
+    :effect (and (Assembled ?se)
+                 (not (Removed ?se))
+                 )
+  )
+
+  ; remove a scaffold element from the assembled structure
+  (:action remove_scaffold_element
+    :parameters (?r ?t ?se ?g)
+    :precondition (and
+                       (RemoveScaffoldMovement ?r ?t ?se ?g)
                        (Removed ?se)
                        )
     :effect (and (Assembled ?se)

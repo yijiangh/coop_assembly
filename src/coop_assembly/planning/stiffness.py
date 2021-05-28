@@ -229,7 +229,8 @@ def conmech_model_from_bar_structure(bar_struct, debug=False, save_model=False, 
     return model, fem_element_from_bar_id
 
 def draw_conmech_model(model, fem_element_from_bar_id, elements=None):
-    elements = elements or list(fem_element_from_bar_id.keys())
+    # elements = elements or list(fem_element_from_bar_id.keys())
+    elements = elements or list(range(len(model.elements)))
     cm_nodes = model.nodes
     cm_elements = model.elements
     cm_supports = model.supports

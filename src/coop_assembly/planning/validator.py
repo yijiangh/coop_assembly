@@ -137,8 +137,8 @@ def validate_pddl_plan(trajectories, fixed_obstacles, element_from_index, ground
         grounded_elements=grounded_elements, allow_failure=allow_failure, watch=watch, **kwargs)
     return valid
 
-def compute_plan_deformation(bar_struct, plan, verbose=False):
-    checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=False)
+def compute_plan_deformation(bar_struct, plan, presample_scaffolds=False, verbose=False):
+    checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, presample_scaffolds=presample_scaffolds, verbose=False)
     trans_tol, rot_tol = checker.get_nodal_deformation_tol()
     if plan is None:
         return trans_tol, rot_tol

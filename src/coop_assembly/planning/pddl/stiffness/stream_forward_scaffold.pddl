@@ -18,4 +18,14 @@
                     (ScaffoldGrasp ?se ?g)
                     )
   )
+
+;   (:stream sample-remove-scaffold
+;     :inputs (?r ?se)
+;     :domain (and (Robot ?r) (ScaffoldElement ?se))
+;     :fluents (Assembled)
+;     :outputs (?t ?g)
+;     :certified (and (RemoveScaffoldMovement ?r ?t ?se ?g)
+;                     (ScaffoldGrasp ?se ?g)
+;                     )
+;   )
 )
