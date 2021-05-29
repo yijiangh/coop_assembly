@@ -198,8 +198,9 @@ def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors
             cm_nodes_from_bar_id[bar_id].update(fem_element.end_node_inds)
 
     all_scaffolds = set()
+    bar_id_from_scaffolds = {}
     if allow_scaffold:
-        bar_id_from_scaffolds = compute_scaffold(checker, cm_nodes_from_bar_id)
+        bar_id_from_scaffolds.update(compute_scaffold(checker, cm_nodes_from_bar_id))
         all_scaffolds.update(bar_id_from_scaffolds)
 
     # * formulate pddl problem
