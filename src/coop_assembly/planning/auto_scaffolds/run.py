@@ -22,10 +22,10 @@ from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput, DE
 from pddlstream.language.constants import And, PDDLProblem, Equal, print_plan
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.utils import INF
+from pddlstream.utils import INF, Profiler
 from pddlstream.language.constants import print_plan, is_plan
 
-DEFAULT_TRANS_TOL = 0.000115 # 0.001
+DEFAULT_TRANS_TOL = 0.001 # 0.001 | 0.000115
 
 ####################################################
 
@@ -167,6 +167,20 @@ def get_wild_add_scaffold_element_gen_fn(bar_struct, element_from_index, grounde
 
 ####################################################
 
+def compute_scaffold(checker, cm_nodes_from_bar_id):
+    # * unpack bar structure data
+    elem_ind_from_elem_tag = checker._sc_ins.get_elem_ind_from_elem_tag()
+    scaffold_elements = elem_ind_from_elem_tag['scaffold']
+    bar_id_from_scaffolds = defaultdict(set)
+    for se_id in scaffold_elements:
+        se_element = checker.model.elements[se_id]
+        for bar_id, cm_node_ids in cm_nodes_from_bar_id.items():
+            for cm_node_id in list(cm_node_ids):
+                if cm_node_id in se_element.end_node_inds:
+                    if bar_id != -1:
+                        bar_id_from_scaffolds[se_id].add(bar_id)
+    return bar_id_from_scaffolds
+
 def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
         stiffness=True, allow_scaffold=True, forward=True, trans_tol=DEFAULT_TRANS_TOL,
         printed=None, removed=None,
@@ -177,34 +191,27 @@ def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors
     # if connect_pb:
     #     draw_conmech_model(checker.model, fem_element_from_bar_id, elements=None);
 
-    # * unpack bar structure data
-    elem_ind_from_elem_tag = checker._sc_ins.get_elem_ind_from_elem_tag()
-
     cm_nodes_from_bar_id = defaultdict(set)
     for bar_id, fem_es in fem_element_from_bar_id.items():
         for fem_e_id in fem_es:
             fem_element = checker.model.elements[fem_e_id]
             cm_nodes_from_bar_id[bar_id].update(fem_element.end_node_inds)
 
+    all_scaffolds = set()
     if allow_scaffold:
-        scaffold_elements = elem_ind_from_elem_tag['scaffold']
-        bar_id_from_scaffolds = defaultdict(set)
-        for se_id in scaffold_elements:
-            se_element = checker.model.elements[se_id]
-            for bar_id, cm_node_ids in cm_nodes_from_bar_id.items():
-                for cm_node_id in list(cm_node_ids):
-                    if cm_node_id in se_element.end_node_inds:
-                        if bar_id != -1:
-                            bar_id_from_scaffolds[se_id].add(bar_id)
-        all_scaffolds = set(bar_id_from_scaffolds)
+        bar_id_from_scaffolds = compute_scaffold(checker, cm_nodes_from_bar_id)
+        all_scaffolds.update(bar_id_from_scaffolds)
 
     # * formulate pddl problem
     formu = 'forward' if forward else 'backward'
     if allow_scaffold:
         formu += '_scaffold'
     pwd_path = os.path.abspath(os.path.dirname(__file__))
-    domain_pddl = read(os.path.join(pwd_path, '..', 'pddl/stiffness/domain_{}.pddl'.format(formu)))
-    stream_pddl = read(os.path.join(pwd_path, '..', 'pddl/stiffness/stream_{}.pddl'.format(formu)))
+    domain_path = os.path.abspath(os.path.join(pwd_path, '..', 'pddl/stiffness/domain_{}.pddl'.format(formu)))
+    stream_path = os.path.abspath(os.path.join(pwd_path, '..', 'pddl/stiffness/stream_{}.pddl'.format(formu)))
+    print('Domain path: {}\nStream path: {}'.format(domain_path, stream_path))
+    domain_pddl = read(domain_path)
+    stream_pddl = read(stream_path)
 
     init = []
     init.extend([
@@ -261,27 +268,64 @@ def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors
     # print('Goal:', pddlstream_problem.goal)
 
     pddlstream_problem = PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
+    order_fn = get_order_fn(element_from_index, bar_id_from_scaffolds)
 
-    return pddlstream_problem
+    return pddlstream_problem, order_fn
 
-def solve_pddlstream(pddlstream_problem, costs=False, debug=False, verbose=True, forward=True):
+def get_order_fn(element_from_index, bar_id_from_scaffolds):
+    from strips.utils import ha_applicable
+    from pddlstream.language.conversion import obj_from_pddl
+
+    def order_fn(state, goal, operators):
+        operators = ha_applicable(state, goal, operators)
+        actions = [op for op in operators if op.__class__.__name__ == 'Action'] # TODO: repair ugliness
+        element_actions = []
+        scaffold_actions = []
+        height_from_action = {}
+        for action in actions:
+            name, args = parse_action(action.fd_action.name)
+            args = [obj_from_pddl(arg).value for arg in args]
+            if name == 'add_element':
+                _, _, element, _ = args
+                height = np.average(element_from_index[element].axis_endpoints, axis=0)[2]
+                element_actions.append(action)
+            elif name == 'add_scaffold_element':
+                _, _, scaffold, _ = args
+                height = np.average(np.vstack([element_from_index[element].axis_endpoints
+                                               for element in bar_id_from_scaffolds[scaffold]]), axis=0)[2]
+                scaffold_actions.append(action)
+            else:
+                raise NotImplementedError(name)
+            height_from_action[action] = height
+        actions = sorted(element_actions, key=height_from_action.__getitem__, reverse=False) + \
+                  sorted(scaffold_actions, key=height_from_action.__getitem__, reverse=False)
+        #actions = reversed(actions)
+        #actions = randomize(actions)
+        return actions
+    return order_fn
+
+def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, verbose=True, forward=True):
     set_cost_scale(1)
     success_cost = 0 if costs else INF
     discrete_planner = {
-        'search': 'lazy', # eager | lazy
-        # lazy might be faster but the solution quality might be low
+        'search': 'eager', # eager | lazy
+        # lazy might be faster because it performs fewer heuristic evaluations but the solution quality might be lower
+        # NOTE(caelan): eager is actually faster here because evaluating heuristic goal is cheap
         'evaluator': 'greedy',
         'heuristic': 'goal', # goal | add | ff
         #'heuristic': ['ff', get_bias_fn(element_from_index)],
-        'successors': 'all', # all | random
+        #'successors': 'all', # all | random
         # tiebreaker
-        #'successors': get_order_fn(element_from_index),
+        'successors': order_fn,
         # ? ordering scaffolds can come here
         # TODO: confirm that this is working correctly
     }
+    profiler = Profiler(field='tottime', num=25)
+    profiler.save()
     solution = solve_incremental(pddlstream_problem, max_time=60, planner=discrete_planner,
                                 success_cost=success_cost, unit_costs=not costs,
                                 max_planner_time=300, debug=True, verbose=verbose)
+    profiler.restore()
 
     plan, _, facts = solution
     # print('-'*10)
@@ -371,7 +415,7 @@ def main():
     tf = pp.multiply(new_world_from_base, rotation, pp.invert(world_from_base))
     bar_struct.transform(tf, scale=METER_SCALE)
 
-    bar_struct.generate_grounded_connection();
+    bar_struct.generate_grounded_connection()
 
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
@@ -379,11 +423,11 @@ def main():
         set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
 
     if not args.progression_search:
-        pddlstream_problem = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
+        pddlstream_problem, order_fn = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
                 stiffness=args.stiffness, allow_scaffold=args.allow_scaffold, forward=args.forward, trans_tol=args.trans_tol,
                 debug=args.debug, verbose=args.verbose)
 
-        element_sequence = solve_pddlstream(pddlstream_problem, costs=args.costs, debug=args.debug,
+        element_sequence = solve_pddlstream(pddlstream_problem, order_fn, costs=args.costs, debug=args.debug,
             verbose=args.verbose, forward=args.forward)
 
         if element_sequence:

@@ -32,6 +32,7 @@
 
   ; add a scaffold element to the assembled structure
   (:action add_scaffold_element
+    ; TODO: condition that both of the nodes are printed?
     :parameters (?r ?t ?se ?g)
     :precondition (and
                        (AddScaffoldMovement ?r ?t ?se ?g)
@@ -47,10 +48,10 @@
     :parameters (?r ?t ?se ?g)
     :precondition (and
                        (RemoveScaffoldMovement ?r ?t ?se ?g)
-                       (Removed ?se)
+                       (Assembled ?se)
                        )
-    :effect (and (Assembled ?se)
-                 (not (Removed ?se))
+    :effect (and (Removed ?se)
+                 (not (Assembled ?se))
                  )
   )
 
