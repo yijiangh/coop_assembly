@@ -16,6 +16,7 @@ from coop_assembly.planning.utils import compute_z_distance, check_connected, Co
 from coop_assembly.planning.visualization import set_camera
 from coop_assembly.planning.stiffness import test_stiffness, conmech_model_from_bar_structure, create_stiffness_checker, evaluate_stiffness, draw_conmech_model
 from coop_assembly.planning.validator import compute_plan_deformation
+from coop_assembly.planning.stiffness import plan_stiffness
 
 from pddlstream.utils import read
 from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput, DEBUG
@@ -345,44 +346,32 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
 
 ####################################################
 
-def verify_plan(bar_struct, element_sequence, trans_tol=DEFAULT_TRANS_TOL, allow_scaffolds=True, verbose=False):
-    translations = compute_plan_deformation(bar_struct, element_sequence, presample_scaffolds=allow_scaffolds, verbose=verbose)
-
+def visualize_translations(sequence, translations, trans_tol, title='plan deformation history'):
     import matplotlib.pyplot as plt
-
     plt.figure(1)
     plt.subplot(121)
     plt.plot([t[1] for t in translations])
     plt.plot([trans_tol for _ in translations])
-    plt.title('PDDLStream plan deformation history')
+    plt.title(title)
 
     plt.subplot(122)
-    plt.plot(element_sequence)
-    plt.title('Squence')
+    plt.plot(sequence)
+    plt.title('sequence')
     plt.show()
 
-from coop_assembly.planning.stiffness import plan_stiffness
-from coop_assembly.planning.validator import compute_plan_deformation
+def verify_plan(bar_struct, element_sequence, trans_tol=DEFAULT_TRANS_TOL, allow_scaffolds=True, verbose=False):
+    translations = compute_plan_deformation(bar_struct, element_sequence, presample_scaffolds=allow_scaffolds, verbose=verbose)
+    visualize_translations(element_sequence, translations, trans_tol, title='PDDLStream plan deformation history')
+    return element_sequence
 
 def progression_search(bar_struct, chosen_elements, trans_tol, verbose=False):
     progression_sequence = plan_stiffness(bar_struct, chosen_elements, trans_tol=trans_tol,
         stiffness=True, heuristic='z', max_time=pp.INF,
         max_backtrack=0, verbose=verbose)
-
     if progression_sequence:
         translations = compute_plan_deformation(bar_struct, progression_sequence)
-
-        import matplotlib.pyplot as plt
-        plt.figure(1)
-        plt.subplot(121)
-        plt.plot([t[1] for t in translations])
-        plt.plot([trans_tol for _ in translations])
-        plt.title('Progression deformation history')
-
-        plt.subplot(122)
-        plt.plot(progression_sequence)
-        plt.title('sequence')
-        plt.show()
+        visualize_translations(progression_sequence, translations, trans_tol, title='Progression deformation history')
+    return progression_sequence
 
 ####################################################
 
