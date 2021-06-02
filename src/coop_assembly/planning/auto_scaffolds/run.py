@@ -346,33 +346,77 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
 
 ####################################################
 
-def plan_elements(element_from_index):
-    from strips.operators import Action
-    from strips.states import State, PartialState, Literal, STRIPSProblem
-    from misc.utils import arg_info, currentframe
-    from strips.utils import default_plan, SEARCHES, EVALUATORS, HEURISTICS, SUCCESSORS
+def get_stiffness_deformation_fn(bar_struct):
+    checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, presample_scaffolds=False, trans_tol=INF)
+    #checker_info = (checker, fem_element_from_bar_id)
+
+    def fn(elements):
+        if not elements:
+            return 0.
+        deformation = evaluate_stiffness(bar_struct, elements, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
+        if not deformation.displacements:
+            return INF # Not connected to ground
+        max_displacement = max([np.linalg.norm(displacement[:3]) for displacement in deformation.displacements.values()])
+        return max_displacement
+    return fn
+
+def plan_elements(bar_struct, element_from_index):
+    elements = frozenset(element_from_index)
+    cost_fn = get_stiffness_deformation_fn(bar_struct)
+
+    # from strips.operators import Action
+    # from strips.states import State, PartialState, Literal, STRIPSProblem
+    # from misc.utils import arg_info, currentframe
+    # from strips.utils import default_plan, SEARCHES, EVALUATORS, HEURISTICS, SUCCESSORS
     # from planner.main import simple_debug, pause_debug
+    # class Removed(Literal): pass
+    # class Assembled(Literal): pass
+    # class Assemble(Action):
+    #     def __init__(self, element):
+    #         super(self.__class__, self).__init__(arg_info(currentframe()))
+    #         self.conditions = {Removed(element)}
+    #         self.effects = {Assembled(element), ~Removed(element)}
+    #         self.cost = 2
+    #         #self.cost = lambda state: 2
+    # initial = State(Removed(element) for element in elements)
+    # goal = PartialState(Assembled(element) for element in elements)
+    # operators = [Assemble(element) for element in elements]
+    # #problem = STRIPSProblem(initial, goal, operators)
+    # plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
 
-    class Removed(Literal): pass
-    class Assembled(Literal): pass
+    from heapq import heappush, heappop
+    from collections import namedtuple
+    Node = namedtuple('Node', ['g', 'parent'])
 
-    class Assemble(Action):
-        def __init__(self, element):
-            super(self.__class__, self).__init__(arg_info(currentframe()))
-            self.conditions = {Removed(element)}
-            self.effects = {Assembled(element), ~Removed(element)}
-            self.cost = 2
-            #self.cost = lambda state: 2
+    start_v = frozenset()
+    start_g = cost_fn(start_v)
+    visited = {start_v: Node(start_g, None)}
+    queue = [(start_g, start_v)]
 
-    elements = set(element_from_index)
-    initial = State(Removed(element) for element in elements)
-    goal = PartialState(Assembled(element) for element in elements)
-    operators = [Assemble(element) for element in elements]
-    #problem = STRIPSProblem(initial, goal, operators)
+    def retrace(v):
+        if visited[v].parent is None:
+            return [v]
+        return retrace(visited[v].parent) + [v]
 
-    plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
-    print(plan)
+    sequence = None
+    while queue:
+        current_g, current_v = heappop(queue)
+        if visited[current_v].g < current_g:
+            continue
+        if current_v == elements:
+            sequence = retrace(current_v)
+        for element in (elements - current_v):
+            next_v = current_v | {element}
+            next_cost = cost_fn(next_v)
+            next_g = max(current_g, next_cost) # sum | max
+            if (next_v not in visited) or (next_g < visited[next_v].g):
+                visited[next_v] = Node(next_g, current_v)
+                heappush(queue, (next_g, next_v))
+
+    print(sequence)
     input()
+
+    return visited
 
 ####################################################
 
