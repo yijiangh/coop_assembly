@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import argparse
 import os, sys
 import numpy as np
@@ -18,12 +19,12 @@ from coop_assembly.planning.stiffness import test_stiffness, conmech_model_from_
 from coop_assembly.planning.validator import compute_plan_deformation
 from coop_assembly.planning.stiffness import plan_stiffness
 
-from pddlstream.utils import read
+from pddlstream.utils import read, randomize
 from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput, DEBUG
 from pddlstream.language.constants import And, PDDLProblem, Equal, print_plan
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.utils import INF, Profiler
+from pddlstream.utils import INF, Profiler, elapsed_time
 from pddlstream.language.constants import print_plan, is_plan
 
 DEFAULT_TRANS_TOL = 0.000115 # 0.001 | 0.000115 | INF
@@ -360,11 +361,16 @@ def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
         return max_displacement
     return fn
 
-def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuristic_fn=lambda *args: 0, operation=max, anytime=False):
+def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuristic_fn=lambda *args: 0, # priority_fn=None,
+           operation=max, w=1, anytime=False, max_time=INF):
+    #if priority_fn is None:
+    priority_fn = lambda g, h: h if w == INF else operation(g, w*h)
+
     from heapq import heappush, heappop
     from collections import namedtuple
-    Node = namedtuple('Node', ['g', 'parent'])
+    Node = namedtuple('Node', ['g', 'parent']) # TODO: parent_action
 
+    start_time = time.time()
     start_g = cost_fn(start_state)
     visited = {start_state: Node(start_g, None)}
 
@@ -374,22 +380,30 @@ def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuris
         return retrace(visited[s].parent) + [s]
 
     goal_states = []
-    queue = [(start_g, start_state)]
-    while queue:
-        current_g, current_state = heappop(queue)
+    start_h = heuristic_fn(start_state)
+    start_p = priority_fn(start_g, start_h)
+    queue = [(start_p, start_g, len(visited), start_state)]
+    while queue and (elapsed_time(start_time) < max_time):
+        awef, current_g, _, current_state = heappop(queue)
+        print(awef)
+
         if visited[current_state].g < current_g:
             continue
         if goal_test(current_state):
             goal_states.append(current_state)
             if not anytime:
                 break
+            continue
         for next_state in successor_fn(current_state):
             next_cost = cost_fn(next_state)
             next_g = operation(current_g, next_cost)  # sum | max
             # print(current_g, next_cost, next_g)
             if (next_state not in visited) or (next_g < visited[next_state].g):
                 visited[next_state] = Node(next_g, current_state)
-                heappush(queue, (next_g, next_state))
+                next_h = heuristic_fn(next_state)
+                next_p = priority_fn(next_g, next_h)
+                heappush(queue, (next_p, next_g, len(visited), next_state))
+
     if not goal_states:
         return None, INF
     goal_state = goal_states[-1]
@@ -399,10 +413,12 @@ def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuris
 
 def plan_elements(bar_struct, element_from_index):
     elements = frozenset(element_from_index)
-    goal_test = lambda s: s == elements
-    successor_fn = lambda s: (s | {element} for element in (elements - s))
+    start_state = frozenset()
+    goal_state = elements
+    goal_test = lambda state: state == goal_state
+    successor_fn = lambda state: (state | {element} for element in randomize(elements - state)) # sorted | randomize
     cost_fn = get_stiffness_deformation_fn(bar_struct)
-    heuristic_fn = lambda *args: 0
+    heuristic_fn = lambda state: len(goal_state - state)
 
     # from strips.operators import Action
     # from strips.states import State, PartialState, Literal, STRIPSProblem
@@ -424,13 +440,11 @@ def plan_elements(bar_struct, element_from_index):
     # #problem = STRIPSProblem(initial, goal, operators)
     # plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
 
-    start_s = frozenset()
-    sequence, cost = search(start_s, goal_test, successor_fn, cost_fn=cost_fn, heuristic_fn=heuristic_fn)
-    print('Sequence: {}'.format(sequence))
+    solution = search(start_state, goal_test, successor_fn, cost_fn=cost_fn, heuristic_fn=heuristic_fn, w=INF)
+    plan, cost = solution
+    print('Sequence: {}'.format(plan))
     print('Cost: {:.6f}'.format(cost))
-    input()
-
-    return visited
+    return solution
 
 ####################################################
 
@@ -499,8 +513,8 @@ def main():
     if args.connect_pb:
         set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
 
-    # plan_elements(bar_struct, element_from_index)
-    # return
+    plan_elements(bar_struct, element_from_index)
+    return
 
     if not args.progression_search:
         pddlstream_problem, order_fn = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
