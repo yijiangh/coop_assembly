@@ -348,7 +348,7 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
 
 def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
     from coop_assembly.planning.visualization import draw_element, draw_ordered, draw_elements
-    if pp.has_gui():
+    if False and pp.has_gui():
         # element_from_index, grounded_elements, contact_from_connectors, connectors = \
         #     unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
         set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
@@ -374,13 +374,19 @@ def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
         return cache[elements]
 
     if pp.has_gui():
+        set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
+        endpts_from_element = bar_struct.get_axis_pts_from_element(scale=METER_SCALE)
         elements = frozenset(endpts_from_element)
         #deformation = fn(elements)
         deformation = evaluate_stiffness(bar_struct, elements, checker=checker,
                                          fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose, **kwargs)
-        deformed_endpts_from_element = {element: (p1 + deformation.displacements[element], p2 + deformation.displacements[element])
-                                        for element, (p1, p2) in endpts_from_element.item()}
-        handles = draw_elements(deformed_endpts_from_element, color=pp.RED)
+        deformation_from_element = {element: np.array(deformation.displacements[element][:3]) for element in elements}
+        elements = sorted(elements, key=lambda e: np.linalg.norm(deformation_from_element[e]))
+        deformed_endpts_from_element = {element: (np.array(p1) + deformation_from_element[element],
+                                                  np.array(p2) + deformation_from_element[element])
+                                        for element, (p1, p2) in endpts_from_element.items()}
+        #handles = draw_elements(deformed_endpts_from_element, color=pp.RED)
+        handles = draw_ordered(elements, deformed_endpts_from_element)
         pp.wait_if_gui()
 
     return fn
@@ -586,14 +592,14 @@ def main():
     bar_struct.transform(tf, scale=METER_SCALE)
     bar_struct.generate_grounded_connection()
 
-    plan_elements(bar_struct)
-    return
+    # plan_elements(bar_struct)
+    # return
 
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
     if args.connect_pb:
         set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
-        pp.wait_if_gui()
+        #pp.wait_if_gui()
 
     if not args.progression_search:
         pddlstream_problem, order_fn = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
