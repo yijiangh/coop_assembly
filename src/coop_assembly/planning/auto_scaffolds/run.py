@@ -26,7 +26,7 @@ from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.utils import INF, Profiler
 from pddlstream.language.constants import print_plan, is_plan
 
-DEFAULT_TRANS_TOL = 0.000115 # 0.001 | 0.000115
+DEFAULT_TRANS_TOL = 0.000115 # 0.001 | 0.000115 | INF
 
 ####################################################
 
@@ -360,10 +360,49 @@ def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
         return max_displacement
     return fn
 
+def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuristic_fn=lambda *args: 0, operation=max, anytime=False):
+    from heapq import heappush, heappop
+    from collections import namedtuple
+    Node = namedtuple('Node', ['g', 'parent'])
+
+    start_g = cost_fn(start_state)
+    visited = {start_state: Node(start_g, None)}
+
+    def retrace(s):
+        if visited[s].parent is None:
+            return [s]
+        return retrace(visited[s].parent) + [s]
+
+    goal_states = []
+    queue = [(start_g, start_state)]
+    while queue:
+        current_g, current_state = heappop(queue)
+        if visited[current_state].g < current_g:
+            continue
+        if goal_test(current_state):
+            goal_states.append(current_state)
+            if not anytime:
+                break
+        for next_state in successor_fn(current_state):
+            next_cost = cost_fn(next_state)
+            next_g = operation(current_g, next_cost)  # sum | max
+            # print(current_g, next_cost, next_g)
+            if (next_state not in visited) or (next_g < visited[next_state].g):
+                visited[next_state] = Node(next_g, current_state)
+                heappush(queue, (next_g, next_state))
+    if not goal_states:
+        return None, INF
+    goal_state = goal_states[-1]
+    plan = retrace(goal_state)
+    cost = visited[goal_state].g
+    return plan, cost
+
 def plan_elements(bar_struct, element_from_index):
     elements = frozenset(element_from_index)
-    cost_fn = get_stiffness_deformation_fn(bar_struct)
     goal_test = lambda s: s == elements
+    successor_fn = lambda s: (s | {element} for element in (elements - s))
+    cost_fn = get_stiffness_deformation_fn(bar_struct)
+    heuristic_fn = lambda *args: 0
 
     # from strips.operators import Action
     # from strips.states import State, PartialState, Literal, STRIPSProblem
@@ -385,43 +424,10 @@ def plan_elements(bar_struct, element_from_index):
     # #problem = STRIPSProblem(initial, goal, operators)
     # plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
 
-    from heapq import heappush, heappop
-    from collections import namedtuple
-    Node = namedtuple('Node', ['g', 'parent'])
-
     start_s = frozenset()
-    start_g = cost_fn(start_s)
-    visited = {start_s: Node(start_g, None)}
-    queue = [(start_g, start_s)]
-
-    def retrace(s):
-        if visited[s].parent is None:
-            return [s]
-        return retrace(visited[s].parent) + [s]
-
-    goal_states = []
-    while queue:
-        current_g, current_state = heappop(queue)
-        if visited[current_state].g < current_g:
-            continue
-        if goal_test(current_state):
-            goal_states.append(current_state)
-            #sequence = retrace(current_state)
-            break
-        for element in (elements - current_state):
-            next_state = current_state | {element}
-            next_cost = cost_fn(next_state)
-            next_g = max(current_g, next_cost) # sum | max
-            #print(current_g, next_cost, next_g)
-            if (next_state not in visited) or (next_g < visited[next_state].g):
-                visited[next_state] = Node(next_g, current_state)
-                heappush(queue, (next_g, next_state))
-
-    sequence = retrace(goal_states[-1]) if goal_states else None
-    print('Sequence:', sequence)
-    if sequence is not None:
-        print(visited[elements].g)
-        print('Cost: {:.6f}'.format(visited[sequence[-1]].g))
+    sequence, cost = search(start_s, goal_test, successor_fn, cost_fn=cost_fn, heuristic_fn=heuristic_fn)
+    print('Sequence: {}'.format(sequence))
+    print('Cost: {:.6f}'.format(cost))
     input()
 
     return visited
