@@ -19,12 +19,11 @@ from coop_assembly.planning.stiffness import test_stiffness, conmech_model_from_
 from coop_assembly.planning.validator import compute_plan_deformation
 from coop_assembly.planning.stiffness import plan_stiffness
 
-from pddlstream.utils import read, randomize
 from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput, DEBUG
 from pddlstream.language.constants import And, PDDLProblem, Equal, print_plan
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.utils import INF, Profiler, elapsed_time
+from pddlstream.utils import INF, Profiler, elapsed_time, read, randomize
 from pddlstream.language.constants import print_plan, is_plan
 
 DEFAULT_TRANS_TOL = 0.000115 # 0.001 | 0.000115 | INF
@@ -348,6 +347,16 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
 ####################################################
 
 def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
+    from coop_assembly.planning.visualization import draw_element, draw_ordered, draw_elements
+    if pp.has_gui():
+        # element_from_index, grounded_elements, contact_from_connectors, connectors = \
+        #     unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
+        set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
+        endpts_from_element = bar_struct.get_axis_pts_from_element(scale=METER_SCALE)
+        handles = draw_elements(endpts_from_element, color=pp.GREEN)
+        #handles = draw_ordered(sorted(endpts_from_element), endpts_from_element)
+        pp.wait_if_gui()
+
     checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, presample_scaffolds=False, trans_tol=INF) # INF | DEFAULT_TRANS_TOL
     #checker_info = (checker, fem_element_from_bar_id)
     cache = {}
@@ -363,6 +372,17 @@ def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
                     max_displacement = INF # Not connected to ground
             cache[elements] = max_displacement
         return cache[elements]
+
+    if pp.has_gui():
+        elements = frozenset(endpts_from_element)
+        #deformation = fn(elements)
+        deformation = evaluate_stiffness(bar_struct, elements, checker=checker,
+                                         fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose, **kwargs)
+        deformed_endpts_from_element = {element: (p1 + deformation.displacements[element], p2 + deformation.displacements[element])
+                                        for element, (p1, p2) in endpts_from_element.item()}
+        handles = draw_elements(deformed_endpts_from_element, color=pp.RED)
+        pp.wait_if_gui()
+
     return fn
 
 def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuristic_fn=lambda *args: 0, # priority_fn=None,
@@ -417,32 +437,11 @@ def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuris
     cost = visited[goal_state].g
     return plan, cost
 
-def plan_pyplanners(elements):
-    from strips.operators import Action
-    from strips.states import State, PartialState, Literal, STRIPSProblem
-    from misc.utils import arg_info, currentframe
-    from strips.utils import default_plan, SEARCHES, EVALUATORS, HEURISTICS, SUCCESSORS
-    from planner.main import simple_debug, pause_debug
-    class Removed(Literal): pass
-    class Assembled(Literal): pass
-    class Assemble(Action):
-        def __init__(self, element):
-            super(self.__class__, self).__init__(arg_info(currentframe()))
-            self.conditions = {Removed(element)}
-            self.effects = {Assembled(element), ~Removed(element)}
-            self.cost = 2
-            #self.cost = lambda state: 2
-    initial = State(Removed(element) for element in elements)
-    goal = PartialState(Assembled(element) for element in elements)
-    operators = [Assemble(element) for element in elements]
-    #problem = STRIPSProblem(initial, goal, operators)
-    plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
-
 def plan_elements(bar_struct, backward=False, w=INF, num=1):
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
 
-    connections = defaultdict(set)
+    connections = defaultdict(set) # Same as fem_element_from_bar_id
     for pair in connectors:
         for element1, element2 in [pair, reversed(pair)]: # -1 is ground
             connections[element1].add(element2)
@@ -473,6 +472,7 @@ def plan_elements(bar_struct, backward=False, w=INF, num=1):
 
     # TODO: hill climbing
     # TODO: lookahead by planning k steps in the future
+    # TODO: local search
     profiler = Profiler(field='cumtime', num=25) # cumtime | tottime
     profiler.save()
     solutions = []
@@ -491,6 +491,9 @@ def plan_elements(bar_struct, backward=False, w=INF, num=1):
         print('Cost: {:.6f}'.format(cost))
         #if plan is not None:
         solutions.append((plan, cost))
+        if plan is not None:
+            sequence = [state2 - state1 for state1, state2 in zip(plan[:-1], plan[1:])]
+            print(sequence)
 
     print([cost for _, cost in solutions])
     profiler.restore()
@@ -499,6 +502,27 @@ def plan_elements(bar_struct, backward=False, w=INF, num=1):
     best_solution = min(solutions, key=lambda pair: pair[1])
     print(best_solution[1])
     return best_solution
+
+def plan_pyplanners(elements):
+    from strips.operators import Action
+    from strips.states import State, PartialState, Literal, STRIPSProblem
+    from misc.utils import arg_info, currentframe
+    from strips.utils import default_plan, SEARCHES, EVALUATORS, HEURISTICS, SUCCESSORS
+    from planner.main import simple_debug, pause_debug
+    class Removed(Literal): pass
+    class Assembled(Literal): pass
+    class Assemble(Action):
+        def __init__(self, element):
+            super(self.__class__, self).__init__(arg_info(currentframe()))
+            self.conditions = {Removed(element)}
+            self.effects = {Assembled(element), ~Removed(element)}
+            self.cost = 2
+            #self.cost = lambda state: 2
+    initial = State(Removed(element) for element in elements)
+    goal = PartialState(Assembled(element) for element in elements)
+    operators = [Assemble(element) for element in elements]
+    #problem = STRIPSProblem(initial, goal, operators)
+    plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
 
 ####################################################
 
@@ -569,6 +593,7 @@ def main():
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
     if args.connect_pb:
         set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
+        pp.wait_if_gui()
 
     if not args.progression_search:
         pddlstream_problem, order_fn = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
