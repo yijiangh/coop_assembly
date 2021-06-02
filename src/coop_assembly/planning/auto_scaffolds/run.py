@@ -363,6 +363,7 @@ def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
 def plan_elements(bar_struct, element_from_index):
     elements = frozenset(element_from_index)
     cost_fn = get_stiffness_deformation_fn(bar_struct)
+    goal_test = lambda s: s == elements
 
     # from strips.operators import Action
     # from strips.states import State, PartialState, Literal, STRIPSProblem
@@ -398,25 +399,25 @@ def plan_elements(bar_struct, element_from_index):
             return [s]
         return retrace(visited[s].parent) + [s]
 
-    goal_s = None
+    goal_states = []
     while queue:
-        current_g, current_s = heappop(queue)
-        if visited[current_s].g < current_g:
+        current_g, current_state = heappop(queue)
+        if visited[current_state].g < current_g:
             continue
-        if current_s == elements:
-            goal_s = current_s
-            #sequence = retrace(current_s)
+        if goal_test(current_state):
+            goal_states.append(current_state)
+            #sequence = retrace(current_state)
             break
-        for element in (elements - current_s):
-            next_s = current_s | {element}
-            next_cost = cost_fn(next_s)
+        for element in (elements - current_state):
+            next_state = current_state | {element}
+            next_cost = cost_fn(next_state)
             next_g = max(current_g, next_cost) # sum | max
-            print(current_g, next_cost, next_g)
-            if (next_s not in visited) or (next_g < visited[next_s].g):
-                visited[next_s] = Node(next_g, current_s)
-                heappush(queue, (next_g, next_s))
+            #print(current_g, next_cost, next_g)
+            if (next_state not in visited) or (next_g < visited[next_state].g):
+                visited[next_state] = Node(next_g, current_state)
+                heappush(queue, (next_g, next_state))
 
-    sequence = None if goal_s is None else retrace(goal_s)
+    sequence = retrace(goal_states[-1]) if goal_states else None
     print('Sequence:', sequence)
     if sequence is not None:
         print(visited[elements].g)
