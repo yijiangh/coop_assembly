@@ -346,14 +346,14 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
 
 ####################################################
 
-def get_stiffness_deformation_fn(bar_struct):
+def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
     checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, presample_scaffolds=False, trans_tol=INF)
     #checker_info = (checker, fem_element_from_bar_id)
 
     def fn(elements):
         if not elements:
             return 0.
-        deformation = evaluate_stiffness(bar_struct, elements, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=True)
+        deformation = evaluate_stiffness(bar_struct, elements, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose, **kwargs)
         if not deformation.displacements:
             return INF # Not connected to ground
         max_displacement = max([np.linalg.norm(displacement[:3]) for displacement in deformation.displacements.values()])
@@ -388,32 +388,34 @@ def plan_elements(bar_struct, element_from_index):
     from collections import namedtuple
     Node = namedtuple('Node', ['g', 'parent'])
 
-    start_v = frozenset()
-    start_g = cost_fn(start_v)
-    visited = {start_v: Node(start_g, None)}
-    queue = [(start_g, start_v)]
+    start_s = frozenset()
+    start_g = cost_fn(start_s)
+    visited = {start_s: Node(start_g, None)}
+    queue = [(start_g, start_s)]
 
-    def retrace(v):
-        if visited[v].parent is None:
-            return [v]
-        return retrace(visited[v].parent) + [v]
+    def retrace(s):
+        if visited[s].parent is None:
+            return [s]
+        return retrace(visited[s].parent) + [s]
 
     sequence = None
     while queue:
-        current_g, current_v = heappop(queue)
-        if visited[current_v].g < current_g:
+        current_g, current_s = heappop(queue)
+        if visited[current_s].g < current_g:
             continue
-        if current_v == elements:
-            sequence = retrace(current_v)
-        for element in (elements - current_v):
-            next_v = current_v | {element}
-            next_cost = cost_fn(next_v)
+        if current_s == elements:
+            sequence = retrace(current_s)
+        for element in (elements - current_s):
+            next_s = current_s | {element}
+            next_cost = cost_fn(next_s)
             next_g = max(current_g, next_cost) # sum | max
-            if (next_v not in visited) or (next_g < visited[next_v].g):
-                visited[next_v] = Node(next_g, current_v)
-                heappush(queue, (next_g, next_v))
+            if (next_s not in visited) or (next_g < visited[next_s].g):
+                visited[next_s] = Node(next_g, current_s)
+                heappush(queue, (next_g, next_s))
 
-    print(sequence)
+    print('Sequence:', sequence)
+    if sequence is not None:
+        print('Cost:', visited[sequence[-1]].g)
     input()
 
     return visited
