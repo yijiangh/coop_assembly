@@ -438,7 +438,7 @@ def plan_pyplanners(elements):
     #problem = STRIPSProblem(initial, goal, operators)
     plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
 
-def plan_elements(bar_struct):
+def plan_elements(bar_struct, backward=False, w=INF, num=1):
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
 
@@ -450,22 +450,32 @@ def plan_elements(bar_struct):
     elements = frozenset(element_from_index)
     start_state = frozenset()
     goal_state = elements
+
     goal_test = lambda state: state == goal_state
-    successor_fn = lambda state: (state | {element} for element in randomize(elements - state) # sorted | randomize
-                                  if (element in grounded_elements) or (state & connections[element]))
+    forward_successor_fn = lambda state: (state | {element} for element in randomize(elements - state)
+                                          if (element in grounded_elements) or (state & connections[element])) # sorted | randomize
+    backward_successor_fn = lambda state: (state - {element} for element in randomize(state)) # TODO: check connectivity
+
+    operation = max
     cost_fn = get_stiffness_deformation_fn(bar_struct)
     zero_cost_fn = lambda state: 0 # TODO: lazy planning
-    bucket_size = 1 # 1 | 5 | INF
-    heuristic_fn = lambda state: int(len(goal_state - state) / bucket_size)
-    operation = max
 
-    # TODO: random restarts
+    bucket_size = 1 # 1 | 5 | INF
+    forward_heuristic_fn = lambda state: int(len(goal_state - state) / bucket_size)
+    backward_heuristic_fn = lambda state: int(len(state) / bucket_size)
+
+    successor_fn = forward_successor_fn
+    heuristic_fn = forward_heuristic_fn
+    if backward:
+        start_state, goal_state = goal_state, start_state
+        successor_fn = backward_successor_fn
+        heuristic_fn = backward_heuristic_fn
+
     # TODO: hill climbing
     # TODO: lookahead by planning k steps in the future
     profiler = Profiler(field='cumtime', num=25) # cumtime | tottime
     profiler.save()
     solutions = []
-    num = 1
     for i in range(num):
         # TODO: prevent repeated sequences
         # TODO: cache evaluations
@@ -473,7 +483,7 @@ def plan_elements(bar_struct):
         solution = search(start_state, goal_test, successor_fn,
                           cost_fn=cost_fn,
                           #cost_fn=zero_cost_fn,
-                          heuristic_fn=heuristic_fn, operation=operation, w=INF)
+                          heuristic_fn=heuristic_fn, operation=operation, w=w)
         plan, cost = solution
         print('Sequence: {}'.format(plan))
         print('Cost: {:.6f}'.format(cost))
@@ -481,6 +491,7 @@ def plan_elements(bar_struct):
         print('Cost: {:.6f}'.format(cost))
         #if plan is not None:
         solutions.append((plan, cost))
+
     print([cost for _, cost in solutions])
     profiler.restore()
     if not solutions:
@@ -551,8 +562,8 @@ def main():
     bar_struct.transform(tf, scale=METER_SCALE)
     bar_struct.generate_grounded_connection()
 
-    # plan_elements(bar_struct)
-    # return
+    plan_elements(bar_struct)
+    return
 
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
