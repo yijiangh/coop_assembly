@@ -350,15 +350,19 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
 def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
     checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, presample_scaffolds=False, trans_tol=INF) # INF | DEFAULT_TRANS_TOL
     #checker_info = (checker, fem_element_from_bar_id)
+    cache = {}
 
     def fn(elements):
-        if not elements:
-            return 0.
-        deformation = evaluate_stiffness(bar_struct, elements, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose, **kwargs)
-        if not deformation.displacements:
-            return INF # Not connected to ground
-        max_displacement = max([np.linalg.norm(displacement[:3]) for displacement in deformation.displacements.values()])
-        return max_displacement
+        if elements not in cache:
+            max_displacement = 0.
+            if elements:
+                deformation = evaluate_stiffness(bar_struct, elements, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose, **kwargs)
+                if deformation.displacements:
+                    max_displacement = max(np.linalg.norm(displacement[:3]) for displacement in deformation.displacements.values())
+                else:
+                    max_displacement = INF # Not connected to ground
+            cache[elements] = max_displacement
+        return cache[elements]
     return fn
 
 def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuristic_fn=lambda *args: 0, # priority_fn=None,
@@ -382,19 +386,21 @@ def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuris
     goal_states = []
     start_h = heuristic_fn(start_state)
     start_p = priority_fn(start_g, start_h)
-    queue = [(start_p, start_g, len(visited), start_state)]
+    queue = [(start_p, start_g, start_h, len(visited), start_state)]
     while queue and (elapsed_time(start_time) < max_time):
-        awef, current_g, _, current_state = heappop(queue)
-        print(awef)
-
+        _, current_g, current_h, _, current_state = heappop(queue)
         if visited[current_state].g < current_g:
             continue
+        print('Cost: {:.6f} | Heuristic: {:.6f} | Visited: {} | Goal states: {} | Time: {:.3f}'.format(
+            current_g, current_h, len(visited), len(goal_states), elapsed_time(start_time)))
         if goal_test(current_state):
             goal_states.append(current_state)
             if not anytime:
                 break
             continue
         for next_state in successor_fn(current_state):
+            if (next_state in visited) and (visited[next_state].g <= current_g):
+                continue # Don't bother computing the cost fn
             next_cost = cost_fn(next_state)
             next_g = operation(current_g, next_cost)  # sum | max
             # print(current_g, next_cost, next_g)
@@ -402,7 +408,7 @@ def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuris
                 visited[next_state] = Node(next_g, current_state)
                 next_h = heuristic_fn(next_state)
                 next_p = priority_fn(next_g, next_h)
-                heappush(queue, (next_p, next_g, len(visited), next_state))
+                heappush(queue, (next_p, next_g, next_h, len(visited), next_state))
 
     if not goal_states:
         return None, INF
@@ -411,40 +417,77 @@ def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuris
     cost = visited[goal_state].g
     return plan, cost
 
-def plan_elements(bar_struct, element_from_index):
+def plan_pyplanners(elements):
+    from strips.operators import Action
+    from strips.states import State, PartialState, Literal, STRIPSProblem
+    from misc.utils import arg_info, currentframe
+    from strips.utils import default_plan, SEARCHES, EVALUATORS, HEURISTICS, SUCCESSORS
+    from planner.main import simple_debug, pause_debug
+    class Removed(Literal): pass
+    class Assembled(Literal): pass
+    class Assemble(Action):
+        def __init__(self, element):
+            super(self.__class__, self).__init__(arg_info(currentframe()))
+            self.conditions = {Removed(element)}
+            self.effects = {Assembled(element), ~Removed(element)}
+            self.cost = 2
+            #self.cost = lambda state: 2
+    initial = State(Removed(element) for element in elements)
+    goal = PartialState(Assembled(element) for element in elements)
+    operators = [Assemble(element) for element in elements]
+    #problem = STRIPSProblem(initial, goal, operators)
+    plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
+
+def plan_elements(bar_struct):
+    element_from_index, grounded_elements, contact_from_connectors, connectors = \
+        unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
+
+    connections = defaultdict(set)
+    for pair in connectors:
+        for element1, element2 in [pair, reversed(pair)]: # -1 is ground
+            connections[element1].add(element2)
+
     elements = frozenset(element_from_index)
     start_state = frozenset()
     goal_state = elements
     goal_test = lambda state: state == goal_state
-    successor_fn = lambda state: (state | {element} for element in randomize(elements - state)) # sorted | randomize
+    successor_fn = lambda state: (state | {element} for element in randomize(elements - state) # sorted | randomize
+                                  if (element in grounded_elements) or (state & connections[element]))
     cost_fn = get_stiffness_deformation_fn(bar_struct)
-    heuristic_fn = lambda state: len(goal_state - state)
+    zero_cost_fn = lambda state: 0 # TODO: lazy planning
+    bucket_size = 1 # 1 | 5 | INF
+    heuristic_fn = lambda state: int(len(goal_state - state) / bucket_size)
+    operation = max
 
-    # from strips.operators import Action
-    # from strips.states import State, PartialState, Literal, STRIPSProblem
-    # from misc.utils import arg_info, currentframe
-    # from strips.utils import default_plan, SEARCHES, EVALUATORS, HEURISTICS, SUCCESSORS
-    # from planner.main import simple_debug, pause_debug
-    # class Removed(Literal): pass
-    # class Assembled(Literal): pass
-    # class Assemble(Action):
-    #     def __init__(self, element):
-    #         super(self.__class__, self).__init__(arg_info(currentframe()))
-    #         self.conditions = {Removed(element)}
-    #         self.effects = {Assembled(element), ~Removed(element)}
-    #         self.cost = 2
-    #         #self.cost = lambda state: 2
-    # initial = State(Removed(element) for element in elements)
-    # goal = PartialState(Assembled(element) for element in elements)
-    # operators = [Assemble(element) for element in elements]
-    # #problem = STRIPSProblem(initial, goal, operators)
-    # plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
-
-    solution = search(start_state, goal_test, successor_fn, cost_fn=cost_fn, heuristic_fn=heuristic_fn, w=INF)
-    plan, cost = solution
-    print('Sequence: {}'.format(plan))
-    print('Cost: {:.6f}'.format(cost))
-    return solution
+    # TODO: random restarts
+    # TODO: hill climbing
+    # TODO: lookahead by planning k steps in the future
+    profiler = Profiler(field='cumtime', num=25) # cumtime | tottime
+    profiler.save()
+    solutions = []
+    num = 1
+    for i in range(num):
+        # TODO: prevent repeated sequences
+        # TODO: cache evaluations
+        print('{}/{}'.format(i, num))
+        solution = search(start_state, goal_test, successor_fn,
+                          cost_fn=cost_fn,
+                          #cost_fn=zero_cost_fn,
+                          heuristic_fn=heuristic_fn, operation=operation, w=INF)
+        plan, cost = solution
+        print('Sequence: {}'.format(plan))
+        print('Cost: {:.6f}'.format(cost))
+        cost = INF if plan is None else operation(cost_fn(state) for state in plan)
+        print('Cost: {:.6f}'.format(cost))
+        #if plan is not None:
+        solutions.append((plan, cost))
+    print([cost for _, cost in solutions])
+    profiler.restore()
+    if not solutions:
+        return None, INF
+    best_solution = min(solutions, key=lambda pair: pair[1])
+    print(best_solution[1])
+    return best_solution
 
 ####################################################
 
@@ -508,13 +551,13 @@ def main():
     bar_struct.transform(tf, scale=METER_SCALE)
     bar_struct.generate_grounded_connection()
 
+    # plan_elements(bar_struct)
+    # return
+
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
     if args.connect_pb:
         set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
-
-    plan_elements(bar_struct, element_from_index)
-    return
 
     if not args.progression_search:
         pddlstream_problem, order_fn = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
