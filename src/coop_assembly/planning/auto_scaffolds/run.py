@@ -347,7 +347,7 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
 ####################################################
 
 def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
-    checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, presample_scaffolds=False, trans_tol=INF)
+    checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, presample_scaffolds=False, trans_tol=INF) # INF | DEFAULT_TRANS_TOL
     #checker_info = (checker, fem_element_from_bar_id)
 
     def fn(elements):
@@ -398,24 +398,29 @@ def plan_elements(bar_struct, element_from_index):
             return [s]
         return retrace(visited[s].parent) + [s]
 
-    sequence = None
+    goal_s = None
     while queue:
         current_g, current_s = heappop(queue)
         if visited[current_s].g < current_g:
             continue
         if current_s == elements:
-            sequence = retrace(current_s)
+            goal_s = current_s
+            #sequence = retrace(current_s)
+            break
         for element in (elements - current_s):
             next_s = current_s | {element}
             next_cost = cost_fn(next_s)
             next_g = max(current_g, next_cost) # sum | max
+            print(current_g, next_cost, next_g)
             if (next_s not in visited) or (next_g < visited[next_s].g):
                 visited[next_s] = Node(next_g, current_s)
                 heappush(queue, (next_g, next_s))
 
+    sequence = None if goal_s is None else retrace(goal_s)
     print('Sequence:', sequence)
     if sequence is not None:
-        print('Cost:', visited[sequence[-1]].g)
+        print(visited[elements].g)
+        print('Cost: {:.6f}'.format(visited[sequence[-1]].g))
     input()
 
     return visited
@@ -486,6 +491,9 @@ def main():
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
     if args.connect_pb:
         set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
+
+    # plan_elements(bar_struct, element_from_index)
+    # return
 
     if not args.progression_search:
         pddlstream_problem, order_fn = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
