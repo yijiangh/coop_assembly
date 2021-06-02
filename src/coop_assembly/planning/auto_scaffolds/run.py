@@ -26,7 +26,7 @@ from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.utils import INF, Profiler
 from pddlstream.language.constants import print_plan, is_plan
 
-DEFAULT_TRANS_TOL = 0.001 # 0.001 | 0.000115
+DEFAULT_TRANS_TOL = 0.000115 # 0.001 | 0.000115
 
 ####################################################
 
@@ -310,7 +310,7 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
     set_cost_scale(1)
     success_cost = 0 if costs else INF
     discrete_planner = {
-        'search': 'eager', # eager | lazy
+        'search': 'eager', # eager | lazy | hill_climbing
         # lazy might be faster because it performs fewer heuristic evaluations but the solution quality might be lower
         # NOTE(caelan): eager is actually faster here because evaluating heuristic goal is cheap
         'evaluator': 'greedy',
@@ -326,7 +326,7 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
     profiler.save()
     solution = solve_incremental(pddlstream_problem, max_time=60, planner=discrete_planner,
                                 success_cost=success_cost, unit_costs=not costs,
-                                max_planner_time=300, debug=True, verbose=verbose)
+                                max_planner_time=300, debug=debug, verbose=verbose)
     profiler.restore()
 
     plan, _, facts = solution
@@ -343,6 +343,36 @@ def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, ver
     element_sequence = [ac.args[2] for ac in actions]
 
     return element_sequence
+
+####################################################
+
+def plan_elements(element_from_index):
+    from strips.operators import Action
+    from strips.states import State, PartialState, Literal, STRIPSProblem
+    from misc.utils import arg_info, currentframe
+    from strips.utils import default_plan, SEARCHES, EVALUATORS, HEURISTICS, SUCCESSORS
+    # from planner.main import simple_debug, pause_debug
+
+    class Removed(Literal): pass
+    class Assembled(Literal): pass
+
+    class Assemble(Action):
+        def __init__(self, element):
+            super(self.__class__, self).__init__(arg_info(currentframe()))
+            self.conditions = {Removed(element)}
+            self.effects = {Assembled(element), ~Removed(element)}
+            self.cost = 2
+            #self.cost = lambda state: 2
+
+    elements = set(element_from_index)
+    initial = State(Removed(element) for element in elements)
+    goal = PartialState(Assembled(element) for element in elements)
+    operators = [Assemble(element) for element in elements]
+    #problem = STRIPSProblem(initial, goal, operators)
+
+    plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
+    print(plan)
+    input()
 
 ####################################################
 
@@ -398,13 +428,12 @@ def main():
         pp.draw_pose(pp.unit_pose())
 
     # transform model
-    new_world_from_base = pp.Pose(point=(np.array([0,0,0])))
+    new_world_from_base = pp.Pose(point=np.array([0,0,0]))
     world_from_base = pp.Pose(point=bar_struct.base_centroid(METER_SCALE))
     # rotation = Pose(euler=Euler(roll=BASE_ROLL, pitch=BASE_PITCH, yaw=BASE_YAW))
     rotation = pp.unit_pose()
     tf = pp.multiply(new_world_from_base, rotation, pp.invert(world_from_base))
     bar_struct.transform(tf, scale=METER_SCALE)
-
     bar_struct.generate_grounded_connection()
 
     element_from_index, grounded_elements, contact_from_connectors, connectors = \

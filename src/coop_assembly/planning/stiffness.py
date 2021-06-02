@@ -422,5 +422,3 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
     cprint('Failed to find stiffness plan under tol {}! Elements: {}, Min remaining {}, Time: {:.3f}sec'.format(
         trans_tol, len(remaining_elements), min_remaining, elapsed_time(start_time)), 'red')
     return None
-
-##################################################
