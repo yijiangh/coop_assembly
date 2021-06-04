@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import argparse
 import os, sys
 import numpy as np
@@ -16,16 +17,16 @@ from coop_assembly.planning.utils import compute_z_distance, check_connected, Co
 from coop_assembly.planning.visualization import set_camera
 from coop_assembly.planning.stiffness import test_stiffness, conmech_model_from_bar_structure, create_stiffness_checker, evaluate_stiffness, draw_conmech_model
 from coop_assembly.planning.validator import compute_plan_deformation
+from coop_assembly.planning.stiffness import plan_stiffness
 
-from pddlstream.utils import read
 from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput, DEBUG
 from pddlstream.language.constants import And, PDDLProblem, Equal, print_plan
 from pddlstream.algorithms.downward import set_cost_scale, parse_action
 from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.utils import INF
+from pddlstream.utils import INF, Profiler, elapsed_time, read, randomize
 from pddlstream.language.constants import print_plan, is_plan
 
-DEFAULT_TRANS_TOL = 0.0008 # 0.001
+DEFAULT_TRANS_TOL = 0.000115 # 0.001 | 0.000115 | INF
 
 ####################################################
 
@@ -167,6 +168,20 @@ def get_wild_add_scaffold_element_gen_fn(bar_struct, element_from_index, grounde
 
 ####################################################
 
+def compute_scaffold(checker, cm_nodes_from_bar_id):
+    # * unpack bar structure data
+    elem_ind_from_elem_tag = checker._sc_ins.get_elem_ind_from_elem_tag()
+    scaffold_elements = elem_ind_from_elem_tag['scaffold']
+    bar_id_from_scaffolds = defaultdict(set)
+    for se_id in scaffold_elements:
+        se_element = checker.model.elements[se_id]
+        for bar_id, cm_node_ids in cm_nodes_from_bar_id.items():
+            for cm_node_id in list(cm_node_ids):
+                if cm_node_id in se_element.end_node_inds:
+                    if bar_id != -1:
+                        bar_id_from_scaffolds[se_id].add(bar_id)
+    return bar_id_from_scaffolds
+
 def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
         stiffness=True, allow_scaffold=True, forward=True, trans_tol=DEFAULT_TRANS_TOL,
         printed=None, removed=None,
@@ -177,34 +192,28 @@ def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors
     # if connect_pb:
     #     draw_conmech_model(checker.model, fem_element_from_bar_id, elements=None);
 
-    # * unpack bar structure data
-    elem_ind_from_elem_tag = checker._sc_ins.get_elem_ind_from_elem_tag()
-
     cm_nodes_from_bar_id = defaultdict(set)
     for bar_id, fem_es in fem_element_from_bar_id.items():
         for fem_e_id in fem_es:
             fem_element = checker.model.elements[fem_e_id]
             cm_nodes_from_bar_id[bar_id].update(fem_element.end_node_inds)
 
+    all_scaffolds = set()
+    bar_id_from_scaffolds = {}
     if allow_scaffold:
-        scaffold_elements = elem_ind_from_elem_tag['scaffold']
-        bar_id_from_scaffolds = defaultdict(set)
-        for se_id in scaffold_elements:
-            se_element = checker.model.elements[se_id]
-            for bar_id, cm_node_ids in cm_nodes_from_bar_id.items():
-                for cm_node_id in list(cm_node_ids):
-                    if cm_node_id in se_element.end_node_inds:
-                        if bar_id != -1:
-                            bar_id_from_scaffolds[se_id].add(bar_id)
-        all_scaffolds = set(bar_id_from_scaffolds)
+        bar_id_from_scaffolds.update(compute_scaffold(checker, cm_nodes_from_bar_id))
+        all_scaffolds.update(bar_id_from_scaffolds)
 
     # * formulate pddl problem
     formu = 'forward' if forward else 'backward'
     if allow_scaffold:
         formu += '_scaffold'
     pwd_path = os.path.abspath(os.path.dirname(__file__))
-    domain_pddl = read(os.path.join(pwd_path, '..', 'pddl/stiffness/domain_{}.pddl'.format(formu)))
-    stream_pddl = read(os.path.join(pwd_path, '..', 'pddl/stiffness/stream_{}.pddl'.format(formu)))
+    domain_path = os.path.abspath(os.path.join(pwd_path, '..', 'pddl/stiffness/domain_{}.pddl'.format(formu)))
+    stream_path = os.path.abspath(os.path.join(pwd_path, '..', 'pddl/stiffness/stream_{}.pddl'.format(formu)))
+    print('Domain path: {}\nStream path: {}'.format(domain_path, stream_path))
+    domain_pddl = read(domain_path)
+    stream_pddl = read(stream_path)
 
     init = []
     init.extend([
@@ -261,27 +270,64 @@ def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors
     # print('Goal:', pddlstream_problem.goal)
 
     pddlstream_problem = PDDLProblem(domain_pddl, constant_map, stream_pddl, stream_map, init, goal)
+    order_fn = get_order_fn(element_from_index, bar_id_from_scaffolds)
 
-    return pddlstream_problem
+    return pddlstream_problem, order_fn
 
-def solve_pddlstream(pddlstream_problem, costs=False, debug=False, verbose=True, forward=True):
+def get_order_fn(element_from_index, bar_id_from_scaffolds):
+    from strips.utils import ha_applicable
+    from pddlstream.language.conversion import obj_from_pddl
+
+    def order_fn(state, goal, operators):
+        operators = ha_applicable(state, goal, operators)
+        actions = [op for op in operators if op.__class__.__name__ == 'Action'] # TODO: repair ugliness
+        element_actions = []
+        scaffold_actions = []
+        height_from_action = {}
+        for action in actions:
+            name, args = parse_action(action.fd_action.name)
+            args = [obj_from_pddl(arg).value for arg in args]
+            if name == 'add_element':
+                _, _, element, _ = args
+                height = np.average(element_from_index[element].axis_endpoints, axis=0)[2]
+                element_actions.append(action)
+            elif name == 'add_scaffold_element':
+                _, _, scaffold, _ = args
+                height = np.average(np.vstack([element_from_index[element].axis_endpoints
+                                               for element in bar_id_from_scaffolds[scaffold]]), axis=0)[2]
+                scaffold_actions.append(action)
+            else:
+                raise NotImplementedError(name)
+            height_from_action[action] = height
+        actions = sorted(element_actions, key=height_from_action.__getitem__, reverse=False) + \
+                  sorted(scaffold_actions, key=height_from_action.__getitem__, reverse=False)
+        #actions = reversed(actions)
+        #actions = randomize(actions)
+        return actions
+    return order_fn
+
+def solve_pddlstream(pddlstream_problem, order_fn, costs=False, debug=False, verbose=True, forward=True):
     set_cost_scale(1)
     success_cost = 0 if costs else INF
     discrete_planner = {
-        'search': 'lazy', # eager | lazy
-        # lazy might be faster but the solution quality might be low
+        'search': 'eager', # eager | lazy | hill_climbing
+        # lazy might be faster because it performs fewer heuristic evaluations but the solution quality might be lower
+        # NOTE(caelan): eager is actually faster here because evaluating heuristic goal is cheap
         'evaluator': 'greedy',
         'heuristic': 'goal', # goal | add | ff
         #'heuristic': ['ff', get_bias_fn(element_from_index)],
-        'successors': 'all', # all | random
+        #'successors': 'all', # all | random
         # tiebreaker
-        #'successors': get_order_fn(element_from_index),
+        'successors': order_fn,
         # ? ordering scaffolds can come here
         # TODO: confirm that this is working correctly
     }
+    profiler = Profiler(field='tottime', num=25)
+    profiler.save()
     solution = solve_incremental(pddlstream_problem, max_time=60, planner=discrete_planner,
                                 success_cost=success_cost, unit_costs=not costs,
-                                max_planner_time=300, debug=True, verbose=True)
+                                max_planner_time=300, debug=debug, verbose=verbose)
+    profiler.restore()
 
     plan, _, facts = solution
     # print('-'*10)
@@ -300,44 +346,218 @@ def solve_pddlstream(pddlstream_problem, costs=False, debug=False, verbose=True,
 
 ####################################################
 
-def verify_plan(bar_struct, element_sequence, trans_tol=DEFAULT_TRANS_TOL, allow_scaffolds=True, verbose=False):
-    translations = compute_plan_deformation(bar_struct, element_sequence, presample_scaffolds=allow_scaffolds, verbose=verbose)
+def get_stiffness_deformation_fn(bar_struct, verbose=False, **kwargs):
+    from coop_assembly.planning.visualization import draw_element, draw_ordered, draw_elements
+    if False and pp.has_gui():
+        # element_from_index, grounded_elements, contact_from_connectors, connectors = \
+        #     unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
+        set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
+        endpts_from_element = bar_struct.get_axis_pts_from_element(scale=METER_SCALE)
+        handles = draw_elements(endpts_from_element, color=pp.GREEN)
+        #handles = draw_ordered(sorted(endpts_from_element), endpts_from_element)
+        pp.wait_if_gui()
 
+    checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, presample_scaffolds=False, trans_tol=INF) # INF | DEFAULT_TRANS_TOL
+    #checker_info = (checker, fem_element_from_bar_id)
+    cache = {}
+
+    def fn(elements):
+        if elements not in cache:
+            max_displacement = 0.
+            if elements:
+                deformation = evaluate_stiffness(bar_struct, elements, checker=checker, fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose, **kwargs)
+                if deformation.displacements:
+                    max_displacement = max(np.linalg.norm(displacement[:3]) for displacement in deformation.displacements.values())
+                else:
+                    max_displacement = INF # Not connected to ground
+            cache[elements] = max_displacement
+        return cache[elements]
+
+    if pp.has_gui():
+        set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
+        endpts_from_element = bar_struct.get_axis_pts_from_element(scale=METER_SCALE)
+        elements = frozenset(endpts_from_element)
+        #deformation = fn(elements)
+        deformation = evaluate_stiffness(bar_struct, elements, checker=checker,
+                                         fem_element_from_bar_id=fem_element_from_bar_id, verbose=verbose, **kwargs)
+        deformation_from_element = {element: np.array(deformation.displacements[element][:3]) for element in elements}
+        elements = sorted(elements, key=lambda e: np.linalg.norm(deformation_from_element[e]))
+        deformed_endpts_from_element = {element: (np.array(p1) + deformation_from_element[element],
+                                                  np.array(p2) + deformation_from_element[element])
+                                        for element, (p1, p2) in endpts_from_element.items()}
+        #handles = draw_elements(deformed_endpts_from_element, color=pp.RED)
+        handles = draw_ordered(elements, deformed_endpts_from_element)
+        pp.wait_if_gui()
+
+    return fn
+
+def search(start_state, goal_test, successor_fn, cost_fn=lambda *args: 1, heuristic_fn=lambda *args: 0, # priority_fn=None,
+           operation=max, w=1, anytime=False, max_time=INF):
+    #if priority_fn is None:
+    priority_fn = lambda g, h: h if w == INF else operation(g, w*h)
+
+    from heapq import heappush, heappop
+    from collections import namedtuple
+    Node = namedtuple('Node', ['g', 'parent']) # TODO: parent_action
+
+    start_time = time.time()
+    start_g = cost_fn(start_state)
+    visited = {start_state: Node(start_g, None)}
+
+    def retrace(s):
+        if visited[s].parent is None:
+            return [s]
+        return retrace(visited[s].parent) + [s]
+
+    goal_states = []
+    start_h = heuristic_fn(start_state)
+    start_p = priority_fn(start_g, start_h)
+    queue = [(start_p, start_g, start_h, len(visited), start_state)]
+    while queue and (elapsed_time(start_time) < max_time):
+        _, current_g, current_h, _, current_state = heappop(queue)
+        if visited[current_state].g < current_g:
+            continue
+        print('Cost: {:.6f} | Heuristic: {:.6f} | Visited: {} | Goal states: {} | Time: {:.3f}'.format(
+            current_g, current_h, len(visited), len(goal_states), elapsed_time(start_time)))
+        if goal_test(current_state):
+            goal_states.append(current_state)
+            if not anytime:
+                break
+            continue
+        for next_state in successor_fn(current_state):
+            if (next_state in visited) and (visited[next_state].g <= current_g):
+                continue # Don't bother computing the cost fn
+            next_cost = cost_fn(next_state)
+            next_g = operation(current_g, next_cost)  # sum | max
+            # print(current_g, next_cost, next_g)
+            if (next_state not in visited) or (next_g < visited[next_state].g):
+                visited[next_state] = Node(next_g, current_state)
+                next_h = heuristic_fn(next_state)
+                next_p = priority_fn(next_g, next_h)
+                heappush(queue, (next_p, next_g, next_h, len(visited), next_state))
+
+    if not goal_states:
+        return None, INF
+    goal_state = goal_states[-1]
+    plan = retrace(goal_state)
+    cost = visited[goal_state].g
+    return plan, cost
+
+def plan_elements(bar_struct, backward=False, w=INF, num=1):
+    element_from_index, grounded_elements, contact_from_connectors, connectors = \
+        unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
+
+    connections = defaultdict(set) # Same as fem_element_from_bar_id
+    for pair in connectors:
+        for element1, element2 in [pair, reversed(pair)]: # -1 is ground
+            connections[element1].add(element2)
+
+    elements = frozenset(element_from_index)
+    start_state = frozenset()
+    goal_state = elements
+
+    goal_test = lambda state: state == goal_state
+    forward_successor_fn = lambda state: (state | {element} for element in randomize(elements - state)
+                                          if (element in grounded_elements) or (state & connections[element])) # sorted | randomize
+    backward_successor_fn = lambda state: (state - {element} for element in randomize(state)) # TODO: check connectivity
+
+    operation = max
+    cost_fn = get_stiffness_deformation_fn(bar_struct)
+    zero_cost_fn = lambda state: 0 # TODO: lazy planning
+
+    bucket_size = 1 # 1 | 5 | INF
+    forward_heuristic_fn = lambda state: int(len(goal_state - state) / bucket_size)
+    backward_heuristic_fn = lambda state: int(len(state) / bucket_size)
+
+    successor_fn = forward_successor_fn
+    heuristic_fn = forward_heuristic_fn
+    if backward:
+        start_state, goal_state = goal_state, start_state
+        successor_fn = backward_successor_fn
+        heuristic_fn = backward_heuristic_fn
+
+    # TODO: hill climbing
+    # TODO: lookahead by planning k steps in the future
+    # TODO: local search
+    profiler = Profiler(field='cumtime', num=25) # cumtime | tottime
+    profiler.save()
+    solutions = []
+    for i in range(num):
+        # TODO: prevent repeated sequences
+        # TODO: cache evaluations
+        print('{}/{}'.format(i, num))
+        solution = search(start_state, goal_test, successor_fn,
+                          cost_fn=cost_fn,
+                          #cost_fn=zero_cost_fn,
+                          heuristic_fn=heuristic_fn, operation=operation, w=w)
+        plan, cost = solution
+        print('Sequence: {}'.format(plan))
+        print('Cost: {:.6f}'.format(cost))
+        cost = INF if plan is None else operation(cost_fn(state) for state in plan)
+        print('Cost: {:.6f}'.format(cost))
+        #if plan is not None:
+        solutions.append((plan, cost))
+        if plan is not None:
+            sequence = [state2 - state1 for state1, state2 in zip(plan[:-1], plan[1:])]
+            print(sequence)
+
+    print([cost for _, cost in solutions])
+    profiler.restore()
+    if not solutions:
+        return None, INF
+    best_solution = min(solutions, key=lambda pair: pair[1])
+    print(best_solution[1])
+    return best_solution
+
+def plan_pyplanners(elements):
+    from strips.operators import Action
+    from strips.states import State, PartialState, Literal, STRIPSProblem
+    from misc.utils import arg_info, currentframe
+    from strips.utils import default_plan, SEARCHES, EVALUATORS, HEURISTICS, SUCCESSORS
+    from planner.main import simple_debug, pause_debug
+    class Removed(Literal): pass
+    class Assembled(Literal): pass
+    class Assemble(Action):
+        def __init__(self, element):
+            super(self.__class__, self).__init__(arg_info(currentframe()))
+            self.conditions = {Removed(element)}
+            self.effects = {Assembled(element), ~Removed(element)}
+            self.cost = 2
+            #self.cost = lambda state: 2
+    initial = State(Removed(element) for element in elements)
+    goal = PartialState(Assembled(element) for element in elements)
+    operators = [Assemble(element) for element in elements]
+    #problem = STRIPSProblem(initial, goal, operators)
+    plan, state_space = default_plan(initial, goal, operators, search='eager', heuristic='goal')
+
+####################################################
+
+def visualize_translations(sequence, translations, trans_tol, title='plan deformation history'):
     import matplotlib.pyplot as plt
-
     plt.figure(1)
     plt.subplot(121)
     plt.plot([t[1] for t in translations])
     plt.plot([trans_tol for _ in translations])
-    plt.title('PDDLStream plan deformation history')
+    plt.title(title)
 
     plt.subplot(122)
-    plt.plot(element_sequence)
-    plt.title('Squence')
+    plt.plot(sequence)
+    plt.title('sequence')
     plt.show()
 
-from coop_assembly.planning.stiffness import plan_stiffness
-from coop_assembly.planning.validator import compute_plan_deformation
+def verify_plan(bar_struct, element_sequence, trans_tol=DEFAULT_TRANS_TOL, allow_scaffolds=True, verbose=False):
+    translations = compute_plan_deformation(bar_struct, element_sequence, presample_scaffolds=allow_scaffolds, verbose=verbose)
+    visualize_translations(element_sequence, translations, trans_tol, title='PDDLStream plan deformation history')
+    return element_sequence
 
 def progression_search(bar_struct, chosen_elements, trans_tol, verbose=False):
     progression_sequence = plan_stiffness(bar_struct, chosen_elements, trans_tol=trans_tol,
         stiffness=True, heuristic='z', max_time=pp.INF,
         max_backtrack=0, verbose=verbose)
-
     if progression_sequence:
         translations = compute_plan_deformation(bar_struct, progression_sequence)
-
-        import matplotlib.pyplot as plt
-        plt.figure(1)
-        plt.subplot(121)
-        plt.plot([t[1] for t in translations])
-        plt.plot([trans_tol for _ in translations])
-        plt.title('Progression deformation history')
-
-        plt.subplot(122)
-        plt.plot(progression_sequence)
-        plt.title('sequence')
-        plt.show()
+        visualize_translations(progression_sequence, translations, trans_tol, title='Progression deformation history')
+    return progression_sequence
 
 ####################################################
 
@@ -364,26 +584,29 @@ def main():
         pp.draw_pose(pp.unit_pose())
 
     # transform model
-    new_world_from_base = pp.Pose(point=(np.array([0,0,0])))
+    new_world_from_base = pp.Pose(point=np.array([0,0,0]))
     world_from_base = pp.Pose(point=bar_struct.base_centroid(METER_SCALE))
     # rotation = Pose(euler=Euler(roll=BASE_ROLL, pitch=BASE_PITCH, yaw=BASE_YAW))
     rotation = pp.unit_pose()
     tf = pp.multiply(new_world_from_base, rotation, pp.invert(world_from_base))
     bar_struct.transform(tf, scale=METER_SCALE)
+    bar_struct.generate_grounded_connection()
 
-    bar_struct.generate_grounded_connection();
+    # plan_elements(bar_struct)
+    # return
 
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
         unpack_structure(bar_struct, chosen_bars=None, scale=METER_SCALE, color=pp.apply_alpha(pp.RED, 0.1))
     if args.connect_pb:
         set_camera([bar_struct.base_centroid(METER_SCALE)], camera_dist=1.25, scale=1.)
+        #pp.wait_if_gui()
 
     if not args.progression_search:
-        pddlstream_problem = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
+        pddlstream_problem, order_fn = get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors,
                 stiffness=args.stiffness, allow_scaffold=args.allow_scaffold, forward=args.forward, trans_tol=args.trans_tol,
                 debug=args.debug, verbose=args.verbose)
 
-        element_sequence = solve_pddlstream(pddlstream_problem, costs=args.costs, debug=args.debug,
+        element_sequence = solve_pddlstream(pddlstream_problem, order_fn, costs=args.costs, debug=args.debug,
             verbose=args.verbose, forward=args.forward)
 
         if element_sequence:

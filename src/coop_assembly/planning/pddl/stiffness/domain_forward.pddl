@@ -23,6 +23,7 @@
                        )
     :effect (and (Assembled ?e)
                  (not (Removed ?e))
+                 ;(increase (total-cost) (Stiffness)) ; TODO(caelan): fluent cost function
                  )
   )
 

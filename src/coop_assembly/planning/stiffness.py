@@ -389,7 +389,8 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
             # * Done!
             #from extrusion.visualization import draw_ordered
             # distance = compute_sequence_distance(node_points, sequence, start=initial_position, end=initial_position)
-            cprint('Plan-stiffness success! Elements: {}, max BT: {}, stiffness failure: {}, Time: {:.3f}sec'.format(len(sequence), max_bt, stiffness_failures, elapsed_time(start_time))) #Distance: {:.3f}m,
+            cprint('Plan-stiffness success! Elements: {}, max BT: {}, stiffness failure: {}, Time: {:.3f}sec'.format(
+                len(sequence), max_bt, stiffness_failures, elapsed_time(start_time))) #Distance: {:.3f}m,
             #local_search(extrusion_path, element_from_id, node_points, ground_nodes, checker, sequence,
             #             initial_position=initial_position, stiffness=stiffness, max_time=INF)
             #draw_ordered(sequence, node_points)
@@ -422,5 +423,3 @@ def plan_stiffness(bar_struct, elements, initial_position=None, checker=None, fe
     cprint('Failed to find stiffness plan under tol {}! Elements: {}, Min remaining {}, Time: {:.3f}sec'.format(
         trans_tol, len(remaining_elements), min_remaining, elapsed_time(start_time)), 'red')
     return None
-
-##################################################

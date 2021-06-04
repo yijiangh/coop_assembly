@@ -30,6 +30,14 @@ def sample_colors(num, lower=0.0, upper=1.0): # for now wrap around
     viridis = cm.get_cmap('viridis', 12)
     return viridis(np.linspace(lower, upper, num, endpoint=True))
 
+def draw_elements(axis_endpts, elements=None, **kwargs):
+    if elements is None:
+        elements = set(axis_endpts)
+    handles = []
+    with LockRenderer():
+        for element in elements:
+            handles.append(draw_element(axis_endpts, element, **kwargs))
+    return handles
 
 def draw_ordered(elements, axis_endpts):
     """colormap the sequence defined by the ``elements`` index list
@@ -210,7 +218,7 @@ def check_model(bar_struct, indices=None, debug=False):
             wait_if_gui('connector: {}'.format(current_connectors))
 
     # * neighbor elements from elements
-    print('Visualize neighnor elements.')
+    print('Visualize neighbor elements.')
     element_neighbors = get_element_neighbors(connectors, elements)
     for element, connected_bars in element_neighbors.items():
         remove_all_debug()
