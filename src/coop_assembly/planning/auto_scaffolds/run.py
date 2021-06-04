@@ -25,7 +25,7 @@ from pddlstream.algorithms.incremental import solve_incremental
 from pddlstream.utils import INF
 from pddlstream.language.constants import print_plan, is_plan
 
-DEFAULT_TRANS_TOL = 0.000115 # 0.001
+DEFAULT_TRANS_TOL = 0.0008 # 0.001
 
 ####################################################
 
@@ -229,7 +229,7 @@ def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors
     if forward:
         stream_map = {
             'sample-add': get_wild_add_element_gen_fn(bar_struct, element_from_index, grounded_elements, connectors,
-                debug=False, stiffness=stiffness, checker_info=checker_info, verbose=False)
+                debug=False, stiffness=stiffness, checker_info=checker_info, verbose=True)
         }
     else:
         stream_map = {
@@ -240,7 +240,7 @@ def get_pddlstream(bar_struct, element_from_index, grounded_elements, connectors
     if allow_scaffold:
         stream_map['sample-add-scaffold'] = get_wild_add_scaffold_element_gen_fn(bar_struct, element_from_index,
             grounded_elements, bar_id_from_scaffolds, debug=False,
-            use_fluent=True, connectivity=True, stiffness=True, checker_info=checker_info, verbose=False)
+            use_fluent=True, connectivity=True, stiffness=True, checker_info=checker_info, verbose=True)
 
     if debug:
         stream_map = DEBUG
@@ -281,7 +281,7 @@ def solve_pddlstream(pddlstream_problem, costs=False, debug=False, verbose=True,
     }
     solution = solve_incremental(pddlstream_problem, max_time=60, planner=discrete_planner,
                                 success_cost=success_cost, unit_costs=not costs,
-                                max_planner_time=300, debug=True, verbose=verbose)
+                                max_planner_time=300, debug=True, verbose=True)
 
     plan, _, facts = solution
     # print('-'*10)
@@ -344,7 +344,7 @@ def progression_search(bar_struct, chosen_elements, trans_tol, verbose=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--connect_pb', action='store_true', help='Enables the viewer during planning (slow!)')
-    parser.add_argument('-p', '--problem', default='1_exp_tets.json', # SP_arch
+    parser.add_argument('-p', '--problem', default='1_exp_tets.json', # SP_arch.json
                         help='The name of the problem to solve')
     parser.add_argument('--stiffness', action='store_false', help='Enable stiffness constraint')
     parser.add_argument('--forward', action='store_false', help='Use forward formulation.')
