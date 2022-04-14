@@ -20,7 +20,6 @@
     :precondition (and
                        (RemoveMovement ?r ?t ?e ?g)
                        (Assembled ?e)
-                    ;    (forall (?e2) (imply (Order ?e ?e2) (Removed ?e2)))
                        )
     :effect (and (Removed ?e)
                  (not (Assembled ?e))

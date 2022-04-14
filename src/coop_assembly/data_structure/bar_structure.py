@@ -14,12 +14,11 @@ edited on 17.12.2019 by Yijiang Huang, yijiangh@mit.edu
 '''
 
 import numpy as np
-from collections import defaultdict
 from compas.datastructures.network import Network
 from compas.geometry import is_point_on_line
 from compas.geometry import scale_vector
-from coop_assembly.help_functions.helpers_geometry import dropped_perpendicular_points, find_points_extreme, \
-    compute_contact_line_between_bars, create_bar_body, create_bar_flying_body
+from coop_assembly.help_functions.helpers_geometry import find_points_extreme, \
+    compute_contact_line_between_bars, create_bar_body
 from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
 from pybullet_planning import create_plane, set_point, Point, get_pose, apply_alpha, RED, set_color, has_body, dump_world, get_bodies, \
