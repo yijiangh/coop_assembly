@@ -27,25 +27,27 @@ except KeyError:
     # Inside PDDLStream, it will look for 'PYPLANNERS_PATH'
     os.environ['PYPLANNERS_PATH'] = pyplanner_path
 
-import pddlstream
-cprint("Using pddlstream from {}".format(pddlstream.__file__), 'yellow')
-import strips # pyplanners
-cprint("Using strips from {}".format(strips.__file__), 'yellow')
+try:
+    import pddlstream
+    cprint("Using pddlstream from {}".format(pddlstream.__file__), 'yellow')
+    import strips # pyplanners
+    cprint("Using strips from {}".format(strips.__file__), 'yellow')
 
-from pddlstream.algorithms.downward import set_cost_scale, parse_action
-from pddlstream.algorithms.incremental import solve_incremental
-from pddlstream.algorithms.focused import solve_focused
-from pddlstream.language.constants import And, PDDLProblem, Equal, print_plan, is_plan
-from pddlstream.language.generator import from_test, from_gen_fn, from_fn, empty_gen
-from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput, DEBUG
-from pddlstream.language.function import FunctionInfo
-from pddlstream.utils import read, get_file_path, inclusive_range, randomize
-from pddlstream.language.temporal import compute_duration, get_end
-from pddlstream.language.conversion import obj_from_pddl
+    from pddlstream.algorithms.downward import set_cost_scale, parse_action
+    from pddlstream.algorithms.incremental import solve_incremental
+    from pddlstream.algorithms.focused import solve_focused
+    from pddlstream.language.constants import And, PDDLProblem, Equal, print_plan, is_plan
+    from pddlstream.language.generator import from_test, from_gen_fn, from_fn, empty_gen
+    from pddlstream.language.stream import StreamInfo, PartialInputs, WildOutput, DEBUG
+    from pddlstream.language.function import FunctionInfo
+    from pddlstream.utils import read, get_file_path, inclusive_range, randomize
+    from pddlstream.language.temporal import compute_duration, get_end
+    from pddlstream.language.conversion import obj_from_pddl
+    from strips.utils import ha_applicable
+except:
+    cprint('pddlstream and strips not loaded.', 'yellow')
 
-from strips.utils import ha_applicable
 from coop_assembly.planning.utils import compute_z_distance, check_connected
-
 from pybullet_planning import has_gui, get_movable_joints, get_configuration, set_configuration, WorldSaver, LockRenderer, \
     wait_if_gui, EndEffector, link_from_name, joints_from_names, intrinsic_euler_from_quat, get_links, create_attachment, \
     set_joint_positions, get_links, set_pose, INF, Attachment

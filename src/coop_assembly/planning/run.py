@@ -1,8 +1,6 @@
 from __future__ import print_function
 
-import os
 import argparse
-import pytest
 import numpy as np
 from numpy.linalg import norm
 import json
@@ -32,9 +30,9 @@ from coop_assembly.planning.stream import get_bar_grasp_gen_fn, get_place_gen_fn
 from coop_assembly.planning.parsing import load_structure, PICKNPLACE_FILENAMES, save_plan, parse_plan, unpack_structure, Config
 from coop_assembly.planning.validator import validate_trajectories, validate_pddl_plan, compute_plan_deformation
 from coop_assembly.planning.utils import recover_sequence, Command, load_world, notify
-from coop_assembly.planning.stripstream import get_pddlstream, solve_pddlstream, STRIPSTREAM_ALGORITHM
+from coop_assembly.planning.stripstream import solve_pddlstream, STRIPSTREAM_ALGORITHM
 from coop_assembly.planning.regression import regression
-from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness, plan_stiffness, TRANS_TOL
+from coop_assembly.planning.stiffness import create_stiffness_checker, evaluate_stiffness, plan_stiffness, TRANS_TOL, USE_CONMECH
 from coop_assembly.planning.heuristics import HEURISTICS
 from coop_assembly.planning.robot_setup import ROBOT_NAME, BUILD_PLATE_CENTER, BASE_PITCH, BASE_ROLL, BASE_YAW, BOTTOM_BUFFER
 
@@ -117,7 +115,7 @@ def run_planning(args, viewer=False, watch=False, step_sim=False, write=False, s
         if args.check_model:
             check_model(bar_struct, chosen_bars, debug=args.debug)
 
-        if args.stiffness:
+        if USE_CONMECH and args.stiffness:
             checker, fem_element_from_bar_id = create_stiffness_checker(bar_struct, verbose=args.debug, debug=args.debug,
                 save_model=args.save_cm_model)
             cprint('stiffness checker created.', 'green')
@@ -289,6 +287,10 @@ def main():
     parser.add_argument('--save_cm_model', action='store_true', help='Export conmech model.')
     args = parser.parse_args()
     print('Arguments:', args)
+
+    if not USE_CONMECH:
+        cprint('conmech not installed, stiffness constraint disabled.', 'yellow')
+        args.stiffness = False
 
     if args.disable:
         args.collisions = False

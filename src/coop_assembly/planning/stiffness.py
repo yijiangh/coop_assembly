@@ -17,7 +17,7 @@ try:
 except ImportError as e:
     cprint('{}, Not using conmech'.format(e), 'yellow')
     USE_CONMECH = False
-    input("Press Enter to continue...")
+    # input("Press Enter to continue...")
 else:
     USE_CONMECH = True
 
@@ -274,7 +274,7 @@ def draw_conmech_model(model, fem_element_from_bar_id, elements=None):
 
 def create_stiffness_checker(bar_struct, verbose=False, trans_tol=TRANS_TOL, **kwargs):
     if not USE_CONMECH:
-        return None
+        return None, None
     # * convert ball structure to a conmech model
     model, fem_element_from_bar_id = conmech_model_from_bar_structure(bar_struct, **kwargs)
     with HideOutput():
