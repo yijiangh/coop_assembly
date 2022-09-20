@@ -100,9 +100,9 @@ class BarStructure(Network):
     #####################################
 
     def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir,
-            _bar_parameters=[], radius=3.17, grounded=False, pb_scale=METER_SCALE):
+            _bar_parameters=[], radius=3.17, grounded=False, pb_scale=METER_SCALE, **kwargs):
         v_key = self.add_node()
-        bar_body = create_bar_body(_axis_endpoints, radius, scale=pb_scale)
+        bar_body = create_bar_body(_axis_endpoints, radius, scale=pb_scale, **kwargs)
         self.node[v_key].update({"bar_type":_bar_type,
                                  "axis_endpoints":_axis_endpoints,
                                  "pb_body":bar_body,  # pybullet body
@@ -234,7 +234,7 @@ class BarStructure(Network):
         end_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
         return (scale_vector(end_pts[0], scale), scale_vector(end_pts[1], scale))
 
-    def get_bar_pb_body(self, bar_v_key, color=apply_alpha(RED, 0), regenerate=False, scale=METER_SCALE):
+    def get_bar_pb_body(self, bar_v_key, color=apply_alpha(RED, 0), regenerate=False, scale=METER_SCALE, **kwargs):
         """get pybullet body of a particular bar
 
         Parameters
@@ -258,7 +258,7 @@ class BarStructure(Network):
             # if cannot find the body in the environment, useful when the env is recreated
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
             radius = self.node[bar_v_key]['radius']
-            self.node[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius, scale=scale)
+            self.node[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius, scale=scale, **kwargs)
         set_color(self.node[bar_v_key]['pb_body'], color)
         return self.node[bar_v_key]['pb_body']
 

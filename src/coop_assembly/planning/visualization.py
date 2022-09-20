@@ -1,4 +1,5 @@
 import colorsys
+from coop_assembly.data_structure.bar_structure import GROUND_INDEX
 import numpy as np
 from matplotlib import cm
 from termcolor import cprint
@@ -102,7 +103,8 @@ def color_structure(element_bodies, printed, next_element=None, built_alpha=1.0,
         element_colors[element] = apply_alpha(BLACK, alpha=remaining_alpha)
     for element, color in element_colors.items():
         if element not in element_bodies:
-            cprint('element {} not in bodies, skipped'.format(element), 'yellow')
+            if element != GROUND_INDEX:
+                cprint('element {} not in bodies, skipped'.format(element), 'yellow')
             continue
         if isinstance(element_bodies[element], int):
             body = element_bodies[element]
@@ -156,7 +158,8 @@ def label_elements(element_bodies, indices=None, body_index=False):
     keys = element_bodies.keys() if indices is None else indices
     for element in keys:
         if element not in element_bodies:
-            cprint('element {} not in bodies, skipped'.format(element), 'yellow')
+            if element != GROUND_INDEX:
+                cprint('element {} not in bodies, skipped'.format(element), 'yellow')
             continue
         body = element_bodies[element]
         handles.extend(label_element(element_bodies, element, tag=get_name(body) if body_index else None))
@@ -174,21 +177,21 @@ def label_points(points, **kwargs):
 
 #####################################################
 
-def check_model(bar_struct, indices=None, debug=False):
+def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCALE, contact_dist_tol=1e-6):
     from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected
     elements = list(bar_struct.nodes()) if indices is None else indices
 
-    element_bodies = bar_struct.get_element_bodies(indices=elements, color=apply_alpha(RED, 0.3))
-    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=1e-3)
+    element_bodies = bar_struct.get_element_bodies(indices=elements, color=apply_alpha(RED, 0.3), scale=to_meter_scale)
+    endpts_from_element = bar_struct.get_axis_pts_from_element(scale=to_meter_scale)
     set_camera([np.array(p[0]) for e, p in endpts_from_element.items()],scale=1.)
 
-    contact_from_connectors = bar_struct.get_connectors(scale=1e-3)
+    contact_from_connectors = bar_struct.get_connectors(scale=to_meter_scale)
     connectors = list(contact_from_connectors.keys())
 
     # * grounded elements
     cprint('Visualize grounded elements.', 'yellow')
     grounded_elements = list(set(bar_struct.get_grounded_bar_keys()) & set(elements))
-    remove_all_debug()
+    # remove_all_debug()
     with LockRenderer():
         for bar in grounded_elements:
             label_elements(element_bodies, [bar])
@@ -205,7 +208,9 @@ def check_model(bar_struct, indices=None, debug=False):
         remove_all_debug()
         with LockRenderer():
             for c in list(bar_connectors):
-                assert get_distance(contact_from_connectors[c][0], contact_from_connectors[c][1]) > 1e-6
+                contact_distance = get_distance(contact_from_connectors[c][0], contact_from_connectors[c][1])
+                assert contact_distance > contact_dist_tol, \
+                    f'tangent distance {contact_distance} > {contact_dist_tol}'
                 if c[0] in elements and c[1] in elements:
                     current_connectors.append(c)
                     label_elements(element_bodies, c)

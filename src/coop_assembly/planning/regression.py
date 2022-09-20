@@ -20,7 +20,7 @@ from pybullet_planning import INF, get_movable_joints, get_joint_positions, rand
     remove_all_debug, wait_for_user, elapsed_time, implies, LockRenderer, EndEffector, link_from_name, \
     set_joint_positions, get_relative_pose, WorldSaver, set_renderer, apply_alpha, RED, wait_for_duration, wait_if_gui
 
-from coop_assembly.help_functions import METER_SCALE, create_bar_flying_body
+from coop_assembly.help_functions import METER_SCALE
 from coop_assembly.data_structure.utils import MotionTrajectory
 from coop_assembly.geometry_generation.utils import outgoing_from_edges
 

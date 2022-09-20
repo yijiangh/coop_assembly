@@ -88,8 +88,8 @@ def Frame_to_plane_data(frame):
 ###############################################
 # pybullet body creation functions used in planning
 
-SHRINK_RADIUS = 0.0001 # meter
-def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=apply_alpha(RED, 0)):
+SHRINK_RADIUS = 1e-4 # meter
+def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=apply_alpha(RED, 0), shrink_radius=SHRINK_RADIUS):
     """create bar's collision body in pybullet
     """
     if not is_connected():
@@ -108,7 +108,7 @@ def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=
     theta = np.math.acos(z / np.linalg.norm(delta))
     quat = quat_from_euler(Euler(pitch=theta, yaw=phi))
     # p1 is z=-height/2, p2 is z=+height/2
-    diameter = 2*(bar_radius*scale - SHRINK_RADIUS)
+    diameter = 2*(bar_radius*scale - shrink_radius)
 
     if use_box:
         # Much smaller than cylinder
@@ -132,10 +132,10 @@ def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=
 
     return body
 
-def create_bar_flying_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0.2)):
+def create_bar_flying_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0.2), shrink_radius=SHRINK_RADIUS):
     """input is in meter
     """
-    radius = bar_radius - SHRINK_RADIUS
+    radius = bar_radius - shrink_radius
     p1, p2 = axis_end_pts
     p1 = np.array(p1)
     p2 = np.array(p2)
