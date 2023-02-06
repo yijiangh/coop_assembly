@@ -3,8 +3,8 @@ import json
 import datetime
 import copy
 from termcolor import cprint
-from collections import OrderedDict
-from pybullet_planning import connect, LockRenderer, get_date, is_connected, RED
+from collections import OrderedDict, namedtuple
+from pybullet_planning import connect, LockRenderer, get_date, is_connected, RED, Pose, unit_pose
 from .visualization import set_camera
 
 from coop_assembly.data_structure import BarStructure, OverallStructure
@@ -12,8 +12,6 @@ from coop_assembly.help_functions.parsing import export_structure_data, parse_sa
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from .visualization import GROUND_COLOR, BACKGROUND_COLOR, SHADOWS
 
-# Configuration = namedtuple('Configuration', ['seed', 'problem', 'algorithm', 'bias', 'max_time',
-#                                              'cfree', 'disable', 'stiffness', 'motions', 'ee_only'])
 class Config(object):
     def __init__(self, args):
         self.problem = args.problem
@@ -53,14 +51,14 @@ def get_assembly_path(assembly_name, file_dir=PICKNPLACE_DIRECTORY):
         raise FileNotFoundError(model_path)
     return model_path
 
-def load_structure(test_file_name, connect_pb=True, viewer=False, color=(1,0,0,0)):
+def load_structure(test_file_name, connect_pb=True, viewer=False, color=(1,0,0,0), **kwarg):
     """connect pybullet env and load the bar system
     """
     if connect_pb and not is_connected():
         connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     if connect_pb and viewer:
         locker = LockRenderer()
-    b_struct_data, o_struct_data = parse_saved_structure_data(get_assembly_path(test_file_name))
+    b_struct_data, o_struct_data = parse_saved_structure_data(get_assembly_path(test_file_name, **kwarg))
     if 'data' in b_struct_data:
         b_struct_data = b_struct_data['data']
     b_struct = BarStructure.from_data(b_struct_data)

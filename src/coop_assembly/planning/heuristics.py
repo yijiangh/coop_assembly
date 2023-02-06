@@ -14,10 +14,10 @@ DISTANCE_HEURISTICS = [
 
 HEURISTICS = ['none'] + DISTANCE_HEURISTICS #  + STIFFNESS_HEURISTICS
 
-def get_heuristic_fn(robot, bar_struct, heuristic, forward=False, checker=None, fem_element_from_bar_id=None):
+def get_heuristic_fn(robot, bar_struct, heuristic, forward=False, checker=None, fem_element_from_bar_id=None, **kwargs):
     sign = +1 if forward else -1
     element_from_index, grounded_elements, contact_from_connectors, connectors = \
-        unpack_structure(bar_struct, scale=METER_SCALE, color=apply_alpha(RED,0.2))
+        unpack_structure(bar_struct, color=apply_alpha(RED,0.2), **kwargs)
     all_elements = frozenset(element_from_index.keys())
 
     # precomputed heuristics

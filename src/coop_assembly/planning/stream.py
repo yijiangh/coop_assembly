@@ -462,7 +462,7 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
         control_joints = joints_from_names(robot, CONTROL_JOINT_NAMES)
         disabled_collisions = get_disabled_collisions(robot)
     else:
-        # this is the bar robot
+        # * this is the bar robot
         control_joints = get_movable_joints(robot)
         disabled_collisions = {}
         # ee_body_link = get_links(end_effector)[-1]

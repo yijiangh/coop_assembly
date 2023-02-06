@@ -14,8 +14,8 @@ from pybullet_planning import Pose, link_from_name, has_link, joint_from_name
 import coop_assembly
 
 # ! set robot here
-# ROBOT_NAME  = 'kuka'
-ROBOT_NAME  = 'abb_track'
+ROBOT_NAME  = 'kuka'
+# ROBOT_NAME  = 'abb_track'
 INCLUDE_ENV_COLLISION_OBJS = 1
 
 ########################################
