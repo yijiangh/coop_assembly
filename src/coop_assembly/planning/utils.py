@@ -172,6 +172,7 @@ class Command(object):
 
 def get_connector_from_elements(connectors, elements):
     # elements: list of indices
+    # connector does not need to contain edge in both directions, like both (e1, e2) and (e2, e1)
     connector_from_elements = defaultdict(set)
     for e in elements:
         for c in connectors:

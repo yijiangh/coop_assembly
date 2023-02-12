@@ -1,9 +1,10 @@
-import colorsys
 from coop_assembly.data_structure.bar_structure import GROUND_INDEX
 import numpy as np
+from numpy.linalg import norm as npnorm
 from matplotlib import cm
 from termcolor import cprint
 
+import pybullet_planning as pp
 from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, get_visual_data, \
     set_camera_pose, add_text, draw_pose, get_pose, wait_for_user, wait_for_duration, get_name, wait_if_gui, remove_all_debug, remove_body, \
     remove_handles, pairwise_collision, pairwise_collision_info, draw_collision_diagnosis, has_gui, remove_debug, LockRenderer, get_distance
@@ -175,6 +176,16 @@ def label_connector(connector_pts, c, **kwargs):
 def label_points(points, **kwargs):
     return [add_text(node, position=point, **kwargs) for node, point in enumerate(points)]
 
+def prune_reverse_connectors(connectors):
+    new_connectors = {}
+    for edge, c in connectors.items():
+        n1, n2 = edge
+        reversed_edge = edge[::-1]
+        if reversed_edge in new_connectors:
+            continue
+        new_connectors[edge] = c
+    return new_connectors
+
 #####################################################
 
 def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCALE, contact_dist_tol=1e-6):
@@ -185,6 +196,7 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
     endpts_from_element = bar_struct.get_axis_pts_from_element(scale=to_meter_scale)
     set_camera([np.array(p[0]) for e, p in endpts_from_element.items()],scale=1.)
 
+    # contact_from_connectors = prune_reverse_connectors(bar_struct.get_connectors(scale=to_meter_scale))
     contact_from_connectors = bar_struct.get_connectors(scale=to_meter_scale)
     connectors = list(contact_from_connectors.keys())
 
@@ -199,51 +211,42 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
     if debug:
         wait_if_gui('grounded element: {}'.format(grounded_elements))
 
-    # * connectors from bar
-    cprint('Visualize connectors.', 'yellow')
-    connector_from_elements = get_connector_from_elements(connectors, elements)
-    for bar in elements:
-        bar_connectors = connector_from_elements[bar]
-        current_connectors = []
-        remove_all_debug()
-        with LockRenderer():
-            for c in list(bar_connectors):
-                contact_distance = get_distance(contact_from_connectors[c][0], contact_from_connectors[c][1])
-                assert contact_distance > contact_dist_tol, \
-                    f'tangent distance {contact_distance} > {contact_dist_tol}'
-                if c[0] in elements and c[1] in elements:
-                    current_connectors.append(c)
-                    label_elements(element_bodies, c)
-                    add_line(*contact_from_connectors[c], color=RED, width=2)
-                else:
-                    print('Grounded connector - {}'.format(c))
-                    add_line(*contact_from_connectors[c], color=BLUE, width=3)
-            color_structure(element_bodies, set(), next_element=bar, built_alpha=0.6)
-        if debug:
-            wait_if_gui('connector: {}'.format(current_connectors))
-
     # * neighbor elements from elements
     print('Visualize neighbor elements.')
     element_neighbors = get_element_neighbors(connectors, elements)
-    for element, connected_bars in element_neighbors.items():
-        remove_all_debug()
-        with LockRenderer():
+    with LockRenderer() as locker:
+        for element, connected_bars in element_neighbors.items():
+            remove_all_debug()
             color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
             label_elements(element_bodies, list(connected_bars) + [element])
-        if debug:
-            wait_if_gui('connected neighbors: {} | {}'.format(element, connected_bars))
+            for nb in list(connected_bars):
+                r1, r2 = bar_struct.node[element]['radius'], bar_struct.node[nb]['radius']
+                c = (element, nb)
+                contact_pts = contact_from_connectors[c]
+                contact_distance = npnorm(np.array(contact_pts[0]) - np.array(contact_pts[1]))
+                if abs(contact_distance - (r1+r2)) > contact_dist_tol:
+                    print('contact distance {:.4} - radius {:.2f} > {}'.format(contact_distance, r1+r2, contact_dist_tol))
+                    print('connector: ({},{}) | all nbs {}'.format(element, nb, connected_bars))
+                    if element in elements and nb in elements:
+                        add_line(*contact_from_connectors[c], color=RED, width=2)
+                    else:
+                        print('Grounded connector - {}'.format(c))
+                        add_line(*contact_from_connectors[c], color=BLUE, width=3)
+                    # color_structure(element_bodies, c, next_element=bar, built_alpha=0.6)
+                    locker.restore()
+                    wait_if_gui()
 
-    # TODO: some sanity check here
-    # mutual collision checks
+    # * mutual collision checks
     is_collided = False
     for bar1, bar2 in connectors:
         if not (bar1 in elements and bar2 in elements):
             continue
         b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
         b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
-        if b1_body is None or b2_body is None:
-            continue
-        if pairwise_collision(b1_body, b2_body):
+        assert b1_body is not None and b2_body is not None
+        # if b1_body is None or b2_body is None:
+        #     continue
+        if pp.pairwise_link_collision(b1_body, pp.BASE_LINK, b2_body, pp.BASE_LINK, distance_threshold=contact_dist_tol):
             cr = pairwise_collision_info(b1_body, b2_body)
             draw_collision_diagnosis(cr, focus_camera=True)
             is_collided = True
