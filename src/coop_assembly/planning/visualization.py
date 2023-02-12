@@ -1,8 +1,8 @@
-from coop_assembly.data_structure.bar_structure import GROUND_INDEX
 import numpy as np
 from numpy.linalg import norm as npnorm
 from matplotlib import cm
 from termcolor import cprint
+from itertools import combinations
 
 import pybullet_planning as pp
 from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color, apply_alpha, get_visual_data, \
@@ -11,6 +11,8 @@ from pybullet_planning import RED, BLUE, GREEN, BLACK, TAN, add_line, set_color,
 
 from coop_assembly.help_functions.shared_const import METER_SCALE
 from coop_assembly.data_structure.utils import MotionTrajectory
+from coop_assembly.data_structure.bar_structure import GROUND_INDEX
+from coop_assembly import LOGGER
 
 BAR_LINE_WIDTH = 1.0
 CONNECTOR_LINE_WIDTH = 1.0
@@ -196,8 +198,8 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
     endpts_from_element = bar_struct.get_axis_pts_from_element(scale=to_meter_scale)
     set_camera([np.array(p[0]) for e, p in endpts_from_element.items()],scale=1.)
 
-    # contact_from_connectors = prune_reverse_connectors(bar_struct.get_connectors(scale=to_meter_scale))
-    contact_from_connectors = bar_struct.get_connectors(scale=to_meter_scale)
+    contact_from_connectors = prune_reverse_connectors(bar_struct.get_connectors(scale=to_meter_scale))
+    # contact_from_connectors = bar_struct.get_connectors(scale=to_meter_scale)
     connectors = list(contact_from_connectors.keys())
 
     # * grounded elements
@@ -213,6 +215,7 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
 
     # * neighbor elements from elements
     print('Visualize neighbor elements.')
+    collision_captured_by_lines = []
     element_neighbors = get_element_neighbors(connectors, elements)
     with LockRenderer() as locker:
         for element, connected_bars in element_neighbors.items():
@@ -220,39 +223,56 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
             color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
             label_elements(element_bodies, list(connected_bars) + [element])
             for nb in list(connected_bars):
+                if nb == GROUND_INDEX:
+                    continue
+                if (element, nb) in collision_captured_by_lines or (nb, element) in collision_captured_by_lines:
+                    continue
                 r1, r2 = bar_struct.node[element]['radius'], bar_struct.node[nb]['radius']
                 c = (element, nb)
+                if c not in contact_from_connectors:
+                    c = c[::-1]
                 contact_pts = contact_from_connectors[c]
                 contact_distance = npnorm(np.array(contact_pts[0]) - np.array(contact_pts[1]))
                 if abs(contact_distance - (r1+r2)) > contact_dist_tol:
-                    print('contact distance {:.4} - radius {:.2f} > {}'.format(contact_distance, r1+r2, contact_dist_tol))
-                    print('connector: ({},{}) | all nbs {}'.format(element, nb, connected_bars))
+                    if contact_distance > (r1+r2):
+                        cprint('Not in contact', 'yellow')
+                    else:
+                        cprint('In collision', 'red')
+                    collision_captured_by_lines.append(c)
+                    LOGGER.error('|contact distance {:.4} - radius {:.2f}| > {}'.format(contact_distance, r1+r2, contact_dist_tol))
+                    LOGGER.error('connector: ({},{}) | all nbs {}'.format(element, nb, connected_bars))
                     if element in elements and nb in elements:
                         add_line(*contact_from_connectors[c], color=RED, width=2)
                     else:
-                        print('Grounded connector - {}'.format(c))
+                        # print('Grounded connector - {}'.format(c))
                         add_line(*contact_from_connectors[c], color=BLUE, width=3)
+
                     # color_structure(element_bodies, c, next_element=bar, built_alpha=0.6)
                     locker.restore()
                     wait_if_gui()
 
     # * mutual collision checks
     is_collided = False
-    for bar1, bar2 in connectors:
-        if not (bar1 in elements and bar2 in elements):
+    # for bar1, bar2 in connectors:
+    for bar1, bar2 in combinations(elements, 2):
+        if bar1 == GROUND_INDEX or bar2 == GROUND_INDEX:
             continue
         b1_body = bar_struct.get_bar_pb_body(bar1, apply_alpha(RED, 0.5))
         b2_body = bar_struct.get_bar_pb_body(bar2, apply_alpha(TAN, 0.5))
         assert b1_body is not None and b2_body is not None
-        # if b1_body is None or b2_body is None:
-        #     continue
         if pp.pairwise_link_collision(b1_body, pp.BASE_LINK, b2_body, pp.BASE_LINK, distance_threshold=collision_dist_tol):
-            cr = pairwise_collision_info(b1_body, b2_body)
-            draw_collision_diagnosis(cr, focus_camera=True)
             is_collided = True
-            if not has_gui():
-                assert False, '{}-{} collision!'.format(b1_body, b2_body)
-    cprint('Model valid: {}'.format(not is_collided), 'red' if is_collided else 'green')
+            cr = pairwise_collision_info(b1_body, b2_body)
+            body_name_from_id = {pp.get_body_from_pb_id(b1_body) : bar1,
+                                 pp.get_body_from_pb_id(b2_body) : bar2}
+            if (bar1, bar2) not in collision_captured_by_lines and (bar2, bar1) not in collision_captured_by_lines:
+                LOGGER.error('Collision not found by line checks!')
+                draw_collision_diagnosis(cr, focus_camera=True, body_name_from_id=body_name_from_id)
+                if not has_gui():
+                    assert False, '{}-{} collision!'.format(b1_body, b2_body)
+            else:
+                pass
+    cprint('Model collision valid: {}'.format(not is_collided), 'red' if is_collided else 'green')
     wait_if_gui('model checking finished.')
 
 
