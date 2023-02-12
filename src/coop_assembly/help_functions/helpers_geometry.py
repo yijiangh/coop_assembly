@@ -31,6 +31,7 @@ from compas.geometry import project_point_plane, translate_points
 from compas.geometry import distance_point_point, distance_point_line, distance_point_plane, \
     area_triangle, volume_polyhedron, rotate_points, closest_point_on_segment, norm_vector
 
+from coop_assembly import LOGGER
 from coop_assembly.help_functions.shared_const import EPS, NODE_CORRECTION_TOP_DISTANCE, NODE_CORRECTION_SINE_ANGLE, \
     HAS_PYBULLET, METER_SCALE, USE_BOX, TOL, EPS
 
@@ -318,7 +319,7 @@ def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1,
            else:
                return [line_point_1_2, contact_pt2]
 
-def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key, method='geometric'):
+def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key, method='opt'):
     """a convenient wrapper for ``dropped_perpendicular_points`` to operate directly on BarStructure and its bar vertices
 
     Parameters
@@ -342,8 +343,12 @@ def compute_contact_line_between_bars(b_struct, bar1_key, bar2_key, method='geom
         return dropped_perpendicular_points(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1],
                                             bar2["axis_endpoints"][0], bar2["axis_endpoints"][1])
     elif method == 'opt':
-        return closest_point_segments(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1],
-                                      bar2["axis_endpoints"][0], bar2["axis_endpoints"][1])
+        try:
+            return closest_point_segments(bar1["axis_endpoints"][0], bar1["axis_endpoints"][1],
+                                          bar2["axis_endpoints"][0], bar2["axis_endpoints"][1])
+        except ImportError as e:
+            LOGGER.error('Gurobi not available, use method=\'geometric\' instead.')
+            raise e
     else:
         raise ValueError
 

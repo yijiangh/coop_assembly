@@ -188,7 +188,7 @@ def prune_reverse_connectors(connectors):
 
 #####################################################
 
-def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCALE, contact_dist_tol=1e-6):
+def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCALE, contact_dist_tol=1e-3, collision_dist_tol=1e-3):
     from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected
     elements = list(bar_struct.nodes()) if indices is None else indices
 
@@ -246,7 +246,7 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
         assert b1_body is not None and b2_body is not None
         # if b1_body is None or b2_body is None:
         #     continue
-        if pp.pairwise_link_collision(b1_body, pp.BASE_LINK, b2_body, pp.BASE_LINK, distance_threshold=contact_dist_tol):
+        if pp.pairwise_link_collision(b1_body, pp.BASE_LINK, b2_body, pp.BASE_LINK, distance_threshold=collision_dist_tol):
             cr = pairwise_collision_info(b1_body, b2_body)
             draw_collision_diagnosis(cr, focus_camera=True)
             is_collided = True
