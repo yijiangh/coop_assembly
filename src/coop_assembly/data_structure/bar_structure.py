@@ -21,8 +21,8 @@ from coop_assembly.help_functions.helpers_geometry import find_points_extreme, \
     compute_contact_line_between_bars, create_bar_body
 from coop_assembly.help_functions.shared_const import TOL, METER_SCALE
 
-from pybullet_planning import create_plane, set_point, Point, get_pose, apply_alpha, RED, set_color, has_body, dump_world, get_bodies, \
-    is_connected, remove_body, tform_point
+import pybullet_planning as pp
+from pybullet_planning import get_pose, apply_alpha, RED, set_color, get_bodies, is_connected, tform_point
 from .utils import Element, WorldPose, compute_bar_pose
 from copy import copy
 
@@ -100,13 +100,15 @@ class BarStructure(Network):
     #####################################
 
     def add_bar(self, _bar_type, _axis_endpoints, _crosec_type, _crosec_values, _zdir,
-            _bar_parameters=[], radius=3.17, grounded=False, pb_scale=METER_SCALE, **kwargs):
+            radius=3.17, grounded=False, pb_scale=METER_SCALE, shrink_radius=1e-3,
+            **kwargs):
         v_key = self.add_node()
         bar_body = create_bar_body(_axis_endpoints, radius, scale=pb_scale, **kwargs)
         self.node[v_key].update({"bar_type":_bar_type,
                                  "axis_endpoints":_axis_endpoints,
                                  "pb_body":bar_body,  # pybullet body
                                  'radius':radius,
+                                 'shrink_radius':shrink_radius,
                                  "grounded":grounded,
                                  "layer":None, # tet group ids to indicate assembly partial ordering
                                  # * below are legacy attributes from SP's code
@@ -115,7 +117,6 @@ class BarStructure(Network):
                                  "crosec_type":_crosec_type,
                                  "crosec_values":_crosec_values,
                                  "zdir":_zdir,
-                                 "bar_parameters":_bar_parameters,
                                  "exchange_values":{},
                                   })
         return v_key
@@ -234,6 +235,11 @@ class BarStructure(Network):
         end_pts = list(self.edge[b1][b2]["endpoints"].values())[0]
         return (scale_vector(end_pts[0], scale), scale_vector(end_pts[1], scale))
 
+    def bar_has_pb_body(self, bar_v_key):
+        return 'pb_body' in self.node[bar_v_key] and \
+            self.node[bar_v_key]['pb_body'] is not None and \
+            self.node[bar_v_key]['pb_body'] in get_bodies()
+
     def get_bar_pb_body(self, bar_v_key, color=apply_alpha(RED, 0), regenerate=False, scale=METER_SCALE, **kwargs):
         """get pybullet body of a particular bar
 
@@ -252,12 +258,13 @@ class BarStructure(Network):
         if bar_v_key not in self.node:
             # cprint('bar key not in the node {}'.format(bar_v_key))
             return None
-        if regenerate or 'pb_body' not in self.node[bar_v_key] or \
-            self.node[bar_v_key]['pb_body'] is None or \
-            self.node[bar_v_key]['pb_body'] not in get_bodies():
-            # if cannot find the body in the environment, useful when the env is recreated
+        if regenerate or not self.bar_has_pb_body(bar_v_key):
+            if self.bar_has_pb_body(bar_v_key):
+                pp.remove_body(self.node[bar_v_key]['pb_body'])
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
             radius = self.node[bar_v_key]['radius']
+            # parse saved shrink radius to prevent collision body inconsistency if regenerated
+            kwargs['shrink_radius'] = self.node[bar_v_key]['shrink_radius']
             self.node[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius, scale=scale, **kwargs)
         set_color(self.node[bar_v_key]['pb_body'], color)
         return self.node[bar_v_key]['pb_body']
@@ -378,7 +385,7 @@ class BarStructure(Network):
             self.node[bar_k]["axis_endpoints"] = (list(tform_point(tform, np.array(bar_vals["axis_endpoints"][0]))),
                                                   list(tform_point(tform, np.array(bar_vals["axis_endpoints"][1])))
                                                   )
-            self.node[bar_k]['pb_body'] = self.get_bar_pb_body(bar_k, regenerate=True, scale=scale)
+            self.node[bar_k]['pb_body'] = self.get_bar_pb_body(bar_k, regenerate=True, scale=scale, shrink_radius=1e-3)
 
         # update connector end pts
         for b1, b2 in self.edges():

@@ -89,8 +89,7 @@ def Frame_to_plane_data(frame):
 ###############################################
 # pybullet body creation functions used in planning
 
-SHRINK_RADIUS = 1e-4 # meter
-def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=apply_alpha(RED, 0), shrink_radius=SHRINK_RADIUS):
+def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=apply_alpha(RED, 0), shrink_radius=0.0):
     """create bar's collision body in pybullet
     """
     if not is_connected():
@@ -133,7 +132,7 @@ def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=
 
     return body
 
-def create_bar_flying_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0.2), shrink_radius=SHRINK_RADIUS):
+def create_bar_flying_body(axis_end_pts, bar_radius, use_box=USE_BOX, color=apply_alpha(RED, 0.2), shrink_radius=0.0):
     """input is in meter
     """
     radius = bar_radius - shrink_radius
