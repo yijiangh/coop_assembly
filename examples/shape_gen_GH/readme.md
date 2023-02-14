@@ -25,7 +25,7 @@ You should be able to see something like the following in the command prompt whe
 
 <img src='./images/rpc_commandline_printout.png' width=70%>
 
-If you can't see these, it means that you have an RPC server runnning *prior* to the commandline `compas_rpc start`. You can kill these running servers by going to the task manager, and manually "end task" all the running `Python` applications.
+If you can't see these, it means that you have an RPC server running *prior* to the commandline `compas_rpc start`. You can kill these running servers by going to the task manager, and manually "end task" all the running `Python` applications.
 
 ## DEV
 

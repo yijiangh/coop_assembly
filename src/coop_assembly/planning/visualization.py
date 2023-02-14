@@ -191,6 +191,10 @@ def prune_reverse_connectors(connectors):
 #####################################################
 
 def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCALE, contact_dist_tol=1e-3, collision_dist_tol=1e-3):
+    """Check bar structure's collision by computing distance between central axes and pybullet collision checking
+
+    contact_dist_tol and collision_dist_tol in [m] scale
+    """
     from coop_assembly.planning.utils import get_element_neighbors, get_connector_from_elements, check_connected
     elements = list(bar_struct.nodes()) if indices is None else indices
 
@@ -227,7 +231,7 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
                     continue
                 if (element, nb) in collision_captured_by_lines or (nb, element) in collision_captured_by_lines:
                     continue
-                r1, r2 = bar_struct.node[element]['radius'], bar_struct.node[nb]['radius']
+                r1, r2 = bar_struct.node[element]['radius']*to_meter_scale, bar_struct.node[nb]['radius']*to_meter_scale
                 c = (element, nb)
                 if c not in contact_from_connectors:
                     c = c[::-1]

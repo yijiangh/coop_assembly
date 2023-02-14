@@ -5,7 +5,7 @@ from itertools import combinations
 import random
 from collections import namedtuple
 
-from compas.geometry import distance_point_point, distance_point_line, distance_point_plane
+from compas.geometry import distance_point_point
 from compas.geometry import is_coplanar
 from coop_assembly.help_functions.shared_const import INF, EPS
 from coop_assembly.help_functions import tet_surface_area, tet_volume, distance_point_triangle
