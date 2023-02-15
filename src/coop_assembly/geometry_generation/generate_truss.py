@@ -36,9 +36,11 @@ from coop_assembly.planning.visualization import draw_element, BACKGROUND_COLOR,
     label_points, check_model
 
 try:
+    import multi_tangent
     from beam_assembly import BeamAssembly, BeamMaterial, CrossSectionType
     from multi_tangent.BeamOpt import BeamOpt, computeBeamOptObjective, computeBeamOptObjectiveGradient, computeBeamOptObjectiveHessianP
     import jax.numpy as jnp
+    from multi_tangent.BeamOpt import plot_contact_distance
 except ImportError as err:
     print('multi_tangent not loaded')
     raise err
@@ -116,7 +118,7 @@ def generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, r
         axis_endpts = list(pts.values())
         _ , _, vec_z = calculate_coord_sys(axis_endpts, centroid_pt)
         is_grounded = e[0] in ground_nodes or e[1] in ground_nodes
-        bar_key = b_struct.add_bar(None, [p.tolist() for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
+        bar_key = b_struct.add_bar(None, [list(p) for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
         index_from_element[e] = bar_key
 
     element_neighbors = get_element_neighbors(list(bar_from_elements.keys()))
@@ -272,9 +274,13 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
     # the actual bar axis endpts are index by using the element's
     # corresponding edge (n1, n2) mapped into the node_points
     # each entry's value (node pt id : axis pt, node pt id : axis pt)
-    # since axis pt usually deviates from the ideal node pt
-    # ! bar_from_elements[edge] = {node : [x,y,z]}
+    # ! bar_from_elements[edge] = {node : [x,y,z]}, initialize with the original line graph
     bar_from_elements = {}
+    for e in edge_seq:
+        bar_from_elements[e] = {
+            e[0] : node_points[e[0]],
+            e[1] : node_points[e[1]],
+            }
     # ! connect_vars[set([edge1, edge2]), node] = 1 or 0
     connect_vars = {}
 
@@ -329,29 +335,30 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
         visited_nodes |= set([n0, n1])
         printed = printed | {element}
 
-        for contact_e in chosen_contact_element_axis_pts :
+        for contact_e in update_element_axis_pts:
+            if contact_e == element:
+                continue
             c_node = (set(element) & set(contact_e)).pop()
             connect_vars[EDGE({element, contact_e}), c_node] = 1
 
         # update all bar element drawing
-        with LockRenderer():
-            for e in bar_from_elements.values():
-                # convert mil to meter
-                h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
-                circ_verts = bar_sec_verts(*list(e.values()), radius=radius)
-                for v in circ_verts:
-                    # assert(abs(v.dot(list(e.values())[0] - list(e.values())[1])) < 1e-8)
-                    if abs(v.dot(list(e.values())[0] - list(e.values())[1])) > 1e-8:
-                        cprint('circle dot: {}'.format(abs(v.dot(list(e.values())[0] - list(e.values())[1]))), 'red')
+        # with LockRenderer():
+        #     for e in bar_from_elements.values():
+        #         # convert mil to meter
+        #         h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
+        #         circ_verts = bar_sec_verts(*list(e.values()), radius=radius)
+        #         for v in circ_verts:
+        #             # assert(abs(v.dot(list(e.values())[0] - list(e.values())[1])) < 1e-8)
+        #             if abs(v.dot(list(e.values())[0] - list(e.values())[1])) > 1e-8:
+        #                 cprint('circle dot: {}'.format(abs(v.dot(list(e.values())[0] - list(e.values())[1]))), 'red')
 
-                ch1 = add_segments([(list(e.values())[0] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
-                ch2 = add_segments([(list(e.values())[1] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
-                # handles.extend([h] + ch1 + ch2)
-                # handles.extend([h] + ch1 + ch2)
-
-        if debug:
-            wait_if_gui('A new bar is added.')
-        remove_handles(handles)
+        #         ch1 = add_segments([(list(e.values())[0] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
+        #         ch2 = add_segments([(list(e.values())[1] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
+        #         # handles.extend([h] + ch1 + ch2)
+        #         # handles.extend([h] + ch1 + ch2)
+        # if debug:
+        #     wait_if_gui('A new bar is added.')
+        # remove_handles(handles)
 
     # * compile bars into a BarStructure
     b_struct = BarStructure()
@@ -363,7 +370,7 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
         _ , _, vec_z = calculate_coord_sys(axis_endpts, centroid_pt)
         n0, n1 = e
         is_grounded = n0 in ground_nodes or n1 in ground_nodes
-        bar_key = b_struct.add_bar(None, [p.tolist() for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
+        bar_key = b_struct.add_bar(None, [p for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
         index_from_element[e] = bar_key
 
     for e, pts in bar_from_elements.items():
@@ -398,13 +405,25 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
         updated contact element axis points
         {(e_n1, e_n2) : [axis pt 1, axis pt 2]}
     """
-    subassembly_edges = [element] + [e for e in in_contact_bars if e != ()]
-    subassembly_verts = np.array(node_points)[list(nodes_from_elements(subassembly_edges))]
+    subassembly_edges = [element]
+    for contact_bars_at_node in in_contact_bars:
+        for e in contact_bars_at_node:
+            if e != ():
+                subassembly_edges.append(e)
+    if len(subassembly_edges) == 1:
+        return {}
+
+    # * renumbering the verts and edges for the subassembly
+    vert_old_inds = list(nodes_from_elements(subassembly_edges))
+    local_verts = np.array(node_points)[vert_old_inds]
+    local_edges = []
+    for e in subassembly_edges:
+        local_edges.append((vert_old_inds.index(e[0]), vert_old_inds.index(e[1])))
 
     E = 1.0
     mu = 0.3
     rho = 1.0
-    assembly = BeamAssembly(subassembly_verts, subassembly_edges, [])
+    assembly = BeamAssembly(local_verts, local_edges, [])
     assembly.setMaterial(BeamMaterial(CrossSectionType.ROUND, radius*2, E, mu, rho))
     beam_opt = BeamOpt(assembly)
     beam_opt.weights =[1, 200, 1]
@@ -412,8 +431,8 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
     # fill in current bar end point as initial guess
     initial_vert_points = np.array(beam_opt.verts[beam_opt.beam_vert_ids])
     for i, ei in enumerate(subassembly_edges):
-        beam_opt.end_pts_init_positions[i,0] = bar_from_elements[ei][ei[0]]
-        beam_opt.end_pts_init_positions[i,1] = bar_from_elements[ei][ei[1]]
+        initial_vert_points[i,0] = bar_from_elements[ei][ei[0]]
+        initial_vert_points[i,1] = bar_from_elements[ei][ei[1]]
     beam_opt.end_pts_init_positions = jnp.array(initial_vert_points.flatten())
 
     # TODO: reuse compilation?
@@ -428,7 +447,10 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
 
     update_element_axis_pts = {}
     for i, ei in enumerate(subassembly_edges):
-        update_element_axis_pts[ei] = [new_V[2*i,:], new_V[2*i+1,:]]
+        update_element_axis_pts[ei] = {
+            ei[0] : new_V[2*i,:].tolist(),
+            ei[1] : new_V[2*i+1,:].tolist(),
+            }
     return update_element_axis_pts
 
 def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius):
@@ -609,7 +631,6 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
             new_contact_pt2, _ = dropped_perpendicular_points(new_point, new_point+axis_vector, *bar_from_elements[contact_bars[1][1]].values())
             # use the point with longer bar length
             contact_pt = new_contact_pt1 if norm(new_contact_pt1-new_point) > norm(new_contact_pt2-new_point) else new_contact_pt2
-
     elif len(contact_bars[0])==2 and len(contact_bars[1])==2:
         # 2 - 2 tangent bars on each end
         # use `third_tangent` strategy
@@ -663,6 +684,7 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
         else:
             new_point, contact_pt = extended_end_pts[::-1]
 
+    # TODO these are pasted from the for-loop, should fix this
     new_axis_endpts = {new_node_id : new_point, contact_v_id : np.array(contact_pt)}
     contact_elements = contact_e
 
@@ -794,6 +816,7 @@ def gen_truss(problem_data, viewer=False, radius=3.17, debug=False, method='sear
             add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
         for v in ground_nodes:
             draw_circle(node_points[v]*1e-3, 0.01)
+
     if debug:
         wait_if_gui('Target line graph...')
 
@@ -861,12 +884,15 @@ def main():
         # build a BarStructure from a graph that's already a tangent-contact bar system
         b_struct = from_bar_network(args.problem, viewer=args.viewer, debug=args.debug)
 
+    fig = plot_contact_distance(b_struct)
+    if args.write:
+        fig.savefig(os.path.join(multi_tangent.DATA_DIRECTORY, 'plots', export_file_name + '_bar_structure_dist_plot.png'))
+    check_model(b_struct, args.subset_bars, debug=args.debug)
+
     if args.write:
         export_structure_data(b_struct.to_data(), overall_struct_data=graph_data, save_dir=FILE_DIR,
             file_name=export_file_name, opt_data=opt_data, indent=0)
         # export_structure_data(b_struct.data, net.data, radius=radius, **kwargs)
-
-    check_model(b_struct, args.subset_bars, debug=args.debug)
 
     reset_simulation()
     disconnect()

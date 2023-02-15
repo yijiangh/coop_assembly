@@ -1,0 +1,9587 @@
+{
+"write_time": "2023-02-15 22:51:58.260801",
+"bar_structure": {
+"compas": "0.18.1",
+"datatype": "coop_assembly.data_structure/BarStructure",
+"data": {
+"attributes": {
+"name": "NetworkBar"
+},
+"node_attributes": {
+"x": 0.0,
+"y": 0.0,
+"z": 0.0
+},
+"edge_attributes": {},
+"node": {
+"0": {
+"bar_type": null,
+"axis_endpoints": [
+[
+530.9622802734375,
+-751.6705932617188,
+395.1081848144531
+],
+[
+589.4429321289062,
+-609.6041870117188,
+-0.007713499944657087
+]
+],
+"pb_body": 0,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5745749114463484,
+0.7935664635388048,
+0.20028963798193802
+],
+"exchange_values": {}
+},
+"1": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-383.95831298828125,
+-491.0997619628906,
+406.2495422363281
+],
+[
+-358.3463439941406,
+-280.3210144042969,
+0.002666088752448559
+]
+],
+"pb_body": 1,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.815088687005785,
+0.4916365115246455,
+0.30647018264598386
+],
+"exchange_values": {}
+},
+"2": {
+"bar_type": null,
+"axis_endpoints": [
+[
+121.45619201660156,
+409.8442687988281,
+413.4206848144531
+],
+[
+245.9674530029297,
+443.172119140625,
+-0.010250396095216274
+]
+],
+"pb_body": 2,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.0607342824157645,
+-0.9962254650456552,
+-0.06201749538646474
+],
+"exchange_values": {}
+},
+"3": {
+"bar_type": null,
+"axis_endpoints": [
+[
+332.3870544433594,
+265.40045166015625,
+446.36090087890625
+],
+[
+244.32131958007812,
+415.6645202636719,
+-0.00391047727316618
+]
+],
+"pb_body": 3,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.551787534800217,
+-0.8172458260139454,
+-0.16625214675872194
+],
+"exchange_values": {}
+},
+"4": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-536.6346435546875,
+-194.66371154785156,
+457.0464782714844
+],
+[
+-402.0940246582031,
+-271.5718078613281,
+0.0016824724152684212
+]
+],
+"pb_body": 4,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.9599244770475875,
+0.07575500376669242,
+0.2698261991898195
+],
+"exchange_values": {}
+},
+"5": {
+"bar_type": null,
+"axis_endpoints": [
+[
+306.9347839355469,
+518.7802734375,
+475.7217712402344
+],
+[
+284.2533264160156,
+412.944091796875,
+-0.0021192182321101427
+]
+],
+"pb_body": 5,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.2722719799274037,
+-0.9364236834249469,
+0.22131121541229323
+],
+"exchange_values": {}
+},
+"6": {
+"bar_type": null,
+"axis_endpoints": [
+[
+658.8639526367188,
+-580.5948486328125,
+491.6846618652344
+],
+[
+611.1834716796875,
+-628.0803833007812,
+0.0020216309931129217
+]
+],
+"pb_body": 6,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7983501966168555,
+0.6018844001645974,
+0.019290733535330583
+],
+"exchange_values": {}
+},
+"7": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-213.25137329101562,
+-106.58785247802734,
+504.4512634277344
+],
+[
+-359.6109313964844,
+-226.43186950683594,
+-0.30992165207862854
+]
+],
+"pb_body": 7,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.9444157079654335,
+-0.2489308659941019,
+-0.2147379670751668
+],
+"exchange_values": {}
+},
+"8": {
+"bar_type": null,
+"axis_endpoints": [
+[
+421.33001708984375,
+-542.3489990234375,
+538.317138671875
+],
+[
+523.4224243164062,
+-623.3157958984375,
+-0.0009271385497413576
+]
+],
+"pb_body": 8,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": true,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6086877013930184,
+0.7594431556329918,
+-0.22966361386838596
+],
+"exchange_values": {}
+},
+"9": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-219.0221710205078,
+-110.44124603271484,
+497.95306396484375
+],
+[
+-379.2528991699219,
+-494.2098083496094,
+403.4150085449219
+]
+],
+"pb_body": 9,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.9187881301487825,
+-0.3929332074437935,
+0.0378400103810349
+],
+"exchange_values": {}
+},
+"10": {
+"bar_type": null,
+"axis_endpoints": [
+[
+120.09507751464844,
+415.6757507324219,
+411.46771240234375
+],
+[
+-282.4161071777344,
+718.8074340820312,
+738.2717895507812
+]
+],
+"pb_body": 10,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.28933024414862246,
+-0.8528325883758615,
+0.4347005705368088
+],
+"exchange_values": {}
+},
+"11": {
+"bar_type": null,
+"axis_endpoints": [
+[
+120.06126403808594,
+416.8550109863281,
+415.4525451660156
+],
+[
+-33.69493103027344,
+139.52581787109375,
+749.0444946289062
+]
+],
+"pb_body": 11,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.3387011481296768,
+-0.7943522707752756,
+-0.5042677881540739
+],
+"exchange_values": {}
+},
+"12": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-546.79931640625,
+-638.3357543945312,
+758.84716796875
+],
+[
+-381.0606689453125,
+-495.60107421875,
+404.8594055175781
+]
+],
+"pb_body": 12,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.7185560841922922,
+0.459765035335624,
+0.5218172727622878
+],
+"exchange_values": {}
+},
+"13": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-539.9678955078125,
+-193.0169677734375,
+454.9875793457031
+],
+[
+-657.0537719726562,
+218.1712188720703,
+710.8214721679688
+]
+],
+"pb_body": 13,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.9694682410207883,
+0.16095022854818783,
+0.1850036582944915
+],
+"exchange_values": {}
+},
+"14": {
+"bar_type": null,
+"axis_endpoints": [
+[
+528.1168212890625,
+-753.4756469726562,
+393.37640380859375
+],
+[
+341.4129333496094,
+-972.7062377929688,
+780.873046875
+]
+],
+"pb_body": 14,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5666479156125082,
+0.8036828744735155,
+0.18166996727579238
+],
+"exchange_values": {}
+},
+"15": {
+"bar_type": null,
+"axis_endpoints": [
+[
+335.93145751953125,
+265.37982177734375,
+446.7322692871094
+],
+[
+236.35552978515625,
+-155.3347930908203,
+738.8297119140625
+]
+],
+"pb_body": 15,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.6226569324115309,
+-0.34145267217577435,
+-0.7040656341449181
+],
+"exchange_values": {}
+},
+"16": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-537.2528686523438,
+-192.28567504882812,
+457.2418212890625
+],
+[
+-942.3574829101562,
+-160.9916229248047,
+757.2442626953125
+]
+],
+"pb_body": 16,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.5965112216030406,
+0.13124648517605408,
+0.7918009362400249
+],
+"exchange_values": {}
+},
+"17": {
+"bar_type": null,
+"axis_endpoints": [
+[
+856.88818359375,
+248.23667907714844,
+783.8397827148438
+],
+[
+336.03900146484375,
+263.8881530761719,
+443.81890869140625
+]
+],
+"pb_body": 17,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.24418776308173654,
+-0.9110837520112686,
+0.33211253090211346
+],
+"exchange_values": {}
+},
+"18": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-217.30389404296875,
+-124.48564147949219,
+519.5294799804688
+],
+[
+-35.892677307128906,
+141.7370147705078,
+748.2788696289062
+]
+],
+"pb_body": 18,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.8833806616947426,
+-0.4152152819100894,
+-0.2173358603914316
+],
+"exchange_values": {}
+},
+"19": {
+"bar_type": null,
+"axis_endpoints": [
+[
+528.4346923828125,
+-751.0137939453125,
+395.6141662597656
+],
+[
+799.344482421875,
+-974.6715087890625,
+869.4264526367188
+]
+],
+"pb_body": 19,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.4153872679751393,
+0.7076623095739938,
+0.5715483122296405
+],
+"exchange_values": {}
+},
+"20": {
+"bar_type": null,
+"axis_endpoints": [
+[
+309.18804931640625,
+516.3200073242188,
+477.2844543457031
+],
+[
+236.06068420410156,
+974.9368286132812,
+793.345947265625
+]
+],
+"pb_body": 20,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5236378301285523,
+-0.5384729667309444,
+0.6601895841031097
+],
+"exchange_values": {}
+},
+"21": {
+"bar_type": null,
+"axis_endpoints": [
+[
+421.4001159667969,
+-538.6468505859375,
+535.959228515625
+],
+[
+230.4644317626953,
+-154.46620178222656,
+744.81591796875
+]
+],
+"pb_body": 21,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5856866480313478,
+0.14267843437299346,
+-0.7978809527007619
+],
+"exchange_values": {}
+},
+"22": {
+"bar_type": null,
+"axis_endpoints": [
+[
+662.281982421875,
+-578.4158935546875,
+490.2474060058594
+],
+[
+940.8193969726562,
+-626.5400390625,
+793.5631713867188
+]
+],
+"pb_body": 22,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.50685884674908,
+0.6481798183192856,
+0.5682930868801508
+],
+"exchange_values": {}
+},
+"23": {
+"bar_type": null,
+"axis_endpoints": [
+[
+661.0751342773438,
+-581.1898193359375,
+492.3824768066406
+],
+[
+814.7258911132812,
+-253.0920867919922,
+827.1050415039062
+]
+],
+"pb_body": 23,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.8701481949171771,
+0.4866449233358421,
+-0.07758116700482759
+],
+"exchange_values": {}
+},
+"24": {
+"bar_type": null,
+"axis_endpoints": [
+[
+422.0169372558594,
+-537.780517578125,
+539.4389038085938
+],
+[
+153.80223083496094,
+-686.731689453125,
+788.6254272460938
+]
+],
+"pb_body": 24,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5556321974306491,
+0.8247639455645315,
+-0.10505853261499001
+],
+"exchange_values": {}
+},
+"25": {
+"bar_type": null,
+"axis_endpoints": [
+[
+311.340087890625,
+516.6304321289062,
+474.8304443359375
+],
+[
+567.13671875,
+655.4131469726562,
+904.9967651367188
+]
+],
+"pb_body": 25,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.1262973831870056,
+-0.9196759351041404,
+0.37181332061995787
+],
+"exchange_values": {}
+},
+"26": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-278.0728454589844,
+717.7532958984375,
+738.1475219726562
+],
+[
+-656.060791015625,
+216.87303161621094,
+713.3970947265625
+]
+],
+"pb_body": 26,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.7836711622865956,
+-0.5804662149868355,
+-0.2211752306639091
+],
+"exchange_values": {}
+},
+"27": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-939.8177490234375,
+-161.18576049804688,
+758.9515380859375
+],
+[
+-659.0231323242188,
+218.9331817626953,
+708.6734619140625
+]
+],
+"pb_body": 27,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.7778853935631972,
+-0.5995315621901428,
+-0.188298222027923
+],
+"exchange_values": {}
+},
+"28": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-282.9451599121094,
+723.5040283203125,
+739.5863647460938
+],
+[
+235.41258239746094,
+973.3489379882812,
+794.6268310546875
+]
+],
+"pb_body": 28,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.44252867377436045,
+-0.8723220772762856,
+-0.20790037610329562
+],
+"exchange_values": {}
+},
+"29": {
+"bar_type": null,
+"axis_endpoints": [
+[
+151.55076599121094,
+-688.1506958007812,
+786.9572143554688
+],
+[
+344.5804748535156,
+-972.6784057617188,
+780.0468139648438
+]
+],
+"pb_body": 29,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.5696216929879813,
+0.4038298224685697,
+-0.7158579477539587
+],
+"exchange_values": {}
+},
+"30": {
+"bar_type": null,
+"axis_endpoints": [
+[
+854.8187866210938,
+249.9524688720703,
+783.6298828125
+],
+[
+811.0875854492188,
+-251.74436950683594,
+825.2992553710938
+]
+],
+"pb_body": 30,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.9226624870837494,
+0.04865386044660287,
+-0.3825267791829383
+],
+"exchange_values": {}
+},
+"31": {
+"bar_type": null,
+"axis_endpoints": [
+[
+817.0925903320312,
+-250.98910522460938,
+826.1104125976562
+],
+[
+944.1082763671875,
+-623.443603515625,
+794.1303100585938
+]
+],
+"pb_body": 31,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.8575317818919359,
+-0.25402879663090294,
+-0.4473350126331456
+],
+"exchange_values": {}
+},
+"32": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-567.3040771484375,
+-329.1650390625,
+886.7662963867188
+],
+[
+-548.6065063476562,
+-635.90869140625,
+757.0667114257812
+]
+],
+"pb_body": 32,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.8627906392245649,
+0.2405975498627659,
+-0.44464045235054894
+],
+"exchange_values": {}
+},
+"33": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-567.3562622070312,
+-329.24627685546875,
+887.0255737304688
+],
+[
+-940.8882446289062,
+-158.7099609375,
+760.6705932617188
+]
+],
+"pb_body": 33,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.4735821222444167,
+0.5001711954731523,
+-0.7249474109957441
+],
+"exchange_values": {}
+},
+"34": {
+"bar_type": null,
+"axis_endpoints": [
+[
+800.2285766601562,
+-972.1724243164062,
+870.2940673828125
+],
+[
+342.71160888671875,
+-976.094970703125,
+781.9012451171875
+]
+],
+"pb_body": 34,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.03814845060733251,
+0.9699004026007102,
+-0.24049512417352711
+],
+"exchange_values": {}
+},
+"35": {
+"bar_type": null,
+"axis_endpoints": [
+[
+938.1195678710938,
+-623.3655395507812,
+793.3575439453125
+],
+[
+801.7581787109375,
+-974.6292114257812,
+867.8846435546875
+]
+],
+"pb_body": 35,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.9214206951771864,
+0.307221791195998,
+-0.23790475723178234
+],
+"exchange_values": {}
+},
+"36": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-548.5714721679688,
+-635.7623291015625,
+760.9547729492188
+],
+[
+-259.931396484375,
+-793.1519775390625,
+914.0358276367188
+]
+],
+"pb_body": 36,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.5931485107064954,
+0.6986347785475254,
+-0.40010534919008095
+],
+"exchange_values": {}
+},
+"37": {
+"bar_type": null,
+"axis_endpoints": [
+[
+858.9459838867188,
+251.1761016845703,
+784.2288818359375
+],
+[
+568.6505126953125,
+656.8932495117188,
+904.021240234375
+]
+],
+"pb_body": 37,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.8160311870535804,
+-0.4965008254337825,
+-0.29593923717462206
+],
+"exchange_values": {}
+},
+"38": {
+"bar_type": null,
+"axis_endpoints": [
+[
+565.673095703125,
+654.2861938476562,
+905.8240356445312
+],
+[
+234.04312133789062,
+973.1781616210938,
+796.2691040039062
+]
+],
+"pb_body": 38,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.5575277342522683,
+-0.7211023005976434,
+-0.41130803251616466
+],
+"exchange_values": {}
+},
+"39": {
+"bar_type": null,
+"axis_endpoints": [
+[
+151.57015991210938,
+-687.9429931640625,
+783.8079833984375
+],
+[
+-258.8479919433594,
+-791.5995483398438,
+916.07568359375
+]
+],
+"pb_body": 39,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.33749870875146437,
+0.866259554558603,
+-0.36835988615350757
+],
+"exchange_values": {}
+},
+"40": {
+"bar_type": null,
+"axis_endpoints": [
+[
+10.03258991241455,
+-261.14642333984375,
+999.7435913085938
+],
+[
+230.0653533935547,
+-146.34580993652344,
+742.6943359375
+]
+],
+"pb_body": 40,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.7082166032620713,
+-0.17439595883873957,
+-0.6841164319066242
+],
+"exchange_values": {}
+},
+"41": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-303.46881103515625,
+-142.79855346679688,
+1106.74365234375
+],
+[
+-38.8499870300293,
+142.95672607421875,
+749.1229248046875
+]
+],
+"pb_body": 41,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.29904775396671074,
+-0.8410589627803644,
+-0.45076630527833744
+],
+"exchange_values": {}
+},
+"42": {
+"bar_type": null,
+"axis_endpoints": [
+[
+11.424403190612793,
+-262.981689453125,
+1001.3602905273438
+],
+[
+-259.3309326171875,
+-791.8558959960938,
+911.7108154296875
+]
+],
+"pb_body": 42,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.14524519976639036,
+0.09261824766926044,
+-0.9850511114371158
+],
+"exchange_values": {}
+},
+"43": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-567.2698364257812,
+-329.2861328125,
+886.8900756835938
+],
+[
+-305.38427734375,
+-140.75074768066406,
+1105.0908203125
+]
+],
+"pb_body": 43,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+0.637794160102735,
+0.005444240245959548,
+-0.770187619731057
+],
+"exchange_values": {}
+},
+"44": {
+"bar_type": null,
+"axis_endpoints": [
+[
+-305.39208984375,
+-144.32945251464844,
+1105.92919921875
+],
+[
+9.568061828613281,
+-262.5335388183594,
+997.447021484375
+]
+],
+"pb_body": 44,
+"radius": 1.5,
+"shrink_radius": 0.001,
+"grounded": false,
+"layer": null,
+"index_sol": null,
+"mean_point": null,
+"crosec_type": "tube",
+"crosec_values": null,
+"zdir": [
+-0.1741081941477154,
+0.37261788571589166,
+-0.9115054843363479
+],
+"exchange_values": {}
+}
+},
+"edge": {
+"0": {
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+530.9622802734375,
+-751.6705932617188,
+395.1081848144531
+],
+[
+528.8955927479178,
+-751.3943040864013,
+396.42026579478437
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+531.047343803549,
+-751.463949360831,
+394.5334656201998
+],
+[
+528.1168212890625,
+-753.4756469726562,
+393.37640380859375
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+589.4429321289062,
+-609.6041870117188,
+-0.007713499944657087
+],
+[
+589.4429321289062,
+-609.6041870117188,
+-1.507713499944657
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"1": {
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-383.8552209314426,
+-490.2513455592685,
+404.61433699084654
+],
+[
+-378.464400699177,
+-492.32127593137903,
+403.8802321196178
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-383.9583129882795,
+-491.0997619628759,
+406.2495422362997
+],
+[
+-381.37640031335206,
+-495.8729831339547,
+405.5337505917065
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-358.3463439941406,
+-280.3210144042969,
+0.002666088752448559
+],
+[
+-358.3463439941406,
+-280.3210144042969,
+-1.4973339112475514
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"2": {
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+121.45619201660156,
+409.8442687988281,
+413.4206848144531
+],
+[
+119.29770014939625,
+415.47777505090386,
+417.10918583700914
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+122.00877171713472,
+409.9921774571727,
+411.5858825599416
+],
+[
+120.09507751464844,
+415.6757507324219,
+411.46771240234375
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+245.9674530029297,
+443.172119140625,
+-0.010250396095216274
+],
+[
+245.9674530029297,
+443.172119140625,
+-1.5102503960952163
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"3": {
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+332.3870544433594,
+265.40045166015625,
+446.36090087890625
+],
+[
+335.8452156702714,
+265.01544449035845,
+446.9852523542964
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+332.16234086339,
+265.78387407579936,
+445.22193082559403
+],
+[
+336.0390014652595,
+263.88815307615937,
+443.8189086916776
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+244.32131958007812,
+415.6645202636719,
+-0.00391047727316618
+],
+[
+244.32131958007812,
+415.6645202636719,
+-1.5039104772731662
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"4": {
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-536.6346435546875,
+-194.66371154785156,
+457.0464782714844
+],
+[
+-537.2528686523438,
+-192.28567504882812,
+457.2418212890625
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-536.4232755997854,
+-194.78453682104063,
+456.3284451259624
+],
+[
+-539.9678955078125,
+-193.0169677734375,
+454.9875793457031
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-402.0940246582031,
+-271.5718078613281,
+0.0016824724152684212
+],
+[
+-402.0940246582031,
+-271.5718078613281,
+-1.4983175275847316
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"5": {
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+306.8822191188853,
+518.5349955721198,
+474.61926982197446
+],
+[
+311.340087890625,
+516.6304321289062,
+474.8304443359375
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+306.9347839355469,
+518.7802734375,
+475.7217712402344
+],
+[
+309.0028530883202,
+517.4814617990122,
+478.08488515901246
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+284.2533264160156,
+412.944091796875,
+-0.0021192182321101427
+],
+[
+284.2533264160156,
+412.944091796875,
+-1.5021192182321101
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"6": {
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+658.8639526367188,
+-580.5948486328125,
+491.6846618652344
+],
+[
+661.0751342773438,
+-581.1898193359375,
+492.3824768066406
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+658.7787226376897,
+-580.6797301606915,
+490.80576739712916
+],
+[
+662.281982421875,
+-578.4158935546875,
+490.2474060058594
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+611.1834716796875,
+-628.0803833007812,
+0.0020216309931129217
+],
+[
+611.1834716796875,
+-628.0803833007812,
+-1.497978369006887
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"7": {
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-215.56158207800317,
+-108.4795273695867,
+496.48387311721353
+],
+[
+-219.02217102061493,
+-110.44124603297138,
+497.95306396478054
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-213.25137329101562,
+-106.58785247802734,
+504.4512634277344
+],
+[
+-214.92068439236186,
+-120.98825904084691,
+522.5345739475877
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-359.6109313964844,
+-226.43186950683594,
+-0.30992165207862854
+],
+[
+-359.6109313964844,
+-226.43186950683594,
+-1.8099216520786285
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"8": {
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+421.6550699642216,
+-542.6067898892653,
+536.6031832527136
+],
+[
+421.4001159667969,
+-538.6468505859375,
+535.959228515625
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+421.33001708984375,
+-542.3489990234375,
+538.317138671875
+],
+[
+421.01221227991397,
+-538.338484606019,
+540.3723497299884
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"-1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+523.4224243164062,
+-623.3157958984375,
+-0.0009271385497413576
+],
+[
+523.4224243164062,
+-623.3157958984375,
+-1.5009271385497414
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"9": {
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-219.0221710205081,
+-110.4412460327155,
+497.9530639648436
+],
+[
+-215.56158207796415,
+-108.47952736955475,
+496.4838731173481
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-221.73073045087605,
+-116.92851580017796,
+496.35498134677357
+],
+[
+-217.30389404296875,
+-124.48564147949219,
+519.5294799804688
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-378.4644007002428,
+-492.3212759339317,
+403.88023211898894
+],
+[
+-383.85522093148256,
+-490.25134555959727,
+404.6143369914801
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-379.25289916981677,
+-494.2098083493576,
+403.4150085449839
+],
+[
+-381.0606689480371,
+-495.60107422109644,
+404.85940552339736
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"10": {
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+120.09507751464844,
+415.6757507324219,
+411.46771240234375
+],
+[
+122.00877171713472,
+409.9921774571727,
+411.5858825599416
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-280.0379286752061,
+717.0164248375846,
+736.3409154276013
+],
+[
+-279.18138191584075,
+716.2843494941837,
+738.074935660718
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+118.22779391731628,
+417.08200437623805,
+412.98378429303403
+],
+[
+120.06126403807433,
+416.85501098630715,
+415.4525451660408
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-282.4161071777342,
+718.8074340820311,
+738.2717895507811
+],
+[
+-282.945159912092,
+723.5040283203209,
+739.5863647460956
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"11": {
+"2": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+119.29770014939625,
+415.47777505090386,
+417.10918583700914
+],
+[
+121.45619201660156,
+409.8442687988281,
+413.4206848144531
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-33.59860984694763,
+139.69955185325801,
+748.8355146180135
+],
+[
+-38.84998703003176,
+142.95672607421608,
+749.1229248046909
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-33.30972139025247,
+140.22061835441562,
+748.2087375089453
+],
+[
+-35.89267737961516,
+141.73701466413357,
+748.2788695375051
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+120.0612640380752,
+416.8550109863088,
+415.452545166039
+],
+[
+118.22779391644127,
+417.082004376897,
+412.9837842937444
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"12": {
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-546.1511358079865,
+-637.7775390850265,
+757.4627714917747
+],
+[
+-548.6065063477655,
+-635.9086914044573,
+757.0667114265393
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"1": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-381.37640031412036,
+-495.8729831346163,
+405.53375059334735
+],
+[
+-383.9583129882791,
+-491.0997619628733,
+406.2495422362947
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-381.0606689453127,
+-495.60107421875017,
+404.8594055175785
+],
+[
+-379.25289916990795,
+-494.20980834957606,
+403.4150085449301
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-546.79931640625,
+-638.3357543945312,
+758.84716796875
+],
+[
+-547.268030275826,
+-636.4730698421793,
+761.6460569266793
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"13": {
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-657.0511120205149,
+218.1618775157033,
+710.8156601440799
+],
+[
+-659.0231323242216,
+218.9331817626915,
+708.6734619140631
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-540.4874640475548,
+-191.1923203253839,
+456.1228421641026
+],
+[
+-538.8550343744405,
+-192.16190885152014,
+458.4283138918363
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-657.053771972312,
+218.17121887086117,
+710.8214721672165
+],
+[
+-655.858407753343,
+217.14121419475535,
+713.4103466629479
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-539.9678955078125,
+-193.0169677734375,
+454.9875793457031
+],
+[
+-536.4232755997854,
+-194.78453682104063,
+456.3284451259624
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"14": {
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+342.26291657535165,
+-971.7081743523871,
+779.108939816101
+],
+[
+343.4103019694287,
+-970.9535592967368,
+780.0887057710479
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+527.9020885655882,
+-753.7277894553612,
+393.8220732074537
+],
+[
+528.4346923835774,
+-751.013793945944,
+395.61416626110343
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+528.1168212890625,
+-753.4756469726562,
+393.37640380859375
+],
+[
+531.047343803549,
+-751.463949360831,
+394.5334656201998
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+341.41293334960943,
+-972.7062377929686,
+780.8730468749999
+],
+[
+342.7116088867338,
+-976.0949707031249,
+781.9012451171903
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"15": {
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+335.8452156702714,
+265.01544449035845,
+446.9852523542964
+],
+[
+332.3870544433594,
+265.40045166015625,
+446.36090087890625
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+237.09679746260363,
+-152.20289010455429,
+736.655266766416
+],
+[
+230.06535339352425,
+-146.34580993653933,
+742.6943359375355
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+236.3555297851564,
+-155.33479309081966,
+738.829711914062
+],
+[
+232.73612640058093,
+-159.037066173054,
+742.3310046666874
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+335.9314575195224,
+265.37982177730635,
+446.7322692871353
+],
+[
+337.26495629506496,
+263.8513132369102,
+444.6192367848118
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"16": {
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-941.5273187656908,
+-161.05575253255057,
+756.6294800901728
+],
+[
+-939.8177490216259,
+-161.18576049559454,
+758.9515380856132
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-538.8550343744299,
+-192.1619088515209,
+458.42831389182857
+],
+[
+-540.4874640475552,
+-191.1923203253822,
+456.1228421641037
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"4": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-537.2528686523438,
+-192.28567504882812,
+457.2418212890625
+],
+[
+-536.6346435546875,
+-194.66371154785156,
+457.0464782714844
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-942.3574829096269,
+-160.99162292484556,
+757.2442626949206
+],
+[
+-940.888244625523,
+-158.70996093904463,
+760.6705932628632
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"17": {
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+337.26495629564545,
+263.8513132368928,
+444.61923678519076
+],
+[
+335.93145751872294,
+265.37982177392837,
+446.73226928948066
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+856.8881835937497,
+248.23667907714844,
+783.8397827148435
+],
+[
+858.9459838866794,
+251.17610168462534,
+784.2288818359538
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"3": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+336.03900146485154,
+263.8881530761716,
+443.81890869141137
+],
+[
+332.1623408650606,
+265.78387407294883,
+445.22193083406165
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+855.3028256226819,
+248.28431895048354,
+782.804828986474
+],
+[
+854.6849704925676,
+248.41729200048468,
+783.7573898089805
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"18": {
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-35.892677308242625,
+141.73701476887342,
+748.2788696275019
+],
+[
+-33.309721383028275,
+140.22061836744584,
+748.2087374932715
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-35.91440478172273,
+141.70512949844993,
+748.2514724996583
+],
+[
+-38.84998703002957,
+142.95672607421847,
+749.1229248046878
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"7": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-214.92068439236186,
+-120.98825904084691,
+522.5345739475877
+],
+[
+-213.25137329101562,
+-106.58785247802734,
+504.4512634277344
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"9": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-217.30389404296875,
+-124.48564147949219,
+519.5294799804688
+],
+[
+-221.73073045087605,
+-116.92851580017796,
+496.35498134677357
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"19": {
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+799.277443303385,
+-974.61616263105,
+869.3092034298742
+],
+[
+801.7581787109426,
+-974.6292114257682,
+867.8846435546847
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"0": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+528.8955927479178,
+-751.3943040864013,
+396.42026579478437
+],
+[
+530.9622802734375,
+-751.6705932617188,
+395.1081848144531
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+528.4346923828125,
+-751.0137939453126,
+395.6141662597658
+],
+[
+527.9020885661643,
+-753.7277894546847,
+393.822073206258
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+799.0021573668988,
+-974.3888920570549,
+868.8277374077159
+],
+[
+798.7549708269016,
+-972.1850583554558,
+870.0093649833751
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"20": {
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+236.06068420410705,
+974.9368286132468,
+793.3459472656014
+],
+[
+234.0431213441618,
+973.1781616150635,
+796.269104005978
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+309.1880493164042,
+516.3200073242316,
+477.284454345712
+],
+[
+311.778276550325,
+516.8681718192322,
+475.567334430723
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+236.12464190176456,
+974.5357191797043,
+793.0695177050078
+],
+[
+235.412582397389,
+973.3489379882466,
+794.6268310546799
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+309.0028530883202,
+517.4814617990122,
+478.08488515901246
+],
+[
+306.9347839355469,
+518.7802734375,
+475.7217712402344
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"21": {
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+232.7361264005634,
+-159.03706617301873,
+742.3310046667066
+],
+[
+236.35552978516142,
+-155.3347930907985,
+738.8297119140474
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+420.6102752193593,
+-537.0576163258932,
+536.8232028135286
+],
+[
+422.01693725552707,
+-537.7805175783096,
+539.4389038089024
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+230.4644317626955,
+-154.466201782227,
+744.8159179687498
+],
+[
+227.67012192041747,
+-147.59550583639182,
+745.4925213389396
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+421.4001159667969,
+-538.6468505859375,
+535.959228515625
+],
+[
+421.6550699642216,
+-542.6067898892653,
+536.6031832527136
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"22": {
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+664.0126878315338,
+-578.7149152107185,
+492.1320728712644
+],
+[
+661.8200669472484,
+-579.5991293521932,
+494.00528543402356
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+939.2649323768153,
+-626.2714673141852,
+791.8704235043368
+],
+[
+937.4229189143531,
+-625.16009057479,
+793.7382912119072
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+662.281982421875,
+-578.4158935546875,
+490.2474060058594
+],
+[
+658.7787226376897,
+-580.6797301606915,
+490.80576739712916
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+940.8193969726485,
+-626.5400390624986,
+793.5631713867103
+],
+[
+944.1082763665494,
+-623.4436035137538,
+794.1303100587544
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"23": {
+"6": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+661.0751342773438,
+-581.1898193359375,
+492.3824768066406
+],
+[
+658.8639526367188,
+-580.5948486328125,
+491.6846618652344
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+814.725891112796,
+-253.0920867930283,
+827.1050415028492
+],
+[
+817.4599598888469,
+-252.06636149304606,
+826.0179160213402
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+661.8200669478271,
+-579.5991293509579,
+494.00528543528395
+],
+[
+664.0126878334289,
+-578.714915211046,
+492.1320728733282
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+814.2703731184642,
+-254.0647759235662,
+826.1127121810268
+],
+[
+811.0875854492226,
+-251.7443695067923,
+825.2992553710901
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"24": {
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+422.01693725536,
+-537.7805175784024,
+539.4389038090577
+],
+[
+420.61027521600846,
+-537.0576163191508,
+536.823202817194
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+153.80223083496222,
+-686.7316894531243,
+788.6254272460926
+],
+[
+151.58230799573988,
+-688.197189029047,
+786.9560851620316
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"8": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+421.01221227991397,
+-538.338484606019,
+540.3723497299884
+],
+[
+421.33001708984375,
+-542.3489990234375,
+538.317138671875
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+154.525638053667,
+-686.329950285251,
+787.9533413181281
+],
+[
+151.57015991207146,
+-687.942993164072,
+783.8079833984497
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"25": {
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+566.9616679227528,
+655.3181729733531,
+904.7023868641938
+],
+[
+565.6365587990439,
+654.3213273583139,
+905.8119655714427
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+567.1367187499991,
+655.4131469726558,
+904.9967651367173
+],
+[
+568.6992522373316,
+656.8251310946684,
+904.0011275379496
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+311.77827655024976,
+516.8681718191913,
+475.5673344305965
+],
+[
+309.188049316368,
+516.3200073244587,
+477.28445434586854
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"5": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+311.340087890625,
+516.6304321289062,
+474.8304443359375
+],
+[
+306.8822191188853,
+518.5349955721198,
+474.61926982197446
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"26": {
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-656.060791015622,
+216.87303161621472,
+713.3970947265627
+],
+[
+-659.2578337858527,
+218.61546031777567,
+708.7154867153367
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-655.8584077610017,
+217.14121418460667,
+713.4103466624464
+],
+[
+-657.0537719672378,
+218.1712188530416,
+710.8214721561294
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-279.1813819158348,
+716.2843494941916,
+738.0749356607184
+],
+[
+-280.03792867517285,
+717.0164248375595,
+736.3409154275744
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-278.0728454589844,
+717.7532958984375,
+738.1475219726562
+],
+[
+-281.37895452199854,
+724.2589286763296,
+739.7526681847626
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"27": {
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-939.8177490234334,
+-161.18576049804136,
+758.9515380859368
+],
+[
+-941.5273187669106,
+-161.05575253245632,
+756.6294800910762
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"13": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-659.0231323242415,
+218.9331817626645,
+708.6734619140666
+],
+[
+-657.0511120047576,
+218.16187746036627,
+710.8156601096503
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-659.2578337859911,
+218.61546031758826,
+708.7154867153616
+],
+[
+-656.0607910156216,
+216.87303161621543,
+713.3970947265627
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-938.9684358010752,
+-160.03602320063203,
+758.7994631088967
+],
+[
+-939.4578086453535,
+-159.36302759382738,
+761.1544680549606
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"28": {
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+234.40501691219762,
+972.863298270567,
+794.5198453388028
+],
+[
+234.08579662149492,
+973.1371255079079,
+796.2832019086176
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"26": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-281.37895452199854,
+724.2589286763296,
+739.7526681847626
+],
+[
+-278.0728454589844,
+717.7532958984375,
+738.1475219726562
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"10": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-282.94515991210324,
+723.5040283203155,
+739.5863647460944
+],
+[
+-282.4161071777093,
+718.8074340820124,
+738.2717895507609
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+235.41258239740765,
+973.3489379882556,
+794.6268310546818
+],
+[
+236.1246419028426,
+974.5357191729436,
+793.0695177003485
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"29": {
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+151.58230799445158,
+-688.1971890271479,
+786.9560851620777
+],
+[
+153.8022308349615,
+-686.7316894531247,
+788.6254272460932
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+343.41030196951954,
+-970.9535592968707,
+780.0887057710446
+],
+[
+342.2629165760605,
+-971.7081743515547,
+779.1089398146298
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+151.55076599121094,
+-688.1506958007812,
+786.9572143554688
+],
+[
+150.6394254112396,
+-688.1780625237076,
+784.107936291276
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+344.5804748530324,
+-972.6784057610064,
+780.046813964861
+],
+[
+344.1959731254876,
+-976.0822444263058,
+782.1880260533645
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"30": {
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+854.6849704925696,
+248.41729200050935,
+783.7573898089784
+],
+[
+855.3028256226721,
+248.28431895048385,
+782.8048289864677
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+811.0875854492224,
+-251.7443695067939,
+825.2992553710903
+],
+[
+814.2703731184016,
+-254.06477592369987,
+826.1127121808904
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+854.8187866210938,
+249.9524688720703,
+783.6298828125
+],
+[
+858.2513094995853,
+252.14697908014125,
+784.515543845552
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+811.1916639958454,
+-250.55035067391083,
+825.200083895842
+],
+[
+817.0925903320368,
+-250.98910522462597,
+826.1104125976549
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"31": {
+"23": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+817.459959885624,
+-252.0663614835954,
+826.0179160221517
+],
+[
+814.7258911132268,
+-253.09208679210857,
+827.1050415037874
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+943.4849057787635,
+-621.6156625186636,
+794.2872627623103
+],
+[
+938.1195678710933,
+-623.3655395507824,
+793.3575439453127
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+944.1082763671823,
+-623.4436035156095,
+794.1303100585951
+],
+[
+940.8193969719076,
+-626.5400390623706,
+793.5631713859034
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+817.0925903320328,
+-250.98910522461404,
+826.1104125976559
+],
+[
+811.1916639959085,
+-250.5503506731862,
+825.200083895782
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"32": {
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-567.3004253244144,
+-329.2249491893562,
+886.7409647505827
+],
+[
+-567.2698364257812,
+-329.2861328125,
+886.8900756835938
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-548.6065063476562,
+-635.9086914062497,
+757.0667114257814
+],
+[
+-546.1511358079543,
+-637.7775390849989,
+757.462771491706
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-548.6986841614057,
+-634.3964650557878,
+757.7061219841524
+],
+[
+-548.5714721621102,
+-635.762329104757,
+760.9547729523258
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-567.3040771484375,
+-329.1650390625,
+886.7662963867188
+],
+[
+-567.4111506824596,
+-329.22121747949456,
+887.0070065593374
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"33": {
+"27": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-939.457808653456,
+-159.3630275901281,
+761.1544680522197
+],
+[
+-938.9684358020785,
+-160.03602320199016,
+758.7994631090763
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-567.4111506824596,
+-329.22121747949456,
+887.0070065593374
+],
+[
+-567.3040771484375,
+-329.1650390625,
+886.7662963867188
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"16": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-940.8882446289055,
+-158.7099609375004,
+760.670593261719
+],
+[
+-942.357482910054,
+-160.9916229248126,
+757.2442626952369
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-567.3562622070312,
+-329.24627685546875,
+887.0255737304688
+],
+[
+-567.2449038739604,
+-329.26818349037495,
+886.9108492664973
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"34": {
+"35": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+800.2285766601524,
+-972.1724243164064,
+870.2940673828118
+],
+[
+802.1970513778467,
+-973.4986859492253,
+867.6447816174923
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+344.19597312507153,
+-976.0822444263093,
+782.1880260532841
+],
+[
+344.58047485237626,
+-972.6784057600394,
+780.0468139648846
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+798.7549708241072,
+-972.1850583554798,
+870.0093649828351
+],
+[
+799.0021573646638,
+-974.3888920552096,
+868.8277374038069
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"14": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+342.71160888675826,
+-976.0949707031247,
+781.9012451171951
+],
+[
+341.41293335143763,
+-972.7062377908219,
+780.8730468712055
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"35": {
+"19": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+801.7581787109436,
+-974.6292114257656,
+867.8846435546842
+],
+[
+799.2774432958261,
+-974.6161626248096,
+869.3092034166539
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"31": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+938.1195678709039,
+-623.3655395512702,
+793.3575439454162
+],
+[
+943.4849057788396,
+-621.6156625188867,
+794.2872627622912
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"22": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+937.4229189171047,
+-625.1600905677021,
+793.7382912104033
+],
+[
+939.2649323760089,
+-626.2714673140458,
+791.8704235034588
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"34": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+802.1970513776542,
+-973.4986859497212,
+867.6447816175976
+],
+[
+800.2285766596178,
+-972.1724243164108,
+870.2940673827085
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"36": {
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-548.5714721679685,
+-635.7623291015626,
+760.9547729492189
+],
+[
+-548.6986841615059,
+-634.3964650541444,
+757.7061219848473
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-260.7798295260815,
+-792.6893440054456,
+913.5858588492987
+],
+[
+-259.3309326171511,
+-791.8558959960227,
+911.7108154296996
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"12": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-547.268030275826,
+-636.4730698421793,
+761.6460569266793
+],
+[
+-546.79931640625,
+-638.3357543945312,
+758.84716796875
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-259.931396484388,
+-793.1519775390555,
+914.0358276367118
+],
+[
+-258.84799194330265,
+-791.5995483398294,
+916.0756835937317
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"37": {
+"17": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+858.9459838867186,
+251.17610168457048,
+784.2288818359376
+],
+[
+856.8881835937397,
+248.23667907714875,
+783.839782714837
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"38": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+568.6505126970636,
+656.8932495092714,
+904.0212402336524
+],
+[
+565.6116047166752,
+654.3453229469085,
+905.8037219173722
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+568.6992522371957,
+656.8251310948585,
+904.0011275380057
+],
+[
+567.1367187499189,
+655.4131469726123,
+904.9967651365824
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"30": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+858.2513094995853,
+252.14697908014125,
+784.515543845552
+],
+[
+854.8187866210938,
+249.9524688720703,
+783.6298828125
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"38": {
+"37": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+565.6116047167485,
+654.3453229468381,
+905.8037219173964
+],
+[
+568.6505126980305,
+656.8932495079201,
+904.0212402332534
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"25": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+565.6365588389937,
+654.3213273198987,
+905.8119655846401
+],
+[
+566.9616679326857,
+655.3181729787422,
+904.7023868808978
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"28": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+234.08579647693895,
+973.1371256469114,
+796.2832018608631
+],
+[
+234.40501684584876,
+972.8632982385873,
+794.5198453317577
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"20": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+234.04312133790785,
+973.1781616210772,
+796.2691040039119
+],
+[
+236.06068420506554,
+974.9368286072357,
+793.3459472614586
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"39": {
+"29": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+150.6394254112396,
+-688.1780625237076,
+784.107936291276
+],
+[
+151.55076599121094,
+-688.1506958007812,
+786.9572143554688
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"24": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+151.5701599120883,
+-687.942993164068,
+783.8079833984443
+],
+[
+154.5256380523776,
+-686.329950285967,
+787.9533413193259
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-256.862994768933,
+-791.0982109399152,
+915.4359677089418
+],
+[
+-258.27890349029235,
+-789.8009371599668,
+912.0591515344303
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-258.8479919427762,
+-791.5995483396965,
+916.0756835935621
+],
+[
+-259.93139648524516,
+-793.1519775385881,
+914.0358276362573
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"40": {
+"15": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+230.06535339333573,
+-146.34580993663766,
+742.6943359377558
+],
+[
+237.0967974625422,
+-152.2028901048139,
+736.6552667665962
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"21": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+227.67012192045092,
+-147.59550583637437,
+745.4925213389005
+],
+[
+230.4644317626997,
+-154.46620178223534,
+744.8159179687452
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+10.49386819356266,
+-260.9057545013143,
+999.2047113853856
+],
+[
+9.337409564240254,
+-262.44697535939696,
+997.5264653753107
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+10.03258991241455,
+-261.14642333984375,
+999.7435913085938
+],
+[
+11.424403190612793,
+-262.981689453125,
+1001.3602905273438
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"41": {
+"11": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-38.84998703003109,
+142.95672607421682,
+749.1229248046899
+],
+[
+-33.59860984661404,
+139.6995518538597,
+748.8355146172896
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-302.83522364275717,
+-142.1143582168582,
+1105.8873867886398
+],
+[
+-305.38427734376774,
+-140.75074768067685,
+1105.0908203124852
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-303.4688110351548,
+-142.79855346679525,
+1106.743652343748
+],
+[
+-304.54395437658354,
+-144.64775652049127,
+1105.6370747007643
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"18": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-38.84998703003136,
+142.95672607421653,
+749.1229248046903
+],
+[
+-35.914404790599015,
+141.7051294854239,
+748.2514724884658
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"42": {
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+10.9621463162596,
+-263.8846291381849,
+1001.2072332070792
+],
+[
+9.568061827022396,
+-262.5335388177623,
+997.447021484923
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+11.424403190612793,
+-262.981689453125,
+1001.3602905273438
+],
+[
+10.03258991241455,
+-261.14642333984375,
+999.7435913085938
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"36": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-259.3309326171871,
+-791.855895996093,
+911.7108154296876
+],
+[
+-260.7798295261458,
+-792.6893440054106,
+913.5858588492647
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"39": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-258.27890349228255,
+-789.8009371638543,
+912.0591515337712
+],
+[
+-256.86299477028825,
+-791.0982109402574,
+915.4359677093785
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"43": {
+"32": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-567.2698364257812,
+-329.2861328125,
+886.8900756835938
+],
+[
+-567.3004253244144,
+-329.2249491893562,
+886.7409647505827
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"44": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-306.2365525368092,
+-141.36431351577525,
+1104.380712117126
+],
+[
+-305.3920898437131,
+-144.32945251466225,
+1105.9291992187373
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-305.3842773437546,
+-140.75074768066742,
+1105.0908203124961
+],
+[
+-302.8352236423552,
+-142.11435821642414,
+1105.8873867880968
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"33": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-567.2449038739604,
+-329.26818349037495,
+886.9108492664973
+],
+[
+-567.3562622070312,
+-329.24627685546875,
+887.0255737304688
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"44": {
+"43": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-305.39208984374625,
+-144.32945251464986,
+1105.9291992187486
+],
+[
+-306.23655253703674,
+-141.36431351593905,
+1104.3807121169364
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"41": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+-304.54395437602716,
+-144.6477565207001,
+1105.6370747005728
+],
+[
+-303.468811034509,
+-142.7985534660979,
+1106.7436523428753
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"42": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+9.568061828607336,
+-262.53353881835716,
+997.447021484377
+],
+[
+10.9621463160632,
+-263.8846291385685,
+1001.2072332070143
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+},
+"40": {
+"connections_count": 1,
+"endpoints": {
+"0": [
+[
+9.337409516847405,
+-262.4469753416104,
+997.5264653916344
+],
+[
+10.493868170655702,
+-260.90575451326583,
+999.2047114121463
+]
+]
+},
+"connection_type": {
+"0": 0
+},
+"connection_parameters": {
+"0": []
+},
+"exchange_values": {
+"0": {}
+},
+"grounded": false
+}
+},
+"-1": {}
+},
+"adjacency": {
+"0": {
+"19": null,
+"14": null,
+"-1": null
+},
+"1": {
+"9": null,
+"12": null,
+"-1": null
+},
+"2": {
+"11": null,
+"10": null,
+"-1": null
+},
+"3": {
+"15": null,
+"17": null,
+"-1": null
+},
+"4": {
+"16": null,
+"13": null,
+"-1": null
+},
+"5": {
+"25": null,
+"20": null,
+"-1": null
+},
+"6": {
+"23": null,
+"22": null,
+"-1": null
+},
+"7": {
+"9": null,
+"18": null,
+"-1": null
+},
+"8": {
+"21": null,
+"24": null,
+"-1": null
+},
+"9": {
+"1": null,
+"7": null,
+"18": null,
+"12": null
+},
+"10": {
+"2": null,
+"26": null,
+"11": null,
+"28": null
+},
+"11": {
+"2": null,
+"10": null,
+"41": null,
+"18": null
+},
+"12": {
+"1": null,
+"9": null,
+"32": null,
+"36": null
+},
+"13": {
+"4": null,
+"27": null,
+"16": null,
+"26": null
+},
+"14": {
+"0": null,
+"29": null,
+"19": null,
+"34": null
+},
+"15": {
+"3": null,
+"40": null,
+"21": null,
+"17": null
+},
+"16": {
+"4": null,
+"13": null,
+"27": null,
+"33": null
+},
+"17": {
+"3": null,
+"15": null,
+"37": null,
+"30": null
+},
+"18": {
+"7": null,
+"9": null,
+"11": null,
+"41": null
+},
+"19": {
+"0": null,
+"14": null,
+"35": null,
+"34": null
+},
+"20": {
+"5": null,
+"38": null,
+"25": null,
+"28": null
+},
+"21": {
+"8": null,
+"15": null,
+"24": null,
+"40": null
+},
+"22": {
+"6": null,
+"23": null,
+"35": null,
+"31": null
+},
+"23": {
+"6": null,
+"22": null,
+"31": null,
+"30": null
+},
+"24": {
+"8": null,
+"21": null,
+"29": null,
+"39": null
+},
+"25": {
+"5": null,
+"20": null,
+"38": null,
+"37": null
+},
+"26": {
+"10": null,
+"13": null,
+"27": null,
+"28": null
+},
+"27": {
+"13": null,
+"16": null,
+"26": null,
+"33": null
+},
+"28": {
+"10": null,
+"20": null,
+"26": null,
+"38": null
+},
+"29": {
+"14": null,
+"24": null,
+"39": null,
+"34": null
+},
+"30": {
+"17": null,
+"23": null,
+"37": null,
+"31": null
+},
+"31": {
+"22": null,
+"23": null,
+"30": null,
+"35": null
+},
+"32": {
+"12": null,
+"43": null,
+"36": null,
+"33": null
+},
+"33": {
+"16": null,
+"27": null,
+"32": null,
+"43": null
+},
+"34": {
+"14": null,
+"19": null,
+"29": null,
+"35": null
+},
+"35": {
+"19": null,
+"22": null,
+"31": null,
+"34": null
+},
+"36": {
+"12": null,
+"32": null,
+"42": null,
+"39": null
+},
+"37": {
+"17": null,
+"25": null,
+"30": null,
+"38": null
+},
+"38": {
+"20": null,
+"25": null,
+"28": null,
+"37": null
+},
+"39": {
+"24": null,
+"29": null,
+"36": null,
+"42": null
+},
+"40": {
+"15": null,
+"21": null,
+"44": null,
+"42": null
+},
+"41": {
+"11": null,
+"18": null,
+"43": null,
+"44": null
+},
+"42": {
+"36": null,
+"39": null,
+"40": null,
+"44": null
+},
+"43": {
+"32": null,
+"33": null,
+"41": null,
+"44": null
+},
+"44": {
+"40": null,
+"41": null,
+"42": null,
+"43": null
+},
+"-1": {
+"8": null
+}
+},
+"max_int_key": 44
+}
+},
+"overall_structure": {
+"dea": {},
+"adjacency": {
+"16": {
+"28": null,
+"29": null,
+"10": null
+},
+"26": {
+"21": null,
+"0": null,
+"25": null
+},
+"15": {
+"7": null,
+"27": null,
+"17": null
+},
+"18": {
+"0": null
+},
+"35": {
+"28": null,
+"34": null,
+"2": null
+},
+"25": {
+"26": null,
+"14": null,
+"34": null
+},
+"28": {
+"14": null,
+"35": null,
+"16": null
+},
+"10": {
+"31": null,
+"30": null,
+"16": null
+},
+"30": {
+"10": null
+},
+"20": {
+"31": null,
+"23": null,
+"24": null
+},
+"17": {
+"15": null
+},
+"27": {
+"7": null,
+"15": null,
+"22": null
+},
+"12": {
+"19": null,
+"14": null,
+"9": null
+},
+"32": {
+"31": null,
+"6": null,
+"22": null
+},
+"22": {
+"27": null,
+"32": null,
+"6": null
+},
+"19": {
+"12": null,
+"13": null,
+"1": null
+},
+"29": {
+"5": null,
+"16": null,
+"2": null
+},
+"11": {
+"4": null,
+"9": null,
+"34": null
+},
+"5": {
+"29": null
+},
+"4": {
+"11": null
+},
+"7": {
+"27": null,
+"15": null,
+"2": null
+},
+"6": {
+"32": null,
+"22": null,
+"8": null
+},
+"1": {
+"21": null,
+"19": null,
+"24": null
+},
+"0": {
+"21": null,
+"26": null,
+"18": null
+},
+"3": {
+"23": null
+},
+"2": {
+"7": null,
+"35": null,
+"29": null
+},
+"21": {
+"26": null,
+"1": null,
+"0": null
+},
+"31": {
+"20": null,
+"32": null,
+"10": null
+},
+"9": {
+"12": null,
+"33": null,
+"11": null
+},
+"8": {
+"6": null
+},
+"14": {
+"28": null,
+"12": null,
+"25": null
+},
+"34": {
+"11": null,
+"35": null,
+"25": null
+},
+"24": {
+"20": null,
+"1": null,
+"23": null
+},
+"13": {
+"19": null
+},
+"33": {
+"9": null
+},
+"23": {
+"20": null,
+"3": null,
+"24": null
+}
+},
+"node": {
+"16": {
+"fixed": false,
+"z": 741.9270134466411,
+"y": -152.1124575223589,
+"x": 232.0927322077264
+},
+"26": {
+"fixed": false,
+"z": 758.9535473176591,
+"y": -160.294688634373,
+"x": -941.0231018947804
+},
+"15": {
+"fixed": false,
+"z": 394.69254185692563,
+"y": -752.0727527650728,
+"x": 529.1802322075596
+},
+"18": {
+"fixed": true,
+"z": 0.0,
+"y": -271.572752765067,
+"x": -402.0947677922741
+},
+"35": {
+"fixed": false,
+"z": 913.9466586676383,
+"y": -792.1987638684924,
+"x": -259.3731870021875
+},
+"25": {
+"fixed": false,
+"z": 886.8958829782752,
+"y": -329.2331548072985,
+"x": -567.3124727904983
+},
+"28": {
+"fixed": false,
+"z": 999.6075489541718,
+"y": -262.1859656616343,
+"x": 10.431227191829294
+},
+"10": {
+"fixed": false,
+"z": 445.6925418569256,
+"y": 264.9074747773129,
+"x": 334.8504668189499
+},
+"30": {
+"fixed": true,
+"z": 0.0,
+"y": 415.67719361107265,
+"x": 244.31523220465579
+},
+"20": {
+"fixed": false,
+"z": 904.9447954151262,
+"y": 655.5274759539616,
+"x": 567.1552916445621
+},
+"17": {
+"fixed": true,
+"z": 0.0,
+"y": -609.5727527650743,
+"x": 589.43023220756
+},
+"27": {
+"fixed": false,
+"z": 869.1947954150835,
+"y": -973.8228063889254,
+"x": 800.4439343314235
+},
+"12": {
+"fixed": false,
+"z": 749.2677040209868,
+"y": 142.03779848087382,
+"x": -37.67206289496426
+},
+"32": {
+"fixed": false,
+"z": 826.1594574030012,
+"y": -251.94080383656458,
+"x": 814.3042684242679
+},
+"22": {
+"fixed": false,
+"z": 793.6947954150975,
+"y": -624.4472160402585,
+"x": 941.0231018947803
+},
+"19": {
+"fixed": false,
+"z": 413.44254185692563,
+"y": 414.11990328500315,
+"x": 120.51216183115002
+},
+"29": {
+"fixed": false,
+"z": 537.9425418569252,
+"y": -539.5727527650744,
+"x": 421.6257865452831
+},
+"11": {
+"fixed": false,
+"z": 405.17503805175045,
+"y": -493.322752765067,
+"x": -382.3447677922737
+},
+"5": {
+"fixed": true,
+"z": 0.0,
+"y": -623.3227527650744,
+"x": 523.4302322075582
+},
+"4": {
+"fixed": true,
+"z": 0.0,
+"y": -280.32275276506704,
+"x": -358.3447677922737
+},
+"7": {
+"fixed": false,
+"z": 780.9447954151175,
+"y": -973.8228063889273,
+"x": 342.8940896792524
+},
+"6": {
+"fixed": false,
+"z": 491.4425418569253,
+"y": -580.0727527650745,
+"x": 660.7346778698362
+},
+"1": {
+"fixed": false,
+"z": 738.6947954150712,
+"y": 720.0274759539616,
+"x": -281.14482722911094
+},
+"0": {
+"fixed": false,
+"z": 456.4250380517501,
+"y": -193.322752765067,
+"x": -537.9504836437733
+},
+"3": {
+"fixed": true,
+"z": 0.0,
+"y": 412.92724723477846,
+"x": 284.25523220772544
+},
+"2": {
+"fixed": false,
+"z": 786.4588944100786,
+"y": -687.6265275636774,
+"x": 152.31523220465579
+},
+"21": {
+"fixed": false,
+"z": 710.9535473176587,
+"y": 217.99284504632763,
+"x": -657.378112074725
+},
+"31": {
+"fixed": false,
+"z": 783.9094574029548,
+"y": 249.79217939859154,
+"x": 856.8835930841328
+},
+"9": {
+"fixed": false,
+"z": 506.42503805171947,
+"y": -115.07275276506654,
+"x": -213.489051940775
+},
+"8": {
+"fixed": true,
+"z": 0.0,
+"y": -628.0727527650746,
+"x": 611.1802322075602
+},
+"14": {
+"fixed": false,
+"z": 1105.9226150709806,
+"y": -142.62739757954023,
+"x": -304.7491440458566
+},
+"34": {
+"fixed": false,
+"z": 758.9535473176587,
+"y": -636.6664147071588,
+"x": -547.9897576123327
+},
+"24": {
+"fixed": false,
+"z": 794.7317742995905,
+"y": 973.8228063889273,
+"x": 235.17187863514985
+},
+"13": {
+"fixed": true,
+"z": 0.0,
+"y": 443.17724723477846,
+"x": 246.0052322077272
+},
+"33": {
+"fixed": true,
+"z": 0.0,
+"y": -225.57275276506704,
+"x": -361.344767792274
+},
+"23": {
+"fixed": false,
+"z": 475.94254185692506,
+"y": 517.2543636420206,
+"x": 309.15306797307994
+}
+},
+"max_node": 35,
+"attributes": {
+"name": "Network"
+},
+"dna": {
+"z": 0.0,
+"y": 0.0,
+"x": 0.0
+},
+"edge": {
+"16": {},
+"26": {
+"21": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"15": {
+"7": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"27": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"17": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+}
+},
+"18": {},
+"35": {},
+"25": {
+"26": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"14": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"34": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"28": {
+"35": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"16": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"10": {
+"30": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+},
+"16": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"30": {},
+"20": {
+"24": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"17": {},
+"27": {
+"7": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"12": {},
+"32": {
+"22": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"22": {
+"27": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"19": {
+"12": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"13": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+},
+"1": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"29": {
+"5": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+},
+"16": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"2": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"11": {
+"4": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+}
+},
+"5": {},
+"4": {},
+"7": {},
+"6": {
+"32": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"22": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"8": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+}
+},
+"1": {
+"21": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"24": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"0": {
+"21": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"26": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"18": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+}
+},
+"3": {},
+"2": {
+"7": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"35": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"21": {},
+"31": {
+"20": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"32": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"10": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"9": {
+"12": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"33": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+},
+"11": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"8": {},
+"14": {
+"28": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"12": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"34": {
+"35": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"11": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+},
+"24": {},
+"13": {},
+"33": {},
+"23": {
+"20": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+},
+"3": {
+"radius": 10.0,
+"fixed": true,
+"shrink": 0.0
+},
+"24": {
+"radius": 10.0,
+"fixed": false,
+"shrink": 0.0
+}
+}
+}
+},
+"opt_data": {
+"x_vars": [
+{
+"key": [
+[
+15,
+17
+],
+15
+],
+"value": [
+530.9622802734375,
+-751.6705932617188,
+395.1081848144531
+]
+},
+{
+"key": [
+[
+15,
+17
+],
+17
+],
+"value": [
+589.4429321289062,
+-609.6041870117188,
+-0.007713499944657087
+]
+},
+{
+"key": [
+[
+11,
+4
+],
+11
+],
+"value": [
+-383.95831298828125,
+-491.0997619628906,
+406.2495422363281
+]
+},
+{
+"key": [
+[
+11,
+4
+],
+4
+],
+"value": [
+-358.3463439941406,
+-280.3210144042969,
+0.002666088752448559
+]
+},
+{
+"key": [
+[
+19,
+13
+],
+19
+],
+"value": [
+121.45619201660156,
+409.8442687988281,
+413.4206848144531
+]
+},
+{
+"key": [
+[
+19,
+13
+],
+13
+],
+"value": [
+245.9674530029297,
+443.172119140625,
+-0.010250396095216274
+]
+},
+{
+"key": [
+[
+10,
+30
+],
+10
+],
+"value": [
+332.3870544433594,
+265.40045166015625,
+446.36090087890625
+]
+},
+{
+"key": [
+[
+10,
+30
+],
+30
+],
+"value": [
+244.32131958007812,
+415.6645202636719,
+-0.00391047727316618
+]
+},
+{
+"key": [
+[
+0,
+18
+],
+0
+],
+"value": [
+-536.6346435546875,
+-194.66371154785156,
+457.0464782714844
+]
+},
+{
+"key": [
+[
+0,
+18
+],
+18
+],
+"value": [
+-402.0940246582031,
+-271.5718078613281,
+0.0016824724152684212
+]
+},
+{
+"key": [
+[
+23,
+3
+],
+23
+],
+"value": [
+306.9347839355469,
+518.7802734375,
+475.7217712402344
+]
+},
+{
+"key": [
+[
+23,
+3
+],
+3
+],
+"value": [
+284.2533264160156,
+412.944091796875,
+-0.0021192182321101427
+]
+},
+{
+"key": [
+[
+6,
+8
+],
+6
+],
+"value": [
+658.8639526367188,
+-580.5948486328125,
+491.6846618652344
+]
+},
+{
+"key": [
+[
+6,
+8
+],
+8
+],
+"value": [
+611.1834716796875,
+-628.0803833007812,
+0.0020216309931129217
+]
+},
+{
+"key": [
+[
+9,
+33
+],
+9
+],
+"value": [
+-213.25137329101562,
+-106.58785247802734,
+504.4512634277344
+]
+},
+{
+"key": [
+[
+9,
+33
+],
+33
+],
+"value": [
+-359.6109313964844,
+-226.43186950683594,
+-0.30992165207862854
+]
+},
+{
+"key": [
+[
+29,
+5
+],
+29
+],
+"value": [
+421.33001708984375,
+-542.3489990234375,
+538.317138671875
+]
+},
+{
+"key": [
+[
+29,
+5
+],
+5
+],
+"value": [
+523.4224243164062,
+-623.3157958984375,
+-0.0009271385497413576
+]
+},
+{
+"key": [
+[
+9,
+11
+],
+9
+],
+"value": [
+-219.0221710205078,
+-110.44124603271484,
+497.95306396484375
+]
+},
+{
+"key": [
+[
+9,
+11
+],
+11
+],
+"value": [
+-379.2528991699219,
+-494.2098083496094,
+403.4150085449219
+]
+},
+{
+"key": [
+[
+19,
+1
+],
+19
+],
+"value": [
+120.09507751464844,
+415.6757507324219,
+411.46771240234375
+]
+},
+{
+"key": [
+[
+19,
+1
+],
+1
+],
+"value": [
+-282.4161071777344,
+718.8074340820312,
+738.2717895507812
+]
+},
+{
+"key": [
+[
+19,
+12
+],
+19
+],
+"value": [
+120.06126403808594,
+416.8550109863281,
+415.4525451660156
+]
+},
+{
+"key": [
+[
+19,
+12
+],
+12
+],
+"value": [
+-33.69493103027344,
+139.52581787109375,
+749.0444946289062
+]
+},
+{
+"key": [
+[
+34,
+11
+],
+34
+],
+"value": [
+-546.79931640625,
+-638.3357543945312,
+758.84716796875
+]
+},
+{
+"key": [
+[
+34,
+11
+],
+11
+],
+"value": [
+-381.0606689453125,
+-495.60107421875,
+404.8594055175781
+]
+},
+{
+"key": [
+[
+0,
+21
+],
+0
+],
+"value": [
+-539.9678955078125,
+-193.0169677734375,
+454.9875793457031
+]
+},
+{
+"key": [
+[
+0,
+21
+],
+21
+],
+"value": [
+-657.0537719726562,
+218.1712188720703,
+710.8214721679688
+]
+},
+{
+"key": [
+[
+15,
+7
+],
+15
+],
+"value": [
+528.1168212890625,
+-753.4756469726562,
+393.37640380859375
+]
+},
+{
+"key": [
+[
+15,
+7
+],
+7
+],
+"value": [
+341.4129333496094,
+-972.7062377929688,
+780.873046875
+]
+},
+{
+"key": [
+[
+10,
+16
+],
+10
+],
+"value": [
+335.93145751953125,
+265.37982177734375,
+446.7322692871094
+]
+},
+{
+"key": [
+[
+10,
+16
+],
+16
+],
+"value": [
+236.35552978515625,
+-155.3347930908203,
+738.8297119140625
+]
+},
+{
+"key": [
+[
+0,
+26
+],
+0
+],
+"value": [
+-537.2528686523438,
+-192.28567504882812,
+457.2418212890625
+]
+},
+{
+"key": [
+[
+0,
+26
+],
+26
+],
+"value": [
+-942.3574829101562,
+-160.9916229248047,
+757.2442626953125
+]
+},
+{
+"key": [
+[
+31,
+10
+],
+31
+],
+"value": [
+856.88818359375,
+248.23667907714844,
+783.8397827148438
+]
+},
+{
+"key": [
+[
+31,
+10
+],
+10
+],
+"value": [
+336.03900146484375,
+263.8881530761719,
+443.81890869140625
+]
+},
+{
+"key": [
+[
+9,
+12
+],
+9
+],
+"value": [
+-217.30389404296875,
+-124.48564147949219,
+519.5294799804688
+]
+},
+{
+"key": [
+[
+9,
+12
+],
+12
+],
+"value": [
+-35.892677307128906,
+141.7370147705078,
+748.2788696289062
+]
+},
+{
+"key": [
+[
+15,
+27
+],
+15
+],
+"value": [
+528.4346923828125,
+-751.0137939453125,
+395.6141662597656
+]
+},
+{
+"key": [
+[
+15,
+27
+],
+27
+],
+"value": [
+799.344482421875,
+-974.6715087890625,
+869.4264526367188
+]
+},
+{
+"key": [
+[
+23,
+24
+],
+23
+],
+"value": [
+309.18804931640625,
+516.3200073242188,
+477.2844543457031
+]
+},
+{
+"key": [
+[
+23,
+24
+],
+24
+],
+"value": [
+236.06068420410156,
+974.9368286132812,
+793.345947265625
+]
+},
+{
+"key": [
+[
+29,
+16
+],
+29
+],
+"value": [
+421.4001159667969,
+-538.6468505859375,
+535.959228515625
+]
+},
+{
+"key": [
+[
+29,
+16
+],
+16
+],
+"value": [
+230.4644317626953,
+-154.46620178222656,
+744.81591796875
+]
+},
+{
+"key": [
+[
+6,
+22
+],
+6
+],
+"value": [
+662.281982421875,
+-578.4158935546875,
+490.2474060058594
+]
+},
+{
+"key": [
+[
+6,
+22
+],
+22
+],
+"value": [
+940.8193969726562,
+-626.5400390625,
+793.5631713867188
+]
+},
+{
+"key": [
+[
+6,
+32
+],
+6
+],
+"value": [
+661.0751342773438,
+-581.1898193359375,
+492.3824768066406
+]
+},
+{
+"key": [
+[
+6,
+32
+],
+32
+],
+"value": [
+814.7258911132812,
+-253.0920867919922,
+827.1050415039062
+]
+},
+{
+"key": [
+[
+29,
+2
+],
+29
+],
+"value": [
+422.0169372558594,
+-537.780517578125,
+539.4389038085938
+]
+},
+{
+"key": [
+[
+29,
+2
+],
+2
+],
+"value": [
+153.80223083496094,
+-686.731689453125,
+788.6254272460938
+]
+},
+{
+"key": [
+[
+23,
+20
+],
+23
+],
+"value": [
+311.340087890625,
+516.6304321289062,
+474.8304443359375
+]
+},
+{
+"key": [
+[
+23,
+20
+],
+20
+],
+"value": [
+567.13671875,
+655.4131469726562,
+904.9967651367188
+]
+},
+{
+"key": [
+[
+1,
+21
+],
+1
+],
+"value": [
+-278.0728454589844,
+717.7532958984375,
+738.1475219726562
+]
+},
+{
+"key": [
+[
+1,
+21
+],
+21
+],
+"value": [
+-656.060791015625,
+216.87303161621094,
+713.3970947265625
+]
+},
+{
+"key": [
+[
+26,
+21
+],
+26
+],
+"value": [
+-939.8177490234375,
+-161.18576049804688,
+758.9515380859375
+]
+},
+{
+"key": [
+[
+26,
+21
+],
+21
+],
+"value": [
+-659.0231323242188,
+218.9331817626953,
+708.6734619140625
+]
+},
+{
+"key": [
+[
+1,
+24
+],
+1
+],
+"value": [
+-282.9451599121094,
+723.5040283203125,
+739.5863647460938
+]
+},
+{
+"key": [
+[
+1,
+24
+],
+24
+],
+"value": [
+235.41258239746094,
+973.3489379882812,
+794.6268310546875
+]
+},
+{
+"key": [
+[
+2,
+7
+],
+2
+],
+"value": [
+151.55076599121094,
+-688.1506958007812,
+786.9572143554688
+]
+},
+{
+"key": [
+[
+2,
+7
+],
+7
+],
+"value": [
+344.5804748535156,
+-972.6784057617188,
+780.0468139648438
+]
+},
+{
+"key": [
+[
+31,
+32
+],
+31
+],
+"value": [
+854.8187866210938,
+249.9524688720703,
+783.6298828125
+]
+},
+{
+"key": [
+[
+31,
+32
+],
+32
+],
+"value": [
+811.0875854492188,
+-251.74436950683594,
+825.2992553710938
+]
+},
+{
+"key": [
+[
+32,
+22
+],
+32
+],
+"value": [
+817.0925903320312,
+-250.98910522460938,
+826.1104125976562
+]
+},
+{
+"key": [
+[
+32,
+22
+],
+22
+],
+"value": [
+944.1082763671875,
+-623.443603515625,
+794.1303100585938
+]
+},
+{
+"key": [
+[
+25,
+34
+],
+25
+],
+"value": [
+-567.3040771484375,
+-329.1650390625,
+886.7662963867188
+]
+},
+{
+"key": [
+[
+25,
+34
+],
+34
+],
+"value": [
+-548.6065063476562,
+-635.90869140625,
+757.0667114257812
+]
+},
+{
+"key": [
+[
+25,
+26
+],
+25
+],
+"value": [
+-567.3562622070312,
+-329.24627685546875,
+887.0255737304688
+]
+},
+{
+"key": [
+[
+25,
+26
+],
+26
+],
+"value": [
+-940.8882446289062,
+-158.7099609375,
+760.6705932617188
+]
+},
+{
+"key": [
+[
+27,
+7
+],
+27
+],
+"value": [
+800.2285766601562,
+-972.1724243164062,
+870.2940673828125
+]
+},
+{
+"key": [
+[
+27,
+7
+],
+7
+],
+"value": [
+342.71160888671875,
+-976.094970703125,
+781.9012451171875
+]
+},
+{
+"key": [
+[
+22,
+27
+],
+22
+],
+"value": [
+938.1195678710938,
+-623.3655395507812,
+793.3575439453125
+]
+},
+{
+"key": [
+[
+22,
+27
+],
+27
+],
+"value": [
+801.7581787109375,
+-974.6292114257812,
+867.8846435546875
+]
+},
+{
+"key": [
+[
+34,
+35
+],
+34
+],
+"value": [
+-548.5714721679688,
+-635.7623291015625,
+760.9547729492188
+]
+},
+{
+"key": [
+[
+34,
+35
+],
+35
+],
+"value": [
+-259.931396484375,
+-793.1519775390625,
+914.0358276367188
+]
+},
+{
+"key": [
+[
+31,
+20
+],
+31
+],
+"value": [
+858.9459838867188,
+251.1761016845703,
+784.2288818359375
+]
+},
+{
+"key": [
+[
+31,
+20
+],
+20
+],
+"value": [
+568.6505126953125,
+656.8932495117188,
+904.021240234375
+]
+},
+{
+"key": [
+[
+20,
+24
+],
+20
+],
+"value": [
+565.673095703125,
+654.2861938476562,
+905.8240356445312
+]
+},
+{
+"key": [
+[
+20,
+24
+],
+24
+],
+"value": [
+234.04312133789062,
+973.1781616210938,
+796.2691040039062
+]
+},
+{
+"key": [
+[
+2,
+35
+],
+2
+],
+"value": [
+151.57015991210938,
+-687.9429931640625,
+783.8079833984375
+]
+},
+{
+"key": [
+[
+2,
+35
+],
+35
+],
+"value": [
+-258.8479919433594,
+-791.5995483398438,
+916.07568359375
+]
+},
+{
+"key": [
+[
+28,
+16
+],
+28
+],
+"value": [
+10.03258991241455,
+-261.14642333984375,
+999.7435913085938
+]
+},
+{
+"key": [
+[
+28,
+16
+],
+16
+],
+"value": [
+230.0653533935547,
+-146.34580993652344,
+742.6943359375
+]
+},
+{
+"key": [
+[
+14,
+12
+],
+14
+],
+"value": [
+-303.46881103515625,
+-142.79855346679688,
+1106.74365234375
+]
+},
+{
+"key": [
+[
+14,
+12
+],
+12
+],
+"value": [
+-38.8499870300293,
+142.95672607421875,
+749.1229248046875
+]
+},
+{
+"key": [
+[
+28,
+35
+],
+28
+],
+"value": [
+11.424403190612793,
+-262.981689453125,
+1001.3602905273438
+]
+},
+{
+"key": [
+[
+28,
+35
+],
+35
+],
+"value": [
+-259.3309326171875,
+-791.8558959960938,
+911.7108154296875
+]
+},
+{
+"key": [
+[
+25,
+14
+],
+25
+],
+"value": [
+-567.2698364257812,
+-329.2861328125,
+886.8900756835938
+]
+},
+{
+"key": [
+[
+25,
+14
+],
+14
+],
+"value": [
+-305.38427734375,
+-140.75074768066406,
+1105.0908203125
+]
+},
+{
+"key": [
+[
+14,
+28
+],
+14
+],
+"value": [
+-305.39208984375,
+-144.32945251464844,
+1105.92919921875
+]
+},
+{
+"key": [
+[
+14,
+28
+],
+28
+],
+"value": [
+9.568061828613281,
+-262.5335388183594,
+997.447021484375
+]
+}
+],
+"z_vars": [
+{
+"key": [
+[
+[
+9,
+11
+],
+[
+9,
+33
+]
+],
+9
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+9,
+11
+],
+[
+11,
+4
+]
+],
+11
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+19,
+13
+],
+[
+19,
+1
+]
+],
+19
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+19,
+13
+],
+[
+19,
+12
+]
+],
+19
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+19,
+1
+],
+[
+19,
+12
+]
+],
+19
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+9,
+11
+],
+[
+34,
+11
+]
+],
+11
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+34,
+11
+],
+[
+11,
+4
+]
+],
+11
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+0,
+18
+],
+[
+0,
+21
+]
+],
+0
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+15,
+17
+],
+[
+15,
+7
+]
+],
+15
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+10,
+16
+],
+[
+10,
+30
+]
+],
+10
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+0,
+18
+],
+[
+0,
+26
+]
+],
+0
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+0,
+26
+],
+[
+0,
+21
+]
+],
+0
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+10,
+16
+],
+[
+31,
+10
+]
+],
+10
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+10,
+30
+],
+[
+31,
+10
+]
+],
+10
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+9,
+33
+],
+[
+9,
+12
+]
+],
+9
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+9,
+11
+],
+[
+9,
+12
+]
+],
+9
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+9,
+12
+],
+[
+19,
+12
+]
+],
+12
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+15,
+27
+],
+[
+15,
+17
+]
+],
+15
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+15,
+27
+],
+[
+15,
+7
+]
+],
+15
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+23,
+24
+],
+[
+23,
+3
+]
+],
+23
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+29,
+16
+],
+[
+29,
+5
+]
+],
+29
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+10,
+16
+],
+[
+29,
+16
+]
+],
+16
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+6,
+8
+],
+[
+6,
+22
+]
+],
+6
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+6,
+8
+],
+[
+6,
+32
+]
+],
+6
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+6,
+32
+],
+[
+6,
+22
+]
+],
+6
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+29,
+5
+],
+[
+29,
+2
+]
+],
+29
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+29,
+16
+],
+[
+29,
+2
+]
+],
+29
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+23,
+24
+],
+[
+23,
+20
+]
+],
+23
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+23,
+3
+],
+[
+23,
+20
+]
+],
+23
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+1,
+21
+],
+[
+19,
+1
+]
+],
+1
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+0,
+21
+],
+[
+1,
+21
+]
+],
+21
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+26,
+21
+],
+[
+0,
+26
+]
+],
+26
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+26,
+21
+],
+[
+0,
+21
+]
+],
+21
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+26,
+21
+],
+[
+1,
+21
+]
+],
+21
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+1,
+24
+],
+[
+1,
+21
+]
+],
+1
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+1,
+24
+],
+[
+19,
+1
+]
+],
+1
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+1,
+24
+],
+[
+23,
+24
+]
+],
+24
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+2,
+7
+],
+[
+29,
+2
+]
+],
+2
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+15,
+7
+],
+[
+2,
+7
+]
+],
+7
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+31,
+10
+],
+[
+31,
+32
+]
+],
+31
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+6,
+32
+],
+[
+31,
+32
+]
+],
+32
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+32,
+22
+],
+[
+6,
+32
+]
+],
+32
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+32,
+22
+],
+[
+31,
+32
+]
+],
+32
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+32,
+22
+],
+[
+6,
+22
+]
+],
+22
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+25,
+34
+],
+[
+34,
+11
+]
+],
+34
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+25,
+34
+],
+[
+25,
+26
+]
+],
+25
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+26,
+21
+],
+[
+25,
+26
+]
+],
+26
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+0,
+26
+],
+[
+25,
+26
+]
+],
+26
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+15,
+27
+],
+[
+27,
+7
+]
+],
+27
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+15,
+7
+],
+[
+27,
+7
+]
+],
+7
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+2,
+7
+],
+[
+27,
+7
+]
+],
+7
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+32,
+22
+],
+[
+22,
+27
+]
+],
+22
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+22,
+27
+],
+[
+6,
+22
+]
+],
+22
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+15,
+27
+],
+[
+22,
+27
+]
+],
+27
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+22,
+27
+],
+[
+27,
+7
+]
+],
+27
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+25,
+34
+],
+[
+34,
+35
+]
+],
+34
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+34,
+11
+],
+[
+34,
+35
+]
+],
+34
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+31,
+20
+],
+[
+31,
+10
+]
+],
+31
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+31,
+20
+],
+[
+31,
+32
+]
+],
+31
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+23,
+20
+],
+[
+31,
+20
+]
+],
+20
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+20,
+24
+],
+[
+23,
+20
+]
+],
+20
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+20,
+24
+],
+[
+31,
+20
+]
+],
+20
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+1,
+24
+],
+[
+20,
+24
+]
+],
+24
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+20,
+24
+],
+[
+23,
+24
+]
+],
+24
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+2,
+7
+],
+[
+2,
+35
+]
+],
+2
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+2,
+35
+],
+[
+29,
+2
+]
+],
+2
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+34,
+35
+],
+[
+2,
+35
+]
+],
+35
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+28,
+16
+],
+[
+10,
+16
+]
+],
+16
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+28,
+16
+],
+[
+29,
+16
+]
+],
+16
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+14,
+12
+],
+[
+9,
+12
+]
+],
+12
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+14,
+12
+],
+[
+19,
+12
+]
+],
+12
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+28,
+16
+],
+[
+28,
+35
+]
+],
+28
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+28,
+35
+],
+[
+34,
+35
+]
+],
+35
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+28,
+35
+],
+[
+2,
+35
+]
+],
+35
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+25,
+34
+],
+[
+25,
+14
+]
+],
+25
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+25,
+14
+],
+[
+25,
+26
+]
+],
+25
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+14,
+12
+],
+[
+25,
+14
+]
+],
+14
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+14,
+12
+],
+[
+14,
+28
+]
+],
+14
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+25,
+14
+],
+[
+14,
+28
+]
+],
+14
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+28,
+16
+],
+[
+14,
+28
+]
+],
+28
+],
+"value": 1
+},
+{
+"key": [
+[
+[
+28,
+35
+],
+[
+14,
+28
+]
+],
+28
+],
+"value": 1
+}
+]
+}
+}
