@@ -14,7 +14,7 @@ from pybullet_planning import Pose, link_from_name, has_link, joint_from_name
 import coop_assembly
 
 # ! set robot here
-ROBOT_NAME  = 'kuka'
+ROBOT_NAME  = 'ur5e'
 # ROBOT_NAME  = 'abb_track'
 INCLUDE_ENV_COLLISION_OBJS = 1
 
@@ -76,15 +76,18 @@ RESOLUTION_RATIO = 5
 ROBOT_URDFs = {
     'kuka' : 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf',
     'abb_track' : 'abb_irb4600_40_255/urdf/ECL_robot1_with_track.urdf',
+    'ur5e' : 'abb_irb4600_40_255/urdf/ECL_robot1_with_track.urdf',
     }
 ROBOT_SRDFs = {
     'kuka' : 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf',
     'abb_track' : 'abb_irb4600_40_255/srdf/ECL_robot1_with_track.srdf',
+    'ur5e' : 'abb_irb4600_40_255/srdf/ECL_robot1_with_track.srdf',
     }
 
 EE_MESH_PATHs = {
     'kuka' : "models/kuka_kr6_r900/meshes/mit_arch_grasp_end_effector/collision/mit_arch_grasp_end_effector_collision.stl",
     'abb_track' : "models/abb_irb4600_40_255/meshes/collision/princeton_gripper_collision_m.stl",
+    'ur5e' : "models/abb_irb4600_40_255/meshes/collision/princeton_gripper_collision_m.stl",
     }
 EE_MESH_PATH = EE_MESH_PATHs[ROBOT_NAME]
 
@@ -99,6 +102,7 @@ def obj_files_from_dir(dir_path):
 WS_MESH_PATHs = {
     'kuka' : [],
     'abb_track' : obj_files_from_dir(coop_assembly.get_data("models/abb_irb4600_40_255/meshes/collision/ECL_env_collision")),
+    'ur5e' : [],
 }
 WS_MESH_PATH = WS_MESH_PATHs[ROBOT_NAME]
 
@@ -111,6 +115,7 @@ try:
     IK_MODULEs = {
         'kuka' : ikfast_kuka_kr6_r900,
         'abb_track' : ikfast_abb_irb4600_40_255,
+        # 'ur5e' : ,
     }
     IK_MODULE = IK_MODULEs[ROBOT_NAME]
 except ImportError as e:
@@ -122,6 +127,9 @@ CUSTOM_LIMITSs = {
         'robot_joint_a1': (-np.pi/2, np.pi/2),
     },
     'abb_track' : {
+        # 'joint_2': (-0.62, 1.83),
+    },
+    'ur5e' : {
         # 'joint_2': (-0.62, 1.83),
     },
 }
@@ -137,6 +145,7 @@ INITIAL_CONFs = {
     # 'abb_track' : np.hstack([1.0, np.radians([0,0,0,0,0,0])]),
     # * SP arch
     'abb_track' : np.hstack([0.0, np.radians([0,0,0,0,0,0])]),
+    'ur5e' : np.radians([0,0,0,0,0,0]),
     }
 INITIAL_CONF = INITIAL_CONFs[ROBOT_NAME]
 
@@ -146,13 +155,14 @@ JOINT_WEIGHTSs = {
                             6.6497044501, 6.77187749774, 10.7337748998]), # sec / radian
     'abb_track' : np.reciprocal([0.1, 2.618, 2.618, 2.618,
                                  6.2832, 6.2832, 7.854]),
-    # 'abb_track' : [0.01, 0.01079, 0.00725, 0.012249, 0.009173, 0.037541, 0.01313],
+    'ur5e' : [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
     }
 JOINT_WEIGHTS = np.array(JOINT_WEIGHTSs[ROBOT_NAME])
 
 JOINT_RESOLUTIONSs = {
     'kuka' : np.divide(np.ones(JOINT_WEIGHTS.shape), JOINT_WEIGHTS),
     'abb_track' : np.array([0.01, 0.01079, 0.00725, 0.012249, 0.009173, 0.037541, 0.01313]),
+    'ur5e' : np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
     }
 JOINT_RESOLUTIONS = RESOLUTION_RATIO * np.array(JOINT_RESOLUTIONSs[ROBOT_NAME])
 
@@ -161,6 +171,7 @@ GANTRY_JOINT_LIMITSs = {
     'abb_track' : {
         'linear_axis_actuation_joint' : (0.0, 3.3), #3
         },
+    'ur5e' : None,
 }
 GANTRY_JOINT_LIMITS = GANTRY_JOINT_LIMITSs[ROBOT_NAME]
 
