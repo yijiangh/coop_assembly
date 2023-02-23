@@ -23,7 +23,7 @@ requirements = [
     'compas_fab==0.14.0',
     'numpy',
     'scipy>=1.2.0',
-    'pybullet<=3.1.0',
+    'pybullet',
     'pybullet_planning>=0.5.0',
     'cmake',
     # 'ikfast_pybind',
