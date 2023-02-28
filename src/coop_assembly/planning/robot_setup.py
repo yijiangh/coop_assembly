@@ -34,6 +34,7 @@ BUILD_PLATE_CENTERs = {
     # 'abb_track' : np.array([1.45, -2, 30.7*1e-3]),
     # * topopt tiny valut S10
     # 'abb_track' : np.array([1.5, -2, 30.7*1e-3]),
+    'ur5e' : np.array([0.5, 0, 0]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
@@ -112,10 +113,11 @@ WS_MESH_PATH = WS_MESH_PATHs[ROBOT_NAME]
 try:
     import ikfast_kuka_kr6_r900
     import ikfast_abb_irb4600_40_255
+    import ikfast_ur5e
     IK_MODULEs = {
         'kuka' : ikfast_kuka_kr6_r900,
         'abb_track' : ikfast_abb_irb4600_40_255,
-        # 'ur5e' : ,
+        'ur5e' : ikfast_ur5e,
     }
     IK_MODULE = IK_MODULEs[ROBOT_NAME]
 except ImportError as e:

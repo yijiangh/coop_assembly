@@ -1,9 +1,7 @@
 using Printf
 using JSON
 using LinearAlgebra: norm
-using JuMP
 #
-using Gurobi
 using Ipopt
 #
 using Base.Iterators
@@ -202,7 +200,9 @@ function solve(nodes, edges, aabb;
                hint_z_solution=nothing,
                diagnose=true,
                min_tangents=MIN_TANGENTS,
-               length_tolerance=LENGTH_TOLERANCE, contact_tolerance=CONTACT_TOLERANCE, buffer_tolerance=BUFFER_TOLERANCE,
+               length_tolerance=LENGTH_TOLERANCE,
+               contact_tolerance=CONTACT_TOLERANCE,
+               buffer_tolerance=BUFFER_TOLERANCE,
                num_solutions=1, max_time=1*60, verbose=true)
     println("-"^20)
     max_distance = norm(aabb[2] - aabb[1])
@@ -307,13 +307,13 @@ function solve(nodes, edges, aabb;
             @assert node1 != node2
             continue
         end
-        # ! use end point to approximate
-        # TODO: introduce contact point parameterization
-        var1, var2 = x_vars[edge1, node1], x_vars[edge2, node2]
-        difference = var2 - var1
-        radius_distance = edges[edge1]["radius"] + edges[edge2]["radius"]
-
         if node1 == node2
+            # ! use end point to approximate
+            # TODO: introduce contact point parameterization
+            var1, var2 = x_vars[edge1, node1], x_vars[edge2, node2]
+            difference = var2 - var1
+            radius_distance = edges[edge1]["radius"] + edges[edge2]["radius"]
+
             pair = Set([edge1, edge2])
             z_var = z_vars[pair, node1]
             # ! contact constraint
@@ -357,10 +357,10 @@ function solve(nodes, edges, aabb;
     ###################################
 
     println("="^20)
-    status=optimize!(model) # time to optimize!
+    status=optimize!(model)
     println("="^20)
 
-    @printf("Status: %s\n", termination_status(model))
+    # @printf("Status: %s\n", termination_status(model))
     if result_count(model) <= 0 || termination_status(model) == MOI.INFEASIBLE # !has_values(model)
         @error "The model was not solved correctly."
 
@@ -378,7 +378,7 @@ function solve(nodes, edges, aabb;
 
         return nothing, nothing
     else
-        @printf("Objective: %s | # Solutions: %d", objective_value(model), result_count(model))
+        # @printf("Objective: %s | # Solutions: %d", objective_value(model), result_count(model))
     end
 
     # for (edge, neighbors) in z_var_from_edge
@@ -476,19 +476,19 @@ function main(file_name, args)
             # return
         end
 
-        x_sol, z_sol = solve(nodes, edges, aabb;
-            opt_option=args["opt_option"],
-            num_solutions=args["num_solutions"],
-            diagnose=args["diagnose"],
-            hint_x_solution=saved_x_vars,
-            hint_z_solution=saved_z_vars)
+        # x_sol, z_sol = solve(nodes, edges, aabb;
+        #     opt_option=args["opt_option"],
+        #     num_solutions=args["num_solutions"],
+        #     diagnose=args["diagnose"],
+        #     hint_x_solution=saved_x_vars,
+        #     hint_z_solution=saved_z_vars)
 
-        if x_sol !== nothing && z_sol !== nothing
-            println(GREEN_FG("Solution found!"))
-            visualize_solution(nodes, edges, x_sol, z_sol)
-        else
-            println(RED_FG("No solution found!"))
-        end
+        # if x_sol !== nothing && z_sol !== nothing
+        #     println(GREEN_FG("Solution found!"))
+        #     visualize_solution(nodes, edges, x_sol, z_sol)
+        # else
+        #     println(RED_FG("No solution found!"))
+        # end
 
         PyPb.wait_if_gui("Finished.")
     finally
@@ -498,37 +498,45 @@ end
 
 #############################################
 
-parser = ArgParseSettings()
-@add_arg_table! parser begin
-    "--problem"
-	    help = "json file name for the original graph to be solved upon"
-        arg_type = String
-        default = "truss_one_tet_skeleton.json"
-        # file_name = "cube_skeleton.json"
-        # file_name = "2_tets.json"
-        # file_name = "single_tet_point2triangle.json"
-    "--check_feasible_file"
-	    help = "json file name for a computed solution, for viz or feasiblity checking"
-        arg_type = String
-        default = nothing
-    "--viewer"
-        help = "Enable pybullet viewer"
-        action = :store_true
-    "--opt_option"
-        arg_type = String
-        default = "optimize"
-    "--diagnose"
-        help = "Show diagnosis info if the optimization is terminated due to infeasiblibility"
-        action = :store_true
-    "--num_solutions"
-        help = "Limits the number of feasible MIP solutions found. https://www.gurobi.com/documentation/9.0/refman/solutionlimit.html"
-        arg_type = Int
-        default = 1
-    "--write"
-        help = "export the newly found solution"
-        action = :store_false
-end
+# parser = ArgParseSettings()
+# @add_arg_table! parser begin
+#     "--problem"
+# 	    help = "json file name for the original graph to be solved upon"
+#         arg_type = String
+#         default = "truss_one_tet_skeleton.json"
+#         # file_name = "cube_skeleton.json"
+#         # file_name = "2_tets.json"
+#         # file_name = "single_tet_point2triangle.json"
+#     "--check_feasible_file"
+# 	    help = "json file name for a computed solution, for viz or feasiblity checking"
+#         arg_type = String
+#         default = nothing
+#     "--viewer"
+#         help = "Enable pybullet viewer"
+#         action = :store_true
+#     "--opt_option"
+#         arg_type = String
+#         default = "optimize"
+#     "--diagnose"
+#         help = "Show diagnosis info if the optimization is terminated due to infeasiblibility"
+#         action = :store_true
+#     "--num_solutions"
+#         help = "Limits the number of feasible MIP solutions found. https://www.gurobi.com/documentation/9.0/refman/solutionlimit.html"
+#         arg_type = Int
+#         default = 1
+#     "--write"
+#         help = "export the newly found solution"
+#         action = :store_false
+# end
+# args = parse_args(parser)
 
-args = parse_args(parser)
+args = Dict()
+args["problem"] = "truss_one_tet_skeleton.json"
+args["check_feasible_file"] = nothing
+args["viewer"] = true
+args["opt_option"] = "optimize"
+args["num_solutions"] = 1
+args["write"] = true
+
 println(YELLOW_FG("Args: $(args)"))
 main(args["problem"], args)
