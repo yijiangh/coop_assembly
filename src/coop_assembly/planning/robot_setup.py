@@ -34,6 +34,7 @@ BUILD_PLATE_CENTERs = {
     # 'abb_track' : np.array([1.45, -2, 30.7*1e-3]),
     # * topopt tiny valut S10
     # 'abb_track' : np.array([1.5, -2, 30.7*1e-3]),
+    'ur5e' : np.array([0.7, 0.0, -0.08]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
@@ -76,18 +77,18 @@ RESOLUTION_RATIO = 5
 ROBOT_URDFs = {
     'kuka' : 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf',
     'abb_track' : 'abb_irb4600_40_255/urdf/ECL_robot1_with_track.urdf',
-    'ur5e' : 'abb_irb4600_40_255/urdf/ECL_robot1_with_track.urdf',
+    'ur5e' : 'ur5e/urdf/ur5e.urdf',
     }
 ROBOT_SRDFs = {
     'kuka' : 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf',
     'abb_track' : 'abb_irb4600_40_255/srdf/ECL_robot1_with_track.srdf',
-    'ur5e' : 'abb_irb4600_40_255/srdf/ECL_robot1_with_track.srdf',
+    'ur5e' : 'ur5e/srdf/ur5e.srdf',
     }
 
 EE_MESH_PATHs = {
     'kuka' : "models/kuka_kr6_r900/meshes/mit_arch_grasp_end_effector/collision/mit_arch_grasp_end_effector_collision.stl",
     'abb_track' : "models/abb_irb4600_40_255/meshes/collision/princeton_gripper_collision_m.stl",
-    'ur5e' : "models/abb_irb4600_40_255/meshes/collision/princeton_gripper_collision_m.stl",
+    'ur5e' : "models/robotiq_85/urdf/robotiq_85_gripper_simple.urdf",
     }
 EE_MESH_PATH = EE_MESH_PATHs[ROBOT_NAME]
 
@@ -112,13 +113,14 @@ WS_MESH_PATH = WS_MESH_PATHs[ROBOT_NAME]
 try:
     import ikfast_kuka_kr6_r900
     import ikfast_abb_irb4600_40_255
+    # import ikfast_ur5e
     IK_MODULEs = {
         'kuka' : ikfast_kuka_kr6_r900,
         'abb_track' : ikfast_abb_irb4600_40_255,
-        # 'ur5e' : ,
+        # 'ur5e' : ikfast_ur5e,
     }
     IK_MODULE = IK_MODULEs[ROBOT_NAME]
-except ImportError as e:
+except Exception as e:
     IK_MODULE = None
     cprint('{}, Using pybullet ik fn instead'.format(e), 'red')
 
@@ -169,7 +171,7 @@ JOINT_WEIGHTS = np.array(JOINT_WEIGHTSs[ROBOT_NAME])
 JOINT_RESOLUTIONSs = {
     'kuka' : np.divide(np.ones(JOINT_WEIGHTS.shape), JOINT_WEIGHTS),
     'abb_track' : np.array([0.01, 0.01079, 0.00725, 0.012249, 0.009173, 0.037541, 0.01313]),
-    'ur5e' : np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
+    'ur5e' : np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
     }
 JOINT_RESOLUTIONS = RESOLUTION_RATIO * np.array(JOINT_RESOLUTIONSs[ROBOT_NAME])
 
