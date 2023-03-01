@@ -77,12 +77,12 @@ RESOLUTION_RATIO = 5
 ROBOT_URDFs = {
     'kuka' : 'kuka_kr6_r900/urdf/kuka_kr6_r900_gripper.urdf',
     'abb_track' : 'abb_irb4600_40_255/urdf/ECL_robot1_with_track.urdf',
-    'ur5e' : 'ur5e/urdf/ur5e.urdf',
+    'ur5e' : 'ur5e/urdf/ur5e_robotiq_85.urdf',
     }
 ROBOT_SRDFs = {
     'kuka' : 'kuka_kr6_r900/srdf/kuka_kr6_r900_mit_grasp.srdf',
     'abb_track' : 'abb_irb4600_40_255/srdf/ECL_robot1_with_track.srdf',
-    'ur5e' : 'ur5e/srdf/ur5e.srdf',
+    'ur5e' : 'ur5e/srdf/ur5e_robotiq_85.srdf',
     }
 
 EE_MESH_PATHs = {

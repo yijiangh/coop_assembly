@@ -28,9 +28,11 @@ CONVEX_BUFFER = 0.1
 
 ##################################################
 
+# initial pose for the the floating end effector
 EE_INITIAL_POINTs = {
     'kuka' : np.array(BUILD_PLATE_CENTER) + np.array([0.4, 0, 0.6]),
     'abb_track' : np.array(BUILD_PLATE_CENTER) + np.array([0.4, 0, 1.6]),
+    'ur5e' : np.array(BUILD_PLATE_CENTER) + np.array([0.4, 0, 0.6]),
 }
 EE_INITIAL_POINT = EE_INITIAL_POINTs[ROBOT_NAME]
 EE_INITIAL_EULER = np.array([0, np.pi/2, 0])

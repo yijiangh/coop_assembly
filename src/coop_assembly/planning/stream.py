@@ -51,6 +51,7 @@ ORI_STEP_SIZE = np.pi/18
 RETREAT_DISTANCEs = {
     'kuka': 0.025,
     'abb_track': 0.07,
+    'ur5e': 0.07,
 }
 RETREAT_DISTANCE = RETREAT_DISTANCEs[ROBOT_NAME]
 
