@@ -264,7 +264,8 @@ class BarStructure(Network):
             axis_pts = self.get_bar_axis_end_pts(bar_v_key)
             radius = self.node[bar_v_key]['radius']
             # parse saved shrink radius to prevent collision body inconsistency if regenerated
-            kwargs['shrink_radius'] = self.node[bar_v_key]['shrink_radius']
+            if 'shrink_radius' in self.node[bar_v_key]:
+                kwargs['shrink_radius'] = self.node[bar_v_key]['shrink_radius']
             self.node[bar_v_key]['pb_body'] = create_bar_body(axis_pts, radius, scale=scale, **kwargs)
         set_color(self.node[bar_v_key]['pb_body'], color)
         return self.node[bar_v_key]['pb_body']

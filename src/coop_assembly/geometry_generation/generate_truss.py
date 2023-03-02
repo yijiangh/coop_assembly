@@ -43,7 +43,7 @@ try:
     from multi_tangent.BeamOpt import plot_contact_distance
 except ImportError as err:
     print('multi_tangent not loaded')
-    raise err
+    # raise err
 
 METHOD_OPTIONS = ['search', 'shrink', 'bar_network']
 EDGE = frozenset

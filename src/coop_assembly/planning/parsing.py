@@ -55,6 +55,7 @@ def load_structure(test_file_name, connect_pb=True, viewer=False, color=(1,0,0,0
     """connect pybullet env and load the bar system
     """
     if connect_pb and not is_connected():
+        print(f'viewer {viewer}')
         connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     if connect_pb and viewer:
         locker = LockRenderer()

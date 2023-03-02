@@ -2,123 +2,11 @@
 
 <robot name="robotiq_85_gripper">
   <!-- control -->
-  <link name="base_link">
-    <inertial>
-      <mass value="0" />
-      <inertia ixx = "0" ixy = "0" ixz = "0"
-               iyx = "0" iyy = "0" iyz = "0"
-               izx = "0" izy = "0" izz = "0" />
-    </inertial>
-  </link>
-
-  <joint name="center_x" type="prismatic">
-    <parent link="base_link"/>
-    <child link="y_control"/>
-    <axis xyz="1 0 0"/>
-    <limit effort="1000.0" lower="-0.5" upper="0.5" velocity="0.2"/>
-  </joint>
-
-  <link name="y_control">
-    <inertial>
-      <mass value="0.1" />
-      <inertia ixx = "0" ixy = "0" ixz = "0"
-               iyx = "0" iyy = "0" iyz = "0"
-               izx = "0" izy = "0" izz = "0" />
-    </inertial>
-  </link>
-
-  <joint name="center_y" type="prismatic">
-    <parent link="y_control"/>
-    <child link="z_control"/>
-    <axis xyz="0 1 0"/>
-    <limit effort="1000.0" lower="-0.5" upper="0.5" velocity="0.2"/>
-  </joint>
-
-  <link name="z_control">
-    <inertial>
-      <mass value="0.1" />
-      <inertia ixx = "0" ixy = "0" ixz = "0"
-               iyx = "0" iyy = "0" iyz = "0"
-               izx = "0" izy = "0" izz = "0" />
-    </inertial>
-  </link>
-
-  <joint name="center_z" type="prismatic">
-    <parent link="z_control"/>
-    <child link="yaw_control"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="1000.0" lower="-0.25" upper="1" velocity="0.2"/>
-  </joint>
-
-  <link name="yaw_control">
-    <inertial>
-      <mass value="0.1" />
-      <inertia ixx = "0" ixy = "0" ixz = "0"
-               iyx = "0" iyy = "0" iyz = "0"
-               izx = "0" izy = "0" izz = "0" />
-    </inertial>
-  </link>
-
-  <joint name="gripper_yaw" type="revolute">
-    <parent link="yaw_control"/>
-    <child link="pitch_control"/>
-    <axis xyz="0 0 1"/>
-    <limit lower="-31.4" upper="31.4" velocity="3.14" effort="10000"/>
-
-  </joint>
-
-  <link name="pitch_control">
-    <inertial>
-      <mass value="0.1" />
-      <inertia ixx = "0" ixy = "0" ixz = "0"
-               iyx = "0" iyy = "0" iyz = "0"
-               izx = "0" izy = "0" izz = "0" />
-    </inertial>
-  </link>
-
-  <joint name="gripper_pitch" type="revolute">
-    <parent link="pitch_control"/>
-    <child link="roll_control"/>
-    <axis xyz="0 1 0"/>
-    <limit lower="-31.4" upper="31.4" velocity="3.14" effort="10000"/>
-
-  </joint>
-
-  <link name="roll_control">
-    <inertial>
-      <mass value="0.1" />
-      <inertia ixx = "0" ixy = "0" ixz = "0"
-               iyx = "0" iyy = "0" iyz = "0"
-               izx = "0" izy = "0" izz = "0" />
-    </inertial>
-  </link>
-
-  <joint name="gripper_roll" type="revolute">
-    <parent link="roll_control"/>
-    <child link="dummy_center_indicator_link"/>
-    <axis xyz="1 0 0"/>
-    <limit lower="-31.4" upper="31.4" velocity="3.14" effort="100000"/>
-  </joint>
-
-  <link name="dummy_center_indicator_link">
-    <visual>
-      <geometry>
-        <box size="0.020 0.085 0.002"/>
-      </geometry>
-    </visual>
-    <inertial>
-      <mass value="0.1" />
-      <inertia ixx = "0" ixy = "0" ixz = "0"
-               iyx = "0" iyy = "0" iyz = "0"
-               izx = "0" izy = "0" izz = "0" />
-    </inertial>
-  </link>
-
-  <joint name="dummy_center_fixed_joint" type="fixed">
+  <!-- <joint name="dummy_center_fixed_joint" type="fixed">
     <parent link="dummy_center_indicator_link"/>
     <child link="robotiq_85_base_link"/>
     <origin xyz="-0.137 0 0" />
-  </joint>
+  </joint> -->
 
   <!-- robot -->
     <link name="robotiq_85_base_link">
@@ -365,4 +253,28 @@
              izx = "0.000000" izy = "0.000000" izz = "0.000006" />
       </inertial>
     </link>
+
+    <!-- * bar grasp TCP -->
+    <link name="bar_tcp"/>
+    <joint name="tool0-bar_tcp_fixed_joint" type="fixed">
+      <origin rpy="0 0 3.141592653589793" xyz="0 0 0.138"/>
+      <parent link="robotiq_85_mount"/>
+      <child link="bar_tcp"/>
+    </joint>
+
+    <link name="robotiq_85_mount"/>
+    <joint name="mount" type="fixed">
+      <parent link="robotiq_85_mount"/>
+      <child link="robotiq_85_base_link"/>
+      <!-- <origin rpy="0.0 0.0 1.5707963267948966" xyz="0.0 0.0 0.0"/> -->
+      <origin rpy="0.0 -1.5707963267948966 1.5707963267948966" xyz="0.0 0.0 0.0"/>
+    </joint>
+
+   <!-- <link name="world"/>
+   <joint name="world_joint" type="fixed">
+     <parent link="world"/>
+     <child link="robotiq_85_mount"/>
+     <origin rpy="0.0 0.0 0" xyz="0.0 0.0 0.0"/>
+   </joint> -->
+
 </robot>

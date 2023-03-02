@@ -8,6 +8,7 @@ from termcolor import cprint, colored
 from itertools import islice
 from collections import namedtuple
 
+import pybullet_planning as pp
 from pybullet_planning import connect, has_gui, LockRenderer, remove_handles, add_line, \
     draw_pose, EndEffector, unit_pose, link_from_name, end_effector_from_body, get_link_pose, \
     dump_world, set_pose, WorldSaver, reset_simulation, disconnect, get_pose, get_date, RED, GREEN, refine_path, joints_from_names, \
@@ -144,9 +145,73 @@ def test_regression(viewer, file_spec, collision, motion, stiffness, watch, revi
     reset_simulation()
     disconnect()
 
+import pybullet as p
+from pybullet_planning import NULL_ID, STATIC_MASS, CARTESIAN_TYPES
+
+def clone_body_fixed_joints(body):
+    client = pp.get_client(client) # client is the new client for the body
+    if links is None:
+        links = pp.get_links(body)
+    #movable_joints = [joint for joint in links if is_movable(body, joint)]
+    new_from_original = {}
+    base_link = get_link_parent(body, links[0]) if links else BASE_LINK
+    new_from_original[base_link] = NULL_ID
+
+    masses = []
+    collision_shapes = []
+    visual_shapes = []
+    positions = [] # list of local link positions, with respect to parent
+    orientations = [] # list of local link orientations, w.r.t. parent
+    inertial_positions = [] # list of local inertial frame pos. in link frame
+    inertial_orientations = [] # list of local inertial frame orn. in link frame
+    parent_indices = []
+    joint_types = []
+    joint_axes = []
+    for i, link in enumerate(links):
+        new_from_original[link] = i
+        joint_info = get_joint_info(body, link)
+        dynamics_info = get_dynamics_info(body, link)
+        masses.append(dynamics_info.mass)
+        collision_shapes.append(clone_collision_shape(body, link, client) if collision else NULL_ID)
+        visual_shapes.append(clone_visual_shape(body, link, client) if visual else NULL_ID)
+        point, quat = get_local_link_pose(body, link)
+        positions.append(point)
+        orientations.append(quat)
+        inertial_positions.append(dynamics_info.local_inertial_pos)
+        inertial_orientations.append(dynamics_info.local_inertial_orn)
+        parent_indices.append(new_from_original[joint_info.parentIndex] + 1) # TODO: need the increment to work
+        joint_types.append(joint_info.jointType)
+        joint_axes.append(joint_info.jointAxis)
+    # https://github.com/bulletphysics/bullet3/blob/9c9ac6cba8118544808889664326fd6f06d9eeba/examples/pybullet/gym/pybullet_utils/urdfEditor.py#L169
+
+    base_dynamics_info = get_dynamics_info(body, base_link)
+    base_point, base_quat = get_link_pose(body, base_link)
+    new_body = p.createMultiBody(baseMass=base_dynamics_info.mass,
+                                 baseCollisionShapeIndex=clone_collision_shape(body, base_link, client) if collision else NULL_ID,
+                                 baseVisualShapeIndex=clone_visual_shape(body, base_link, client) if visual else NULL_ID,
+                                 basePosition=base_point,
+                                 baseOrientation=base_quat,
+                                 baseInertialFramePosition=base_dynamics_info.local_inertial_pos,
+                                 baseInertialFrameOrientation=base_dynamics_info.local_inertial_orn,
+                                 linkMasses=masses,
+                                 linkCollisionShapeIndices=collision_shapes,
+                                 linkVisualShapeIndices=visual_shapes,
+                                 linkPositions=positions,
+                                 linkOrientations=orientations,
+                                 linkInertialFramePositions=inertial_positions,
+                                 linkInertialFrameOrientations=inertial_orientations,
+                                 linkParentIndices=parent_indices,
+                                 linkJointTypes=joint_types,
+                                 linkJointAxis=joint_axes,
+                                 physicsClientId=client)
+    #set_configuration(new_body, get_joint_positions(body, movable_joints)) # Need to use correct client
+    # for joint, value in zip(range(len(links)), get_joint_positions(body, links)):
+    #     # TODO: check if movable?
+    #     p.resetJointState(new_body, joint, value, targetVelocity=0, physicsClientId=client)
+
 @pytest.mark.stream
 def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
-    bar_struct, _ = load_structure(file_spec, viewer)
+    bar_struct, _ = load_structure(file_spec, viewer=True)
 
     # * transform model
     bar_radius = bar_struct.node[0]['radius']*METER_SCALE
@@ -179,11 +244,25 @@ def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
 
     n_attempts = 5
     tool_pose = unit_pose()
-    ee_mesh_path = get_gripper_mesh_path()
-    collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
-    end_effector = create_flying_body(SE3, collision_id, visual_id)
-    ee_joints = get_movable_joints(end_effector)
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
+    # if bar_only:
+    if True:
+        # ee_mesh_path = get_gripper_mesh_path()
+        # collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
+
+        collision_id, visual_id = pp.create_shape(pp.get_box_geometry(0.001,0.001,0.001), color=pp.RED)
+        end_effector = create_flying_body(SE3, collision_id, visual_id)
+        pp.set_pose(end_effector, pp.get_link_pose(robot, link_from_name(robot, EE_LINK_NAME)))
+        ee_joints = get_movable_joints(end_effector)
+
+        selected_links = pp.get_link_subtree(robot, 6) # TODO: child_link_from_joint?
+        sub_ee_robot = pp.clone_body(robot, links=selected_links, visual=True, collision=True) # TODO: joint limits
+        flying_ee_attach = pp.create_attachment(end_effector, pp.get_links(end_effector)[-1], sub_ee_robot)
+        ee_attachments = [flying_ee_attach]
+
+    pp.set_color(robot, apply_alpha(pp.RED, 0.1))
+    # pp.set_pose(jointed_gripper, pp.Pose(point=(0,1,0)))
+    pp.camera_focus_on_body(end_effector)
 
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, reverse_grasp=True, safety_margin_length=0.005)
     # pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, obstacles, collision=collision, teleops=False) # max_attempts=max_attempts,
@@ -202,13 +281,14 @@ def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
 
         # visualize grasp
         p = element_goal_pose.value
-        gripper_from_bar = grasp.attach
+        gripper_from_bar = grasp.gripper_from_object
         set_pose(element_from_index[chosen].body, p)
         world_from_tool = end_effector_from_body(p, gripper_from_bar)
-
-        set_joint_positions(end_effector, ee_joints, se3_conf_from_pose(multiply(world_from_tool, tool_from_ee)))
         handles.extend(draw_pose(world_from_tool, length=0.05))
         handles.extend(draw_pose(p, length=0.05))
+
+        if bar_only:
+            set_joint_positions(end_effector, ee_joints, se3_conf_from_pose(multiply(world_from_tool, tool_from_ee)))
 
         # * sample pick trajectory
         command, = next(pick_gen(chosen, printed=printed, diagnosis=debug_mode))
