@@ -6,7 +6,7 @@
 	url = https://github.com/yijiangh/pddlstream.git
 [submodule "external/pyplanners"]
 	path = external/pyplanners
-	url = https://github.com/caelan/pyplanners.git
+	url = https://github.com/yijiangh/pyplanners.git
 [submodule "external/conmech"]
 	path = external/conmech
 	url = https://github.com/yijiangh/conmech.git
