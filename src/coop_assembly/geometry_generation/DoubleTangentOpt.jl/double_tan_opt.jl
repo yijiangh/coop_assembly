@@ -1,6 +1,6 @@
 using Printf
 using JSON
-using LinearAlgebra: norm
+using LinearAlgebra: norm, cross, dot
 #
 using Ipopt
 #
@@ -31,10 +31,6 @@ include("visualize.jl")
 const ROOT_DIR = abspath(joinpath(@__FILE__, [".." for i in 1:5]...))
 const DATA_DIR = joinpath(ROOT_DIR, "tests", "test_data")
 
-# original units of millimeters
-const SCALE = 1e-2
-const COORDINATES = ["x", "y", "z"]
-
 # edge id format
 const EDGE_ID = Set
 
@@ -44,21 +40,6 @@ const CONTACT_TOLERANCE = SCALE * 0.1
 const MIN_TANGENTS = 2 # | Inf
 
 const OPT_OPTIONS = ["optimize", "check_feasible"]
-
-#########################################
-
-function parse_point(json_point)
-    return SCALE*[json_point[k] for k in COORDINATES]
-end
-
-function get_other(edge, node)
-    return find_unique(n -> n != node, edge)
-end
-
-function get_length(edge, nodes)
-    n1, n2 = edge
-    return norm(nodes[n1]["point"]-nodes[n2]["point"])
-end
 
 ########################################
 
@@ -190,6 +171,11 @@ end
 #########################################
 
 """
+Inputs:
+- nodes: Dict( node_id => node info)
+- edges: Dict( edge_id => edge info)
+
+Returns:
 - length_tolerance: tolerance for bar's adherence to the original graph edge length
 - contact_tolerance : eps added to the contact constraint
 - buffer_tolerance : eps added to the collision constraint
@@ -203,7 +189,9 @@ function solve(nodes, edges, aabb;
                length_tolerance=LENGTH_TOLERANCE,
                contact_tolerance=CONTACT_TOLERANCE,
                buffer_tolerance=BUFFER_TOLERANCE,
-               num_solutions=1, max_time=1*60, verbose=true)
+               num_solutions=1,
+               max_time=1*60,
+               verbose=true)
     println("-"^20)
     max_distance = norm(aabb[2] - aabb[1])
 
@@ -213,6 +201,21 @@ function solve(nodes, edges, aabb;
     if hint_x_solution === nothing
         hint_x_solution = create_x_hint(nodes, edges)
     end
+    # verts = Matrix{Float64}(undef, length(nodes), 3)
+    # for (i, node) in nodes
+    #     verts[i, :] = node
+    # end
+    end_pts_init_positions = Vector{Float64}(undef, 2*3*length(edges))
+    for (i, (v0,v1)) in edges
+        end_pts_init_positions[i*6-5:i*6-3] = nodes[v0]
+        end_pts_init_positions[i*6-2:i*6] = nodes[v1]
+    end
+
+    # nP: number of varibles Pi for beams' endpoints
+    nP = size(end_pts_init_positions,1)
+
+    # * compute initial values
+    init_vars = vcat(ones(nT)*0.5, end_pts_init_positions)
 
     # * Define the model
     model = Model(with_optimizer(Gurobi.Optimizer))

@@ -1,5 +1,24 @@
 using JuMP
 using Ipopt
+using LinearAlgebra: norm
+
+#########################################
+# original units of millimeters
+const SCALE = 1e-2
+const COORDINATES = ["x", "y", "z"]
+
+function parse_point(json_point)
+    return SCALE*[json_point[k] for k in COORDINATES]
+end
+
+function get_other(edge, node)
+    return find_unique(n -> n != node, edge)
+end
+
+function get_length(edge, nodes)
+    n1, n2 = edge
+    return norm(nodes[n1]["point"]-nodes[n2]["point"])
+end
 
 #############################################
 
@@ -56,3 +75,17 @@ function closest_point_segments(line1, line2; optimize=true)
     return convex_combination(line1..., g[1]), convex_combination(line2..., g[2])
 end
 
+function normalize_vector(v)
+    vnorm = norm(v)
+    if vnorm < eps()
+        @warn "normalize vector with norm close to zero"
+        vnorm = eps()
+    end
+    return v / vnorm
+end
+
+function get_edge_direction(edge::AbstractArray, nodes::AbstractMatrix)
+    v0, v1 = edge
+    p0, p1 = nodes[v0,:], nodes[v1,:]
+    return normalize_vector(p1 - p0)
+end
