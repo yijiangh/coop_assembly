@@ -34,7 +34,7 @@ BUILD_PLATE_CENTERs = {
     # 'abb_track' : np.array([1.45, -2, 30.7*1e-3]),
     # * topopt tiny valut S10
     # 'abb_track' : np.array([1.5, -2, 30.7*1e-3]),
-    'ur5e' : np.array([0.7, 0.0, -0.08]),
+    'ur5e' : np.array([0.4, 0.0, -0.08]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 

@@ -246,49 +246,54 @@ def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
     tool_pose = unit_pose()
     tool_from_ee = get_relative_pose(robot, link_from_name(robot, EE_LINK_NAME), link_from_name(robot, TOOL_LINK_NAME))
     # if bar_only:
-    if True:
-        # ee_mesh_path = get_gripper_mesh_path()
-        # collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
-
-        collision_id, visual_id = pp.create_shape(pp.get_box_geometry(0.001,0.001,0.001), color=pp.RED)
-        end_effector = create_flying_body(SE3, collision_id, visual_id)
-        pp.set_pose(end_effector, pp.get_link_pose(robot, link_from_name(robot, EE_LINK_NAME)))
-        ee_joints = get_movable_joints(end_effector)
-
-        selected_links = pp.get_link_subtree(robot, 6) # TODO: child_link_from_joint?
-        sub_ee_robot = pp.clone_body(robot, links=selected_links, visual=True, collision=True) # TODO: joint limits
-        flying_ee_attach = pp.create_attachment(end_effector, pp.get_links(end_effector)[-1], sub_ee_robot)
-        ee_attachments = [flying_ee_attach]
-
+    # ee_mesh_path = get_gripper_mesh_path()
+    # collision_id, visual_id = create_shape(get_mesh_geometry(ee_mesh_path, scale=1e-3), collision=True, color=apply_alpha(YELLOW, 0.5))
+    # * create a dummy box as the robot to carry the end effector attachments
     pp.set_color(robot, apply_alpha(pp.RED, 0.1))
+
+    collision_id, visual_id = pp.create_shape(pp.get_box_geometry(0.01,0.01,0.01), color=pp.RED)
+    end_effector = create_flying_body(SE3, collision_id, visual_id)
+    ee_joints = get_movable_joints(end_effector)
+    set_joint_positions(end_effector, ee_joints, se3_conf_from_pose(pp.get_link_pose(robot, link_from_name(robot, EE_LINK_NAME))))
+    # pp.set_pose(end_effector, pp.get_link_pose(robot, link_from_name(robot, EE_LINK_NAME)))
+
+    selected_links = pp.get_link_subtree(robot, 6) # TODO: child_link_from_joint?
+    sub_ee_robot = pp.clone_body(robot, links=selected_links, visual=True, collision=True) # TODO: joint limits
+    flying_ee_attach = pp.create_attachment(end_effector, pp.get_links(end_effector)[-1], sub_ee_robot)
+    ee_attachments = [flying_ee_attach]
+
     # pp.set_pose(jointed_gripper, pp.Pose(point=(0,1,0)))
-    pp.camera_focus_on_body(end_effector)
+    # pp.camera_focus_on_body(end_effector)
 
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, reverse_grasp=True, safety_margin_length=0.005)
     # pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, obstacles, collision=collision, teleops=False) # max_attempts=max_attempts,
     pick_gen = get_place_gen_fn(end_effector if bar_only else robot, tool_from_ee, element_from_index, obstacles,
         collisions=collision, verbose=True, bar_only=bar_only) #max_attempts=n_attempts,
 
+    element_goal_pose = element_from_index[chosen].goal_pose
     for _ in range(n_attempts):
         handles = []
-        element_goal_pose = element_from_index[chosen].goal_pose
-
         # * sample goal pose and grasp
         # couple rotations in goal pose' symmetry and translational grasp
         # sample a grasp separately to verify
-        grasp, = next(grasp_gen(chosen))
-        # pregrasp_poses, = next(pregrasp_gen_fn(chosen, element_goal_pose, printed=printed))
+        # grasp, = next(grasp_gen(chosen))
+        # # pregrasp_poses, = next(pregrasp_gen_fn(chosen, element_goal_pose, printed=printed))
 
-        # visualize grasp
-        p = element_goal_pose.value
-        gripper_from_bar = grasp.gripper_from_object
-        set_pose(element_from_index[chosen].body, p)
-        world_from_tool = end_effector_from_body(p, gripper_from_bar)
-        handles.extend(draw_pose(world_from_tool, length=0.05))
-        handles.extend(draw_pose(p, length=0.05))
+        # # visualize grasp
+        # goal_pose = element_goal_pose.value
+        # gripper_from_bar = grasp.gripper_from_object
+        # set_pose(element_from_index[chosen].body, goal_pose)
+        # world_from_tool = end_effector_from_body(goal_pose, gripper_from_bar)
 
-        if bar_only:
-            set_joint_positions(end_effector, ee_joints, se3_conf_from_pose(multiply(world_from_tool, tool_from_ee)))
+        # # handles.extend(draw_pose(world_from_tool, length=0.05))
+        # # handles.extend(draw_pose(goal_pose, length=0.05))
+
+        # # if bar_only:
+        # world_from_ee =pp.multiply(world_from_tool, tool_from_ee)
+        # set_joint_positions(end_effector, ee_joints, se3_conf_from_pose(world_from_ee))
+        # pp.camera_focus_on_body(end_effector)
+        # for ea in ee_attachments:
+        #     ea.assign()
 
         # * sample pick trajectory
         command, = next(pick_gen(chosen, printed=printed, diagnosis=debug_mode))
@@ -308,7 +313,7 @@ def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
             trajs = flatten_commands([command])
             time_step = None if has_gui() else 0.1
             display_trajectories(trajs, time_step=time_step, #video=True,
-                                 animate=True)
+                                 animate=True, element_from_index=element_from_index)
             print('*'*10)
 
         wait_if_gui()

@@ -1,12 +1,14 @@
 using JSON
-using Test, SafeTestsets
+using Test# , SafeTestsets
 using Zygote, FiniteDifferences, ForwardDiff
 using Nonconvex
+using Debugger
 
 const ROOT_DIR = abspath(joinpath(@__FILE__, [".." for i in 1:5]...))
 const DATA_DIR = joinpath(ROOT_DIR, "tests", "test_data")
 
-include("beam_dist_energy.jl")
+using Revise
+includet("beam_dist_energy.jl")
 
 # @testset "BeamDistEnergy_grad" begin
     file_name = "truss_one_tet_skeleton.json"
@@ -28,16 +30,18 @@ include("beam_dist_energy.jl")
     end
     radius = eltype(nodes)(3.17 * 1e-2)
 
-    beam_dist_energy = BeamDistanceEnergy(edges, nodes, radius)
-
     x0 = Vector{Float64}(undef, 2*3*length(edges))
     for i in 1:size(edges)[1]
         v0, v1 = edges[i,:]
         x0[i*6-5:i*6-3] = nodes[v0,:]
         x0[i*6-2:i*6] = nodes[v1,:]
     end
+    t0 = fill(0.5, 2*length(edges))
+    X0 = [x0;t0]
 
-    f = x -> beam_dist_energy(x)
+    beam_dist_energy = BeamDistanceEnergy(edges, nodes, radius)
+    f = x -> beam_dist_energy(X0)
+    f(x0)
 
     val1, grad1 = NonconvexCore.value_gradient(f, x0)
     val2, grad2 = f(x0), Zygote.gradient(f, x0)[1]
