@@ -429,7 +429,7 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
     beam_opt.weights =[1, 200, 1]
 
     # fill in current bar end point as initial guess
-    initial_vert_points = np.array(beam_opt.verts[beam_opt.beam_vert_ids])
+    initial_vert_points = np.array(beam_opt.vertices[beam_opt.edges])
     for i, ei in enumerate(subassembly_edges):
         initial_vert_points[i,0] = bar_from_elements[ei][ei[0]]
         initial_vert_points[i,1] = bar_from_elements[ei][ei[1]]
@@ -881,7 +881,7 @@ def main():
         b_struct, opt_data = gen_truss(graph_data, viewer=args.viewer, radius=args.radius,
             method=args.method, debug=args.debug)
     else:
-        # build a BarStructure from a graph that's already a tangent-contact bar system
+        # * build a BarStructure from a graph that's already a tangent-contact bar system
         b_struct = from_bar_network(args.problem, viewer=args.viewer, debug=args.debug)
 
     fig = plot_contact_distance(b_struct)

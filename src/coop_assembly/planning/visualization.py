@@ -223,7 +223,7 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
     element_neighbors = get_element_neighbors(connectors, elements)
     with LockRenderer() as locker:
         for element, connected_bars in element_neighbors.items():
-            remove_all_debug()
+            # remove_all_debug()
             color_structure(element_bodies, connected_bars, element, built_alpha=0.6)
             label_elements(element_bodies, list(connected_bars) + [element])
             for nb in list(connected_bars):
@@ -267,8 +267,8 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
         if pp.pairwise_link_collision(b1_body, pp.BASE_LINK, b2_body, pp.BASE_LINK, distance_threshold=collision_dist_tol):
             is_collided = True
             cr = pairwise_collision_info(b1_body, b2_body)
-            body_name_from_id = {pp.get_body_from_pb_id(b1_body) : bar1,
-                                 pp.get_body_from_pb_id(b2_body) : bar2}
+            body_name_from_id = {b1_body : bar1,
+                                 b2_body : bar2}
             if (bar1, bar2) not in collision_captured_by_lines and (bar2, bar1) not in collision_captured_by_lines:
                 LOGGER.error('Collision not found by line checks!')
                 draw_collision_diagnosis(cr, focus_camera=True, body_name_from_id=body_name_from_id)
