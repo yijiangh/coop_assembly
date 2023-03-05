@@ -10,6 +10,7 @@ import numpy as np
 from numpy.linalg import norm
 from termcolor import cprint
 from copy import copy
+import pybullet_planning as pp
 
 from compas.geometry import centroid_points
 from compas.datastructures import Network
@@ -30,6 +31,7 @@ from coop_assembly.geometry_generation.utils import get_node_neighbors, get_elem
     check_connected, incoming_from_edges, compute_printable, compute_z_distance
 from coop_assembly.geometry_generation.tangents import compute_tangent_from_two_lines, lines_tangent_to_cylinder, \
     solve_one_one_tangent, solve_second_tangent, solve_third_tangent
+from coop_assembly.help_functions import create_bar_body
 
 from coop_assembly.planning.parsing import get_assembly_path
 from coop_assembly.planning.visualization import draw_element, BACKGROUND_COLOR, SHADOWS, set_camera, \
@@ -320,7 +322,7 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
         for contact_bars in neighbor_pairs:
             cprint('^'*10)
             # update_element_axis_pts = compute_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius)
-            update_element_axis_pts = beam_opt_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius)
+            update_element_axis_pts = beam_opt_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius, debug=True)
             if update_element_axis_pts:
                 # cprint('new axis pt: {} | contact elements : {}'.format(new_axis_endpts, contact_elements), 'cyan')
                 break
@@ -397,7 +399,7 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
 
     return b_struct, (bar_from_elements, connect_vars)
 
-def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius):
+def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius, debug=False):
     """
     Returns
     -------
@@ -419,13 +421,9 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
     local_edges = []
     for e in subassembly_edges:
         local_edges.append((vert_old_inds.index(e[0]), vert_old_inds.index(e[1])))
+    local_edges = np.array(local_edges, dtype=int)
 
-    E = 1.0
-    mu = 0.3
-    rho = 1.0
-    assembly = BeamAssembly(local_verts, local_edges, [])
-    assembly.setMaterial(BeamMaterial(CrossSectionType.ROUND, radius*2, E, mu, rho))
-    beam_opt = BeamOpt(assembly)
+    beam_opt = BeamOpt(local_verts, local_edges, [], radius)
     beam_opt.weights =[1, 200, 1]
 
     # fill in current bar end point as initial guess
@@ -435,23 +433,50 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
         initial_vert_points[i,1] = bar_from_elements[ei][ei[1]]
     beam_opt.end_pts_init_positions = jnp.array(initial_vert_points.flatten())
 
-    # TODO: reuse compilation?
     var = beam_opt.computeInitVar()
     fun = computeBeamOptObjective(var, beam_opt)
     grad = computeBeamOptObjectiveGradient(var, beam_opt)
     v = jnp.ones(beam_opt.nP + beam_opt.nT)
     hessian = computeBeamOptObjectiveHessianP(var, v, beam_opt)
 
-    new_assembly = beam_opt.runOptimization()
-    new_V = beam_opt.xstar[beam_opt.nT: beam_opt.nP + beam_opt.nT].reshape(beam_opt.nB * 2, 3)
+    new_vertices, new_edges, new_supports = beam_opt.runOptimization()
+    # new_V = beam_opt.xstar[beam_opt.nT: beam_opt.nP + beam_opt.nT].reshape(beam_opt.nB * 2, 3)
+    assert new_edges.shape[0] == len(subassembly_edges)
+
+    if debug:
+        handles = draw_graph(local_verts, local_edges)
+        bodies = draw_assembly(new_vertices, new_edges, radius)
+        pp.wait_if_gui()
+        pp.remove_handles(handles)
+        list(map(lambda b : pp.remove_body(b), bodies))
 
     update_element_axis_pts = {}
-    for i, ei in enumerate(subassembly_edges):
+    for i, (ei, new_ei) in enumerate(zip(subassembly_edges, new_edges)):
         update_element_axis_pts[ei] = {
-            ei[0] : new_V[2*i,:].tolist(),
-            ei[1] : new_V[2*i+1,:].tolist(),
+            ei[0] : new_vertices[new_ei[0],:].tolist(),
+            ei[1] : new_vertices[new_ei[1],:].tolist(),
             }
     return update_element_axis_pts
+
+def draw_assembly(vertices, edges, radius):
+    bodies = []
+    for e in edges:
+        bodies.append(create_bar_body([vertices[e[0]], vertices[e[1]]], radius, scale=1e-3, color=pp.apply_alpha(pp.RED, 0.2)))
+    return bodies
+
+def draw_graph(vertices, edges, support_vertex_indices=None):
+    handles = []
+    support_vertex_indices = support_vertex_indices or []
+    with pp.LockRenderer():
+        set_camera(vertices)
+        for e in edges:
+            n1, n2 = e
+            p1 = vertices[n1]
+            p2 = vertices[n2]
+            handles.append(pp.add_line(p1, p2, color=pp.apply_alpha(pp.BLUE, 0.6), width=0.5))
+        for v in support_vertex_indices:
+            handles.extend(pp.draw_circle(vertices[v], 0.01))
+    return handles
 
 def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius):
     """Compute double-tangent bar position for `element` using pure geometric logic
