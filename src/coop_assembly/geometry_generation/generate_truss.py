@@ -5,12 +5,12 @@ import heapq
 import random
 import argparse
 from itertools import combinations, product
-from collections import namedtuple, defaultdict, deque
 import numpy as np
 from numpy.linalg import norm
 from termcolor import cprint
 from copy import copy
 import pybullet_planning as pp
+import matplotlib.pyplot as plt
 
 from compas.geometry import centroid_points
 from compas.datastructures import Network
@@ -28,9 +28,9 @@ from coop_assembly.help_functions.helpers_geometry import find_points_extreme, c
 from coop_assembly.data_structure import OverallStructure, BarStructure, GROUND_INDEX
 from coop_assembly.geometry_generation.tet_sequencing import SearchState
 from coop_assembly.geometry_generation.utils import get_node_neighbors, get_element_neighbors, nodes_from_elements, \
-    check_connected, incoming_from_edges, compute_printable, compute_z_distance
+    check_connected, incoming_from_edges, compute_printable, compute_z_distance, values_as_list
 from coop_assembly.geometry_generation.tangents import compute_tangent_from_two_lines, lines_tangent_to_cylinder, \
-    solve_one_one_tangent, solve_second_tangent, solve_third_tangent
+    solve_one_one_tangent, solve_second_tangent, solve_third_tangent, closest_point_segments
 from coop_assembly.help_functions import create_bar_body
 
 from coop_assembly.planning.parsing import get_assembly_path
@@ -40,9 +40,9 @@ from coop_assembly.planning.visualization import draw_element, BACKGROUND_COLOR,
 try:
     import multi_tangent
     from beam_assembly import BeamAssembly, BeamMaterial, CrossSectionType
-    from multi_tangent.BeamOpt import BeamOpt, computeBeamOptObjective, computeBeamOptObjectiveGradient, computeBeamOptObjectiveHessianP
+    from multi_tangent.BeamOpt import BeamOpt, computeBeamOptObjective, computeBeamOptObjectiveGradient, computeBeamOptObjectiveHessianP, plot_beam_opt_per_pair
     import jax.numpy as jnp
-    from multi_tangent.BeamOpt import plot_contact_distance
+    from multi_tangent.BeamOpt import plot_contact_distance, plot_f_trace
 except ImportError as err:
     print('multi_tangent not loaded')
     # raise err
@@ -286,21 +286,17 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
     # ! connect_vars[set([edge1, edge2]), node] = 1 or 0
     connect_vars = {}
 
+    # for debug viz
+    bodies = {}
+    handles = {}
+    contact_handles = []
     for _, element in enumerate(edge_seq):
-        # temporal drawing cache for each iter
-        handles = []
-
         # next_printed = printed | {element}
         # unprinted = all_elements - next_printed
         n0, n1 = element
         n_neighbors = {n0 : list(set(node_neighbors[n0]) & printed), \
                        n1 : list(set(node_neighbors[n1]) & printed)}
         print('------')
-        # print('visited node: ', visited_nodes)
-        # print('printed bars: ', printed)
-        # print('existing node_neighbors: {}'.format(n_neighbors))
-        # print('n#{} neighbors: {}'.format(n0, set(node_neighbors[n0])))
-        # print('n#{} neighbors: {}'.format(n1, set(node_neighbors[n1])))
 
         # * find all potential tangent assignment of each node
         for i in [n0, n1]:
@@ -314,15 +310,16 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
         neighbor_pairs = list(product(n_neighbors[n0], n_neighbors[n1]))
         cprint('produced neighnor pairs: {}'.format(neighbor_pairs), 'yellow')
 
-        chosen_new_axis_endpts = None
-        chosen_contact_element_axis_pts = {}
+        # chosen_new_axis_endpts = None
+        update_element_axis_pts = {}
         extension_score = np.inf
         # TODO: iterate through all neighboring pairs and use the pairs that produces the minial neighbor element extension
         # for contact_bars in randomize(neighbor_pairs):
         for contact_bars in neighbor_pairs:
             cprint('^'*10)
             # update_element_axis_pts = compute_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius)
-            update_element_axis_pts = beam_opt_tangent_bar(bar_from_elements, node_points, element, contact_bars, radius, debug=True)
+            update_element_axis_pts, contact_handles = beam_opt_tangent_bar(bar_from_elements, node_points, element,
+                                                                            contact_bars, radius, debug=0, scale=1e-3)
             if update_element_axis_pts:
                 # cprint('new axis pt: {} | contact elements : {}'.format(new_axis_endpts, contact_elements), 'cyan')
                 break
@@ -343,26 +340,20 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
             c_node = (set(element) & set(contact_e)).pop()
             connect_vars[EDGE({element, contact_e}), c_node] = 1
 
-        # update all bar element drawing
-        # with LockRenderer():
-        #     for e in bar_from_elements.values():
-        #         # convert mil to meter
-        #         h = draw_element({0 : map(lambda x : 1e-3*x, list(e.values()))}, 0, width=3)
-        #         circ_verts = bar_sec_verts(*list(e.values()), radius=radius)
-        #         for v in circ_verts:
-        #             # assert(abs(v.dot(list(e.values())[0] - list(e.values())[1])) < 1e-8)
-        #             if abs(v.dot(list(e.values())[0] - list(e.values())[1])) > 1e-8:
-        #                 cprint('circle dot: {}'.format(abs(v.dot(list(e.values())[0] - list(e.values())[1]))), 'red')
+        if update_element_axis_pts:
+            # pp.remove_handles(values_as_list(handles))
+            # list(map(lambda b : pp.remove_body(b), values_as_list(bodies)))
+            new_bodies, new_handles = draw_bar_from_elements(update_element_axis_pts, radius)
+            for nb_eid in new_bodies:
+                if nb_eid in bodies:
+                    pp.remove_body(bodies[nb_eid])
+                    pp.remove_handle(handles[nb_eid])
+            bodies.update(new_bodies)
+            handles.update(new_handles)
+            wait_if_gui('A new bar is added.')
 
-        #         ch1 = add_segments([(list(e.values())[0] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
-        #         ch2 = add_segments([(list(e.values())[1] + v)*1e-3 for v in circ_verts], closed=True, color=GREEN)
-        #         # handles.extend([h] + ch1 + ch2)
-        #         # handles.extend([h] + ch1 + ch2)
-        # if debug:
-        #     wait_if_gui('A new bar is added.')
-        # remove_handles(handles)
-
-    # * compile bars into a BarStructure
+    ## * compile bars into a BarStructure
+    # everything in BarStructure is in millimeter
     b_struct = BarStructure()
     centroid_pt = np.average(node_points, axis=0)
 
@@ -399,8 +390,13 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
 
     return b_struct, (bar_from_elements, connect_vars)
 
-def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius, debug=False):
+def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius, scale=1.0, debug=False):
     """
+    Inputs
+    -------
+    scale:
+        scale for converting length unit, opt better operates in meter scale
+
     Returns
     -------
     update_element_axis_pts: dict
@@ -413,24 +409,26 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
             if e != ():
                 subassembly_edges.append(e)
     if len(subassembly_edges) == 1:
-        return {}
+        return {}, []
 
     # * renumbering the verts and edges for the subassembly
     vert_old_inds = list(nodes_from_elements(subassembly_edges))
     local_verts = np.array(node_points)[vert_old_inds]
     local_edges = []
-    for e in subassembly_edges:
+    new_edge_from_old = {}
+    for i, e in enumerate(subassembly_edges):
         local_edges.append((vert_old_inds.index(e[0]), vert_old_inds.index(e[1])))
+        new_edge_from_old[e] = i
     local_edges = np.array(local_edges, dtype=int)
 
-    beam_opt = BeamOpt(local_verts, local_edges, [], radius)
+    beam_opt = BeamOpt(local_verts*scale, local_edges, [], radius*scale)
     beam_opt.weights =[1, 200, 1]
 
     # fill in current bar end point as initial guess
     initial_vert_points = np.array(beam_opt.vertices[beam_opt.edges])
     for i, ei in enumerate(subassembly_edges):
-        initial_vert_points[i,0] = bar_from_elements[ei][ei[0]]
-        initial_vert_points[i,1] = bar_from_elements[ei][ei[1]]
+        initial_vert_points[i,0] = np.array(bar_from_elements[ei][ei[0]]) * scale
+        initial_vert_points[i,1] = np.array(bar_from_elements[ei][ei[1]]) * scale
     beam_opt.end_pts_init_positions = jnp.array(initial_vert_points.flatten())
 
     var = beam_opt.computeInitVar()
@@ -439,24 +437,40 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
     v = jnp.ones(beam_opt.nP + beam_opt.nT)
     hessian = computeBeamOptObjectiveHessianP(var, v, beam_opt)
 
-    new_vertices, new_edges, new_supports = beam_opt.runOptimization()
+    new_vertices, new_edges, new_supports = beam_opt.runOptimization(trace=True)
     # new_V = beam_opt.xstar[beam_opt.nT: beam_opt.nP + beam_opt.nT].reshape(beam_opt.nB * 2, 3)
     assert new_edges.shape[0] == len(subassembly_edges)
 
-    if debug:
-        handles = draw_graph(local_verts, local_edges)
-        bodies = draw_assembly(new_vertices, new_edges, radius)
-        pp.wait_if_gui()
-        pp.remove_handles(handles)
-        list(map(lambda b : pp.remove_body(b), bodies))
+    # plot_beam_opt_per_pair(beam_opt)
+    # plot_f_trace(beam_opt)
+    # plt.show()
+
+    contact_handles = []
+    if True:
+        # * draw contact lines
+        neighbors = get_element_neighbors(subassembly_edges)
+        for i, ei in enumerate(subassembly_edges):
+            new_ei = new_edges[new_edge_from_old[ei]]
+            for nei in neighbors[ei]:
+                new_nei = new_edges[new_edge_from_old[nei]]
+                dpp = closest_point_segments(new_vertices[new_ei[0]], new_vertices[new_ei[1]],
+                                             new_vertices[new_nei[0]], new_vertices[new_nei[1]])
+                print('contact len: {:.4f} | target {:.4f}'.format(norm(dpp[0]-dpp[1])*(1/scale), radius*2))
+                contact_handles.append(pp.add_line(dpp[0], dpp[1], color=pp.apply_alpha(pp.GREEN, 1.0), width=1.5))
+
+    #     handles = draw_graph(new_vertices, new_edges)
+    #     bodies = draw_assembly(new_vertices, new_edges, radius)
+    #     pp.wait_if_gui()
+    #     pp.remove_handles(handles)
+    #     list(map(lambda b : pp.remove_body(b), bodies))
 
     update_element_axis_pts = {}
     for i, (ei, new_ei) in enumerate(zip(subassembly_edges, new_edges)):
         update_element_axis_pts[ei] = {
-            ei[0] : new_vertices[new_ei[0],:].tolist(),
-            ei[1] : new_vertices[new_ei[1],:].tolist(),
+            ei[0] : ((1/scale)*new_vertices[new_ei[0],:]).tolist(),
+            ei[1] : ((1/scale)*new_vertices[new_ei[1],:]).tolist(),
             }
-    return update_element_axis_pts
+    return update_element_axis_pts, contact_handles
 
 def draw_assembly(vertices, edges, radius):
     bodies = []
@@ -477,6 +491,18 @@ def draw_graph(vertices, edges, support_vertex_indices=None):
         for v in support_vertex_indices:
             handles.extend(pp.draw_circle(vertices[v], 0.01))
     return handles
+
+def draw_bar_from_elements(bar_from_elements, radius):
+    bodies = {}
+    handles = {}
+    with LockRenderer():
+        for e, node_dict in bar_from_elements.items():
+            p1, p2 = list(map(lambda x: np.array(x)*1e-3, node_dict.values()))
+            h = pp.add_line(p1, p2, color=pp.apply_alpha(pp.BLACK, 1), width=0.5)
+            b = create_bar_body([p1, p2], radius*1e-3, scale=1, color=pp.apply_alpha(pp.RED, 0.9))
+            bodies[e] = b
+            handles[e] = h
+    return bodies, handles
 
 def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius):
     """Compute double-tangent bar position for `element` using pure geometric logic
@@ -761,7 +787,6 @@ def compute_tangent_bar(bar_from_elements, node_points, element, in_contact_bars
     update_element_axis_pts[element] = [chosen_new_axis_endpts[element[0]], chosen_new_axis_endpts[element[1]]]
     return update_element_axis_pts
 
-
 #######################################
 # heuristics
 
@@ -801,7 +826,7 @@ def retrace_sequence(visited, current_state, horizon=INF):
     return previous_tet_ids + [command]
 
 #############################################################
-def gen_truss(problem_data, viewer=False, radius=3.17, debug=False, method='search', **kwargs):
+def gen_truss(problem_data, viewer=False, radius=10, debug=False, method='search', **kwargs):
     """[summary]
 
     Parameters
@@ -811,7 +836,7 @@ def gen_truss(problem_data, viewer=False, radius=3.17, debug=False, method='sear
     viewer : bool, optional
         enable pybullet viewer, by default False
     radius : float, optional
-        bar radius in millimeter, by default 3.17
+        bar radius in millimeter, by default 10 mm
 
     Returns
     -------
@@ -819,14 +844,13 @@ def gen_truss(problem_data, viewer=False, radius=3.17, debug=False, method='sear
         [description]
     """
     net = Network.from_data(problem_data)
-
-    # TODO waiting for compas update to use ordered dict for nodes
-    # node_points, edges = net.to_nodes_and_edges()
     node_points = [np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
-    # EDGE
     edges = [e for e in net.edges()]
-    edge_attributes = {e[0] : e[1] for e in net.edges(True)}
     ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
+
+    # node_points = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.5], [0.0, 0.5, 1]])*1e3
+    # edges = [(0,1), (1,2)]
+    # ground_nodes = [0]
 
     connect(use_gui=viewer, shadows=SHADOWS, color=BACKGROUND_COLOR)
     with LockRenderer():
@@ -861,6 +885,7 @@ def gen_truss(problem_data, viewer=False, radius=3.17, debug=False, method='sear
             'z_vars' : z_vars_data,
             }
     elif method == 'shrink':
+        edge_attributes = {e[0] : e[1] for e in net.edges(True)}
         b_struct = generate_shrinked_truss(node_points, edges, edge_attributes, ground_nodes, float(radius), debug=debug)
     else:
         raise NotImplementedError('Unsupported method : {}'.format(method))
@@ -878,7 +903,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--problem', default='truss_one_tet_skeleton.json', help='The name of the problem to solve')
     parser.add_argument('-m', '--method', default='search', choices=METHOD_OPTIONS, help='Computing method')
-    parser.add_argument('-r', '--radius', default=1.5, help='Radius of bars in millimeter')
+    parser.add_argument('-r', '--radius', default=10, help='Radius of bars in millimeter')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     parser.add_argument('-w', '--write', action='store_true', help='Export results')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug verbose mode')
@@ -910,6 +935,7 @@ def main():
         b_struct = from_bar_network(args.problem, viewer=args.viewer, debug=args.debug)
 
     fig = plot_contact_distance(b_struct)
+    plt.show()
     if args.write:
         fig.savefig(os.path.join(multi_tangent.DATA_DIRECTORY, 'plots', export_file_name + '_bar_structure_dist_plot.png'))
     check_model(b_struct, args.subset_bars, debug=args.debug)

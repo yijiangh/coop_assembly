@@ -190,7 +190,7 @@ def prune_reverse_connectors(connectors):
 
 #####################################################
 
-def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCALE, contact_dist_tol=1e-3, collision_dist_tol=1e-3):
+def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCALE, contact_dist_tol=1e-4, collision_dist_tol=1e-3):
     """Check bar structure's collision by computing distance between central axes and pybullet collision checking
 
     contact_dist_tol and collision_dist_tol in [m] scale
@@ -243,7 +243,7 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
                     else:
                         cprint('In collision', 'red')
                     collision_captured_by_lines.append(c)
-                    LOGGER.error('|contact distance {:.4} - radius {:.2f}| > {}'.format(contact_distance, r1+r2, contact_dist_tol))
+                    LOGGER.error('|contact distance {:.4} - radius {:.4f}| > {}'.format(contact_distance, r1+r2, contact_dist_tol))
                     LOGGER.error('connector: ({},{}) | all nbs {}'.format(element, nb, connected_bars))
                     if element in elements and nb in elements:
                         add_line(*contact_from_connectors[c], color=RED, width=2)
@@ -270,7 +270,7 @@ def check_model(bar_struct, indices=None, debug=False, to_meter_scale=METER_SCAL
             body_name_from_id = {b1_body : bar1,
                                  b2_body : bar2}
             if (bar1, bar2) not in collision_captured_by_lines and (bar2, bar1) not in collision_captured_by_lines:
-                LOGGER.error('Collision not found by line checks!')
+                LOGGER.error('Collision not captured by line checks!')
                 draw_collision_diagnosis(cr, focus_camera=True, body_name_from_id=body_name_from_id)
                 if not has_gui():
                     assert False, '{}-{} collision!'.format(b1_body, b2_body)

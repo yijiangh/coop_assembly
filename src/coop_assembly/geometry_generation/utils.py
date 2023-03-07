@@ -1,5 +1,6 @@
 import numpy as np
 from collections import defaultdict, deque
+from collections.abc import Iterable
 
 ##################################################
 
@@ -99,3 +100,14 @@ def outgoing_from_edges(edges):
     for v1, v2 in edges:
         outgoing_vertices[v1].add(v2)
     return outgoing_vertices
+
+#####################################################
+
+def values_as_list(dict_data : dict) -> list:
+    vals = []
+    for _, v in dict_data.items():
+        if isinstance(v, Iterable):
+            vals.extend(list(v))
+        else:
+            vals.append(v)
+    return vals
