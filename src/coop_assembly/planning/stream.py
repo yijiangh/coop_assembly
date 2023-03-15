@@ -9,6 +9,7 @@ from itertools import islice
 
 # from extrusion.utils import get_disabled_collisions, get_custom_limits, MotionTrajectory
 
+import pybullet_planning as pp
 from pybullet_planning import link_from_name, set_pose, \
     multiply, invert, inverse_kinematics, plan_direct_joint_motion, Attachment, set_joint_positions, plan_joint_motion, \
     get_configuration, wait_for_interrupt, point_from_pose, HideOutput, load_pybullet, draw_pose, unit_quat, create_obj, \
@@ -288,6 +289,41 @@ def command_collision(command, bodies, index_from_bodies=None, debug=False):
 
 ######################################
 
+def plan_cartesian_motion_with_trac_ik(robot_uid, ik_info, waypoint_poses,
+        custom_limits={}, options=None, **kwargs):
+    """Plan cartesian motion with a customized ik fn"""
+    options = options or {}
+    lower_limits, upper_limits = get_custom_limits(robot_uid, get_movable_joints(robot_uid), custom_limits)
+
+    ik_joints = joints_from_names(robot_uid, ik_info.ik_joint_names)
+    free_joints = joints_from_names(robot_uid, ik_info.free_joint_names)
+    ee_link = link_from_name(robot_uid, ik_info.ee_link_name)
+
+    solutions = []
+    for i, target_pose in enumerate(waypoint_poses):
+        for conf in ik_info.ik_fn(target_pose, **kwargs):
+            if conf is None:
+                # LOGGER.debug('TracIK: #{}/{} waypoint IK fails due to unfound.'.format(i, len(waypoint_poses)))
+                return None
+                # continue
+            set_joint_positions(robot_uid, ik_joints, conf)
+            if pp.is_poses_close(get_link_pose(robot_uid, ee_link), target_pose, options=options):
+                kinematic_conf = get_configuration(robot_uid)
+                if not pp.all_between(lower_limits, kinematic_conf, upper_limits):
+                    # LOGGER.debug('Reject due to limit: {} \nL {}\nU {}'.format(kinematic_conf, lower_limits, upper_limits))
+                    return None
+                solutions.append(kinematic_conf)
+                break
+            else:
+                # draw_pose(get_link_pose(robot_uid, ee_link), length=1.0)
+                # draw_pose(target_pose, length=1.0)
+                # LOGGER.debug('Pose not close:\nIK {}\nGiven {}!'.format(get_link_pose(robot_uid, ee_link), target_pose))
+                pass
+        else:
+            # LOGGER.debug('TracIK: #{}/{} waypoint IK fails.'.format(i, len(waypoint_poses)))
+            return None
+    return
+
 def check_path(joints, path, collision_fn=None, jump_threshold=None, diagnosis=False):
     """return False if path is not valid
     """
@@ -303,8 +339,11 @@ def check_path(joints, path, collision_fn=None, jump_threshold=None, diagnosis=F
     return True
 
 def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, element_from_index, collision_fn,
-    bar_only=False, verbose=False, diagnosis=False, retreat_vector=np.array([0, 0, -1]), teleops=False, gantry_sample_fn=None):
+    bar_only=False, verbose=False, diagnosis=False, retreat_vector=np.array([0, 0, -1]), teleops=False, gantry_sample_fn=None,
+    attachments=None):
     """Give the grasp and EE workspace poses, compute cartesian planning for pre-detach ~ detach ~ post-detach process.
+
+    tool_from_ee: gripper_tip from flange attached frame
     """
     body = element_from_index[index].body
     pre_attach_poses = [multiply(bar_pose, invert(grasp.gripper_from_object)) for bar_pose in pregrasp_poses]
@@ -313,6 +352,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
     post_attach_pose = multiply(attach_pose, (retreat_vector, unit_quat()))
     post_attach_poses = list(interpolate_poses(attach_pose, post_attach_pose, pos_step_size=POS_STEP_SIZE, ori_step_size=ORI_STEP_SIZE))
     ee_from_tool = invert(tool_from_ee)
+    attachments = attachments or []
 
     if bar_only:
         # no inverse kinematics involved in the bar_only mode
@@ -332,8 +372,8 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         for conf in randomize(retreat_path):
             if collision_fn(conf, diagnosis):
                 return None
-        approach_traj = MotionTrajectory(robot, ee_joints, approach_path, attachments=[attachment], tag='place_approach', element=index)
-        retreat_traj = MotionTrajectory(robot, ee_joints, retreat_path, attachments=[], tag='place_retreat', element=index)
+        approach_traj = MotionTrajectory(robot, ee_joints, approach_path, attachments=attachments+[attachment], tag='place_approach', element=index)
+        retreat_traj = MotionTrajectory(robot, ee_joints, retreat_path, attachments=attachments, tag='place_retreat', element=index)
         command = Command([approach_traj, retreat_traj])
         return command
 
@@ -361,7 +401,10 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
         else:
             assert IK_MODULE.get_dof() == len(CONTROL_JOINT_NAMES), 'IKFast module dof {} | control joints dof {}'.format(
                     IK_MODULE.get_dof(), len(CONTROL_JOINT_NAMES))
-            attach_conf = sample_tool_ik(IK_MODULE.get_ik, robot, ik_joints, attach_pose, ik_base_link, ik_tool_link_from_tcp=ee_from_tool)
+            ik_fn = IK_MODULE.get_ik
+            if 'ur' in ROBOT_NAME:
+                ik_fn = lambda pos, rot : IK_MODULE.get_ik(pos, rot, [0.0])
+            attach_conf = sample_tool_ik(ik_fn, robot, ik_joints, attach_pose, ik_base_link, ik_tool_link_from_tcp=ee_from_tool)
         # assert attach_conf is not None
     else:
         # joint conf sample fn, used when ikfast is not used
@@ -398,13 +441,28 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
     if teleops:
         approach_path = [approach_conf, attach_conf]
     else:
+        # handles = list(map(draw_pose, pre_attach_poses))
         set_joint_positions(robot, control_joints, approach_conf)
+
         # Cartesian planning only from the robot's base
         approach_path = plan_cartesian_motion(robot, ik_joints[0], tool_link, pre_attach_poses, custom_limits=custom_limits)
+
+        # # we have to specify ik fn wrapper and feed it into pychoreo
+        # def get_sample_ik_fn(robot, ik_fn, robot_base_link, ik_joints, tool_from_root=None):
+        #     def sample_ik_fn(world_from_tcp):
+        #         if tool_from_root:
+        #             world_from_tcp = multiply(world_from_tcp, tool_from_root)
+        #         return sample_tool_ik(ik_fn, robot, ik_joints, world_from_tcp, robot_base_link, get_all=True)
+        #     return sample_ik_fn
+        # # ik generation function stays the same for all cartesian processes
+        # sample_ik_fn = get_sample_ik_fn(robot, ik_fn, ik_base_link, ik_joints)
+        # approach_path, cost = pp.plan_cartesian_motion_lg(robot, ik_joints, pre_attach_poses, sample_ik_fn, collision_fn)
+
         if approach_path is not None:
             # ! pay attention to the jump_threshold
             if not check_path(control_joints, [approach_conf] + approach_path, collision_fn=collision_fn, jump_threshold=None, diagnosis=diagnosis):
                 approach_path = None
+        pp.remove_all_debug()
 
     if approach_path is None:
         if verbose : print('direct approach motion failure.')
@@ -456,7 +514,7 @@ def compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, index, elemen
 
 def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, collisions=True,
     max_attempts=IK_MAX_ATTEMPTS, max_grasp=GRASP_MAX_ATTEMPTS, allow_failure=False, verbose=False, bar_only=False,
-    precompute_collisions=False, teleops=False):
+    precompute_collisions=False, teleops=False, attachments=None):
     if not collisions:
         precompute_collisions = False
     if not bar_only:
@@ -467,6 +525,7 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
         control_joints = get_movable_joints(robot)
         disabled_collisions = {}
         # ee_body_link = get_links(end_effector)[-1]
+    attachments = attachments or []
 
     # conditioned sampler
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, reverse_grasp=True, safety_margin_length=0.005)
@@ -491,11 +550,14 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
         elements_order = [e for e in element_from_index if (e != element) and (element_from_index[e].body not in obstacles)]
 
         # attachment is assumed to be empty here, since pregrasp sampler guarantees that
-        collision_fn = get_collision_fn(robot, control_joints, obstacles=obstacles, attachments=[],
-                                        self_collisions=ENABLE_SELF_COLLISIONS,
-                                        disabled_collisions=disabled_collisions,
-                                        custom_limits={} if bar_only else get_custom_limits(robot),
-                                        max_distance=MAX_DISTANCE)
+        if collisions:
+            collision_fn = get_collision_fn(robot, control_joints, obstacles=obstacles, attachments=attachments,
+                                            self_collisions=ENABLE_SELF_COLLISIONS,
+                                            disabled_collisions=disabled_collisions,
+                                            custom_limits={} if bar_only else get_custom_limits(robot),
+                                            max_distance=MAX_DISTANCE)
+        else:
+            collision_fn = lambda q, diagnosis=False : False
 
         # keep track of sampled traj, prune newly sampled one with more collided element
         element_goal_pose = element_from_index[element].goal_pose
@@ -512,7 +574,7 @@ def get_place_gen_fn(robot, tool_from_ee, element_from_index, fixed_obstacles, c
 
                 command = compute_place_path(robot, tool_from_ee, pregrasp_poses, grasp, element, element_from_index, collision_fn,
                     bar_only=bar_only, verbose=verbose, diagnosis=diagnosis, retreat_vector=retreat_vector, teleops=teleops, \
-                    gantry_sample_fn=gantry_sample_fn)
+                    gantry_sample_fn=gantry_sample_fn, attachments=attachments)
                 if command is None:
                     continue
 

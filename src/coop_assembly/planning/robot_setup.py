@@ -34,7 +34,7 @@ BUILD_PLATE_CENTERs = {
     # 'abb_track' : np.array([1.45, -2, 30.7*1e-3]),
     # * topopt tiny valut S10
     # 'abb_track' : np.array([1.5, -2, 30.7*1e-3]),
-    'ur5e' : np.array([0.4, 0.0, -0.08]),
+    'ur5e' : np.array([0.8, 0.0, 0.0]),
 }
 BUILD_PLATE_CENTER = BUILD_PLATE_CENTERs[ROBOT_NAME]
 
@@ -113,11 +113,11 @@ WS_MESH_PATH = WS_MESH_PATHs[ROBOT_NAME]
 try:
     import ikfast_kuka_kr6_r900
     import ikfast_abb_irb4600_40_255
-    # import ikfast_ur5e
+    import ikfast_ur5e
     IK_MODULEs = {
         'kuka' : ikfast_kuka_kr6_r900,
         'abb_track' : ikfast_abb_irb4600_40_255,
-        # 'ur5e' : ikfast_ur5e,
+        'ur5e' : ikfast_ur5e,
     }
     IK_MODULE = IK_MODULEs[ROBOT_NAME]
 except Exception as e:
@@ -147,7 +147,7 @@ INITIAL_CONFs = {
     # 'abb_track' : np.hstack([1.0, np.radians([0,0,0,0,0,0])]),
     # * SP arch
     'abb_track' : np.hstack([0.0, np.radians([0,0,0,0,0,0])]),
-    'ur5e' : np.radians([0,0,0,0,0,0]),
+    'ur5e' : np.array([-1.193202320729391, -1.63928284267568, -1.6197887659072876, -0.022245840435363817, 1.1937241554260254, 1.0615092515945435]),
     }
 INITIAL_CONF = INITIAL_CONFs[ROBOT_NAME]
 

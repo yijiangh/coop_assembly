@@ -30,12 +30,12 @@ def load_world(use_floor=True, built_plate_z=0.0, viewer=False):
         set_static(robot)
         # set_joint_positions(robot, joints_from_names(robot, joint_names), INITIAL_CONF)
         if use_floor:
-            if ROBOT_NAME == 'kuka':
-                floor = create_plane(color=GROUND_COLOR)
-                obstacles.append(floor)
-                set_point(floor, Point(x=1.2, z=built_plate_z))
-            elif ROBOT_NAME == 'abb_track':
-                pass
+            # if ROBOT_NAME == 'kuka':
+            floor = create_plane(color=GROUND_COLOR)
+            obstacles.append(floor)
+            set_point(floor, Point(x=1.2, z=built_plate_z))
+            # elif ROBOT_NAME == 'abb_track':
+            #     pass
                 # h = 0.2
                 # build_platform = create_box(2, 6, 0.2, color=GROUND_COLOR)
                 # set_point(build_platform, Point(x=1.7, y=-1.5, z=built_plate_z-h/2))

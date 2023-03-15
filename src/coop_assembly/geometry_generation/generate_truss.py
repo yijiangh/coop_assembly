@@ -48,7 +48,7 @@ except ImportError as err:
     # raise err
 
 METHOD_OPTIONS = ['search', 'shrink', 'bar_network']
-EDGE = frozenset
+EDGE_KEY = frozenset
 SCALE = 1e-3
 
 ########################################
@@ -338,7 +338,7 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
             if contact_e == element:
                 continue
             c_node = (set(element) & set(contact_e)).pop()
-            connect_vars[EDGE({element, contact_e}), c_node] = 1
+            connect_vars[EDGE_KEY({element, contact_e}), c_node] = 1
 
         if update_element_axis_pts:
             # pp.remove_handles(values_as_list(handles))
@@ -389,6 +389,51 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
         wait_if_gui('Final bar assembly.')
 
     return b_struct, (bar_from_elements, connect_vars)
+
+def beam_opt_global(bar_from_elements, node_points, edges, radius, scale=1.0, debug=False):
+    # TODO init BeamOpt with a given contact pattern
+    beam_opt = BeamOpt(node_points*scale, edges, [], radius*scale)
+    beam_opt.weights =[1, 200, 1]
+
+    # fill in current bar end point as initial guess
+    initial_vert_points = np.array(beam_opt.vertices[beam_opt.edges])
+    for i, ei in enumerate(edges):
+        initial_vert_points[i,0] = np.array(bar_from_elements[ei][ei[0]]) * scale
+        initial_vert_points[i,1] = np.array(bar_from_elements[ei][ei[1]]) * scale
+    beam_opt.end_pts_init_positions = jnp.array(initial_vert_points.flatten())
+
+    var = beam_opt.computeInitVar()
+    fun = computeBeamOptObjective(var, beam_opt)
+    grad = computeBeamOptObjectiveGradient(var, beam_opt)
+    v = jnp.ones(beam_opt.nP + beam_opt.nT)
+    hessian = computeBeamOptObjectiveHessianP(var, v, beam_opt)
+
+    new_vertices, new_edges, new_supports = beam_opt.runOptimization(trace=True)
+    # new_V = beam_opt.xstar[beam_opt.nT: beam_opt.nP + beam_opt.nT].reshape(beam_opt.nB * 2, 3)
+    assert new_edges.shape[0] == len(edges)
+    new_edge_from_old = {}
+    for i, e in enumerate(edges):
+        new_edge_from_old[e] = i
+
+    contact_handles = []
+    if True:
+        # * draw contact lines
+        neighbors = get_element_neighbors(edges)
+        for i, ei in enumerate(edges):
+            for nei in neighbors[ei]:
+                new_nei = new_edges[new_edge_from_old[nei]]
+                dpp = closest_point_segments(new_vertices[new_ei[0]], new_vertices[new_ei[1]],
+                                             new_vertices[new_nei[0]], new_vertices[new_nei[1]])
+                print('contact len: {:.4f} | target {:.4f}'.format(norm(dpp[0]-dpp[1])*(1/scale), radius*2))
+                contact_handles.append(pp.add_line(dpp[0], dpp[1], color=pp.apply_alpha(pp.GREEN, 1.0), width=1.5))
+
+    update_element_axis_pts = {}
+    for i, (ei, new_ei) in enumerate(zip(edges, new_edges)):
+        update_element_axis_pts[ei] = {
+            ei[0] : ((1/scale)*new_vertices[new_ei[0],:]).tolist(),
+            ei[1] : ((1/scale)*new_vertices[new_ei[1],:]).tolist(),
+            }
+    return update_element_axis_pts, contact_handles
 
 def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bars, radius, scale=1.0, debug=False):
     """
@@ -457,12 +502,6 @@ def beam_opt_tangent_bar(bar_from_elements, node_points, element, in_contact_bar
                                              new_vertices[new_nei[0]], new_vertices[new_nei[1]])
                 print('contact len: {:.4f} | target {:.4f}'.format(norm(dpp[0]-dpp[1])*(1/scale), radius*2))
                 contact_handles.append(pp.add_line(dpp[0], dpp[1], color=pp.apply_alpha(pp.GREEN, 1.0), width=1.5))
-
-    #     handles = draw_graph(new_vertices, new_edges)
-    #     bodies = draw_assembly(new_vertices, new_edges, radius)
-    #     pp.wait_if_gui()
-    #     pp.remove_handles(handles)
-    #     list(map(lambda b : pp.remove_body(b), bodies))
 
     update_element_axis_pts = {}
     for i, (ei, new_ei) in enumerate(zip(subassembly_edges, new_edges)):

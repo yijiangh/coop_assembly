@@ -227,16 +227,17 @@ def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
     # element_from_index, grounded_elements, contact_from_connectors, connectors = \
     #     unpack_structure(bar_struct, scale=METER_SCALE, color=apply_alpha(RED,0.2)) #chosen_bars=chosen_bars,
 
-    obstacles, robot = load_world(use_floor=True)
+    obstacles, robot = load_world(use_floor=True, built_plate_z=BUILD_PLATE_CENTER[2]-0.01)
     draw_pose(get_link_pose(robot, link_from_name(robot, TOOL_LINK_NAME)))
     draw_pose(get_link_pose(robot, link_from_name(robot, EE_LINK_NAME)))
+    pp.set_joint_positions(robot, pp.get_movable_joints(robot), INITIAL_CONF)
 
-    # printed = set([0,1,2,3])
-    # chosen = 4
+    printed = set([0,1,2,3])
+    chosen = 4
     #
-    printed = set()
-    # printed = set([0,1,2,4])
-    chosen = 0
+    # printed = set()
+    # # printed = set([0,1,2,4])
+    # chosen = 0
 
     # https://github.com/yijiangh/pybullet_planning/blob/dev/tests/test_grasp.py#L81
     color_structure(element_bodies, printed, next_element=chosen, built_alpha=0.6)
@@ -257,7 +258,7 @@ def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
     set_joint_positions(end_effector, ee_joints, se3_conf_from_pose(pp.get_link_pose(robot, link_from_name(robot, EE_LINK_NAME))))
     # pp.set_pose(end_effector, pp.get_link_pose(robot, link_from_name(robot, EE_LINK_NAME)))
 
-    selected_links = pp.get_link_subtree(robot, 6) # TODO: child_link_from_joint?
+    selected_links = pp.get_link_subtree(robot, 6)[1:] # TODO: child_link_from_joint?
     sub_ee_robot = pp.clone_body(robot, links=selected_links, visual=True, collision=True) # TODO: joint limits
     flying_ee_attach = pp.create_attachment(end_effector, pp.get_links(end_effector)[-1], sub_ee_robot)
     ee_attachments = [flying_ee_attach]
@@ -268,7 +269,7 @@ def test_stream(viewer, file_spec, collision, bar_only, debug_mode):
     grasp_gen = get_bar_grasp_gen_fn(element_from_index, tool_pose=tool_pose, reverse_grasp=True, safety_margin_length=0.005)
     # pregrasp_gen_fn = get_pregrasp_gen_fn(element_from_index, obstacles, collision=collision, teleops=False) # max_attempts=max_attempts,
     pick_gen = get_place_gen_fn(end_effector if bar_only else robot, tool_from_ee, element_from_index, obstacles,
-        collisions=collision, verbose=True, bar_only=bar_only) #max_attempts=n_attempts,
+        collisions=collision, verbose=True, bar_only=bar_only, attachments=ee_attachments, teleops=False) #max_attempts=n_attempts,
 
     element_goal_pose = element_from_index[chosen].goal_pose
     for _ in range(n_attempts):
