@@ -1,15 +1,6 @@
-[submodule "external/pybullet_planning"]
-	path = external/pybullet_planning
-	url = https://github.com/yijiangh/pybullet_planning.git
-[submodule "external/pddlstream"]
-	path = external/pddlstream
-	url = https://github.com/yijiangh/pddlstream.git
-[submodule "external/pyplanners"]
-	path = external/pyplanners
-	url = https://github.com/yijiangh/pyplanners.git
 [submodule "external/conmech"]
 	path = external/conmech
 	url = https://github.com/yijiangh/conmech.git
-[submodule "external/ikfast_pybind"]
-	path = external/ikfast_pybind
-	url = https://github.com/yijiangh/ikfast_pybind.git
+[submodule "external/tracikpy"]
+	path = external/tracikpy
+	url = https://github.com/mjd3/tracikpy.git
