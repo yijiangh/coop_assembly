@@ -34,6 +34,9 @@ def compute_printable(all_elements, ground_nodes, printed):
         if node1 in nodes or node2 in nodes:
             yield element
 
+def contain_directed(all_elements, element):
+    return element in all_elements or reverse_element(element) in all_elements
+
 ##################################################
 
 def get_midpoint(node_points, element):
