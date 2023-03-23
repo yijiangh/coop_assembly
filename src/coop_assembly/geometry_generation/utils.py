@@ -37,6 +37,15 @@ def compute_printable(all_elements, ground_nodes, printed):
 def contain_directed(all_elements, element):
     return element in all_elements or reverse_element(element) in all_elements
 
+def directed_index(all_elements, element):
+    rev_element = reverse_element(element)
+    if element in all_elements:
+        return all_elements.index(element)
+    elif rev_element in all_elements:
+        return all_elements.index(rev_element)
+    else:
+        return None
+
 ##################################################
 
 def get_midpoint(node_points, element):

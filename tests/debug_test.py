@@ -1,10 +1,13 @@
 import argparse
 import numpy as np
 from test_planning import test_stream
+from test_generation import test_contact_pts
 
 def main(args):
     if args.test_module == 'stream':
         test_stream(args.viewer, args.problem, args.collision, args.bar_only, args.debug)
+    elif args.test_module == 'drop_contact':
+        test_contact_pts()
     else:
         raise NotImplementedError()
 

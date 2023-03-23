@@ -24,8 +24,9 @@ from coop_assembly.help_functions.helpers_geometry import calculate_coord_sys, c
 from coop_assembly.data_structure import BarStructure, GROUND_INDEX
 from coop_assembly.geometry_generation.tet_sequencing import SearchState
 from coop_assembly.geometry_generation.utils import get_node_neighbors, get_element_neighbors, nodes_from_elements, \
-    check_connected, incoming_from_edges, compute_printable, compute_z_distance, values_as_list, contain_directed
+    check_connected, incoming_from_edges, compute_printable, compute_z_distance, values_as_list, contain_directed, directed_index
 from coop_assembly.geometry_generation.tangents import closest_point_segments
+from coop_assembly.geometry_generation.validate import plot_contact_distance
 from coop_assembly.help_functions import create_bar_body
 
 from coop_assembly.planning.parsing import get_assembly_path
@@ -39,7 +40,7 @@ except ImportError as err:
     print('multi_tangent not loaded')
     raise err
 
-METHOD_OPTIONS = ['search']
+METHOD_OPTIONS = ['search', 'presolved_assignment']
 EDGE_KEY = frozenset
 # convert to meter
 SCALE = 1e-3
@@ -266,26 +267,37 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
 
 
     ## * compile bars into a BarStructure
-    # everything in BarStructure is in millimeter
+    # TODO fix assumptions in BarStructure that everything is in millimeter
+    # centroid_pt = np.average(node_points, axis=0)
+    b_struct = compose_bar_structure(bar_from_elements, ground_nodes)
+
+    if debug:
+        wait_if_gui('Final bar assembly.')
+
+    return b_struct, (bar_from_elements, connect_vars)
+
+def compose_bar_structure(bar_from_elements, ground_nodes, contact_pairs, radius):
     b_struct = BarStructure()
-    centroid_pt = np.average(node_points, axis=0)
 
     index_from_element = {}
     for e, pts in bar_from_elements.items():
         axis_endpts = list(pts.values())
-        _ , _, vec_z = calculate_coord_sys(axis_endpts, centroid_pt)
+        _ , _, vec_z = calculate_coord_sys(axis_endpts, [0,0,0])
         n0, n1 = e
         is_grounded = n0 in ground_nodes or n1 in ground_nodes
-        bar_key = b_struct.add_bar(None, [p.tolist() for p in axis_endpts], "tube", None, vec_z, radius=radius, grounded=is_grounded)
-        index_from_element[e] = bar_key
+        # everything in BarStructure is stored in millimeter
+        bar_key = b_struct.add_bar(None, [(1/SCALE * p).tolist() for p in axis_endpts], "tube", None, vec_z, radius=1/SCALE*radius, grounded=is_grounded)
+        index_from_element[EDGE_KEY(e)] = bar_key
 
-    for e, pts in bar_from_elements.items():
-        # update contact point into BarS's edges
-        # TODO use contact assignment here
-        for ne in element_neighbors[e]:
-            b_struct.connect_bars(index_from_element[e], index_from_element[ne])
-            contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e], index_from_element[ne])
-            b_struct.edge[index_from_element[e]][index_from_element[ne]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
+    # TODO use contact assignment here
+    # for e, pts in bar_from_elements.items():
+    #     # update contact point into BarS's edges
+    #     for ne in element_neighbors[e]:
+    for e0t, e1t in contact_pairs:
+        e0, e1 = EDGE_KEY(e0t), EDGE_KEY(e1t)
+        b_struct.connect_bars(index_from_element[e0], index_from_element[e1])
+        contact_pts = compute_contact_line_between_bars(b_struct, index_from_element[e0], index_from_element[e1])
+        b_struct.edge[index_from_element[e0]][index_from_element[e1]]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
 
     # * add grounded connector
     grounded_bars = list(b_struct.get_grounded_bar_keys())
@@ -298,11 +310,10 @@ def generate_truss_from_points(node_points, ground_nodes, edge_seq, radius, debu
         contact_pts = [axis_endpts[0], axis_endpts[0]-np.array([0,0,radius])]
         b_struct.edge[ground_k][GROUND_INDEX]["endpoints"].update({0:(list(contact_pts[0]), list(contact_pts[1]))})
 
-    element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 0.5))
-    if debug:
-        wait_if_gui('Final bar assembly.')
+    element_bodies = b_struct.get_element_bodies(color=apply_alpha(RED, 1.0))
+    return b_struct
 
-    return b_struct, (bar_from_elements, connect_vars)
+#############################################################
 
 def beam_opt_global(bar_from_elements, node_points, edges, grounded_nodes, contact_pairs, collision_pairs, radius, scale=1.0, debug=False):
     """Use beam opt to compute nodal positions for given contact and collision assignments
@@ -354,18 +365,36 @@ def beam_opt_global(bar_from_elements, node_points, edges, grounded_nodes, conta
         boundary_vertices.append(e[0] in grounded_nodes)
         boundary_vertices.append(e[1] in grounded_nodes)
         radius_list.append(radius)
+        new_edge_from_old[e] = i
+
+    for cp in contact_pairs:
         # TODO can restrict further based on initial contact point range
         contact_ts_bound.append([0.1, 0.9])
-
-        new_edge_from_old[e] = i
-    local_edges = np.array(local_edges, dtype=int)
+        contact_ts_bound.append([0.1, 0.9])
 
     bo_struct = BeamOpt()
     bo_struct.lines = local_lines
     bo_struct.boundary_vertices = boundary_vertices
     bo_struct.radius = radius_list
+
+    contact_inds = []
+    for e0,e1 in contact_pairs:
+        e0_id, e1_id = directed_index(edges, tuple(e0)), directed_index(edges, tuple(e1))
+        assert e0_id is not None and e1_id is not None
+        assert e0_id != e1_id
+        contact_inds.extend([e0_id, e1_id])
+    collision_dists = []
+    collision_inds = []
+    for e0,e1 in collision_pairs:
+        e0_id, e1_id = directed_index(edges, tuple(e0)), directed_index(edges, tuple(e1))
+        assert e0_id is not None and e1_id is not None
+        assert e0_id != e1_id
+        collision_inds.extend([e0_id, e1_id])
+        collision_dists.append(2*radius)
     bo_struct.contact_inds = contact_inds
     bo_struct.collision_inds = collision_inds
+    bo_struct.collision_dists = collision_dists
+
     bo_struct.contact_ts_bound = contact_ts_bound
 
     solver = BeamOptSolver(bo_struct)
@@ -376,12 +405,12 @@ def beam_opt_global(bar_from_elements, node_points, edges, grounded_nodes, conta
     obj, xstar = solver.solve()
     if solver.nStatus != 0:
         LOGGER.error('Knitro status: {} | feasError {} | optError {}'.format(solver.nStatus, solver.feasError, solver.optError))
-        return False, None
+        return False, bar_from_elements
 
     # unpack computed x
     for i, e in enumerate(edges):
         bar_from_elements[e][e[0]] = xstar[i*6:i*6+3]
-        bar_from_elements[e][e[1]] = xstar[i*6:i*6+3]
+        bar_from_elements[e][e[1]] = xstar[i*6+3:i*6+6]
 
     # contact_handles = []
     # if True:
@@ -474,7 +503,8 @@ def retrace_sequence(visited, current_state, horizon=INF):
     return previous_tet_ids + [command]
 
 #############################################################
-def gen_truss(problem_data, radius, viewer=False, debug=False, method='search', **kwargs):
+
+def compute_multi_tangent(problem_data, radius, viewer=False, debug=False, method='search', **kwargs):
     """[summary]
 
     Parameters
@@ -492,7 +522,8 @@ def gen_truss(problem_data, radius, viewer=False, debug=False, method='search', 
         [description]
     """
     net = Network.from_data(problem_data)
-    node_points = [np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
+    # everything below this line is in meters
+    node_points = [SCALE*np.array([net.node[v][c] for c in ['x', 'y', 'z']]) for v in range(net.number_of_nodes())]
     edges = [e for e in net.edges()]
     ground_nodes = [v for v, attr in net.nodes(True) if attr['fixed'] == True]
 
@@ -505,14 +536,14 @@ def gen_truss(problem_data, radius, viewer=False, debug=False, method='search', 
         set_camera(node_points)
         draw_pose(unit_pose(), length=0.01)
         # draw the ideal truss that we want to achieve
-        label_points([pt*SCALE for pt in node_points])
+        label_points(node_points)
         for e in edges:
             n1, n2 = e
-            p1 = node_points[n1] * SCALE
-            p2 = node_points[n2] * SCALE
+            p1 = node_points[n1]
+            p2 = node_points[n2]
             add_line(p1, p2, color=apply_alpha(BLUE, 0.3), width=0.5)
         for v in ground_nodes:
-            draw_circle(node_points[v]*SCALE, 0.01)
+            draw_circle(node_points[v], 0.01)
 
     if debug:
         wait_if_gui('Target line graph...')
@@ -533,6 +564,28 @@ def gen_truss(problem_data, radius, viewer=False, debug=False, method='search', 
             'x_vars' : x_vars_data,
             'z_vars' : z_vars_data,
             }
+
+    elif method == 'presolved_assignment':
+        bar_from_elements = {}
+        for e in edges:
+            bar_from_elements[e] = {
+                e[0] : node_points[e[0]],
+                e[1] : node_points[e[1]],
+                }
+
+        problem_name = problem_data['problem_name'].split('.json')[0]
+        assignment_filepath = os.path.join(FILE_DIR, problem_name+'_contact_assignment.json')
+        with open(assignment_filepath) as json_file:
+            assign_data = json.load(json_file)
+            cprint('Contact assignments parsed from : {}'.format(assignment_filepath), 'green')
+        contact_pairs = assign_data['contact_pairs'] 
+        collision_pairs = assign_data['collision_pairs'] 
+
+        success, bar_from_elements = beam_opt_global(bar_from_elements, node_points, edges, ground_nodes, 
+                                                     contact_pairs, collision_pairs, 
+                                                     radius, scale=1.0, debug=False)
+        assert success
+        b_struct = compose_bar_structure(bar_from_elements, ground_nodes, contact_pairs, radius)
     else:
         raise NotImplementedError('Unsupported method : {}'.format(method))
 
@@ -548,7 +601,8 @@ def main():
     np.set_printoptions(precision=3)
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--problem', default='truss_one_tet_skeleton.json', help='The name of the problem to solve')
-    parser.add_argument('-r', '--radius', default=0.02, help='Radius of bars in meter')
+    parser.add_argument('-m', '--method', choices=METHOD_OPTIONS, default='search', help='Radius of bars in meter')
+    parser.add_argument('-r', '--radius', default=0.01, help='Radius of bars in meter')
     parser.add_argument('-v', '--viewer', action='store_true', help='Enables the viewer during planning (slow!)')
     parser.add_argument('-w', '--write', action='store_true', help='Export results')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug verbose mode')
@@ -571,15 +625,16 @@ def main():
         cprint('Design graph parsed from : {}'.format(problem_path), 'green')
     if 'data' in graph_data:
         graph_data = graph_data['data']
+    graph_data['problem_name'] = args.problem
 
-    b_struct, opt_data = gen_truss(graph_data, args.radius, viewer=args.viewer,
+    b_struct, opt_data = compute_multi_tangent(graph_data, args.radius, viewer=args.viewer,
         method=args.method, debug=args.debug)
 
-    # fig = plot_contact_distance(b_struct)
-    # plt.show()
+    fig = plot_contact_distance(b_struct)
+    plt.show()
     # if args.write:
     #     fig.savefig(os.path.join(multi_tangent.DATA_DIRECTORY, 'plots', export_file_name + '_bar_structure_dist_plot.png'))
-    # check_model(b_struct, args.subset_bars, debug=args.debug)
+    check_model(b_struct, args.subset_bars, debug=args.debug)
 
     if args.write:
         export_structure_data(b_struct.to_data(), overall_struct_data=graph_data, save_dir=FILE_DIR,

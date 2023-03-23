@@ -18,7 +18,7 @@ import math
 import numpy as np
 from numpy.linalg import norm
 from itertools import combinations
-from copy import deepcopy
+from copy import deepcopy, copy
 from termcolor import cprint
 
 from compas.geometry import Plane, Point, Vector
@@ -95,7 +95,7 @@ def create_bar_body(axis_end_pts, bar_radius, scale=1.0, use_box=USE_BOX, color=
     if not is_connected():
         return None
 
-    p1, p2 = axis_end_pts
+    p1, p2 = copy(axis_end_pts)
     p1 = np.array(p1) * scale
     p2 = np.array(p2) * scale
     # height = max(np.linalg.norm(p2 - p1) - 2*shrink, 0)
@@ -243,24 +243,64 @@ def convex_combination(x1, x2, w=0.5):
     #assert 0 <= w <= 1
     return (1 - w) * x1 + (w * x2)
 
-def closest_point_segments(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2):
-    from gurobipy import Model, GRB, quicksum, GurobiError
+def closest_point_segments(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2, opt_tol=1e-8):
+    from knitro import KN_RC_EVALFC, KN_new, KN_add_vars, KN_set_var_lobnds, \
+        KN_set_var_upbnds, KN_add_eval_callback, KN_set_cb_user_params, KN_set_obj_goal, \
+        KN_OBJGOAL_MINIMIZE, KN_solve, KN_free, KN_get_solution, KN_set_double_param, KN_PARAM_OPTTOL, \
+        KN_set_int_param, KN_PARAM_OUTLEV, KN_OUTLEV_NONE
     np_line1 = [np.array(line_point_1_1), np.array(line_point_1_2)]
     np_line2 = [np.array(line_point_2_1), np.array(line_point_2_2)]
 
-    model = Model(name='qp_closest_points_between_segments')
-    model.setParam(GRB.Param.OutputFlag, False)
-    t1 = np.full(np_line1[0].shape, model.addVar(lb=0.0, ub=1.0, name="t1"))
-    t2 = np.full(np_line2[0].shape, model.addVar(lb=0.0, ub=1.0, name="t2"))
-    # difference = convex_combination(*np_line1, t1) - convex_combination(*np_line2, t2)
-    difference = ((1 - t1) * np_line1[0] + t1 * np_line1[1]) - \
-                 ((1 - t2) * np_line2[0] + t2 * np_line2[1])
-    model.setObjective(sum(difference*difference), sense=GRB.MINIMIZE)
+    class UserEvalType:
+        def __init__ (self, lines):
+            self.lines = lines
+
+    def callbackEvalF (kc, cb, evalRequest, evalResult, userParams):
+        if evalRequest.type != KN_RC_EVALFC:
+            print ("*** callbackEvalF incorrectly called with eval type %d" % evalRequest.type)
+            return -1
+        x = evalRequest.x
+        lines = userParams.lines
+        difference = ((1 - x[0]) * lines[0][0] + x[0] * lines[0][1]) - \
+                     ((1 - x[1]) * lines[1][0] + x[1] * lines[1][1])
+        evalResult.obj = sum(difference*difference)
+        return 0
     try:
-        model.optimize()
-    except GurobiError as e:
-        raise e
-    return [convex_combination(*np_line1, t1[0].x), convex_combination(*np_line2, t2[0].x)]
+        kc = KN_new()
+    except:
+        print("Failed to find a valid license.")
+        quit()
+    KN_add_vars (kc, 2)
+    KN_set_var_lobnds (kc, xLoBnds = [0.0, 0.0])
+    KN_set_var_upbnds (kc, xUpBnds = [1.0, 1.0])
+    cb = KN_add_eval_callback (kc, evalObj = True, funcCallback = callbackEvalF)
+    KN_set_double_param(kc, KN_PARAM_OPTTOL, opt_tol);
+    KN_set_int_param (kc, KN_PARAM_OUTLEV, KN_OUTLEV_NONE);
+
+    userEval = UserEvalType ([np_line1, np_line2])
+    KN_set_cb_user_params (kc, cb, userEval)
+    KN_set_obj_goal (kc, KN_OBJGOAL_MINIMIZE)
+    nStatus = KN_solve (kc)
+    nStatus, objSol, x, lambda_ = KN_get_solution (kc)
+    # Delete the Knitro solver instance.
+    KN_free (kc)
+    # assert nStatus == 0
+
+    return [convex_combination(*np_line1, x[0]), convex_combination(*np_line2, x[1])]
+
+    # from gurobipy import Model, GRB, quicksum, GurobiError
+    # model = Model(name='qp_closest_points_between_segments')
+    # model.setParam(GRB.Param.OutputFlag, False)
+    # t1 = np.full(np_line1[0].shape, model.addVar(lb=0.0, ub=1.0, name="t1"))
+    # t2 = np.full(np_line2[0].shape, model.addVar(lb=0.0, ub=1.0, name="t2"))
+    # # difference = convex_combination(*np_line1, t1) - convex_combination(*np_line2, t2)
+    # difference = ((1 - t1) * np_line1[0] + t1 * np_line1[1]) - \
+    #              ((1 - t2) * np_line2[0] + t2 * np_line2[1])
+    # model.setObjective(sum(difference*difference), sense=GRB.MINIMIZE)
+    # try:
+    #     model.optimize()
+    # except GurobiError as e:
+    #     raise e
 
 def dropped_perpendicular_points(line_point_1_1, line_point_1_2, line_point_2_1, line_point_2_2):
     """compute the projected tangent point on axis defined by [L1_pt1, L1_pt2] and [L2_pt1, L2_pt2]

@@ -1,10 +1,10 @@
 using JuMP
-using Ipopt
+using KNITRO
 using LinearAlgebra: norm
 
 #########################################
 # original units of millimeters
-const SCALE = 1e-2
+const SCALE = 1e-3
 const COORDINATES = ["x", "y", "z"]
 
 function parse_point(json_point)
@@ -55,7 +55,8 @@ Compute closest line between two line segments, using an unconstrained quadratic
 """
 function closest_point_segments(line1, line2; optimize=true)
     if optimize
-        m = Model(optimizer_with_attributes(Ipopt.Optimizer, "print_level" => 0))
+        m = Model(optimizer_with_attributes(KNITRO.Optimizer, "outlev" => 0))
+        # m = Model(optimizer_with_attributes(Ipopt.Optimizer, "print_level" => 0))
         # m = Model(optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => false))
         @variable(m, 0 <= γ1 <= 1)
         @variable(m, 0 <= γ2 <= 1)
